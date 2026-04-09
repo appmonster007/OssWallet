@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Centered safe zone is roughly 21,21 to 87,87 -->
+
+    <!-- Upward Trend Line (Predictive Analytics / Growth) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M30,70 L48,52 L60,64 L78,38" />
+
+    <!-- Currency / Money symbol (Simplified Dollar) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,32 L54,76"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M64,42 C64,36 44,36 44,42 C44,54 64,54 64,66 C64,72 44,72 44,66" />
+
+</vector>

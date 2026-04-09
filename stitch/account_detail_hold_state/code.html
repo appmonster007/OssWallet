@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#01677d",
+                        "surface-container": "#ebeeee",
+                        "surface-variant": "#e0e3e3",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "tertiary-fixed": "#7cf8da",
+                        "on-tertiary-fixed-variant": "#005143",
+                        "surface-container-low": "#f1f4f4",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#006b59",
+                        "on-error": "#ffffff",
+                        "background": "#f7fafa",
+                        "primary": "#004d5f",
+                        "outline-variant": "#bec8cc",
+                        "tertiary": "#005143",
+                        "primary-fixed-dim": "#86d1ea",
+                        "on-primary-container": "#98e3fc",
+                        "on-tertiary-container": "#71edd0",
+                        "on-secondary-fixed": "#0e1e21",
+                        "on-surface": "#181c1d",
+                        "on-surface-variant": "#3f484c",
+                        "on-secondary-fixed-variant": "#3a494c",
+                        "outline": "#6f797c",
+                        "inverse-on-surface": "#eef1f1",
+                        "primary-fixed": "#b3ebff",
+                        "surface-bright": "#f7fafa",
+                        "primary-container": "#00677d",
+                        "surface-container-highest": "#e0e3e3",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#b9cacd",
+                        "on-tertiary-fixed": "#00201a",
+                        "inverse-primary": "#86d1ea",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e6e9e9",
+                        "secondary-fixed": "#d4e6e9",
+                        "on-background": "#181c1d",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d4e6e9",
+                        "secondary": "#516164",
+                        "surface": "#f7fafa",
+                        "tertiary-fixed-dim": "#5ddbbe",
+                        "on-secondary-container": "#57676a",
+                        "on-primary-fixed": "#001f27",
+                        "inverse-surface": "#2d3131",
+                        "surface-dim": "#d7dbdb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Header (Shared Component: TopAppBar) -->
+<header class="bg-[#f7fafa] dark:bg-[#181c1d] w-full top-0 px-6 py-4 fixed z-40">
+<div class="flex justify-between items-center w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Portrait of a professional person with a friendly expression in a modern office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq_qiW--Pfg3Pxw6OaYEJBZ0zI3ur2vrRH1kFrXoWQkuZODu6rlib-2iFyVQrfHZBx6w13EjCUHRP4XRMpMquCpgxA660e-V_SYtee5HJS6tDReFvzZThTw06QluJlPwVENjS0f1zymyA_zouFUxJUwcEyWXDiPeEuK0W4x9c7xZJKiTf0R6bqEqn3z-oZxhiUhY6wCEcQw1ZkYTsYaQWE5tdpN-dnZjO5i2xJAxnMLVzqFnrRYHSr_lDl_fHnxirxZSmri7i-KGCz"/>
+</div>
+<span class="font-['Manrope'] font-medium tracking-tight text-[#181c1d] dark:text-[#f7fafa]">Intelligence</span>
+</div>
+<div class="flex items-center">
+<button class="text-[#004d5f] dark:text-[#86d1ea] hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Dashboard Content (Dimmed Background Simulation) -->
+<main class="pt-24 px-6 pb-32 max-w-screen-xl mx-auto opacity-40 grayscale-[0.2]">
+<!-- Hero Balance Section -->
+<section class="mb-12">
+<p class="font-label text-on-surface-variant text-[0.6875rem] uppercase tracking-widest mb-2">Total Net Worth</p>
+<h1 class="font-headline text-[3.5rem] font-extrabold tracking-[-0.02em] leading-tight tabular-nums">$142,850.42</h1>
+</section>
+<!-- Bento Grid Accounts -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Account Card 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined text-primary-fixed-dim">account_balance_wallet</span>
+<span class="font-label text-[10px] text-on-tertiary-fixed-variant bg-tertiary-fixed px-2 py-1 rounded-full">ACTIVE</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-1">Checking Account</p>
+<h3 class="font-headline font-bold text-xl mb-4">Main Treasury</h3>
+<p class="font-body font-bold text-2xl tabular-nums">$84,200.00</p>
+</div>
+<!-- Account Card 2 (Target of Long Press) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm relative ring-4 ring-primary/20">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined text-primary-fixed-dim">savings</span>
+</div>
+<p class="text-on-surface-variant text-sm mb-1">Global Savings</p>
+<h3 class="font-headline font-bold text-xl mb-4">International Fund</h3>
+<p class="font-body font-bold text-2xl tabular-nums">€12,450.00</p>
+</div>
+</div>
+</main>
+<!-- LONG PRESS OVERLAY STATE -->
+<div class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-on-surface/40 backdrop-blur-sm">
+<div class="w-full max-w-lg bg-surface-container-lowest rounded-xl shadow-[0px_24px_48px_rgba(0,77,95,0.08)] overflow-hidden">
+<!-- Modal Header / Card Detailed View -->
+<div class="p-8 pb-4">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl">savings</span>
+</div>
+<div>
+<p class="font-label text-on-surface-variant text-[0.6875rem] uppercase tracking-[0.05em]">Checking Account</p>
+<h2 class="font-headline font-bold text-2xl tracking-tight text-on-surface">International Fund</h2>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Balance Breakdown -->
+<div class="bg-surface-container-low rounded-lg p-6 mb-8">
+<div class="space-y-6">
+<!-- Primary Currency -->
+<div class="flex justify-between items-end">
+<div>
+<p class="text-on-surface-variant text-sm mb-1">Primary Balance</p>
+<p class="font-headline font-extrabold text-4xl tabular-nums text-primary">€12,450.00</p>
+</div>
+<div class="text-right">
+<p class="text-on-surface-variant text-[0.6875rem] uppercase tracking-wider">EUR/USD</p>
+<p class="text-tertiary font-semibold tabular-nums">1.0842</p>
+</div>
+</div>
+<!-- Secondary Currencies -->
+<div class="grid grid-cols-2 gap-4 pt-6 border-t border-outline-variant/15">
+<div>
+<p class="text-on-surface-variant text-[0.6875rem] uppercase tracking-wider mb-1">USD Equivalent</p>
+<p class="font-body font-bold text-lg tabular-nums text-on-surface">$13,498.29</p>
+</div>
+<div>
+<p class="text-on-surface-variant text-[0.6875rem] uppercase tracking-wider mb-1">GBP Equivalent</p>
+<p class="font-body font-bold text-lg tabular-nums text-on-surface">£10,612.40</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions List -->
+<div class="space-y-2 mb-4">
+<button class="w-full flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors active:scale-[0.98] group">
+<span class="material-symbols-outlined text-primary-fixed-dim group-hover:text-primary">edit_square</span>
+<span class="font-body font-semibold text-on-surface">Edit Account</span>
+<span class="material-symbols-outlined ml-auto text-outline-variant">chevron_right</span>
+</button>
+<button class="w-full flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors active:scale-[0.98] group">
+<span class="material-symbols-outlined text-primary-fixed-dim group-hover:text-primary">reorder</span>
+<span class="font-body font-semibold text-on-surface">Reorder</span>
+<span class="material-symbols-outlined ml-auto text-outline-variant">chevron_right</span>
+</button>
+<button class="w-full flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors active:scale-[0.98] group">
+<span class="material-symbols-outlined text-outline group-hover:text-error">visibility_off</span>
+<span class="font-body font-semibold text-on-surface">Hide from Dashboard</span>
+<span class="material-symbols-outlined ml-auto text-outline-variant">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Footer Decorative/Context -->
+<div class="px-8 py-4 bg-surface-container-low/50 flex justify-center">
+<div class="w-12 h-1.5 rounded-full bg-outline-variant/30"></div>
+</div>
+</div>
+</div>
+<!-- Navigation (Shared Component: BottomNavBar) -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center z-50 pb-8 pointer-events-none">
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-[3rem] px-2 py-3 bg-[#ffffffcc] dark:bg-[#181c1dcc] backdrop-blur-xl shadow-[0px_24px_48px_rgba(0,77,95,0.08)] flex justify-around items-center pointer-events-auto">
+<button class="flex flex-col items-center justify-center text-[#004d5f] dark:text-[#86d1ea] bg-[#f1f4f4] dark:bg-[#3f484c] rounded-full p-3 active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-wider font-semibold">Dashboard</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#3f484c] dark:text-[#bec8cc] p-3 hover:text-[#004d5f] dark:hover:text-[#86d1ea] active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-wider font-semibold">Records</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#3f484c] dark:text-[#bec8cc] p-3 hover:text-[#004d5f] dark:hover:text-[#86d1ea] active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-wider font-semibold">Add</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#3f484c] dark:text-[#bec8cc] p-3 hover:text-[#004d5f] dark:hover:text-[#86d1ea] active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-wider font-semibold">Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#3f484c] dark:text-[#bec8cc] p-3 hover:text-[#004d5f] dark:hover:text-[#86d1ea] active:scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-wider font-semibold">Budgets</span>
+</button>
+</div>
+</nav>
+</body></html>

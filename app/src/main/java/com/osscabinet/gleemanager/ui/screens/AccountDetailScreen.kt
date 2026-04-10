@@ -37,6 +37,8 @@ fun AccountDetailScreen(
     accountId: String,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
+    settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel,
+    analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit
 ) {
@@ -45,6 +47,13 @@ fun AccountDetailScreen(
     
     val transactions by transactionViewModel.transactions.collectAsState()
     val accountTransactions = transactions.filter { it.accountId == accountId }
+    
+    val baseCurrency by settingsViewModel.currency.collectAsState()
+    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+
+    LaunchedEffect(baseCurrency) {
+        analyticsViewModel.onCurrencySelected(baseCurrency)
+    }
     
     val income = accountTransactions.filter { it.isIncome }.sumOf { it.amount }
     val expense = accountTransactions.filter { !it.isIncome }.sumOf { it.amount }
@@ -126,6 +135,15 @@ fun AccountDetailScreen(
                                     "${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", account.balance)}",
                                     style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
                                 )
+                                if (account.currencyCode != baseCurrency) {
+                                    val rate = exchangeRates[account.currencyCode] ?: 1.0
+                                    val convertedBalance = if (rate != 0.0) account.balance / rate else 0.0
+                                    Text(
+                                        "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", convertedBalance)}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = LocalContentColor.current.copy(alpha = 0.7f)
+                                    )
+                                }
                             }
                             Icon(
                                 iconMap[account.icon] ?: Icons.Rounded.AccountBalance,

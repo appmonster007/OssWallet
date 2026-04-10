@@ -32,6 +32,10 @@ class TransactionRepositoryImpl(
         }
     }
 
+    override suspend fun getTransactionById(id: Long): Transaction? {
+        return transactionDao.getTransactionById(id)?.toDomain()
+    }
+
     private fun TransactionEntity.toDomain(): Transaction {
         return Transaction(
             id = id,

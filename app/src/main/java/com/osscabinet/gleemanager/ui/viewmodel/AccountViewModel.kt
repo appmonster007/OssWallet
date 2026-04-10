@@ -42,12 +42,20 @@ class AccountViewModel(
                 id = UUID.randomUUID().toString(),
                 name = name,
                 balance = balance,
+                initialBalance = balance,
                 currencyCode = currency,
                 structureType = structureType,
                 colorHex = colorHex,
                 icon = icon,
                 allowedCurrencies = allowedCurrencies
             )
+            repository.insertAccount(account, profileId)
+        }
+    }
+
+    fun updateAccount(account: Account) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
             repository.insertAccount(account, profileId)
         }
     }

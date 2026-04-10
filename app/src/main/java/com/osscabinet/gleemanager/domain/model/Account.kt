@@ -4,6 +4,7 @@ data class Account(
     val id: String,
     val name: String,
     val balance: Double,
+    val initialBalance: Double = 0.0,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,

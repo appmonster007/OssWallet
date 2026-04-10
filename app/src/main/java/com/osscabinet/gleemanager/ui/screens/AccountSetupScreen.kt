@@ -44,8 +44,8 @@ fun AccountSetupScreen(
     var iconSearchQuery by remember { mutableStateOf("") }
     
     // Currency logic
-    var primaryCurrency by remember { mutableStateOf("USD") }
-    var allowedCurrencies by remember { mutableStateOf(setOf("USD")) }
+    var primaryCurrency by remember { mutableStateOf("") }
+    var allowedCurrencies by remember { mutableStateOf(setOf<String>()) }
     
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
     
@@ -131,7 +131,7 @@ fun AccountSetupScreen(
                         value = initialBalance,
                         onValueChange = { initialBalance = it },
                         placeholder = "0.00",
-                        prefix = primaryCurrency
+                        prefix = primaryCurrency.ifEmpty { null }
                     )
                 }
             }
@@ -223,6 +223,9 @@ fun AccountSetupScreen(
                                             if (!isPrimary) allowedCurrencies = allowedCurrencies - code
                                         } else {
                                             allowedCurrencies = allowedCurrencies + code
+                                            if (primaryCurrency.isBlank()) {
+                                                primaryCurrency = code
+                                            }
                                         }
                                     },
                                     onLongClick = {
@@ -387,7 +390,7 @@ fun AccountSetupScreen(
                     containerColor = currentAccentColor,
                     contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
                 ),
-                enabled = accountName.isNotBlank() && isBalanceValid
+                enabled = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
             ) {
                 Text("INITIALIZE LEDGER", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }

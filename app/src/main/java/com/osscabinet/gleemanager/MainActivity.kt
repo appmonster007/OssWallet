@@ -53,8 +53,11 @@ class MainActivity : FragmentActivity() {
         val repository = TransactionRepositoryImpl(db.transactionDao())
         val getTransactionsUseCase = GetTransactionsUseCase(repository)
         val insertTransactionUseCase = InsertTransactionUseCase(repository)
+        val deleteTransactionUseCase = DeleteTransactionUseCase(repository)
         val settingsDataStore = com.osscabinet.gleemanager.data.local.SettingsDataStore(this)
-        val viewModelFactory = TransactionViewModelFactory(getTransactionsUseCase, insertTransactionUseCase, settingsDataStore)
+        val accountRepository = com.osscabinet.gleemanager.data.repository.AccountRepositoryImpl(db.accountDao())
+        val updateTransactionUseCase = UpdateTransactionUseCase(repository, accountRepository)
+        val viewModelFactory = TransactionViewModelFactory(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore)
         
         val budgetRepository = BudgetRepositoryImpl(db.budgetDao())
         val syncBudgetSpentUseCase = SyncBudgetSpentUseCase(budgetRepository, repository)
@@ -80,8 +83,6 @@ class MainActivity : FragmentActivity() {
         val profileRepository = com.osscabinet.gleemanager.data.repository.ProfileRepositoryImpl(db.profileDao(), settingsDataStore)
         val backupRepository = com.osscabinet.gleemanager.data.repository.BackupRepositoryImpl(contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao())
         val settingsViewModelFactory = com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModelFactory(settingsDataStore, profileRepository, backupRepository)
-
-        val accountRepository = com.osscabinet.gleemanager.data.repository.AccountRepositoryImpl(db.accountDao())
         val accountViewModelFactory = com.osscabinet.gleemanager.ui.viewmodel.AccountViewModelFactory(accountRepository, settingsDataStore)
 
         setContent {
@@ -145,6 +146,7 @@ class MainActivity : FragmentActivity() {
                             viewModel = viewModel,
                             accountViewModel = accountViewModel,
                             onAddTransactionClick = { navController.navigate("add") },
+                            onEditTransactionClick = { transactionId -> navController.navigate("edit_transaction/$transactionId") },
                             onBackClick = { navController.popBackStack() },
                             onAccountDetailClick = { accountId -> navController.navigate("account_detail/$accountId") }
                         )
@@ -153,6 +155,17 @@ class MainActivity : FragmentActivity() {
                         AddTransactionScreen(
                             viewModel = viewModel,
                             accountViewModel = accountViewModel,
+                            analyticsViewModel = analyticsViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("edit_transaction/{transactionId}") { backStackEntry ->
+                        val transactionId = backStackEntry.arguments?.getString("transactionId")?.toLongOrNull() ?: -1L
+                        EditTransactionScreen(
+                            transactionId = transactionId,
+                            viewModel = viewModel,
+                            accountViewModel = accountViewModel,
+                            analyticsViewModel = analyticsViewModel,
                             onBackClick = { navController.popBackStack() }
                         )
                     }
@@ -165,7 +178,16 @@ class MainActivity : FragmentActivity() {
                             settingsViewModel = settingsViewModel,
                             analyticsViewModel = analyticsViewModel,
                             onBackClick = { navController.popBackStack() },
-                            onEditAccountClick = { /* navController.navigate("edit_account/$accountId") */ }
+                            onEditAccountClick = { navController.navigate("edit_account/$accountId") },
+                            onEditTransactionClick = { transactionId -> navController.navigate("edit_transaction/$transactionId") }
+                        )
+                    }
+                    composable("edit_account/{accountId}") { backStackEntry ->
+                        val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                        EditAccountScreen(
+                            accountId = accountId,
+                            viewModel = accountViewModel,
+                            onBackClick = { navController.popBackStack() }
                         )
                     }
                     composable("account_setup") {

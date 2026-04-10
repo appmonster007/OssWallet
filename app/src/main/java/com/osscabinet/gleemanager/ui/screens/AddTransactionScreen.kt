@@ -35,6 +35,7 @@ import com.osscabinet.gleemanager.ui.components.CalculatorDialog
 import com.osscabinet.gleemanager.ui.components.OCRScanner
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,6 +45,7 @@ import java.util.*
 fun AddTransactionScreen(
     viewModel: TransactionViewModel,
     accountViewModel: AccountViewModel,
+    analyticsViewModel: AnalyticsViewModel,
     onBackClick: () -> Unit
 ) {
     var title by remember { mutableStateOf("") }
@@ -54,6 +56,7 @@ fun AddTransactionScreen(
     var selectedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     
     val accounts by accountViewModel.accounts.collectAsState()
+    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
     
@@ -309,11 +312,22 @@ fun AddTransactionScreen(
                             tags = tagsList,
                             timestamp = selectedDateMillis
                         )
-                        // Update account balance
-                        // Note: In a real app, you'd handle currency conversion here if the transaction currency differs from account primary currency
+                        // Convert amount to account's primary currency before updating balance
+                        val amountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
+                            amountDouble
+                        } else {
+                            // Find rate for transaction currency (relative to USD usually)
+                            val txRate = exchangeRates[selectedCurrency] ?: 1.0
+                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: 1.0
+                            
+                            // Amount in base (e.g. USD) = amountDouble / txRate
+                            // Amount in account currency = (amountDouble / txRate) * accountRate
+                            if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                        }
+
                         accountViewModel.updateBalance(
                             accountId,
-                            if (isIncome) amountDouble else -amountDouble
+                            if (isIncome) amountInAccountCurrency else -amountInAccountCurrency
                         )
                         onBackClick()
                     }

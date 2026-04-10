@@ -141,11 +141,11 @@ fun DashboardScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NetWorthSection(accounts, transactions, baseCurrency, exchangeRates)
+            NetWorthSection(accounts, baseCurrency, exchangeRates)
             CurrencyAggregationSection(transactions, baseCurrency, exchangeRates)
             IntelligenceInsightsSection(accounts, transactions, baseCurrency, exchangeRates)
-            AccountsSection(onManageAccountsClick, onAccountClick, accounts, transactions, baseCurrency, exchangeRates)
-            RecentActivitySection(onRecordsClick, baseCurrency)
+            AccountsSection(onManageAccountsClick, onAccountClick, accounts, baseCurrency, exchangeRates)
+            RecentActivitySection(onRecordsClick, baseCurrency, transactions, accounts)
             BudgetTrackingSection(baseCurrency)
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -215,17 +215,8 @@ fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Tran
 }
 
 @Composable
-fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-    // Total net worth = (Initial balance of all accounts in base) + (Sum of all transactions in base)
-    // Actually, account.balance should already be current. But the request says "balance for each currency separately"
-    // and "aggregate balance in base".
-    // If account.balance is just the initial balance plus transactions, we should calculate it per currency.
-    
-    val totalBalanceInBase = transactions.groupBy { it.currency }.map { (currency, txs) ->
-        val currencySum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
-        val rate = exchangeRates[currency] ?: 1.0
-        if (rate == 0.0) 0.0 else currencySum / rate
-    }.sum() + accounts.sumOf { account ->
+fun NetWorthSection(accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
+    val totalBalanceInBase = accounts.sumOf { account ->
         val rate = exchangeRates[account.currencyCode] ?: 1.0
         if (rate == 0.0) 0.0 else account.balance / rate
     }
@@ -317,7 +308,7 @@ fun CurrencyAggregationSection(transactions: List<Transaction>, baseCurrency: St
 }
 
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, Double>) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -342,28 +333,14 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
             )
         } else {
             accounts.forEach { account ->
-                val accountTransactions = transactions.filter { it.accountId == account.id }
-                
-                // Group by currency to show separate balances
-                val currencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
-                    val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
-                    if (curr == account.currencyCode) account.balance + txSum else txSum
-                }.toMutableMap()
-                
-                if (!currencyBalances.containsKey(account.currencyCode)) {
-                    currencyBalances[account.currencyCode] = account.balance
-                }
-
-                // Calculate total for this account in base currency
-                val totalInBase = currencyBalances.map { (curr, bal) ->
-                    val rate = exchangeRates[curr] ?: 1.0
-                    if (rate == 0.0) 0.0 else bal / rate
-                }.sum()
+                // Account's primary balance in base currency
+                val rate = exchangeRates[account.currencyCode] ?: 1.0
+                val balanceInBase = if (rate != 0.0) account.balance / rate else 0.0
 
                 AccountCard(
                     title = account.name.uppercase(),
-                    balance = "${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", totalInBase)}",
-                    currencyBalances = currencyBalances,
+                    balance = "${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", balanceInBase)}",
+                    currencyBalances = mapOf(account.currencyCode to account.balance),
                     icon = when(account.structureType) {
                         "Savings" -> Icons.Default.Savings
                         "Credit Card" -> Icons.Default.CreditCard
@@ -495,7 +472,12 @@ fun AccountCard(
 }
 
 @Composable
-fun RecentActivitySection(onViewAll: () -> Unit, baseCurrency: String) {
+fun RecentActivitySection(onViewAll: () -> Unit, baseCurrency: String, transactions: List<Transaction>, accounts: List<Account>) {
+    val accountMap = accounts.associate { it.id to it.name }
+    val recentTransactions = transactions.sortedByDescending { it.timestamp }.take(3)
+    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
+    val today = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date())
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -508,9 +490,27 @@ fun RecentActivitySection(onViewAll: () -> Unit, baseCurrency: String) {
             }
         }
 
-        ActivityItem("Apple Store", "Electronics • Today", "- ${getCurrencySymbol(baseCurrency)}1,299.00", "CHECKING", Icons.Default.ShoppingBag)
-        ActivityItem("Salary Deposit", "Income • Oct 28", "+ ${getCurrencySymbol(baseCurrency)}8,500.00", "SAVINGS", Icons.Default.Payments, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-        ActivityItem("The Alchemist", "Dining • Oct 27", "- ${getCurrencySymbol(baseCurrency)}142.50", "CHECKING", Icons.Default.Restaurant)
+        recentTransactions.forEach { transaction ->
+            val dateStr = dateFormat.format(Date(transaction.timestamp))
+            val displayDate = if (dateStr == today) "Today" else dateStr
+            
+            val icon = when(transaction.category.lowercase()) {
+                "food", "dining" -> Icons.Default.Restaurant
+                "shopping" -> Icons.Default.ShoppingBag
+                "transport" -> Icons.Default.DirectionsCar
+                "salary", "income" -> Icons.Default.Payments
+                else -> Icons.Default.Receipt
+            }
+
+            ActivityItem(
+                title = transaction.title,
+                sub = "${transaction.category} • $displayDate",
+                amount = "${if (transaction.isIncome) "+" else "-"} ${getCurrencySymbol(transaction.currency)}${String.format("%,.2f", transaction.amount)}",
+                account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
+                icon = icon,
+                iconBg = if (transaction.isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        }
     }
 }
 

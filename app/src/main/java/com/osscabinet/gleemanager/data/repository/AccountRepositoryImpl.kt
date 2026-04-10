@@ -24,6 +24,25 @@ class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountReposit
         accountDao.getAccountById(accountId)?.let { accountDao.deleteAccount(it) }
     }
 
-    private fun AccountEntity.toDomain() = Account(id, name, balance, currencyCode, accountType, colorHex)
-    private fun Account.toEntity(profileId: Int) = AccountEntity(id, name, balance, currencyCode, accountType, colorHex, profileId)
+    private fun AccountEntity.toDomain() = Account(
+        id = id,
+        name = name,
+        balance = balance,
+        currencyCode = currencyCode,
+        structureType = structureType,
+        colorHex = colorHex,
+        icon = icon,
+        allowedCurrencies = allowedCurrencies.split(",").filter { it.isNotBlank() }
+    )
+
+    private fun Account.toEntity(profileId: Int) = AccountEntity(
+        id = id,
+        name = name,
+        balance = balance,
+        currencyCode = currencyCode,
+        structureType = structureType,
+        colorHex = colorHex,
+        icon = icon,
+        allowedCurrencies = allowedCurrencies.joinToString(",")
+    )
 }

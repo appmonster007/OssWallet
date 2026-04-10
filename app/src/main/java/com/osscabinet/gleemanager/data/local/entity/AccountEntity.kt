@@ -9,7 +9,9 @@ data class AccountEntity(
     val name: String,
     val balance: Double,
     val currencyCode: String,
-    val accountType: String,
-    val colorHex: Int,
+    val structureType: String,
+    val colorHex: String,
+    val icon: String,
+    val allowedCurrencies: String, // JSON or Comma separated
     val profileId: Int = 1
 )

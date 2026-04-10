@@ -1,14 +1,13 @@
 package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -19,15 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AccountSetupScreen(
     onBackClick: () -> Unit,
@@ -35,37 +33,70 @@ fun AccountSetupScreen(
     viewModel: AccountViewModel
 ) {
     var accountName by remember { mutableStateOf("") }
-    var accountType by remember { mutableStateOf("Checking") }
-    var initialBalance by remember { mutableStateOf("") }
-    var currency by remember { mutableStateOf("USD") }
-    var selectedColor by remember { mutableStateOf(Color(0xFF006064)) }
-
-    val accountTypes = listOf("Checking", "Savings", "Credit", "Cash", "Investment")
-    val currencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD")
-    val colors = listOf(
-        Color(0xFF006064), Color(0xFFC62828), Color(0xFF2E7D32),
-        Color(0xFF1565C0), Color(0xFF6A1B9A), Color(0xFFEF6C00),
-        Color(0xFF455A64), Color(0xFF37474F)
+    var structureType by remember { mutableStateOf("Savings") }
+    var isStructureMenuExpanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var iconSearchQuery by remember { mutableStateOf("") }
+    var allowedCurrencies by remember { mutableStateOf(setOf("USD")) }
+    
+    val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
+    
+    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL")
+    val filteredCurrencies = if (searchQuery.isBlank()) {
+        commonCurrencies
+    } else {
+        commonCurrencies.filter { it.contains(searchQuery, ignoreCase = true) }
+    }
+    
+    val iconMap = mapOf(
+        "AccountBalance" to Icons.Rounded.AccountBalance,
+        "Wallet" to Icons.Rounded.Wallet,
+        "RocketLaunch" to Icons.Rounded.RocketLaunch,
+        "ShowChart" to Icons.Rounded.ShowChart,
+        "Payments" to Icons.Rounded.Payments,
+        "Savings" to Icons.Rounded.Savings,
+        "Paid" to Icons.Rounded.Paid,
+        "AccountBalanceWallet" to Icons.Rounded.AccountBalanceWallet,
+        "CreditCard" to Icons.Rounded.CreditCard,
+        "MonetizationOn" to Icons.Rounded.MonetizationOn,
+        "Analytics" to Icons.Rounded.Analytics,
+        "Foundation" to Icons.Rounded.Foundation,
+        "Stars" to Icons.Rounded.Stars,
+        "Diamond" to Icons.Rounded.Diamond,
+        "AccountTree" to Icons.Rounded.AccountTree,
+        "AutoGraph" to Icons.Rounded.AutoGraph
     )
+    
+    var selectedIconName by remember { mutableStateOf("AccountBalance") }
+    var accentColorHex by remember { mutableStateOf("#004D5F") }
+
+    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121")
+    
+    val filteredIcons = if (iconSearchQuery.isBlank()) {
+        iconMap.keys.toList()
+    } else {
+        iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(
-                        "MANUAL SETUP", 
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            letterSpacing = 2.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Aeon Ledger", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                actions = {
+                    IconButton(onClick = {}) { Icon(Icons.Rounded.Search, contentDescription = "Search") }
+                    Surface(modifier = Modifier.size(32.dp).padding(end = 8.dp), shape = CircleShape) {
+                        Icon(Icons.Rounded.Person, contentDescription = "Profile", modifier = Modifier.padding(4.dp))
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -73,179 +104,311 @@ fun AccountSetupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            Text(
-                "Establish a new ledger account. This record will track your manual entries and balances.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-
-            EditorialInput(
-                value = accountName,
-                onValueChange = { accountName = it },
-                label = "ACCOUNT NAME",
-                placeholder = "Personal Checking",
-                icon = Icons.Rounded.Badge
-            )
-
-            EditorialInput(
-                value = initialBalance,
-                onValueChange = { initialBalance = it },
-                label = "INITIAL BALANCE",
-                placeholder = "0.00",
-                icon = Icons.Rounded.AccountBalanceWallet,
-                keyboardType = KeyboardType.Decimal
-            )
-
             Column {
-                Text(
-                    "ACCOUNT TYPE", 
-                    style = MaterialTheme.typography.labelSmall, 
-                    color = MaterialTheme.colorScheme.outline,
-                    letterSpacing = 1.sp
+                Text("CONFIGURATION", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                Text("New Account Identity", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+            }
+
+            // Account Name
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Account Name", style = MaterialTheme.typography.titleSmall)
+                AeonTextField(
+                    value = accountName,
+                    onValueChange = { accountName = it },
+                    placeholder = "e.g. Global Treasury"
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(accountTypes) { type ->
-                        FilterChip(
-                            selected = accountType == type,
-                            onClick = { accountType = type },
-                            label = { Text(type) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            border = null
-                        )
+            }
+
+            // Structure Type
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Structure Type", style = MaterialTheme.typography.titleSmall)
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .clickable { isStructureMenuExpanded = true }
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(structureType, style = MaterialTheme.typography.bodyLarge)
+                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = isStructureMenuExpanded,
+                        onDismissRequest = { isStructureMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.85f).background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        structureTypes.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    structureType = type
+                                    isStructureMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            Column {
-                Text(
-                    "BASE CURRENCY", 
-                    style = MaterialTheme.typography.labelSmall, 
-                    color = MaterialTheme.colorScheme.outline,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(currencies) { curr ->
-                        FilterChip(
-                            selected = currency == curr,
-                            onClick = { currency = curr },
-                            label = { Text(curr) },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            border = null
-                        )
+            // Allowed Currencies Card
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(48.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            ) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Text("Allowed Currencies", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    
+                    // Search Bar
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.weight(1f),
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                decorationBox = { innerTextField ->
+                                    if (searchQuery.isEmpty()) Text("Search ISO codes...", color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                    innerTextField()
+                                }
+                            )
+                        }
                     }
-                }
-            }
 
-            Column {
-                Text(
-                    "LEDGER COLOR", 
-                    style = MaterialTheme.typography.labelSmall, 
-                    color = MaterialTheme.colorScheme.outline,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(colors) { color ->
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .clickable { selectedColor = color }
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (selectedColor == color) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    // Chips
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        filteredCurrencies.forEach { code ->
+                            val isSelected = allowedCurrencies.contains(code)
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                            
+                            Surface(
+                                modifier = Modifier.clickable {
+                                    allowedCurrencies = if (isSelected) {
+                                        if (allowedCurrencies.size > 1) allowedCurrencies - code else allowedCurrencies
+                                    } else {
+                                        allowedCurrencies + code
+                                    }
+                                },
+                                shape = CircleShape,
+                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = if (isSelected) {
+                                    if (accentColor.isDark()) Color.White else Color.Black
+                                } else MaterialTheme.colorScheme.onSurfaceVariant
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        if (isSelected) Icons.Rounded.Close else Icons.Rounded.Add,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Visual Identity
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
+                        Text("LIBRARY OF ICONS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    }
+                    
+                    AeonTextField(
+                        value = iconSearchQuery,
+                        onValueChange = { iconSearchQuery = it },
+                        placeholder = "Search icons (e.g. 'bank', 'wallet')...",
+                        leadingIcon = Icons.Rounded.Search
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        filteredIcons.forEach { name ->
+                            val icon = iconMap[name]!!
+                            val isSelected = selectedIconName == name
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+
+                            Surface(
+                                modifier = Modifier.size(48.dp).clickable { selectedIconName = name },
+                                shape = CircleShape,
+                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                contentColor = if (isSelected) {
+                                    if (accentColor.isDark()) Color.White else Color.Black
+                                } else MaterialTheme.colorScheme.onSurfaceVariant
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
+                    
+                    // Preset Colors
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        presetColors.forEach { colorHex ->
+                            val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(android.graphics.Color.parseColor(colorHex)))
+                                    .clickable { accentColorHex = colorHex }
+                                    .border(
+                                        width = if (isSelected) 2.dp else 0.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.Check, 
+                                        contentDescription = null, 
+                                        tint = if (Color(android.graphics.Color.parseColor(colorHex)).isDark()) Color.White else Color.Black,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
+                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(color))
+                        AeonTextField(
+                            value = accentColorHex,
+                            onValueChange = { 
+                                val formatted = if (it.startsWith("#")) it else "#$it"
+                                if (formatted.length <= 7) {
+                                    accentColorHex = formatted
+                                }
+                            },
+                            placeholder = "#004D5F",
+                            prefix = "HEX",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
 
             Button(
                 onClick = {
-                    val balance = initialBalance.toDoubleOrNull() ?: 0.0
-                    viewModel.addAccount(accountName, balance, currency, accountType, selectedColor.toArgb())
-                    onAccountCreated()
+                    if (accountName.isNotBlank() && allowedCurrencies.isNotEmpty()) {
+                        viewModel.addAccount(
+                            name = accountName,
+                            balance = 0.0,
+                            currency = allowedCurrencies.first(),
+                            structureType = structureType,
+                            colorHex = accentColorHex,
+                            icon = selectedIconName,
+                            allowedCurrencies = allowedCurrencies.toList()
+                        )
+                        onAccountCreated()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(32.dp),
+                    .height(80.dp),
+                shape = RoundedCornerShape(40.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = currentAccentColor,
+                    contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
                 ),
-                enabled = accountName.isNotBlank() && initialBalance.isNotBlank()
+                enabled = accountName.isNotBlank() && allowedCurrencies.isNotEmpty()
             ) {
-                Text(
-                    "CREATE LEDGER RECORD", 
-                    style = MaterialTheme.typography.titleSmall, 
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Save Account", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
+                }
             }
+            
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
 
 @Composable
-fun EditorialInput(
+fun AeonTextField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String = "",
-    icon: ImageVector,
-    keyboardType: KeyboardType = KeyboardType.Text
+    placeholder: String,
+    leadingIcon: ImageVector? = null,
+    prefix: String? = null
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(start = 12.dp, bottom = 4.dp))
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
+    Surface(
+        modifier = modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (leadingIcon != null) {
+                Icon(leadingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
-                TextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))) },
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
+            if (prefix != null) {
+                Text(prefix, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 8.dp))
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                decorationBox = { innerTextField ->
+                    if (value.isEmpty()) Text(placeholder, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                    innerTextField()
+                }
+            )
         }
     }
 }

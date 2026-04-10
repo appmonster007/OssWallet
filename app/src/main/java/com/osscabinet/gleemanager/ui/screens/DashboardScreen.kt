@@ -278,14 +278,14 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 AccountCard(
                     title = account.name.uppercase(),
                     balance = "${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", account.balance)}",
-                    icon = when(account.accountType) {
+                    icon = when(account.structureType) {
                         "Savings" -> Icons.Default.Savings
                         "Credit Card" -> Icons.Default.CreditCard
                         else -> Icons.Default.AccountBalance
                     },
-                    containerColor = Color(account.colorHex),
-                    contentColor = if (Color(account.colorHex).isDark()) Color.White else Color.Black,
-                    subAccounts = listOf(account.accountType.uppercase()),
+                    containerColor = Color(android.graphics.Color.parseColor(account.colorHex)),
+                    contentColor = if (Color(android.graphics.Color.parseColor(account.colorHex)).isDark()) Color.White else Color.Black,
+                    subAccounts = listOf(account.structureType.uppercase()),
                     onClick = { onAccountClick(account.id) }
                 )
             }

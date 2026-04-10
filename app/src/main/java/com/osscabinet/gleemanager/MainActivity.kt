@@ -158,8 +158,10 @@ class MainActivity : FragmentActivity() {
                         val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
                         AccountDetailScreen(
                             accountId = accountId,
-                            viewModel = viewModel,
-                            onBackClick = { navController.popBackStack() }
+                            accountViewModel = accountViewModel,
+                            transactionViewModel = viewModel,
+                            onBackClick = { navController.popBackStack() },
+                            onEditAccountClick = { /* navController.navigate("edit_account/$accountId") */ }
                         )
                     }
                     composable("account_setup") {

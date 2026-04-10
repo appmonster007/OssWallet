@@ -27,7 +27,15 @@ class AccountViewModel(
             initialValue = emptyList()
         )
 
-    fun addAccount(name: String, balance: Double, currency: String, type: String, color: Int) {
+    fun addAccount(
+        name: String, 
+        balance: Double, 
+        currency: String, 
+        structureType: String, 
+        colorHex: String,
+        icon: String,
+        allowedCurrencies: List<String>
+    ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
             val account = Account(
@@ -35,8 +43,10 @@ class AccountViewModel(
                 name = name,
                 balance = balance,
                 currencyCode = currency,
-                accountType = type,
-                colorHex = color
+                structureType = structureType,
+                colorHex = colorHex,
+                icon = icon,
+                allowedCurrencies = allowedCurrencies
             )
             repository.insertAccount(account, profileId)
         }

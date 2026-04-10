@@ -26,7 +26,17 @@ class BackupRepositoryImpl(
         val backup = GleeBackup(
             profiles = profileDao.getAllProfilesSync().map { ProfileBackup(it.id, it.name, it.type) },
             accounts = accountDao.getAllAccountsSync().map { 
-                AccountBackup(it.id, it.name, it.balance, it.currencyCode, it.accountType, it.colorHex, it.profileId) 
+                AccountBackup(
+                    id = it.id,
+                    name = it.name,
+                    balance = it.balance,
+                    currencyCode = it.currencyCode,
+                    structureType = it.structureType,
+                    colorHex = it.colorHex,
+                    icon = it.icon,
+                    allowedCurrencies = it.allowedCurrencies,
+                    profileId = it.profileId
+                ) 
             },
             transactions = transactionDao.getAllTransactionsSync().map { 
                 TransactionBackup(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.profileId)
@@ -60,7 +70,19 @@ class BackupRepositoryImpl(
         // Restore data
         backup.profiles.forEach { profileDao.insertProfile(ProfileEntity(it.id, it.name, it.type)) }
         backup.accounts.forEach { 
-            accountDao.upsertAccount(AccountEntity(it.id, it.name, it.balance, it.currencyCode, it.accountType, it.colorHex, it.profileId)) 
+            accountDao.upsertAccount(
+                AccountEntity(
+                    id = it.id,
+                    name = it.name,
+                    balance = it.balance,
+                    currencyCode = it.currencyCode,
+                    structureType = it.structureType,
+                    colorHex = it.colorHex,
+                    icon = it.icon,
+                    allowedCurrencies = it.allowedCurrencies,
+                    profileId = it.profileId
+                )
+            )
         }
         backup.transactions.forEach { 
             transactionDao.insertTransaction(TransactionEntity(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.profileId))

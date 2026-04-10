@@ -270,8 +270,10 @@ fun AddTransactionScreen(
                             selectedAccount!!.name,
                             if (isIncome) selectedAccount!!.balance + amountDouble else selectedAccount!!.balance - amountDouble,
                             selectedAccount!!.currencyCode,
-                            selectedAccount!!.accountType,
-                            selectedAccount!!.colorHex
+                            selectedAccount!!.structureType,
+                            selectedAccount!!.colorHex,
+                            selectedAccount!!.icon,
+                            selectedAccount!!.allowedCurrencies
                         )
                         onBackClick()
                     }
@@ -315,14 +317,14 @@ fun AddTransactionScreen(
                                     showAccountSheet = false
                                 },
                             shape = RoundedCornerShape(24.dp),
-                            color = if (selectedAccount?.id == account.id) Color(account.colorHex).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                            border = if (selectedAccount?.id == account.id) BorderStroke(2.dp, Color(account.colorHex)) else null
+                            color = if (selectedAccount?.id == account.id) Color(android.graphics.Color.parseColor(account.colorHex)).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            border = if (selectedAccount?.id == account.id) BorderStroke(2.dp, Color(android.graphics.Color.parseColor(account.colorHex))) else null
                         ) {
                             Row(
                                 modifier = Modifier.padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(account.colorHex)))
+                                Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(account.colorHex))))
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(account.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.weight(1f))

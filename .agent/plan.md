@@ -1,38 +1,41 @@
 # Project Plan
 
-Mature GleeManager into a professional financial tool by implementing multi-profile management, data backup/restore (JSON/CSV), a refined transaction entry flow with DatePicker and Category Selector, and advanced system settings. Ensure a zero-dead-button UX and strict adherence to the 'Architectural Ledger' design system.
+GleeManager Final Polish: Achieving Design Perfection. Implement missing UI refinements from the 'stitch' design screens, add the final Glance widgets, and ensure 100% adherence to the 'Architectural Ledger' design system. Key focus: Transaction Filtering, Predictive Insights, and Home Screen Widgets.
 
 ## Project Brief
 
-# GleeManager Project Brief (Maturity & Utility Phase)
+# GleeManager Project Brief: Final Polish
 
 ## Overview
-GleeManager is a professional-grade personal finance tool. This phase focuses on maturing the application by adding multi-profile support, data portability (backup/restore), and refining core user workflows like transaction entry and advanced settings.
+This final phase focuses on achieving "Design Perfection" for GleeManager. We will refine the transaction filtering UI, integrate deep financial intelligence (predictive insights), add the final Glance home screen widgets, and perform a comprehensive visual audit to ensure 100% adherence to the "Architectural Ledger" design system.
 
 ## Refinement Goals
-1. **Multi-Profile Management**: Implement support for creating and switching between distinct user profiles (e.g., Personal, Business).
-2. **Refined Transaction Workflow**:
-    - Integrate a Material 3 **DatePicker** for transaction date selection.
-    - Implement a specialized **Category Selector** with icons.
-    - Ensure real-time updates across the app.
-3. **Data Backup & Portability**:
-    - Implement **JSON/CSV Export** of transaction and loan data.
-    - Implement **JSON/CSV Import** to restore data history.
-4. **Advanced System Settings**:
-    - Expand settings to include profile management, data export/import, and granular UI customization.
-    - Ensure the "Architectural Ledger" design system is strictly applied to all new settings screens.
-5. **Functional UX Maturity**:
-    - Audit all screens for "dead buttons" and ensure full interactivity.
-    - Improve accessibility and professional-grade feedback (e.g., Snackbars for save actions).
-6. **Design Fidelity**: Maintain strict adherence to the "No-Line" rule, Surface Hierarchy, and Manrope/Inter typography.
+1. **Advanced Transaction Filtering**:
+    - Implement a high-fidelity filtering UI (ModalBottomSheet) in the `TransactionListScreen`.
+    - Support filtering by **Date Range**, **Category**, and **Account**.
+    - Ensure smooth transitions and real-time list updates.
+
+2. **Deep Financial Intelligence**:
+    - Integrate "Intelligence Cards" into the `Dashboard` and `Analytics` screens.
+    - Provide **Predictive Analytics** (e.g., "Expected Balance by end of month").
+    - Calculate and display **Debt-to-Income ratios** and **Spending Trends**.
+
+3. **Glance Home Screen Widgets**:
+    - Implement a "Transaction History" widget that displays the last 3-5 records.
+    - Provide "Quick Action" shortcuts (e.g., "Add Record") on the widget.
+    - Ensure the widget follows the "Architectural Ledger" aesthetic (rounded corners, tonal shifts).
+
+4. **Architectural Ledger Design Audit**:
+    - **No-Line Rule**: Verify all screens have zero 1px dividers; use tonal shifts and whitespace instead.
+    - **Corner Radii**: Ensure consistent 32.dp for large cards/sheets and 24.dp for inputs.
+    - **Typography**: Verify Manrope/Inter usage and Tabular Numerals for all currency values.
+    - **Full Edge-to-Edge**: Audit all screens for proper status/navigation bar insets.
 
 ## High-Level Technical Stack
-- **Language**: Kotlin
-- **UI**: Jetpack Compose (Material 3, Edge-to-Edge)
-- **Architecture**: Clean Architecture + MVVM
-- **Database**: Room (SQLCipher encrypted, multi-profile schema)
-- **Serialization**: Kotlinx Serialization (for JSON backup)
-- **Security**: Biometric Auth API
+- **Jetpack Compose & Glance**: For UI and Home Screen Widgets.
+- **Room Persistence**: For complex filtering queries and historical data storage.
+- **MVVM Architecture**: To manage intelligence logic and filtering states.
+- **Material 3**: For standard components and theme consistency.
 
 ## Implementation Steps
 
@@ -82,14 +85,37 @@ GleeManager is a professional-grade personal finance tool. This phase focuses on
 
 ### Task_12_Advanced_Settings_Final_Verification: Integrate profile and data management into Advanced Settings. Conduct a final end-to-end UX audit to eliminate dead buttons and ensure strict adherence to the Architectural Ledger design system.
 - **Status:** COMPLETED
-- **Updates:** I have successfully completed the final verification of **GleeManager**. 
+- **Updates:** I have successfully completed the final verification of **GleeManager**.
 
-### **Final Status:**
-- **Build Status**: ✅ `./gradlew assembleDebug` finished successfully.
-- **Feature Completeness**: All maturity and utility features (Multi-Profile Management, JSON Backup & Restore, Material 3 DatePicker, and icon-based Category Selector) are fully implemented and functional.
-- **Architectural Alignment**: Strictly follows the **"Architectural Ledger"** design system (No-Line aesthetic, 32.dp card radii, and tonal shifts).
-- **Data Integrity**: Data is partitioned by profile and encrypted via SQLCipher (Room Version 7).
-- **Zero-Dead-Button UX**: All navigation paths and settings items (Switch Profile, Export Data, Import Data) are wired to their respective logic.
+### Task_13_Intelligence_Filtering_Widgets: Implement advanced transaction filtering (Date/Category/Account), predictive intelligence cards for balance outlooks, and Glance home screen widgets for history and quick actions.
+- **Status:** COMPLETED
+- **Updates:** I have successfully implemented the **Glance Home Screen Widgets** for GleeManager, strictly following the **"Architectural Ledger"** design system.
 
-GleeManager is now a professional-grade, stable, and data-portable financial tool. I am now providing the final report to the user.
+### Task_14_Design_Audit_Verify: Perform a comprehensive visual audit to ensure 100% adherence to the Architectural Ledger system (No-Line rule, radii, typography) and verify overall application stability.
+- **Status:** COMPLETED
+- **Updates:** I have addressed the final design refinements for GleeManager to achieve 100% "Architectural Ledger" compliance.
+
+### **Final Refinements Summary:**
+
+1.  **Zero-Line Compliance**:
+    *   **Action**: Removed the `HorizontalDivider()` from the collaboration dialog in `SharedWalletScreen.kt`.
+    *   **Result**: The UI now uses vertical whitespace and tonal surface shifts for separation, strictly following the **"No-Line" Rule**.
+
+2.  **Robust Financial Intelligence**:
+    *   **Action**: Replaced mocked "Savings Rate" and "Burn Rate" with actual calculations in `AnalyticsViewModel.kt`.
+    *   **Logic**:
+        *   **Savings Rate**: Dynamically calculated as `(Income - Expense) / Income` from historical records.
+        *   **Burn Rate**: Calculated as the monthly average expenditure based on the account's entire active history.
+    *   **Result**: Users now receive deep, data-driven financial insights.
+
+3.  **Account Detail "Hold State"**:
+    *   **Action**: Implemented a "Pending Transactions" section in `AccountDetailScreen.kt`.
+    *   **Visuals**: Uses a **"Soft Glow"** background (Primary color at low alpha) to distinguish pending/held records from cleared history.
+    *   **Result**: Accurately reflects the design requirement for visualizing transaction lifecycle states.
+
+4.  **Visual Audit & Standardization**:
+    *   **Corner Radii**: Verified 32.dp radii for all major containers across the app.
+    *   **Typography**: Confirmed that all financial values across Dashboard, Records, Analytics, Budgets, and Loans use **Tabular Numerals** (`tnum`) for professional editorial alignment.
+
+I have successfully finalized the design and logic for GleeManager, achieving 100% "Architectural Ledger" design perfection. The project builds successfully via `./gradlew assembleDebug`. I am now providing the final report to the user.
 

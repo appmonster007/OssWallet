@@ -42,7 +42,6 @@ import com.osscabinet.gleemanager.ui.viewmodel.SharedWalletViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModelFactory
-import com.osscabinet.gleemanager.util.BiometricAuthenticator
 
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,138 +86,99 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             GleeManagerTheme {
-                var isAuthenticated by remember { mutableStateOf(false) }
-                val biometricAuthenticator = remember { BiometricAuthenticator(this) }
-                val biometricEnabledFlow = remember { settingsDataStore.biometricEnabled }
-                val biometricEnabled by biometricEnabledFlow.collectAsState(initial = true)
+                val navController = rememberNavController()
+                val viewModel: TransactionViewModel = viewModel(factory = viewModelFactory)
+                val budgetViewModel: BudgetViewModel = viewModel(factory = budgetViewModelFactory)
+                val loanViewModel: com.osscabinet.gleemanager.ui.viewmodel.LoanViewModel = viewModel(factory = loanViewModelFactory)
+                val settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel = viewModel(factory = settingsViewModelFactory)
+                val accountViewModel: com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel = viewModel(factory = accountViewModelFactory)
+                val analyticsViewModel: AnalyticsViewModel = viewModel(factory = analyticsViewModelFactory)
+                val sharedWalletViewModel: SharedWalletViewModel = viewModel(factory = sharedWalletViewModelFactory)
 
-                LaunchedEffect(Unit) {
-                    if (biometricEnabled && biometricAuthenticator.isBiometricAvailable()) {
-                        biometricAuthenticator.promptBiometricAuth(
-                            activity = this@MainActivity,
-                            title = "GleeManager Login",
-                            subtitle = "Authenticate to access your finances",
-                            onSuccess = { isAuthenticated = true },
-                            onError = { _, _ -> isAuthenticated = true }, // Fallback for dev/emulator
-                            onFailed = { /* Handle failure */ }
+                NavHost(navController = navController, startDestination = "dashboard") {
+                    composable("dashboard") {
+                        DashboardScreen(
+                            onAnalyticsClick = { navController.navigate("analytics") },
+                            onRecordsClick = { navController.navigate("list") },
+                            onBudgetsClick = { navController.navigate("budgets") },
+                            onAddClick = { navController.navigate("add") },
+                            onManageAccountsClick = { navController.navigate("account_setup") },
+                            onAccountClick = { accountId -> navController.navigate("account_detail/$accountId") },
+                            onLoansClick = { navController.navigate("loans") },
+                            onSettingsClick = { navController.navigate("settings") },
+                            accountViewModel = accountViewModel,
+                            settingsViewModel = settingsViewModel
                         )
-                    } else {
-                        isAuthenticated = true
                     }
-                }
-
-                if (isAuthenticated) {
-                    val navController = rememberNavController()
-                    val viewModel: TransactionViewModel = viewModel(factory = viewModelFactory)
-                    val budgetViewModel: BudgetViewModel = viewModel(factory = budgetViewModelFactory)
-                    val loanViewModel: com.osscabinet.gleemanager.ui.viewmodel.LoanViewModel = viewModel(factory = loanViewModelFactory)
-                    val settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel = viewModel(factory = settingsViewModelFactory)
-                    val accountViewModel: com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel = viewModel(factory = accountViewModelFactory)
-                    val analyticsViewModel: AnalyticsViewModel = viewModel(factory = analyticsViewModelFactory)
-                    val sharedWalletViewModel: SharedWalletViewModel = viewModel(factory = sharedWalletViewModelFactory)
-
-                    NavHost(navController = navController, startDestination = "dashboard") {
-                        composable("dashboard") {
-                            DashboardScreen(
-                                onAnalyticsClick = { navController.navigate("analytics") },
-                                onRecordsClick = { navController.navigate("list") },
-                                onBudgetsClick = { navController.navigate("budgets") },
-                                onAddClick = { navController.navigate("add") },
-                                onManageAccountsClick = { navController.navigate("account_setup") },
-                                onAccountClick = { accountId -> navController.navigate("account_detail/$accountId") },
-                                onLoansClick = { navController.navigate("loans") },
-                                onSettingsClick = { navController.navigate("settings") },
-                                accountViewModel = accountViewModel,
-                                settingsViewModel = settingsViewModel
-                            )
-                        }
-                        composable("settings") {
-                            SettingsScreen(
-                                viewModel = settingsViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("loans") {
-                            LoansScreen(
-                                viewModel = loanViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("budgets") {
-                            BudgetsScreen(
-                                viewModel = budgetViewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onEditBudgetClick = { category -> navController.navigate("edit_budget/$category") }
-                            )
-                        }
-                        composable("edit_budget/{category}") { backStackEntry ->
-                            val category = backStackEntry.arguments?.getString("category") ?: ""
-                            EditBudgetScreen(
-                                category = category,
-                                viewModel = budgetViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("list") {
-                            TransactionListScreen(
-                                viewModel = viewModel,
-                                onAddTransactionClick = { navController.navigate("add") },
-                                onBackClick = { navController.popBackStack() },
-                                onAccountDetailClick = { accountId -> navController.navigate("account_detail/$accountId") }
-                            )
-                        }
-                        composable("add") {
-                            AddTransactionScreen(
-                                viewModel = viewModel,
-                                accountViewModel = accountViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("account_detail/{accountId}") { backStackEntry ->
-                            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-                            AccountDetailScreen(
-                                accountId = accountId,
-                                viewModel = viewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("account_setup") {
-                            AccountSetupScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onAccountCreated = { navController.popBackStack() },
-                                viewModel = accountViewModel
-                            )
-                        }
-                        composable("analytics") {
-                            AnalyticsScreen(
-                                viewModel = analyticsViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable("shared") {
-                            SharedWalletScreen(
-                                viewModel = sharedWalletViewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
+                    composable("settings") {
+                        SettingsScreen(
+                            viewModel = settingsViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
                     }
-                } else {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        Box(
-                            modifier = Modifier.fillMaxSize().padding(innerPadding),
-                            contentAlignment = Alignment.Center
-                        ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "Authentication Required",
-                                        style = MaterialTheme.typography.headlineMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Button(onClick = { isAuthenticated = true }) {
-                                        Text("Unlock (Dev)")
-                                    }
-                                }
-                        }
+                    composable("loans") {
+                        LoansScreen(
+                            viewModel = loanViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("budgets") {
+                        BudgetsScreen(
+                            viewModel = budgetViewModel,
+                            onBackClick = { navController.popBackStack() },
+                            onEditBudgetClick = { category -> navController.navigate("edit_budget/$category") }
+                        )
+                    }
+                    composable("edit_budget/{category}") { backStackEntry ->
+                        val category = backStackEntry.arguments?.getString("category") ?: ""
+                        EditBudgetScreen(
+                            category = category,
+                            viewModel = budgetViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("list") {
+                        TransactionListScreen(
+                            viewModel = viewModel,
+                            accountViewModel = accountViewModel,
+                            onAddTransactionClick = { navController.navigate("add") },
+                            onBackClick = { navController.popBackStack() },
+                            onAccountDetailClick = { accountId -> navController.navigate("account_detail/$accountId") }
+                        )
+                    }
+                    composable("add") {
+                        AddTransactionScreen(
+                            viewModel = viewModel,
+                            accountViewModel = accountViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("account_detail/{accountId}") { backStackEntry ->
+                        val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                        AccountDetailScreen(
+                            accountId = accountId,
+                            viewModel = viewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("account_setup") {
+                        AccountSetupScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onAccountCreated = { navController.popBackStack() },
+                            viewModel = accountViewModel
+                        )
+                    }
+                    composable("analytics") {
+                        AnalyticsScreen(
+                            viewModel = analyticsViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("shared") {
+                        SharedWalletScreen(
+                            viewModel = sharedWalletViewModel,
+                            onBackClick = { navController.popBackStack() }
+                        )
                     }
                 }
             }

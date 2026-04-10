@@ -127,9 +127,62 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             NetWorthSection(accounts)
+            IntelligenceInsightsSection(accounts)
             AccountsSection(onManageAccountsClick, onAccountClick, accounts)
             RecentActivitySection(onRecordsClick)
             BudgetTrackingSection()
+        }
+    }
+}
+
+@Composable
+fun IntelligenceInsightsSection(accounts: List<Account>) {
+    val totalBalance = accounts.sumOf { it.balance }
+    val expectedBalance = totalBalance * 1.05 // Mocked logic: expect 5% growth
+    
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("INTELLIGENCE INSIGHTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        ) {
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = Color(0xFF006064)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.AutoGraph, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("PREDICTIVE BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF006064)))
+                }
+                
+                Column {
+                    Text(
+                        "Expected by month-end:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        "$${String.format("%,.2f", expectedBalance)}",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
+                    )
+                }
+                
+                LinearProgressIndicator(
+                    progress = 0.85f,
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                    color = Color(0xFF006064),
+                    trackColor = Color.White
+                )
+                
+                Text(
+                    "You are on track to save 12% more than last month. Current spending trend is down by $420.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }

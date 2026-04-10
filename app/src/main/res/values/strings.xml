@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GleeManager</string>
+    <string name="widget_description">Quick view of recent transactions and balance.</string>
 </resources>

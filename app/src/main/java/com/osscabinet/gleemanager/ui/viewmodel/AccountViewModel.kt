@@ -52,6 +52,12 @@ class AccountViewModel(
         }
     }
 
+    fun updateBalance(accountId: String, amount: Double) {
+        viewModelScope.launch {
+            repository.updateBalance(accountId, amount)
+        }
+    }
+
     fun deleteAccount(accountId: String) {
         viewModelScope.launch {
             repository.deleteAccount(accountId)

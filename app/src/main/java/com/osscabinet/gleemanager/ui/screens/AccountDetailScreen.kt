@@ -27,6 +27,7 @@ import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
+import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -202,11 +203,36 @@ fun AccountDetailScreen(
                         }
                     }
                 } else {
+                    // Group by currency to show separate balances
+                    val currencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
+                        val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
+                        if (curr == account.currencyCode) account.balance + txSum else txSum
+                    }
+                    
+                    val finalBalances = if (!currencyBalances.containsKey(account.currencyCode)) {
+                        currencyBalances + (account.currencyCode to account.balance)
+                    } else {
+                        currencyBalances
+                    }
+
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        item {
+                            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                                Text("CURRENCY BREAKDOWN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                finalBalances.forEach { (curr, bal) ->
+                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text(curr, style = MaterialTheme.typography.bodyMedium)
+                                        Text("${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
                         items(accountTransactions.sortedByDescending { it.timestamp }) { transaction ->
                             TransactionItem(
                                 transaction = transaction,
-                                currencySymbol = getCurrencySymbol(account.currencyCode),
+                                currencySymbol = getCurrencySymbol(transaction.currency),
                                 onClick = { /* View transaction detail */ }
                             )
                         }

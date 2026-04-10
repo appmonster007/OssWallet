@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -68,8 +67,8 @@ fun TransactionListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddTransactionClick,
-                containerColor = Color(0xFF004D40),
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add")
@@ -88,7 +87,7 @@ fun TransactionListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Period / Filter Status
             val dateRange by viewModel.dateRange.collectAsState()
@@ -174,7 +173,8 @@ fun FilterBottomSheet(
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -196,7 +196,6 @@ fun FilterBottomSheet(
                     FilterChip(
                         selected = dateRange.first != null,
                         onClick = { 
-                            // In a real app, show a DateRangePicker here
                             val now = System.currentTimeMillis()
                             viewModel.setDateRangeFilter(now - 30 * 24 * 60 * 60 * 1000L, now)
                         },
@@ -261,7 +260,6 @@ fun FilterBottomSheet(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TransactionItemEditorial(
     transaction: Transaction,
@@ -293,14 +291,15 @@ fun TransactionItemEditorial(
                         "salary", "income" -> Icons.Default.Payments
                         else -> Icons.Default.Receipt
                     }
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = transaction.category,
@@ -313,20 +312,16 @@ fun TransactionItemEditorial(
                     text = "${if (transaction.isIncome) "+" else "-"} ${getCurrencySymbol(transaction.currency)}${String.format(Locale.getDefault(), "%,.2f", transaction.amount)}",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum" // Tabular numerals
+                        fontFeatureSettings = "tnum"
                     ),
-                    color = if (transaction.isIncome) Color(0xFF004D40) else MaterialTheme.colorScheme.onSurface
+                    color = if (transaction.isIncome) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "CHECKING", // Mocked account
+                    text = "CHECKING",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = MaterialTheme.colorScheme.outline
                 )
             }
         }
     }
-}
-
-private fun <T> itemsIndexed(items: List<T>, itemContent: @Composable (Int, T) -> Unit) {
-    // This is a helper for LazyColumn
 }

@@ -51,30 +51,30 @@ fun AnalyticsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency)
 
-            // Cash Flow Chart (Using custom Compose implementation for stability)
+            // Cash Flow Chart
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("CASH FLOW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                EditorialChartCard(Color(0xFF006064)) {
-                    SimpleBarChart(uiState.dailyNetFlow, Color.White)
+                EditorialChartCard(MaterialTheme.colorScheme.primaryContainer) {
+                    SimpleBarChart(uiState.dailyNetFlow, MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
 
-            // Balance Outlook Chart (Using custom Compose implementation for stability)
+            // Balance Outlook Chart
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("BALANCE OUTLOOK", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                EditorialChartCard(Color.White) {
-                    SimpleLineChart(uiState.forecast, Color(0xFF006064))
+                EditorialChartCard(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
+                    SimpleLineChart(uiState.forecast, MaterialTheme.colorScheme.primary)
                 }
             }
 
-            InsightSection()
+            InsightSection(uiState.selectedCurrency)
         }
     }
 }
@@ -93,7 +93,7 @@ fun SimpleBarChart(data: Map<Long, Double>, barColor: Color) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(heightPercent),
-                color = barColor,
+                color = barColor.copy(alpha = 0.8f),
                 shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
             ) {}
         }
@@ -140,7 +140,7 @@ fun AnalyticsHeroSection(balance: Double, currency: String) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 "${getCurrencySymbol(currency)}${String.format(Locale.getDefault(), "%,.0f", balance)}",
-                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
+                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)
             )
             Text(
                 ".${String.format(Locale.getDefault(), "%02d", ((balance % 1) * 100).toInt())}",
@@ -150,13 +150,13 @@ fun AnalyticsHeroSection(balance: Double, currency: String) {
         }
         Spacer(modifier = Modifier.height(8.dp))
         Surface(
-            color = Color(0xFFE0F2F1),
+            color = Color(0xFF4CAF50).copy(alpha = 0.2f),
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF00695C), modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("On track for $142K goal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF00695C), fontWeight = FontWeight.Bold)
+                Text("On track for goal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -177,25 +177,26 @@ fun EditorialChartCard(containerColor: Color, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun InsightSection() {
+fun InsightSection(currency: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = Color(0xFF006064)) {
+                Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.AutoGraph, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF006064)))
+                Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by $400 for your upcoming trip.",
-                style = MaterialTheme.typography.bodyLarge
+                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${getCurrencySymbol(currency)}400 for your upcoming trip.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

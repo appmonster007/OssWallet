@@ -38,7 +38,8 @@ class CurrencyRepositoryImpl(
     }
 
     private fun isCacheValid(timestamp: Long): Boolean {
-        val oneDayMillis = 24 * 60 * 60 * 1000L
-        return System.currentTimeMillis() - timestamp < oneDayMillis
+        // Reduced cache to 5 minutes for "live" rates
+        val fiveMinutesMillis = 5 * 60 * 1000L
+        return System.currentTimeMillis() - timestamp < fiveMinutesMillis
     }
 }

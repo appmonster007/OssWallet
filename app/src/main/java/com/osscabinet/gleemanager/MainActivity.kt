@@ -162,6 +162,8 @@ class MainActivity : FragmentActivity() {
                             accountId = accountId,
                             accountViewModel = accountViewModel,
                             transactionViewModel = viewModel,
+                            settingsViewModel = settingsViewModel,
+                            analyticsViewModel = analyticsViewModel,
                             onBackClick = { navController.popBackStack() },
                             onEditAccountClick = { /* navController.navigate("edit_account/$accountId") */ }
                         )

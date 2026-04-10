@@ -17,13 +17,16 @@ class AnalyticsViewModel(
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
+    private val _exchangeRates = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val exchangeRates: StateFlow<Map<String, Double>> = _exchangeRates.asStateFlow()
+
     private var allTransactions: List<Transaction> = emptyList()
-    private var exchangeRates: Map<String, Double> = emptyMap()
 
     init {
         viewModelScope.launch {
             // Load initial exchange rates (default USD)
-            exchangeRates = getExchangeRatesUseCase("USD")
+            val rates = getExchangeRatesUseCase("USD")
+            _exchangeRates.value = rates
             
             getTransactionsUseCase().collect { transactions ->
                 allTransactions = transactions
@@ -35,7 +38,8 @@ class AnalyticsViewModel(
     fun onCurrencySelected(currencyCode: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            exchangeRates = getExchangeRatesUseCase(currencyCode)
+            val rates = getExchangeRatesUseCase(currencyCode)
+            _exchangeRates.value = rates
             _uiState.update { it.copy(selectedCurrency = currencyCode, isLoading = false) }
             calculateAnalytics()
         }
@@ -43,11 +47,12 @@ class AnalyticsViewModel(
 
     private fun calculateAnalytics() {
         val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _exchangeRates.value
         
         // Convert all transactions to selected currency
         val convertedTransactions = allTransactions.map { tx ->
             val rate = if (tx.currency == selectedCurrency) 1.0 
-                      else (exchangeRates[selectedCurrency] ?: 1.0) / (exchangeRates[tx.currency] ?: 1.0)
+                      else (currentRates[selectedCurrency] ?: 1.0) / (currentRates[tx.currency] ?: 1.0)
             tx.copy(amount = tx.amount * rate)
         }
 

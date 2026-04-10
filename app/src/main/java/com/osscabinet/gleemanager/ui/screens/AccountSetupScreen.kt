@@ -1,8 +1,10 @@
 package com.osscabinet.gleemanager.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,6 +13,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,8 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
+import com.osscabinet.gleemanager.ui.util.isDark
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AccountSetupScreen(
     onBackClick: () -> Unit,
@@ -33,10 +37,14 @@ fun AccountSetupScreen(
     viewModel: AccountViewModel
 ) {
     var accountName by remember { mutableStateOf("") }
+    var initialBalance by remember { mutableStateOf("") }
     var structureType by remember { mutableStateOf("Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var iconSearchQuery by remember { mutableStateOf("") }
+    
+    // Currency logic
+    var primaryCurrency by remember { mutableStateOf("USD") }
     var allowedCurrencies by remember { mutableStateOf(setOf("USD")) }
     
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
@@ -52,7 +60,7 @@ fun AccountSetupScreen(
         "AccountBalance" to Icons.Rounded.AccountBalance,
         "Wallet" to Icons.Rounded.Wallet,
         "RocketLaunch" to Icons.Rounded.RocketLaunch,
-        "ShowChart" to Icons.Rounded.ShowChart,
+        "ShowChart" to Icons.AutoMirrored.Rounded.ShowChart,
         "Payments" to Icons.Rounded.Payments,
         "Savings" to Icons.Rounded.Savings,
         "Paid" to Icons.Rounded.Paid,
@@ -82,19 +90,11 @@ fun AccountSetupScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Aeon Ledger", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    }
+                    Text("Aeon Ledger", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Rounded.Search, contentDescription = "Search") }
-                    Surface(modifier = Modifier.size(32.dp).padding(end = 8.dp), shape = CircleShape) {
-                        Icon(Icons.Rounded.Person, contentDescription = "Profile", modifier = Modifier.padding(4.dp))
                     }
                 }
             )
@@ -114,14 +114,26 @@ fun AccountSetupScreen(
                 Text("New Account Identity", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
             }
 
-            // Account Name
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Account Name", style = MaterialTheme.typography.titleSmall)
-                AeonTextField(
-                    value = accountName,
-                    onValueChange = { accountName = it },
-                    placeholder = "e.g. Global Treasury"
-                )
+            // Account Name & Balance
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Account Name", style = MaterialTheme.typography.titleSmall)
+                    AeonTextField(
+                        value = accountName,
+                        onValueChange = { accountName = it },
+                        placeholder = "e.g. Global Treasury"
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Initial Balance", style = MaterialTheme.typography.titleSmall)
+                    AeonTextField(
+                        value = initialBalance,
+                        onValueChange = { initialBalance = it },
+                        placeholder = "0.00",
+                        prefix = primaryCurrency
+                    )
+                }
             }
 
             // Structure Type
@@ -168,7 +180,7 @@ fun AccountSetupScreen(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
             ) {
                 Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Text("Allowed Currencies", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                     
                     // Search Bar
                     Surface(
@@ -201,37 +213,49 @@ fun AccountSetupScreen(
                     ) {
                         filteredCurrencies.forEach { code ->
                             val isSelected = allowedCurrencies.contains(code)
+                            val isPrimary = primaryCurrency == code
                             val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                             
                             Surface(
-                                modifier = Modifier.clickable {
-                                    allowedCurrencies = if (isSelected) {
-                                        if (allowedCurrencies.size > 1) allowedCurrencies - code else allowedCurrencies
-                                    } else {
-                                        allowedCurrencies + code
+                                modifier = Modifier.clip(CircleShape).combinedClickable(
+                                    onClick = {
+                                        if (isSelected) {
+                                            if (!isPrimary) allowedCurrencies = allowedCurrencies - code
+                                        } else {
+                                            allowedCurrencies = allowedCurrencies + code
+                                        }
+                                    },
+                                    onLongClick = {
+                                        primaryCurrency = code
+                                        allowedCurrencies = allowedCurrencies + code
                                     }
-                                },
+                                ),
                                 shape = CircleShape,
-                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                contentColor = if (isSelected) {
-                                    if (accentColor.isDark()) Color.White else Color.Black
-                                } else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = when {
+                                    isPrimary -> accentColor
+                                    isSelected -> accentColor.copy(alpha = 0.3f)
+                                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                },
+                                contentColor = when {
+                                    isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
+                                    isSelected -> MaterialTheme.colorScheme.onSurface
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        if (isSelected) Icons.Rounded.Close else Icons.Rounded.Add,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
+                                    if (isPrimary) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
+                                    }
                                 }
                             }
                         }
                     }
+                    Text("Tip: Long-press a currency to set as primary.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 }
             }
 
@@ -338,14 +362,15 @@ fun AccountSetupScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+            val isBalanceValid = initialBalance.isEmpty() || initialBalance.toDoubleOrNull() != null
 
             Button(
                 onClick = {
-                    if (accountName.isNotBlank() && allowedCurrencies.isNotEmpty()) {
+                    if (isBalanceValid) {
                         viewModel.addAccount(
                             name = accountName,
-                            balance = 0.0,
-                            currency = allowedCurrencies.first(),
+                            balance = initialBalance.toDoubleOrNull() ?: 0.0,
+                            currency = primaryCurrency,
                             structureType = structureType,
                             colorHex = accentColorHex,
                             icon = selectedIconName,
@@ -356,32 +381,26 @@ fun AccountSetupScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp),
-                shape = RoundedCornerShape(40.dp),
+                    .height(64.dp),
+                shape = RoundedCornerShape(32.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = currentAccentColor,
                     contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
                 ),
-                enabled = accountName.isNotBlank() && allowedCurrencies.isNotEmpty()
+                enabled = accountName.isNotBlank() && isBalanceValid
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Save Account", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Rounded.AutoAwesome, contentDescription = null)
-                }
+                Text("INITIALIZE LEDGER", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
-            
-            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
 
 @Composable
 fun AeonTextField(
-    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
+    modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
     prefix: String? = null
 ) {
@@ -390,13 +409,17 @@ fun AeonTextField(
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     ) {
-        Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             if (leadingIcon != null) {
                 Icon(leadingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
             }
             if (prefix != null) {
-                Text(prefix, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(end = 8.dp))
+                Text(prefix, style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold))
+                Spacer(modifier = Modifier.width(8.dp))
             }
             BasicTextField(
                 value = value,

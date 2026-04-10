@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.components.CalculatorDialog
 import com.osscabinet.gleemanager.ui.components.OCRScanner
+import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
@@ -54,6 +55,7 @@ fun AddTransactionScreen(
     
     val accounts by accountViewModel.accounts.collectAsState()
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
+    var selectedCurrency by remember { mutableStateOf("") }
     
     var showCalculator by remember { mutableStateOf(false) }
     var showOCR by remember { mutableStateOf(false) }
@@ -64,6 +66,7 @@ fun AddTransactionScreen(
     LaunchedEffect(accounts) {
         if (selectedAccount == null && accounts.isNotEmpty()) {
             selectedAccount = accounts.first()
+            selectedCurrency = accounts.first().currencyCode
         }
     }
 
@@ -118,13 +121,53 @@ fun AddTransactionScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(top = 16.dp)
                 ) {
+                    var showCurrencySheet by remember { mutableStateOf(false) }
                     Text(
-                        "$", 
+                        getCurrencySymbol(selectedCurrency), 
                         style = MaterialTheme.typography.displayMedium.copy(
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Light
-                        )
+                        ),
+                        modifier = Modifier.clickable { if ((selectedAccount?.allowedCurrencies?.size ?: 0) > 1) showCurrencySheet = true }
                     )
+                    
+                    if (showCurrencySheet) {
+                        ModalBottomSheet(
+                            onDismissRequest = { showCurrencySheet = false },
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                                Text("SELECT CURRENCY", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                                Spacer(modifier = Modifier.height(24.dp))
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    items(selectedAccount?.allowedCurrencies ?: emptyList()) { currencyCode ->
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    selectedCurrency = currencyCode
+                                                    showCurrencySheet = false
+                                                },
+                                            shape = RoundedCornerShape(24.dp),
+                                            color = if (selectedCurrency == currencyCode) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                            border = if (selectedCurrency == currencyCode) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(20.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(currencyCode, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                                                Spacer(modifier = Modifier.weight(1f))
+                                                Text(getCurrencySymbol(currencyCode), style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     TextField(
                         value = amount,
                         onValueChange = { 
@@ -262,18 +305,15 @@ fun AddTransactionScreen(
                             category = category,
                             isIncome = isIncome,
                             accountId = accountId,
+                            currency = selectedCurrency,
                             tags = tagsList,
                             timestamp = selectedDateMillis
                         )
                         // Update account balance
-                        accountViewModel.addAccount(
-                            selectedAccount!!.name,
-                            if (isIncome) selectedAccount!!.balance + amountDouble else selectedAccount!!.balance - amountDouble,
-                            selectedAccount!!.currencyCode,
-                            selectedAccount!!.structureType,
-                            selectedAccount!!.colorHex,
-                            selectedAccount!!.icon,
-                            selectedAccount!!.allowedCurrencies
+                        // Note: In a real app, you'd handle currency conversion here if the transaction currency differs from account primary currency
+                        accountViewModel.updateBalance(
+                            accountId,
+                            if (isIncome) amountDouble else -amountDouble
                         )
                         onBackClick()
                     }
@@ -314,6 +354,7 @@ fun AddTransactionScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     selectedAccount = account
+                                    selectedCurrency = account.currencyCode
                                     showAccountSheet = false
                                 },
                             shape = RoundedCornerShape(24.dp),
@@ -328,7 +369,7 @@ fun AddTransactionScreen(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(account.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text("$${String.format("%.2f", account.balance)}", style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.outline)
+                                Text("${getCurrencySymbol(account.currencyCode)}${String.format("%.2f", account.balance)}", style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.outline)
                             }
                         }
                     }

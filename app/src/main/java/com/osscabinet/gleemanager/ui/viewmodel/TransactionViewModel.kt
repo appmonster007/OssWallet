@@ -69,6 +69,7 @@ class TransactionViewModel(
         category: String,
         isIncome: Boolean,
         accountId: String,
+        currency: String,
         categoryId: Long? = null,
         tags: List<String> = emptyList(),
         timestamp: Long = System.currentTimeMillis()
@@ -80,7 +81,7 @@ class TransactionViewModel(
                 amount = amount,
                 category = category,
                 timestamp = timestamp,
-                currency = "USD", // Default currency
+                currency = currency,
                 isIncome = isIncome,
                 accountId = accountId,
                 categoryId = categoryId,

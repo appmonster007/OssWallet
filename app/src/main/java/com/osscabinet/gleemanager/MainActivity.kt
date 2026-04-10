@@ -108,7 +108,9 @@ class MainActivity : FragmentActivity() {
                             onLoansClick = { navController.navigate("loans") },
                             onSettingsClick = { navController.navigate("settings") },
                             accountViewModel = accountViewModel,
-                            settingsViewModel = settingsViewModel
+                            transactionViewModel = viewModel,
+                            settingsViewModel = settingsViewModel,
+                            analyticsViewModel = analyticsViewModel
                         )
                     }
                     composable("settings") {

@@ -51,9 +51,13 @@ class AnalyticsViewModel(
         
         // Convert all transactions to selected currency
         val convertedTransactions = allTransactions.map { tx ->
-            val rate = if (tx.currency == selectedCurrency) 1.0 
-                      else (currentRates[selectedCurrency] ?: 1.0) / (currentRates[tx.currency] ?: 1.0)
-            tx.copy(amount = tx.amount * rate)
+            val amountInBase = if (tx.currency == selectedCurrency) {
+                tx.amount 
+            } else {
+                val rate = currentRates[tx.currency] ?: 1.0
+                if (rate != 0.0) tx.amount / rate else tx.amount
+            }
+            tx.copy(amount = amountInBase)
         }
 
         val totalIncome = convertedTransactions.filter { it.isIncome }.sumOf { it.amount }

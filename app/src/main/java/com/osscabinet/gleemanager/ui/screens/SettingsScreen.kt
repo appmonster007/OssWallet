@@ -212,6 +212,22 @@ fun SettingsScreen(
             ) {
                 Text("GleeManager v1.1.0", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 Text("Built for the Modern Ledger", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Currency rates provided by",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
+                Text(
+                    "Exchangerate.host",
+                    modifier = Modifier.clickable {
+                        // In a real app, use Context to open the URL
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
             }
         }
     }

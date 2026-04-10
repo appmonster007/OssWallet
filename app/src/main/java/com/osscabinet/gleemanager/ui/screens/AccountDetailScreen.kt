@@ -1,5 +1,6 @@
 package com.osscabinet.gleemanager.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -40,7 +41,8 @@ fun AccountDetailScreen(
     settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel,
     onBackClick: () -> Unit,
-    onEditAccountClick: (String) -> Unit
+    onEditAccountClick: (String) -> Unit,
+    onEditTransactionClick: (Long) -> Unit
 ) {
     val accounts by accountViewModel.accounts.collectAsState()
     val account = accounts.find { it.id == accountId }
@@ -51,13 +53,74 @@ fun AccountDetailScreen(
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
 
+    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            val currentAccount = account ?: return@derivedStateOf 0.0
+            val initialBalance = currentAccount.initialBalance
+            
+            val convertedTxSum = accountTransactions.sumOf { tx ->
+                val amount = if (tx.isIncome) tx.amount else -tx.amount
+                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
+                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
+                if (rateFrom != 0.0) (amount / rateFrom) * rateTo else amount
+            }
+            initialBalance + convertedTxSum
+        }
+    }
+
+    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            val currentAccount = account ?: return@derivedStateOf 0.0
+            accountTransactions.filter { it.isIncome }.sumOf { tx ->
+                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
+                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
+                if (rateFrom != 0.0) (tx.amount / rateFrom) * rateTo else tx.amount
+            }
+        }
+    }
+
+    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            val currentAccount = account ?: return@derivedStateOf 0.0
+            accountTransactions.filter { !it.isIncome }.sumOf { tx ->
+                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
+                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
+                if (rateFrom != 0.0) (tx.amount / rateFrom) * rateTo else tx.amount
+            }
+        }
+    }
+
+    val netInAccountCurrency = incomeInAccountCurrency - expenseInAccountCurrency
+
+    val incomeBreakdown by remember(accountTransactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            accountTransactions.filter { it.isIncome }
+                .groupBy { it.currency }
+                .map { (curr, txs) ->
+                    val amount = txs.sumOf { it.amount }
+                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                    val inBase = if (rate != 0.0) amount / rate else amount
+                    Triple(curr, amount, inBase)
+                }
+        }
+    }
+
+    val expenseBreakdown by remember(accountTransactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            accountTransactions.filter { !it.isIncome }
+                .groupBy { it.currency }
+                .map { (curr, txs) ->
+                    val amount = txs.sumOf { it.amount }
+                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                    val inBase = if (rate != 0.0) amount / rate else amount
+                    Triple(curr, amount, inBase)
+                }
+        }
+    }
+
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
     }
-    
-    val income = accountTransactions.filter { it.isIncome }.sumOf { it.amount }
-    val expense = accountTransactions.filter { !it.isIncome }.sumOf { it.amount }
-    val net = income - expense
 
     val accountColor = try {
         Color(android.graphics.Color.parseColor(account?.colorHex ?: "#004D5F"))
@@ -132,12 +195,12 @@ fun AccountDetailScreen(
                             Column {
                                 Text(account.structureType.uppercase(), style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
                                 Text(
-                                    "${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", account.balance)}",
+                                    "${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", totalBalanceInAccountCurrency)}",
                                     style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
                                 )
                                 if (account.currencyCode != baseCurrency) {
                                     val rate = exchangeRates[account.currencyCode] ?: 1.0
-                                    val convertedBalance = if (rate != 0.0) account.balance / rate else 0.0
+                                    val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
                                     Text(
                                         "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", convertedBalance)}",
                                         style = MaterialTheme.typography.labelMedium,
@@ -161,7 +224,7 @@ fun AccountDetailScreen(
                             Column {
                                 Text("MONTHLY NET", style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
                                 Text(
-                                    "${if (net >= 0) "+" else ""}${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", net)}",
+                                    "${if (netInAccountCurrency >= 0) "+" else ""}${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", netInAccountCurrency)}",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -170,25 +233,62 @@ fun AccountDetailScreen(
                     }
                 }
 
-                // Stats Row
+                // Flow Breakdown
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    StatCard(
-                        Modifier.weight(1f),
-                        "INCOME",
-                        "${getCurrencySymbol(account.currencyCode)}${String.format("%,.0f", income)}",
-                        Color(0xFF2E7D32)
-                    )
-                    StatCard(
-                        Modifier.weight(1f),
-                        "EXPENSE",
-                        "${getCurrencySymbol(account.currencyCode)}${String.format("%,.0f", expense)}",
-                        Color(0xFFC62828)
-                    )
+                    // Income Section
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFF2E7D32).copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (incomeBreakdown.isEmpty()) {
+                                Text("-", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    incomeBreakdown.forEach { (curr, amount, inBase) ->
+                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Expense Section
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color(0xFFC62828).copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (expenseBreakdown.isEmpty()) {
+                                Text("-", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    expenseBreakdown.forEach { (curr, amount, inBase) ->
+                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -222,15 +322,21 @@ fun AccountDetailScreen(
                     }
                 } else {
                     // Group by currency to show separate balances
-                    val currencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
-                        val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
-                        if (curr == account.currencyCode) account.balance + txSum else txSum
-                    }
-                    
-                    val finalBalances = if (!currencyBalances.containsKey(account.currencyCode)) {
-                        currencyBalances + (account.currencyCode to account.balance)
-                    } else {
-                        currencyBalances
+                    val finalBalances by remember(account, accountTransactions) {
+                        derivedStateOf {
+                            val currentAccount = account ?: return@derivedStateOf emptyMap<String, Double>()
+                            val initialBalance = currentAccount.initialBalance
+                            
+                            val currencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
+                                val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
+                                if (curr == currentAccount.currencyCode) initialBalance + txSum else txSum
+                            }.toMutableMap()
+                            
+                            if (!currencyBalances.containsKey(currentAccount.currencyCode)) {
+                                currencyBalances[currentAccount.currencyCode] = initialBalance
+                            }
+                            currencyBalances.toMap()
+                        }
                     }
 
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -239,9 +345,21 @@ fun AccountDetailScreen(
                                 Text("CURRENCY BREAKDOWN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 finalBalances.forEach { (curr, bal) ->
-                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text(curr, style = MaterialTheme.typography.bodyMedium)
-                                        Text("${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text(curr, style = MaterialTheme.typography.bodyMedium)
+                                            Text("${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                        }
+                                        if (curr != baseCurrency) {
+                                            val rate = exchangeRates[curr] ?: 1.0
+                                            val convertedBal = if (rate != 0.0) bal / rate else bal
+                                            Text(
+                                                "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", convertedBal)}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.outline,
+                                                modifier = Modifier.align(Alignment.End)
+                                            )
+                                        }
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -251,7 +369,7 @@ fun AccountDetailScreen(
                             TransactionItem(
                                 transaction = transaction,
                                 currencySymbol = getCurrencySymbol(transaction.currency),
-                                onClick = { /* View transaction detail */ }
+                                onClick = { onEditTransactionClick(transaction.id) }
                             )
                         }
                     }
@@ -262,18 +380,29 @@ fun AccountDetailScreen(
 }
 
 @Composable
-fun StatCard(modifier: Modifier, label: String, amount: String, color: Color) {
-    Surface(
-        modifier = modifier.height(80.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-            Text(amount, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = color))
+        Column {
+            Text(
+                curr,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = MaterialTheme.colorScheme.outline
+            )
+            Text(
+                "${getCurrencySymbol(curr)}${String.format("%,.2f", amount)}",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+        if (curr != baseCurrency) {
+            Text(
+                "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.0f", inBase)}",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.colorScheme.outline
+            )
         }
     }
 }

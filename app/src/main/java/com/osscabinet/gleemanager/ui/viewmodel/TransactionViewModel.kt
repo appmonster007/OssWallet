@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.gleemanager.data.local.SettingsDataStore
 import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.domain.usecase.DeleteTransactionUseCase
 import com.osscabinet.gleemanager.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.gleemanager.domain.usecase.InsertTransactionUseCase
+import com.osscabinet.gleemanager.domain.usecase.UpdateTransactionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,6 +16,8 @@ import kotlinx.coroutines.launch
 class TransactionViewModel(
     private val getTransactionsUseCase: GetTransactionsUseCase,
     private val insertTransactionUseCase: InsertTransactionUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
@@ -91,10 +95,36 @@ class TransactionViewModel(
         }
     }
 
+    fun updateTransaction(
+        oldTransaction: Transaction,
+        title: String,
+        amount: Double,
+        category: String,
+        isIncome: Boolean,
+        accountId: String,
+        currency: String,
+        tags: List<String> = emptyList(),
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
+            val newTransaction = oldTransaction.copy(
+                title = title,
+                amount = amount,
+                category = category,
+                timestamp = timestamp,
+                currency = currency,
+                isIncome = isIncome,
+                accountId = accountId,
+                tags = tags
+            )
+            updateTransactionUseCase(oldTransaction, newTransaction, profileId)
+        }
+    }
+
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
-            // Need a DeleteTransactionUseCase ideally, but calling repository directly for now if needed
-            // Or just add it to the ViewModel if the usecase is missing
+            deleteTransactionUseCase(id)
         }
     }
 }
@@ -102,9 +132,11 @@ class TransactionViewModel(
 class TransactionViewModelFactory(
     private val getTransactionsUseCase: GetTransactionsUseCase,
     private val insertTransactionUseCase: InsertTransactionUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val settingsDataStore: com.osscabinet.gleemanager.data.local.SettingsDataStore
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-        return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, settingsDataStore) as T
+        return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore) as T
     }
 }

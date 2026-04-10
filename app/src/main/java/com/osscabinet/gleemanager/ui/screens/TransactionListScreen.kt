@@ -34,10 +34,14 @@ fun TransactionListScreen(
     viewModel: TransactionViewModel,
     accountViewModel: com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel,
     onAddTransactionClick: () -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
+    val accounts by accountViewModel.accounts.collectAsState()
+    val accountMap = accounts.associate { it.id to it.name }
+
     var showFilterSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -144,7 +148,8 @@ fun TransactionListScreen(
                         items(items) { transaction ->
                             TransactionItemEditorial(
                                 transaction = transaction,
-                                onClick = { onAccountDetailClick(transaction.accountId) },
+                                accountName = accountMap[transaction.accountId] ?: "Unknown",
+                                onClick = { onEditTransactionClick(transaction.id) },
                                 showTonalShift = false
                             )
                         }
@@ -263,6 +268,7 @@ fun FilterBottomSheet(
 @Composable
 fun TransactionItemEditorial(
     transaction: Transaction,
+    accountName: String,
     onClick: () -> Unit,
     showTonalShift: Boolean
 ) {
@@ -317,7 +323,7 @@ fun TransactionItemEditorial(
                     color = if (transaction.isIncome) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "CHECKING",
+                    text = accountName.uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = MaterialTheme.colorScheme.outline
                 )

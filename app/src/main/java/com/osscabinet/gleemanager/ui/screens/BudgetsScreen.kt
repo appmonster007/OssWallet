@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Budget
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
+import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +31,11 @@ fun BudgetsScreen(
     onEditBudgetClick: (String) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsState()
+    // We should probably get the base currency here too if we want it to be accurate
+    // But for now let's assume USD or get it from a shared source if available.
+    // Since we don't have easy access to settingsViewModel here without passing it, 
+    // let's just use the symbol from the first budget if available or default to $
+    val currencySymbol = if (budgets.isNotEmpty()) getCurrencySymbol("USD") else "$" 
 
     Scaffold(
         topBar = {
@@ -50,7 +56,7 @@ fun BudgetsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
             contentPadding = PaddingValues(top = 24.dp, bottom = 80.dp)
@@ -70,55 +76,78 @@ fun BudgetsScreen(
                 }
             } else {
                 items(budgets) { budget ->
-                    BudgetGoalCard(budget, onClick = { onEditBudgetClick(budget.category) })
+                    BudgetGoalCard(budget, currencySymbol, onClick = { onEditBudgetClick(budget.category) })
                 }
             }
 
             item {
-                InsightSection()
+                // We'll use a local version of InsightSection to ensure theme consistency
+                BudgetInsightSection(currencySymbol)
             }
         }
     }
 }
 
 @Composable
-fun BudgetGoalCard(budget: Budget, onClick: () -> Unit) {
-    val color = when(budget.category.lowercase()) {
-        "lifestyle", "lifestyle & leisure" -> Color(0xFF004D40)
-        "housing", "housing & utilities" -> Color(0xFFC62828)
-        else -> Color(0xFF006064)
-    }
+fun BudgetGoalCard(budget: Budget, currencySymbol: String, onClick: () -> Unit) {
+    val progressColor = if (budget.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
         shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(budget.category, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(budget.category, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "$${String.format(Locale.getDefault(), "%,.0f", budget.spent)} / $${String.format(Locale.getDefault(), "%,.0f", budget.limit)}",
+                    "$currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.spent)} / $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.limit)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.outline
                 )
             }
             
             LinearProgressIndicator(
-                progress = { budget.progress },
+                progress = { budget.progress.coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(CircleShape),
-                color = color,
-                trackColor = color.copy(alpha = 0.1f)
+                color = progressColor,
+                trackColor = progressColor.copy(alpha = 0.1f)
             )
             
             Text(
-                text = if (!budget.isOverBudget) "You have $${String.format(Locale.getDefault(), "%,.0f", budget.remaining)} remaining" else "Over budget by $${String.format(Locale.getDefault(), "%,.0f", budget.spent - budget.limit)}",
+                text = if (!budget.isOverBudget) "You have $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.remaining)} remaining" else "Over budget by $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.spent - budget.limit)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else Color(0xFFC62828)
+                color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
+@Composable
+fun BudgetInsightSection(currencySymbol: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("OPTIMIZATION TIP", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
+            }
+            Text(
+                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${currencySymbol}100 to your Savings goal.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -85,7 +85,8 @@ class MainActivity : FragmentActivity() {
         val accountViewModelFactory = com.osscabinet.gleemanager.ui.viewmodel.AccountViewModelFactory(accountRepository, settingsDataStore)
 
         setContent {
-            GleeManagerTheme {
+            val theme by settingsDataStore.theme.collectAsState(initial = "System")
+            GleeManagerTheme(theme = theme) {
                 val navController = rememberNavController()
                 val viewModel: TransactionViewModel = viewModel(factory = viewModelFactory)
                 val budgetViewModel: BudgetViewModel = viewModel(factory = budgetViewModelFactory)

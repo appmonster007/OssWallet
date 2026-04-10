@@ -5,6 +5,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
+import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
+import com.osscabinet.gleemanager.ui.util.getCurrencyName
+import com.osscabinet.gleemanager.ui.util.getAllCurrencies
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,9 +34,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val currency by viewModel.currency.collectAsState()
+    val currencyCode by viewModel.currency.collectAsState()
     val theme by viewModel.theme.collectAsState()
-    val currentProfile by viewModel.currentProfile.collectAsState()
     
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -50,26 +54,47 @@ fun SettingsScreen(
     }
 
     if (showCurrencyDialog) {
-        val currencies = listOf("USD", "EUR", "GBP", "JPY", "INR", "CAD", "AUD")
+        val currencies = remember { getAllCurrencies() }
         AlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
             title = { Text("Base Currency") },
             text = {
-                Column {
-                    currencies.forEach { code ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setCurrency(code)
-                                    showCurrencyDialog = false
+                Box(modifier = Modifier.height(400.dp)) {
+                    LazyColumn {
+                        items(currencies) { code ->
+                            val symbol = getCurrencySymbol(code)
+                            val name = getCurrencyName(code)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setCurrency(code)
+                                        showCurrencyDialog = false
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(40.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            symbol,
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
                                 }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(code, modifier = Modifier.weight(1f))
-                            if (code == currency) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
+                                    Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                }
+                                if (code == currencyCode) {
+                                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
                         }
                     }
@@ -82,7 +107,7 @@ fun SettingsScreen(
     }
 
     if (showThemeDialog) {
-        val themes = listOf("System", "Light", "Dark")
+        val themes = listOf("System", "Light", "Dark", "Amoled")
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
             title = { Text("App Appearance") },
@@ -99,7 +124,15 @@ fun SettingsScreen(
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(t, modifier = Modifier.weight(1f))
+                            val icon = when(t) {
+                                "Light" -> Icons.Rounded.LightMode
+                                "Dark" -> Icons.Rounded.DarkMode
+                                "Amoled" -> Icons.Rounded.Contrast
+                                else -> Icons.Rounded.SettingsSuggest
+                            }
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(t, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                             if (t == theme) {
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
@@ -129,7 +162,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
@@ -137,7 +170,7 @@ fun SettingsScreen(
             SettingsSection("GENERAL") {
                 SettingsItem(
                     title = "Base Currency",
-                    subtitle = currency,
+                    subtitle = "${getCurrencySymbol(currencyCode)} ${getCurrencyName(currencyCode)}",
                     icon = Icons.Rounded.CurrencyExchange,
                     onClick = { showCurrencyDialog = true }
                 )
@@ -166,7 +199,7 @@ fun SettingsScreen(
                     title = "Delete All Data",
                     subtitle = "Permanently clear your ledger",
                     icon = Icons.Rounded.DeleteForever,
-                    color = Color(0xFFC62828),
+                    color = MaterialTheme.colorScheme.error,
                     onClick = { /* Handle delete */ }
                 )
             }

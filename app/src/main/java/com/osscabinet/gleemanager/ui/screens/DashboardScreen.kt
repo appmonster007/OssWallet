@@ -141,10 +141,10 @@ fun DashboardScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NetWorthSection(accounts, baseCurrency, exchangeRates)
-            CurrencyAggregationSection(transactions, baseCurrency, exchangeRates)
+            NetWorthSection(accounts, transactions, baseCurrency, exchangeRates)
+            CurrencyAggregationSection(accounts, transactions, baseCurrency, exchangeRates)
             IntelligenceInsightsSection(accounts, transactions, baseCurrency, exchangeRates)
-            AccountsSection(onManageAccountsClick, onAccountClick, accounts, baseCurrency, exchangeRates)
+            AccountsSection(onManageAccountsClick, onAccountClick, accounts, transactions, baseCurrency, exchangeRates)
             RecentActivitySection(onRecordsClick, baseCurrency, transactions, accounts)
             BudgetTrackingSection(baseCurrency)
             Spacer(modifier = Modifier.height(16.dp))
@@ -154,15 +154,16 @@ fun DashboardScreen(
 
 @Composable
 fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-    // Calculate current total net worth including all transactions and initial balances
-    val totalBalanceInBase = transactions.groupBy { it.currency }.map { (currency, txs) ->
-        val currencySum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
-        val rate = exchangeRates[currency] ?: 1.0
-        if (rate == 0.0) 0.0 else currencySum / rate
-    }.sum() + accounts.sumOf { account ->
-        val rate = exchangeRates[account.currencyCode] ?: 1.0
-        if (rate == 0.0) 0.0 else account.balance / rate
-    }
+        val accountInitialBalances = accounts.sumOf { account ->
+            val rate = exchangeRates[account.currencyCode] ?: 1.0
+            if (rate != 0.0) account.initialBalance / rate else account.initialBalance
+        }
+        val transactionSumInBase = transactions.sumOf { tx ->
+            val amount = if (tx.isIncome) tx.amount else -tx.amount
+            val rate = exchangeRates[tx.currency] ?: 1.0
+            if (rate != 0.0) amount / rate else amount
+        }
+        val totalBalanceInBase = accountInitialBalances + transactionSumInBase
     
     val expectedBalance = totalBalanceInBase * 1.05
     
@@ -215,10 +216,18 @@ fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Tran
 }
 
 @Composable
-fun NetWorthSection(accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-    val totalBalanceInBase = accounts.sumOf { account ->
-        val rate = exchangeRates[account.currencyCode] ?: 1.0
-        if (rate == 0.0) 0.0 else account.balance / rate
+fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
+    val totalBalanceInBase = remember(accounts, transactions, exchangeRates, baseCurrency) {
+        val accountInitialBalances = accounts.sumOf { account ->
+            val rate = exchangeRates[account.currencyCode] ?: 1.0
+            if (rate != 0.0) account.initialBalance / rate else account.initialBalance
+        }
+        val transactionSumInBase = transactions.sumOf { tx ->
+            val amount = if (tx.isIncome) tx.amount else -tx.amount
+            val rate = exchangeRates[tx.currency] ?: 1.0
+            if (rate != 0.0) amount / rate else amount
+        }
+        accountInitialBalances + transactionSumInBase
     }
     
     Column {
@@ -233,7 +242,7 @@ fun NetWorthSection(accounts: List<Account>, baseCurrency: String, exchangeRates
                 style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                ".${String.format("%02d", ((totalBalanceInBase % 1) * 100).toInt())}",
+                ".${String.format("%02d", ((Math.abs(totalBalanceInBase) % 1) * 100).toInt())}",
                 style = MaterialTheme.typography.displaySmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
@@ -276,28 +285,55 @@ fun NetWorthSection(accounts: List<Account>, baseCurrency: String, exchangeRates
 }
 
 @Composable
-fun CurrencyAggregationSection(transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
-    val currencyTotals = transactions.groupBy { it.currency }.mapValues { (_, txs) ->
-        txs.sumOf { if (it.isIncome) it.amount else -it.amount }
+fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+    val currencyTotals = remember(accounts, transactions) {
+        val totals = mutableMapOf<String, Double>()
+        
+        // Add initial balances from accounts
+        accounts.forEach { account ->
+            totals[account.currencyCode] = (totals[account.currencyCode] ?: 0.0) + account.initialBalance
+        }
+        
+        // Add transaction sums
+        transactions.forEach { tx ->
+            val amount = if (tx.isIncome) tx.amount else -tx.amount
+            totals[tx.currency] = (totals[tx.currency] ?: 0.0) + amount
+        }
+        totals.toMap()
     }
     
     if (currencyTotals.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("AGGREGATED CURRENCY BALANCES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(end = 16.dp)
+            ) {
                 items(currencyTotals.toList()) { (currency, amount) ->
+                    val rate = exchangeRates[currency] ?: 1.0
+                    val inBase = if (rate != 0.0) amount / rate else amount
+                    
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                     ) {
-                        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                            Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                                if (currency != baseCurrency) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.0f", inBase)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                            }
                             Text(
                                 "${getCurrencySymbol(currency)}${String.format("%,.2f", amount)}",
-                                style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum")
+                                style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
                             )
                         }
                     }
@@ -308,7 +344,7 @@ fun CurrencyAggregationSection(transactions: List<Transaction>, baseCurrency: St
 }
 
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -333,14 +369,27 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
             )
         } else {
             accounts.forEach { account ->
-                // Account's primary balance in base currency
-                val rate = exchangeRates[account.currencyCode] ?: 1.0
-                val balanceInBase = if (rate != 0.0) account.balance / rate else 0.0
+                val accountTransactions = transactions.filter { it.accountId == account.id }
+                
+                val accountCurrencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
+                    val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
+                    if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+                }.toMutableMap()
+                
+                if (!accountCurrencyBalances.containsKey(account.currencyCode)) {
+                    accountCurrencyBalances[account.currencyCode] = account.initialBalance
+                }
+
+                // Total balance in base currency for the main display
+                val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
+                    val rate = exchangeRates[curr] ?: 1.0
+                    if (rate != 0.0) amount / rate else amount
+                }
 
                 AccountCard(
                     title = account.name.uppercase(),
                     balance = "${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", balanceInBase)}",
-                    currencyBalances = mapOf(account.currencyCode to account.balance),
+                    currencyBalances = accountCurrencyBalances,
                     icon = when(account.structureType) {
                         "Savings" -> Icons.Default.Savings
                         "Credit Card" -> Icons.Default.CreditCard
@@ -382,25 +431,6 @@ fun AccountCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(title, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
-                
-                // Top Right Multi-currency breakdown
-                if (currencyBalances.isNotEmpty()) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        val entries = currencyBalances.toList()
-                        // Chunk entries to display multiple per line or one per line as in screenshot
-                        // The screenshot shows something like 2-3 lines
-                        entries.chunked(2).forEach { chunk ->
-                            Text(
-                                chunk.joinToString(" | ") { (curr, bal) ->
-                                    "${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}"
-                                },
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = contentColor.copy(alpha = 0.7f),
-                                textAlign = TextAlign.End
-                            )
-                        }
-                    }
-                }
             }
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -443,13 +473,13 @@ fun AccountCard(
                         }
                     }
                     
-                    currencyBalances.keys.forEach { curr ->
+                    currencyBalances.forEach { (curr, bal) ->
                         Surface(
-                            color = contentColor.copy(alpha = 0.1f),
+                            color = contentColor.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                curr.uppercase(),
+                                "${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}",
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = contentColor

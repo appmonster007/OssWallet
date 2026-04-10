@@ -88,7 +88,7 @@ fun SharedWalletScreen(
                             label = { Text("New Wallet Name") },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
                         OutlinedTextField(
                             value = inviteCode,
                             onValueChange = { inviteCode = it },

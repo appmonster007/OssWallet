@@ -22,9 +22,6 @@ class SettingsViewModel(
     private val _currency = MutableStateFlow("USD")
     val currency: StateFlow<String> = _currency.asStateFlow()
 
-    private val _biometricEnabled = MutableStateFlow(true)
-    val biometricEnabled: StateFlow<Boolean> = _biometricEnabled.asStateFlow()
-
     private val _theme = MutableStateFlow("System")
     val theme: StateFlow<String> = _theme.asStateFlow()
 
@@ -37,9 +34,6 @@ class SettingsViewModel(
     init {
         viewModelScope.launch {
             settingsDataStore.currency.collect { _currency.value = it }
-        }
-        viewModelScope.launch {
-            settingsDataStore.biometricEnabled.collect { _biometricEnabled.value = it }
         }
         viewModelScope.launch {
             settingsDataStore.theme.collect { _theme.value = it }
@@ -57,12 +51,6 @@ class SettingsViewModel(
     fun setCurrency(currency: String) {
         viewModelScope.launch {
             settingsDataStore.saveCurrency(currency)
-        }
-    }
-
-    fun setBiometricEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsDataStore.saveBiometricEnabled(enabled)
         }
     }
 

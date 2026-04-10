@@ -30,13 +30,12 @@ fun SettingsScreen(
     onBackClick: () -> Unit
 ) {
     val currency by viewModel.currency.collectAsState()
-    val biometricEnabled by viewModel.biometricEnabled.collectAsState()
     val theme by viewModel.theme.collectAsState()
     val currentProfile by viewModel.currentProfile.collectAsState()
-    val profiles by viewModel.profiles.collectAsState()
     
     val scrollState = rememberScrollState()
-    var showProfileDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -50,25 +49,26 @@ fun SettingsScreen(
         uri?.let { viewModel.importBackup(it) }
     }
 
-    if (showProfileDialog) {
+    if (showCurrencyDialog) {
+        val currencies = listOf("USD", "EUR", "GBP", "JPY", "INR", "CAD", "AUD")
         AlertDialog(
-            onDismissRequest = { showProfileDialog = false },
-            title = { Text("Switch Profile") },
+            onDismissRequest = { showCurrencyDialog = false },
+            title = { Text("Base Currency") },
             text = {
                 Column {
-                    profiles.forEach { profile ->
+                    currencies.forEach { code ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.switchProfile(profile.id)
-                                    showProfileDialog = false
+                                    viewModel.setCurrency(code)
+                                    showCurrencyDialog = false
                                 }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(profile.name, modifier = Modifier.weight(1f))
-                            if (profile.id == currentProfile?.id) {
+                            Text(code, modifier = Modifier.weight(1f))
+                            if (code == currency) {
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
                         }
@@ -76,9 +76,39 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showProfileDialog = false }) {
-                    Text("Close")
+                TextButton(onClick = { showCurrencyDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
+    if (showThemeDialog) {
+        val themes = listOf("System", "Light", "Dark")
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("App Appearance") },
+            text = {
+                Column {
+                    themes.forEach { t ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setTheme(t)
+                                    showThemeDialog = false
+                                }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(t, modifier = Modifier.weight(1f))
+                            if (t == theme) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
                 }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) { Text("Close") }
             }
         )
     }
@@ -109,29 +139,13 @@ fun SettingsScreen(
                     title = "Base Currency",
                     subtitle = currency,
                     icon = Icons.Rounded.CurrencyExchange,
-                    onClick = { /* Launch currency picker */ }
+                    onClick = { showCurrencyDialog = true }
                 )
                 SettingsItem(
                     title = "App Appearance",
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
-                    onClick = { /* Launch theme picker */ }
-                )
-                SettingsItem(
-                    title = "Switch Profile",
-                    subtitle = "Current: ${currentProfile?.name ?: "Personal"}",
-                    icon = Icons.Rounded.People,
-                    onClick = { showProfileDialog = true }
-                )
-            }
-
-            SettingsSection("SECURITY") {
-                SettingsToggle(
-                    title = "Biometric Lock",
-                    subtitle = "Require authentication on app launch",
-                    icon = Icons.Rounded.Fingerprint,
-                    checked = biometricEnabled,
-                    onCheckedChange = { viewModel.setBiometricEnabled(it) }
+                    onClick = { showThemeDialog = true }
                 )
             }
 
@@ -220,46 +234,5 @@ fun SettingsItem(
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
-    }
-}
-
-@Composable
-fun SettingsToggle(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
-            }
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF006064),
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            )
-        )
     }
 }

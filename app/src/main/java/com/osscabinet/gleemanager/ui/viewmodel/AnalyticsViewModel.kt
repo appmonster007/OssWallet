@@ -45,18 +45,29 @@ class AnalyticsViewModel(
         val selectedCurrency = _uiState.value.selectedCurrency
         
         // Convert all transactions to selected currency
-        // Note: For simplicity, we use the current rate for all historical data
-        // In a real app, you'd want historical rates, but for this task, current is fine.
         val convertedTransactions = allTransactions.map { tx ->
             val rate = if (tx.currency == selectedCurrency) 1.0 
                       else (exchangeRates[selectedCurrency] ?: 1.0) / (exchangeRates[tx.currency] ?: 1.0)
             tx.copy(amount = tx.amount * rate)
         }
 
-        val currentBalance = convertedTransactions.sumOf { if (it.isIncome) it.amount else -it.amount }
+        val totalIncome = convertedTransactions.filter { it.isIncome }.sumOf { it.amount }
+        val totalExpense = convertedTransactions.filter { !it.isIncome }.sumOf { it.amount }
+        val currentBalance = totalIncome - totalExpense
         
+        // Savings Rate = (Income - Expense) / Income
+        val savingsRate = if (totalIncome > 0) (totalIncome - totalExpense) / totalIncome else 0.0
+        
+        // Burn Rate = Monthly Expense Average
+        val firstTx = convertedTransactions.minByOrNull { it.timestamp }
+        val daysActive = if (firstTx != null) {
+            val diff = System.currentTimeMillis() - firstTx.timestamp
+            (diff / (24 * 60 * 60 * 1000L)).coerceAtLeast(1)
+        } else 1
+        val dailyExpenseAvg = totalExpense / daysActive
+        val monthlyBurnRate = dailyExpenseAvg * 30
+
         // Group by day for cash flow (last 7 days)
-        val calendar = Calendar.getInstance()
         val dailyNetFlow = convertedTransactions
             .filter { it.timestamp > System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L }
             .groupBy { 
@@ -84,6 +95,8 @@ class AnalyticsViewModel(
         _uiState.update { 
             it.copy(
                 currentBalance = currentBalance,
+                savingsRate = savingsRate,
+                burnRate = monthlyBurnRate,
                 dailyNetFlow = dailyNetFlow,
                 forecast = forecast.toMap(),
                 isLoading = false
@@ -94,6 +107,8 @@ class AnalyticsViewModel(
 
 data class AnalyticsUiState(
     val currentBalance: Double = 0.0,
+    val savingsRate: Double = 0.0,
+    val burnRate: Double = 0.0,
     val dailyNetFlow: Map<Long, Double> = emptyMap(),
     val forecast: Map<Long, Double> = emptyMap(),
     val selectedCurrency: String = "USD",

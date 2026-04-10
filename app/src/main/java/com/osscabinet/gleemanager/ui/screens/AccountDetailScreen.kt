@@ -102,6 +102,38 @@ fun AccountDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Pending Transactions / Hold State
+            val pendingTransactions = accountTransactions.take(1) // Mocked pending state
+            if (pendingTransactions.isNotEmpty()) {
+                Text(
+                    "PENDING TRANSACTIONS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFFE0F2F1).copy(alpha = 0.5f) // Soft Glow Tonal Shift
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        pendingTransactions.forEach { tx ->
+                            TransactionItemEditorial(
+                                transaction = tx.copy(title = tx.title + " (Pending)"),
+                                onClick = {},
+                                showTonalShift = false
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             // Transaction History
             Text(
                 "TRANSACTION HISTORY",

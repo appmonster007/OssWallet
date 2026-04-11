@@ -1,7 +1,11 @@
 package com.osscabinet.gleemanager.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Chat
+import androidx.compose.material.icons.automirrored.rounded.DirectionsBike
+import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.material.icons.rounded.*
@@ -32,7 +36,7 @@ val AccountIconMap = mapOf(
     "Flight" to Icons.Rounded.Flight,
     "DirectionsCar" to Icons.Rounded.DirectionsCar,
     "DirectionsBus" to Icons.Rounded.DirectionsBus,
-    "DirectionsBike" to Icons.Rounded.DirectionsBike,
+    "DirectionsBike" to Icons.AutoMirrored.Rounded.DirectionsBike,
     "Hotel" to Icons.Rounded.Hotel,
     "LocalPharmacy" to Icons.Rounded.LocalPharmacy,
     "LocalHospital" to Icons.Rounded.LocalHospital,
@@ -68,7 +72,7 @@ val AccountIconMap = mapOf(
     "Cloud" to Icons.Rounded.Cloud,
     "Email" to Icons.Rounded.Email,
     "Phone" to Icons.Rounded.Phone,
-    "Chat" to Icons.Rounded.Chat,
+    "Chat" to Icons.AutoMirrored.Rounded.Chat,
     "Forum" to Icons.Rounded.Forum,
     "Public" to Icons.Rounded.Public,
     "Language" to Icons.Rounded.Language,
@@ -89,7 +93,7 @@ val AccountIconMap = mapOf(
     "Engineering" to Icons.Rounded.Engineering,
     "Gavel" to Icons.Rounded.Gavel,
     "HistoryEdu" to Icons.Rounded.HistoryEdu,
-    "MenuBook" to Icons.Rounded.MenuBook,
+    "MenuBook" to Icons.AutoMirrored.Rounded.MenuBook,
     "Book" to Icons.Rounded.Book,
     "Receipt" to Icons.Rounded.Receipt,
     "ReceiptLong" to Icons.AutoMirrored.Rounded.ReceiptLong,
@@ -110,7 +114,7 @@ val AccountIconMap = mapOf(
     "Error" to Icons.Rounded.Error,
     "Warning" to Icons.Rounded.Warning,
     "Info" to Icons.Rounded.Info,
-    "Help" to Icons.Rounded.Help,
+    "Help" to Icons.AutoMirrored.Rounded.Help,
     "Add" to Icons.Rounded.Add,
     "Remove" to Icons.Rounded.Remove,
     "Check" to Icons.Rounded.Check,

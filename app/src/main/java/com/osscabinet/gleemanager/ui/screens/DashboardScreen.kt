@@ -18,16 +18,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
 import com.osscabinet.gleemanager.ui.util.toContainerColor
@@ -37,7 +44,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
@@ -51,11 +58,12 @@ fun DashboardScreen(
     onSettingsClick: () -> Unit,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
-    settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel,
-    analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
+    settingsViewModel: SettingsViewModel,
+    analyticsViewModel: AnalyticsViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val transactions by transactionViewModel.transactions.collectAsState()
@@ -63,11 +71,9 @@ fun DashboardScreen(
     val activeTransactions = remember(transactions, nonArchivedAccountIds) {
         transactions.filter { it.accountId in nonArchivedAccountIds }
     }
+    
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
     val baseCurrency by settingsViewModel.currency.collectAsState()
-    val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
-    
-    // Using AnalyticsViewModel to get exchange rates
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
 
@@ -126,186 +132,129 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                }
-                item {
-                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                }
                 item {
                     CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
                 }
+                
                 item {
+                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                }
+
+                item {
+                    val gridColumns = 2 // or from settings
                     AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
                 }
+
                 item {
                     RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
                 }
+
                 item {
                     BudgetTrackingSection(baseCurrency)
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun CashFlowSummarySection(
-    transactions: List<Transaction>,
-    baseCurrency: String,
-    exchangeRates: Map<String, Double>
-) {
-    val allSupportedCurrencies = remember(transactions) {
-        transactions.map { it.currency }.distinct().sorted()
-    }
-
-    val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
-        derivedStateOf {
-            allSupportedCurrencies.mapNotNull { curr ->
-                val txsForCurr = transactions.filter { it.currency == curr }
-                val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
-                val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }
-
-                if (income == 0.0 && expense == 0.0) null
-                else {
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val incomeInBase = if (rate != 0.0) income / rate else income
-                    val expenseInBase = if (rate != 0.0) expense / rate else expense
-                    Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
-                }
-            }
-        }
-    }
-
-    val totalIncomeInBase = flowData.sumOf { it.second.second }
-    val totalExpenseInBase = flowData.sumOf { it.third.second }
-
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("CASH FLOW SUMMARY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Income Section
-            Surface(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(24.dp),
-                color = Color(0xFF2E7D32).copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.1f))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        formatCurrency(totalIncomeInBase, baseCurrency),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, income, _) ->
-                            FlowBreakdownItem(curr, income.first, income.second, baseCurrency)
-                        }
-                    }
-                }
-            }
-
-            // Expense Section
-            Surface(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(24.dp),
-                color = Color(0xFFC62828).copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.1f))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        formatCurrency(totalExpenseInBase, baseCurrency),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, _, expense) ->
-                            FlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
-                        }
-                    }
+                item {
+                    Spacer(modifier = Modifier.height(64.dp))
                 }
             }
         }
     }
 }
 
-
-
 @Composable
-fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-    val totalBalanceInBase = remember(accounts, transactions, exchangeRates, baseCurrency) {
-        val accountInitialBalances = accounts.sumOf { account ->
-            val rate = exchangeRates[account.currencyCode] ?: 1.0
-            if (rate != 0.0) account.initialBalance / rate else account.initialBalance
-        }
-        val transactionSumInBase = transactions.sumOf { tx ->
-            val amount = if (tx.isIncome) tx.amount else -tx.amount
-            val rate = exchangeRates[tx.currency] ?: 1.0
-            if (rate != 0.0) amount / rate else amount
-        }
-        accountInitialBalances + transactionSumInBase
+fun CashFlowSummarySection(transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+    val now = Calendar.getInstance()
+    val monthStart = now.clone() as Calendar
+    monthStart.set(Calendar.DAY_OF_MONTH, 1)
+    monthStart.set(Calendar.HOUR_OF_DAY, 0)
+    monthStart.set(Calendar.MINUTE, 0)
+    monthStart.set(Calendar.SECOND, 0)
+
+    val monthTransactions = transactions.filter { it.timestamp >= monthStart.timeInMillis }
+    
+    val incomeInBase = monthTransactions.filter { it.isIncome }.sumOf { tx ->
+        val rate = exchangeRates[tx.currency] ?: 1.0
+        if (rate != 0.0) tx.amount / rate else tx.amount
     }
     
-    Column {
-        Text(
-            "TOTAL NET WORTH",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Text(
-            formatCurrency(totalBalanceInBase, baseCurrency),
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                color = Color(0xFF2E7D32).copy(alpha = 0.2f),
-                shape = RoundedCornerShape(16.dp)
+    val expenseInBase = monthTransactions.filter { !it.isIncome }.sumOf { tx ->
+        val rate = exchangeRates[tx.currency] ?: 1.0
+        if (rate != 0.0) tx.amount / rate else tx.amount
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("Cash Flow", style = MaterialTheme.typography.titleMedium)
+        
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(24.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.ArrowUpward,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF4CAF50)
-                    )
-                    Text(
-                        "+12.4%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF4CAF50),
-                        fontWeight = FontWeight.Bold
-                    )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.ArrowUpward, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                        Text("Income", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(formatCurrency(incomeInBase, baseCurrency), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.ArrowDownward, null, tint = Color(0xFFF44336), modifier = Modifier.size(16.dp))
+                        Text("Expense", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(formatCurrency(expenseInBase, baseCurrency), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+    val totalNetWorth = accounts.sumOf { account ->
+        val accountTransactions = transactions.filter { it.accountId == account.id }
+        val supportedCurrencies = mutableSetOf<String>()
+        supportedCurrencies.add(account.currencyCode)
+        supportedCurrencies.addAll(account.allowedCurrencies)
+        accountTransactions.forEach { supportedCurrencies.add(it.currency) }
+
+        val balances = supportedCurrencies.associateWith { curr ->
+            val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
+            if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+        }
+
+        balances.entries.sumOf { (curr, amount) ->
+            val rate = exchangeRates[curr] ?: 1.0
+            if (rate != 0.0) amount / rate else amount
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
+        shape = RoundedCornerShape(32.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text("Total Net Worth", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "vs last month",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                formatCurrency(totalNetWorth, baseCurrency),
+                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
@@ -313,57 +262,34 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
 
 @Composable
 fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
-    val allSupportedCurrencies = remember(accounts, transactions) {
-        val list = mutableSetOf<String>()
-        accounts.forEach { account ->
-            list.add(account.currencyCode)
-            list.addAll(account.allowedCurrencies)
+    val currencyBalances = mutableMapOf<String, Double>()
+    
+    accounts.forEach { account ->
+        val accountTransactions = transactions.filter { it.accountId == account.id }
+        val supportedCurrencies = mutableSetOf<String>()
+        supportedCurrencies.add(account.currencyCode)
+        supportedCurrencies.addAll(account.allowedCurrencies)
+        accountTransactions.forEach { supportedCurrencies.add(it.currency) }
+
+        supportedCurrencies.forEach { curr ->
+            val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
+            val amount = if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+            currencyBalances[curr] = currencyBalances.getOrDefault(curr, 0.0) + amount
         }
-        transactions.forEach { list.add(it.currency) }
-        list.toList().sorted()
     }
 
-    val currencyTotals = remember(accounts, transactions, allSupportedCurrencies) {
-        allSupportedCurrencies.associateWith { curr ->
-            val initialBalanceSum = accounts.filter { it.currencyCode == curr }.sumOf { it.initialBalance }
-            val txSum = transactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
-            initialBalanceSum + txSum
-        }
-    }
-    
-    if (allSupportedCurrencies.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("AGGREGATED CURRENCY BALANCES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-            
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
-                items(currencyTotals.toList()) { (currency, amount) ->
-                    val rate = exchangeRates[currency] ?: 1.0
-                    val inBase = if (rate != 0.0) amount / rate else amount
-                    
-                    Surface(
+    if (currencyBalances.size > 1) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("By Currency", style = MaterialTheme.typography.titleMedium)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(currencyBalances.toList().sortedBy { it.first }) { (curr, amount) ->
+                    Card(
                         shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                                if (currency != baseCurrency) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "≈ ${formatCurrency(inBase, baseCurrency)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                            }
-                            Text(
-                                formatCurrency(amount, currency),
-                                style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
-                            )
+                        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(curr, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black), color = MaterialTheme.colorScheme.primary)
+                            Text(com.osscabinet.gleemanager.ui.util.formatAmount(amount), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }
@@ -423,7 +349,6 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         if (curr == account.currencyCode) account.initialBalance + txSum else txSum
                     }
 
-                    // Total balance in base currency
                     val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
                         val rate = exchangeRates[curr] ?: 1.0
                         if (rate != 0.0) amount / rate else amount
@@ -480,6 +405,9 @@ fun AccountGridItem(
     modifier: Modifier = Modifier,
     gridColumns: Int = 2
 ) {
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
         "Dark", "Amoled" -> true
@@ -491,7 +419,6 @@ fun AccountGridItem(
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
 
-    // Scaling factors based on grid columns
     val titleFontSize = when(gridColumns) {
         1 -> 18.sp
         2 -> 14.sp
@@ -520,106 +447,117 @@ fun AccountGridItem(
 
     Surface(
         modifier = modifier
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .onSizeChanged { cardSize = it },
         shape = RoundedCornerShape(if (gridColumns > 2) 16.dp else 24.dp),
         color = containerColor,
         contentColor = contentColor,
         border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
     ) {
-        Column(modifier = Modifier.padding(padding)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
-                    contentDescription = null,
-                    modifier = Modifier.size(iconSize),
-                    tint = contentColor.copy(alpha = 0.7f)
-                )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance
+            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset { IntOffset(x = (cardSize.width * 0.2f).toInt(), y = 0) }
+                    .size(iconHeight)
+                    .alpha(0.15f),
+                tint = contentColor
+            )
+
+            Column(modifier = Modifier.padding(padding)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(iconSize),
+                        tint = contentColor.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        account.name,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = titleFontSize),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
+
                 Text(
-                    account.name,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = titleFontSize),
+                    formatCurrency(balanceInBase, baseCurrency),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
+                    color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
 
-            // Primary (Base) Currency Balance - Smaller
-            Text(
-                formatCurrency(balanceInBase, baseCurrency),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
-                color = contentColor.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                Text(
+                    formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val badges = @Composable {
+                    val incomeBg = Color(0xFF2E7D32)
+                    val expenseBg = Color(0xFFC62828)
+                    val badgeTextColor = Color.White
 
-            // Account Default Currency Balance - Bigger
-            Text(
-                formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Income and Expense combined (converted to account currency)
-            val badgeContent = @Composable {
-                val incomeBg = Color(0xFF2E7D32)
-                val expenseBg = Color(0xFFC62828)
-                val badgeTextColor = Color.White
+                    Surface(
+                        color = incomeBg,
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                        modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
+                    ) {
+                        Text(
+                            "+${com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency)}",
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
+                            color = badgeTextColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
 
-                // Income Badge
-                Surface(
-                    color = incomeBg,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
-                    modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
-                ) {
-                    Text(
-                        "+${com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency)}",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
-                        color = badgeTextColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Surface(
+                        color = expenseBg,
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                        modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
+                    ) {
+                        Text(
+                            "-${com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency)}",
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
+                            color = badgeTextColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
-                // Expense Badge
-                Surface(
-                    color = expenseBg,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
-                    modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
-                ) {
-                    Text(
-                        "-${com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency)}",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
-                        color = badgeTextColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            if (gridColumns <= 2) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    badgeContent()
-                }
-            } else {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    badgeContent()
+                if (gridColumns <= 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        badges()
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        badges()
+                    }
                 }
             }
         }
@@ -627,12 +565,9 @@ fun AccountGridItem(
 }
 
 @Composable
-fun RecentActivitySection(onViewAll: () -> Unit, transactions: List<Transaction>, accounts: List<Account>) {
-    val accountMap = accounts.associate { it.id to it.name }
-    val recentTransactions = transactions.sortedByDescending { it.timestamp }.take(3)
-    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
-    val today = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date())
-
+fun RecentActivitySection(onViewAllClick: () -> Unit, transactions: List<Transaction>, accounts: List<Account>) {
+    val recentTransactions = transactions.sortedByDescending { it.timestamp }.take(5)
+    
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -640,69 +575,61 @@ fun RecentActivitySection(onViewAll: () -> Unit, transactions: List<Transaction>
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Recent Activity", style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = onViewAll) {
-                Text("View all", color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = onViewAllClick) {
+                Text("View All", style = MaterialTheme.typography.labelLarge)
             }
         }
-
-        recentTransactions.forEach { transaction ->
-            val dateStr = dateFormat.format(Date(transaction.timestamp))
-            val displayDate = if (dateStr == today) "Today" else dateStr
-            
-            val icon = when(transaction.category.lowercase()) {
-                "food", "dining" -> Icons.Default.Restaurant
-                "shopping" -> Icons.Default.ShoppingBag
-                "transport" -> Icons.Default.DirectionsCar
-                "salary", "income" -> Icons.Default.Payments
-                else -> Icons.Default.Receipt
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                recentTransactions.forEachIndexed { index, tx ->
+                    val account = accounts.find { it.id == tx.accountId }
+                    val accountColor = try { Color(android.graphics.Color.parseColor(account?.colorHex ?: "#808080")) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+                    
+                    ActivityItem(
+                        title = tx.category,
+                        subtitle = account?.name ?: "Unknown",
+                        amount = (if (tx.isIncome) "+" else "-") + com.osscabinet.gleemanager.ui.util.formatCurrency(tx.amount, tx.currency),
+                        date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(tx.timestamp)),
+                        icon = Icons.Default.Category,
+                        color = accountColor
+                    )
+                    
+                    if (index < recentTransactions.size - 1) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    }
+                }
             }
-
-            ActivityItem(
-                title = transaction.title,
-                sub = "${transaction.category} • $displayDate",
-                amount = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
-                icon = icon,
-                iconBg = if (transaction.isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
         }
     }
 }
 
 @Composable
-fun ActivityItem(title: String, sub: String, amount: String, account: String, icon: ImageVector, iconBg: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+fun ActivityItem(title: String, subtitle: String, amount: String, date: String, icon: ImageVector, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier.size(48.dp).background(color.copy(alpha = 0.15f), CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = iconBg
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    amount,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (amount.startsWith("+")) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
-                )
-                Text(account, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = MaterialTheme.colorScheme.outline)
-            }
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+        }
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+            Text(subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+        }
+        
+        Column(horizontalAlignment = Alignment.End) {
+            Text(amount, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Black), color = if (amount.startsWith("+")) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface)
+            Text(date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
@@ -711,35 +638,31 @@ fun ActivityItem(title: String, sub: String, amount: String, account: String, ic
 fun BudgetTrackingSection(baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Budget Tracking", style = MaterialTheme.typography.titleMedium)
-        
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(28.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                BudgetProgress("Lifestyle & Leisure", 1420f, 2000f, MaterialTheme.colorScheme.primary, baseCurrency)
-                BudgetProgress("Housing & Utilities", 3800f, 4000f, Color(0xFFE57373), baseCurrency)
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                BudgetProgress("Monthly Budget", 0.75f, 1500f, Color(0xFF673AB7), baseCurrency)
+                BudgetProgress("Savings Goal", 0.4f, 5000f, Color(0xFF009688), baseCurrency)
             }
         }
     }
 }
 
 @Composable
-fun BudgetProgress(label: String, current: Float, total: Float, color: Color, baseCurrency: String) {
+fun BudgetProgress(label: String, progress: Float, total: Float, color: Color, baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${formatCurrency(current.toDouble(), baseCurrency)} / ${formatCurrency(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            Text(formatCurrency((progress * total).toDouble(), baseCurrency), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
         }
         LinearProgressIndicator(
-            progress = { current / total },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(CircleShape),
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape),
             color = color,
-            trackColor = MaterialTheme.colorScheme.surface
+            trackColor = color.copy(alpha = 0.1f)
         )
     }
 }

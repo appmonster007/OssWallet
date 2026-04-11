@@ -340,24 +340,75 @@ fun AccountDetailScreen(
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     item {
-                        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                            Text("CURRENCY BREAKDOWN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            finalBalances.forEach { (curr, bal) ->
-                                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text(curr, style = MaterialTheme.typography.bodyMedium)
-                                        Text(formatCurrency(bal, curr), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                    }
-                                    if (curr != baseCurrency) {
-                                        val rate = exchangeRates[curr] ?: 1.0
-                                        val convertedBal = if (rate != 0.0) bal / rate else bal
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(28.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            ) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Text(
-                                            "≈ ${formatCurrency(convertedBal, baseCurrency)}",
+                                            "CURRENCY BREAKDOWN",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.outline,
-                                            modifier = Modifier.align(Alignment.End)
+                                            letterSpacing = 0.5.sp
                                         )
+                                        Icon(
+                                            Icons.Rounded.AccountBalanceWallet,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    finalBalances.forEach { (curr, bal) ->
+                                        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Surface(
+                                                        modifier = Modifier.size(32.dp),
+                                                        shape = CircleShape,
+                                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Text(
+                                                                getCurrencySymbol(curr),
+                                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Text(
+                                                        curr,
+                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                                    )
+                                                }
+                                                Column(horizontalAlignment = Alignment.End) {
+                                                    Text(
+                                                        formatCurrency(bal, curr),
+                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                                    )
+                                                    if (curr != baseCurrency) {
+                                                        val rate = exchangeRates[curr] ?: 1.0
+                                                        val convertedBal = if (rate != 0.0) bal / rate else bal
+                                                        Text(
+                                                            "≈ ${formatCurrency(convertedBal, baseCurrency)}",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

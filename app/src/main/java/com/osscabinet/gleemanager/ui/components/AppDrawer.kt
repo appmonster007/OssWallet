@@ -143,17 +143,6 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
-        NavigationDrawerItem(
-            label = { Text("MANAGE", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-            selected = selectedDestination == "manage_accounts",
-            onClick = { 
-                onManageAccountsClick()
-                onCloseDrawer()
-            },
-            icon = { Icon(Icons.Default.SettingsSuggest, contentDescription = null) },
-            modifier = Modifier.padding(horizontal = 12.dp),
-            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-        )
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         

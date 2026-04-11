@@ -32,6 +32,7 @@ import com.osscabinet.gleemanager.ui.util.getAllCurrencies
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onManageAccountsClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val currencyCode by viewModel.currency.collectAsState()
@@ -229,6 +230,12 @@ fun SettingsScreen(
                     subtitle = "$dashboardGridColumns Columns",
                     icon = Icons.Rounded.DashboardCustomize,
                     onClick = { showGridDialog = true }
+                )
+                SettingsItem(
+                    title = "Manage Accounts",
+                    subtitle = "Reorder, hide, or edit your accounts",
+                    icon = Icons.Rounded.AccountBalance,
+                    onClick = onManageAccountsClick
                 )
             }
 

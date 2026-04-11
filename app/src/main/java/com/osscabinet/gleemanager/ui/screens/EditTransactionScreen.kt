@@ -1,15 +1,14 @@
 package com.osscabinet.gleemanager.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -31,7 +30,6 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
-import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,7 +53,7 @@ fun EditTransactionScreen(
     }
 
     var title by remember { mutableStateOf(transaction.title) }
-    var amount by remember { mutableStateOf(transaction.amount.toString()) }
+    var amount by remember { mutableStateOf(if (transaction.amount % 1 == 0.0) transaction.amount.toLong().toString() else String.format(Locale.getDefault(), "%.2f", transaction.amount)) }
     
     // Calculator State
     var firstOperand by remember { mutableStateOf<Double?>(null) }
@@ -82,11 +80,27 @@ fun EditTransactionScreen(
 
     var category by remember { mutableStateOf(transaction.category) }
     var tagsInput by remember { mutableStateOf(transaction.tags.joinToString(", ")) }
-    var transactionType by remember { mutableStateOf(if (transaction.isIncome) 1 else 0) }
+    
+    // Inferred transaction type: 0: Expense, 1: Income, 2: Transfer, 3: Refund
+    // Assuming category "Transfer" means it's a transfer. Refund is harder to infer if not stored, 
+    // but for now let's map isIncome to 1 (Income) and !isIncome to 0 (Expense).
+    var transactionType by remember { 
+        mutableStateOf(
+            when {
+                transaction.category == "Transfer" -> 2
+                transaction.isIncome -> 1
+                else -> 0
+            }
+        ) 
+    }
+    
     val isIncome = transactionType == 1
+    val isTransfer = transactionType == 2
+    val isRefund = transactionType == 3
+    
     var selectedDateMillis by remember { mutableStateOf(transaction.timestamp) }
-    var payee by remember { mutableStateOf("") } // Assuming these might be added to the model later
-    var note by remember { mutableStateOf("") }
+    var payee by remember { mutableStateOf(transaction.payee) }
+    var note by remember { mutableStateOf(transaction.note) }
     var isWarrantyEnabled by remember { mutableStateOf(false) }
     
     val accounts by accountViewModel.accounts.collectAsState()
@@ -94,22 +108,58 @@ fun EditTransactionScreen(
     var selectedAccount by remember { mutableStateOf(accounts.find { it.id == transaction.accountId }) }
     var selectedCurrency by remember { mutableStateOf(transaction.currency) }
     
+    var targetAccount by remember { mutableStateOf<Account?>(null) }
+    var targetCurrency by remember { mutableStateOf("") }
+    var exchangeRate by remember { mutableStateOf(1.0) }
+
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
+    var showTargetAccountSheet by remember { mutableStateOf(false) }
+    var showExchangeRateDialog by remember { mutableStateOf(false) }
     var isDetailDrawerOpen by remember { mutableStateOf(false) }
+    var showTemplateSheet by remember { mutableStateOf(false) }
+
+    val templates = listOf(
+        "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
+        "Salary Deposit" to (Icons.Rounded.Payments to "Income"),
+        "Rent Payment" to (Icons.Rounded.Home to "Housing"),
+        "Coffee" to (Icons.Rounded.CoffeeMaker to "Food")
+    )
+    var selectedTemplate by remember { mutableStateOf<String?>(null) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
-    val formatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+
+    // Sync exchange rate for transfers
+    LaunchedEffect(isTransfer, selectedCurrency, targetCurrency, exchangeRates) {
+        if (isTransfer && targetAccount != null) {
+            val baseRates = exchangeRates
+            if (baseRates.isNotEmpty()) {
+                val sourceRateInUSD = baseRates[selectedCurrency] ?: 1.0
+                val destRateInUSD = baseRates[targetCurrency] ?: 1.0
+                if (sourceRateInUSD != 0.0) {
+                    exchangeRate = destRateInUSD / sourceRateInUSD
+                }
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("Edit Record", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                    title = { 
+                        Text(
+                            "Edit Record", 
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) 
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.Rounded.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     },
                     actions = {
@@ -133,9 +183,74 @@ fun EditTransactionScreen(
                         }) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                         }
-                    }
+
+                        Surface(
+                            modifier = Modifier.padding(end = 16.dp, start = 8.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            onClick = {
+                                val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                selectedAccount?.let { account ->
+                                    // 1. Revert old balance impact
+                                    val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
+                                        transaction.amount
+                                    } else {
+                                        val txRate = exchangeRates[transaction.currency] ?: 1.0
+                                        val accountRate = exchangeRates[account.currencyCode] ?: 1.0
+                                        if (txRate != 0.0) (transaction.amount / txRate) * accountRate else transaction.amount
+                                    }
+                                    accountViewModel.updateBalance(
+                                        transaction.accountId, 
+                                        if (transaction.isIncome) -oldAmountInAccountCurrency else oldAmountInAccountCurrency
+                                    )
+
+                                    // 2. Apply new balance impact
+                                    val newAmountInAccountCurrency = if (selectedCurrency == account.currencyCode) {
+                                        amountDouble
+                                    } else {
+                                        val txRate = exchangeRates[selectedCurrency] ?: 1.0
+                                        val accountRate = exchangeRates[account.currencyCode] ?: 1.0
+                                        if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                                    }
+                                    accountViewModel.updateBalance(
+                                        account.id, 
+                                        if (isIncome || isRefund) newAmountInAccountCurrency else -newAmountInAccountCurrency
+                                    )
+
+                                    // 3. Update transaction record
+                                    viewModel.updateTransaction(
+                                        oldTransaction = transaction,
+                                        title = title.ifBlank { if (isTransfer) "Transfer" else category },
+                                        amount = amountDouble,
+                                        category = if (isTransfer) "Transfer" else category,
+                                        isIncome = isIncome || isRefund,
+                                        accountId = account.id,
+                                        currency = selectedCurrency,
+                                        tags = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() },
+                                        timestamp = selectedDateMillis,
+                                        payee = payee,
+                                        note = note
+                                    )
+                                    onBackClick()
+                                }
+                            }
+                        ) {
+                            Text(
+                                "Save",
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
         ) { innerPadding ->
             Column(
                 modifier = Modifier
@@ -144,17 +259,19 @@ fun EditTransactionScreen(
                     .padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Header Card
+                // Header Card: Type & Amount
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp),
                     shape = RoundedCornerShape(40.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Transaction Type Row
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(32.dp))
@@ -162,7 +279,12 @@ fun EditTransactionScreen(
                                 .padding(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            val types = listOf(Icons.Rounded.RemoveCircleOutline, Icons.Rounded.AddCircleOutline)
+                            val types = listOf(
+                                Icons.Rounded.RemoveCircleOutline,
+                                Icons.Rounded.AddCircleOutline,
+                                Icons.Rounded.SyncAlt,
+                                Icons.Rounded.Restore
+                            )
                             types.forEachIndexed { index, icon ->
                                 Box(
                                     modifier = Modifier
@@ -182,58 +304,139 @@ fun EditTransactionScreen(
                             }
                         }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                        // Amount & Currency Area
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = if (amount.isEmpty()) "0.00" else (if (isIncome) "+" else "-") + amount,
-                                style = TextStyle(
-                                    fontSize = 48.sp,
-                                    fontWeight = FontWeight.Black,
-                                    textAlign = TextAlign.Center,
-                                    color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            CurrencySelector(
-                                selectedCurrency = selectedCurrency,
-                                onCurrencySelected = { selectedCurrency = it },
-                                supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    if (isTransfer) {
+                                        IconButton(onClick = { showExchangeRateDialog = true }) {
+                                            Icon(Icons.Rounded.CurrencyExchange, contentDescription = "Exchange Rate", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+
+                                    Text(
+                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
+                                        style = TextStyle(
+                                            fontSize = if (isTransfer) 48.sp else 64.sp,
+                                            fontWeight = FontWeight.Black,
+                                            textAlign = TextAlign.Center,
+                                            color = when {
+                                                isIncome || isRefund -> Color(0xFF2E7D32)
+                                                isTransfer -> MaterialTheme.colorScheme.onSurface
+                                                else -> MaterialTheme.colorScheme.error
+                                            }
+                                        ),
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    
+                                    CurrencySelector(
+                                        selectedCurrency = selectedCurrency,
+                                        onCurrencySelected = { selectedCurrency = it },
+                                        supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
+                                    )
+                                }
+                                
+                                if (isTransfer) {
+                                    val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                    val convertedAmount = amountDouble * exchangeRate
+                                    
+                                    Icon(
+                                        Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp).padding(vertical = 4.dp),
+                                        tint = MaterialTheme.colorScheme.outline
+                                    )
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                            style = TextStyle(
+                                                fontSize = 32.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF2E7D32)
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        CurrencySelector(
+                                            selectedCurrency = targetCurrency,
+                                            onCurrencySelected = { targetCurrency = it },
+                                            supportedCurrencies = targetAccount?.allowedCurrencies ?: listOf("USD")
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                // Field Cards
+                // Slim Action Cards
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EditorialInput(value = title, onValueChange = { title = it }, label = "RECORD TITLE", icon = Icons.Rounded.Edit)
-                    
+                    EditorialInput(
+                        value = title, 
+                        onValueChange = { title = it }, 
+                        label = "RECORD TITLE", 
+                        icon = Icons.Rounded.Edit
+                    )
+
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         RecordFieldCard(
                             icon = Icons.Rounded.AccountBalance,
-                            label = "LEDGER",
+                            label = if (isTransfer) "FROM" else "LEDGER",
                             value = selectedAccount?.name ?: "Select",
                             onClick = { showAccountSheet = true },
                             modifier = Modifier.weight(1f),
                             iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                             isSlim = true
                         )
-                        RecordFieldCard(
-                            icon = categoryIcons[category] ?: Icons.Rounded.Category,
-                            label = "CATEGORY",
-                            value = category,
-                            onClick = { showCategorySheet = true },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                            isSlim = true
-                        )
+                        
+                        if (isTransfer) {
+                            RecordFieldCard(
+                                icon = Icons.Rounded.AccountBalance,
+                                label = "TO",
+                                value = targetAccount?.name ?: "Select",
+                                onClick = { showTargetAccountSheet = true },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                isSlim = true
+                            )
+                        } else {
+                            RecordFieldCard(
+                                icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                                label = "CATEGORY",
+                                value = category,
+                                onClick = { showCategorySheet = true },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                isSlim = true
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
-
+                // Number Pad
                 Numpad(
                     onNumberClick = { input ->
                         if (isEnteringSecondOperand) {
@@ -271,57 +474,17 @@ fun EditTransactionScreen(
                     },
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-
-                Button(
-                    onClick = {
-                        val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                        selectedAccount?.let { account ->
-                            val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
-                                transaction.amount
-                            } else {
-                                val txRate = exchangeRates[transaction.currency] ?: 1.0
-                                val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                                if (txRate != 0.0) (transaction.amount / txRate) * accountRate else transaction.amount
-                            }
-                            accountViewModel.updateBalance(transaction.accountId, if (transaction.isIncome) -oldAmountInAccountCurrency else oldAmountInAccountCurrency)
-
-                            val newAmountInAccountCurrency = if (selectedCurrency == account.currencyCode) {
-                                amountDouble
-                            } else {
-                                val txRate = exchangeRates[selectedCurrency] ?: 1.0
-                                val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                                if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
-                            }
-                            accountViewModel.updateBalance(account.id, if (isIncome) newAmountInAccountCurrency else -newAmountInAccountCurrency)
-
-                            viewModel.updateTransaction(
-                                oldTransaction = transaction,
-                                title = title,
-                                amount = amountDouble,
-                                category = category,
-                                isIncome = isIncome,
-                                accountId = account.id,
-                                currency = selectedCurrency,
-                                tags = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() },
-                                timestamp = selectedDateMillis
-                            )
-                            onBackClick()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
-                    shape = RoundedCornerShape(32.dp)
-                ) {
-                    Text("SAVE CHANGES", fontWeight = FontWeight.Bold)
-                }
             }
         }
 
+        // Right Detail Drawer
         DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true }
         ) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Metadata Section
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
@@ -336,9 +499,13 @@ fun EditTransactionScreen(
                                 onValueChange = { payee = it },
                                 modifier = Modifier.fillMaxWidth(),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                decorationBox = { if (payee.isEmpty()) Text("Add Payee", color = MaterialTheme.colorScheme.outline); it() }
+                                decorationBox = { innerTextField ->
+                                    if (payee.isEmpty()) Text("Add Payee", color = MaterialTheme.colorScheme.outline)
+                                    innerTextField()
+                                }
                             )
                         }
+                        
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                             Spacer(modifier = Modifier.width(12.dp))
@@ -347,12 +514,36 @@ fun EditTransactionScreen(
                                 onValueChange = { note = it },
                                 modifier = Modifier.fillMaxWidth(),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                decorationBox = { if (note.isEmpty()) Text("Add Note", color = MaterialTheme.colorScheme.outline); it() }
+                                decorationBox = { innerTextField ->
+                                    if (note.isEmpty()) Text("Add Note", color = MaterialTheme.colorScheme.outline)
+                                    innerTextField()
+                                }
                             )
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                onClick = { /* Recurring toggle */ }
+                            ) {
+                                Text("RECURRING", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                onClick = { /* Tag dialog */ }
+                            ) {
+                                Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Text("LABEL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }
 
+                // Occurrence & Payment Method
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(
                         modifier = Modifier.weight(1f).height(80.dp),
@@ -365,12 +556,28 @@ fun EditTransactionScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF42A5F5))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(formatter.format(Date(selectedDateMillis)), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                val calendar = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
+                                Text("${calendar.get(Calendar.DAY_OF_MONTH)}/${calendar.get(Calendar.MONTH) + 1}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    Surface(
+                        modifier = Modifier.weight(1f).height(80.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
+                            Text("PAYMENT METHOD", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Contactless, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF26C6DA))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Digital Wallet", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
 
+                // Map/Location Card
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     shape = RoundedCornerShape(28.dp),
@@ -398,6 +605,25 @@ fun EditTransactionScreen(
                         }
                     }
                 }
+
+                // Warranty Toggle
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = CircleShape, color = Color(0xFFB3E5FC), modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.Rounded.GppGood, contentDescription = null, modifier = Modifier.padding(10.dp), tint = Color(0xFF0288D1))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Warranty Tracking", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                            Text("Notify before expiration", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(checked = isWarrantyEnabled, onCheckedChange = { isWarrantyEnabled = it })
+                    }
+                }
             }
         }
     }
@@ -406,8 +632,36 @@ fun EditTransactionScreen(
         AccountPickerSheet(
             accounts = accounts,
             selectedAccount = selectedAccount,
-            onAccountSelected = { selectedAccount = it; selectedCurrency = it.currencyCode; showAccountSheet = false },
+            onAccountSelected = { account ->
+                selectedAccount = account
+                selectedCurrency = account.currencyCode
+                showAccountSheet = false
+            },
             onDismiss = { showAccountSheet = false }
+        )
+    }
+
+    if (showTargetAccountSheet) {
+        AccountPickerSheet(
+            accounts = accounts,
+            selectedAccount = targetAccount,
+            onAccountSelected = { account ->
+                targetAccount = account
+                targetCurrency = account.currencyCode
+                showTargetAccountSheet = false
+            },
+            onDismiss = { showTargetAccountSheet = false }
+        )
+    }
+
+    if (showExchangeRateDialog) {
+        ExchangeRateDialog(
+            initialRate = exchangeRate,
+            onDismiss = { showExchangeRateDialog = false },
+            onConfirm = { 
+                exchangeRate = it
+                showExchangeRateDialog = false
+            }
         )
     }
 
@@ -416,11 +670,16 @@ fun EditTransactionScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedDateMillis = datePickerState.selectedDateMillis ?: selectedDateMillis
+                    selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
                     showDatePicker = false
                 }) { Text("CONFIRM") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("CANCEL") }
             }
-        ) { DatePicker(state = datePickerState) }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     if (showCategorySheet) {
@@ -432,5 +691,44 @@ fun EditTransactionScreen(
             },
             onDismiss = { showCategorySheet = false }
         )
+    }
+
+    if (showTemplateSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showTemplateSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                Text("QUICK TEMPLATES", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(24.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(templates) { (name, info) ->
+                        val (icon, cat) = info
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedTemplate = name
+                                    category = cat
+                                    transactionType = if (cat == "Income") 1 else 0
+                                    showTemplateSheet = false
+                                },
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

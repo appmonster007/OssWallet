@@ -108,7 +108,9 @@ class TransactionViewModel(
         accountId: String,
         currency: String,
         tags: List<String> = emptyList(),
-        timestamp: Long = System.currentTimeMillis()
+        timestamp: Long = System.currentTimeMillis(),
+        payee: String = "",
+        note: String = ""
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -120,7 +122,9 @@ class TransactionViewModel(
                 currency = currency,
                 isIncome = isIncome,
                 accountId = accountId,
-                tags = tags
+                tags = tags,
+                payee = payee,
+                note = note
             )
             updateTransactionUseCase(oldTransaction, newTransaction, profileId)
         }

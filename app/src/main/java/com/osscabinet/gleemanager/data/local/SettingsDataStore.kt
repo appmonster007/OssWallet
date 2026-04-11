@@ -15,6 +15,7 @@ class SettingsDataStore(private val context: Context) {
         val CURRENCY_KEY = stringPreferencesKey("currency")
         val THEME_KEY = stringPreferencesKey("theme")
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
+        val DASHBOARD_GRID_COLUMNS_KEY = intPreferencesKey("dashboard_grid_columns")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -27,6 +28,10 @@ class SettingsDataStore(private val context: Context) {
 
     val currentProfileId: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[CURRENT_PROFILE_ID_KEY] ?: 1
+    }
+
+    val dashboardGridColumns: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[DASHBOARD_GRID_COLUMNS_KEY] ?: 2
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -44,6 +49,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveCurrentProfileId(profileId: Int) {
         context.dataStore.edit { preferences ->
             preferences[CURRENT_PROFILE_ID_KEY] = profileId
+        }
+    }
+
+    suspend fun saveDashboardGridColumns(columns: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[DASHBOARD_GRID_COLUMNS_KEY] = columns
         }
     }
 }

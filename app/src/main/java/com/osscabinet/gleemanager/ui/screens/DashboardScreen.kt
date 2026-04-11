@@ -61,6 +61,7 @@ fun DashboardScreen(
     }
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
     val baseCurrency by settingsViewModel.currency.collectAsState()
+    val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
     
     // Using AnalyticsViewModel to get exchange rates
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
@@ -128,7 +129,7 @@ fun DashboardScreen(
                 NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
                 CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
                 CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
-                AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, gridColumns)
                 RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
                 BudgetTrackingSection(baseCurrency)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -356,7 +357,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>, gridColumns: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -378,14 +379,15 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 expenseInAccountCurrency = 0.0,
                 baseCurrency = baseCurrency,
                 onClick = onManageClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                gridColumns = gridColumns
             )
         } else {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = 2
+                maxItemsInEachRow = gridColumns
             ) {
                 accounts.forEach { account ->
                     val accountTransactions = transactions.filter { it.accountId == account.id }
@@ -432,11 +434,14 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         expenseInAccountCurrency = expenseInAccountCurrency,
                         baseCurrency = baseCurrency,
                         onClick = { onAccountClick(account.id) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        gridColumns = gridColumns
                     )
                 }
-                if (accounts.size % 2 != 0) {
-                    Spacer(modifier = Modifier.weight(1f))
+                if (accounts.size % gridColumns != 0) {
+                    repeat(gridColumns - (accounts.size % gridColumns)) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -452,20 +457,48 @@ fun AccountGridItem(
     expenseInAccountCurrency: Double,
     baseCurrency: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gridColumns: Int = 2
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
     val isDark = accountColor.isDark()
     val contentColor = if (isDark) Color.White else Color.Black
 
+    // Scaling factors based on grid columns
+    val titleFontSize = when(gridColumns) {
+        1 -> 18.sp
+        2 -> 14.sp
+        3 -> 12.sp
+        else -> 10.sp
+    }
+    val balanceFontSize = when(gridColumns) {
+        1 -> 24.sp
+        2 -> 16.sp
+        3 -> 14.sp
+        else -> 12.sp
+    }
+    val secondaryBalanceFontSize = when(gridColumns) {
+        1 -> 14.sp
+        2 -> 12.sp
+        else -> 10.sp
+    }
+    val badgeFontSize = when(gridColumns) {
+        1 -> 12.sp
+        2 -> 9.sp
+        3 -> 8.sp
+        else -> 7.sp
+    }
+    val iconSize = if (gridColumns > 2) 14.dp else 18.dp
+    val padding = if (gridColumns > 2) 12.dp else 16.dp
+
     Surface(
         modifier = modifier
             .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(if (gridColumns > 2) 16.dp else 24.dp),
         color = accountColor,
         contentColor = contentColor
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(padding)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -477,23 +510,23 @@ fun AccountGridItem(
                         else -> Icons.Default.AccountBalance
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = contentColor.copy(alpha = 0.7f)
                 )
                 Text(
                     account.name,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = titleFontSize),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
 
             // Primary (Base) Currency Balance - Smaller
             Text(
                 formatCurrency(balanceInBase, baseCurrency),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
                 color = contentColor.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -502,7 +535,7 @@ fun AccountGridItem(
             // Account Default Currency Balance - Bigger
             Text(
                 formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -510,10 +543,7 @@ fun AccountGridItem(
             Spacer(modifier = Modifier.height(8.dp))
             
             // Income and Expense combined (converted to account currency)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            val badgeContent = @Composable {
                 val incomeBg = Color(0xFF2E7D32)
                 val expenseBg = Color(0xFFC62828)
                 val badgeTextColor = Color.White
@@ -521,14 +551,14 @@ fun AccountGridItem(
                 // Income Badge
                 Surface(
                     color = incomeBg,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(6.dp),
                     border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
                 ) {
                     Text(
                         "+${com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency)}",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
                         color = badgeTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -538,18 +568,34 @@ fun AccountGridItem(
                 // Expense Badge
                 Surface(
                     color = expenseBg,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(6.dp),
                     border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
                 ) {
                     Text(
                         "-${com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency)}",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
                         color = badgeTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+
+            if (gridColumns <= 2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    badgeContent()
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    badgeContent()
                 }
             }
         }

@@ -281,14 +281,16 @@ fun AddTransactionScreen(
             ) {
                 // Header Card: Type & Amount (Aeon Style)
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp),
                     shape = RoundedCornerShape(40.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.Center
                     ) {
                         // Transaction Type Row
                         Row(
@@ -323,6 +325,8 @@ fun AddTransactionScreen(
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         // Amount & Currency Row
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -343,7 +347,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
                                     style = TextStyle(
-                                        fontSize = 48.sp,
+                                        fontSize = if (isTransfer) 48.sp else 64.sp,
                                         fontWeight = FontWeight.Black,
                                         textAlign = TextAlign.Center,
                                         color = when {

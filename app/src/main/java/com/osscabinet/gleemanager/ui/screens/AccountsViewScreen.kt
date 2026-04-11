@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -29,6 +28,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
@@ -245,7 +245,7 @@ fun AccountCard(
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .offset { IntOffset(x = (cardSize.width * 0.2f).toInt(), y = 0) }
+                    .offset { IntOffset(x = (cardSize.width * 0.1f).toInt(), y = 0) }
                     .size(iconHeight)
                     .alpha(0.15f),
                 tint = contentColor
@@ -271,7 +271,7 @@ fun AccountCard(
                         style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
                         color = contentColor
                     )
-                    Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
+//                    Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))

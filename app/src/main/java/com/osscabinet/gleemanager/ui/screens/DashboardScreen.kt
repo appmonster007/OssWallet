@@ -27,6 +27,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -47,6 +48,8 @@ fun DashboardScreen(
     analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 ) {
     val scrollState = rememberScrollState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val transactions by transactionViewModel.transactions.collectAsState()
@@ -64,96 +67,172 @@ fun DashboardScreen(
         analyticsViewModel.onCurrencySelected(baseCurrency)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(320.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.surface,
+                drawerShape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(64.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
-                                modifier = Modifier.padding(8.dp)
+                                modifier = Modifier.size(32.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        currentProfile?.name ?: "Intelligence",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        "Personal Ledger",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                
+                Spacer(modifier = Modifier.height(12.dp))
+
+                NavigationDrawerItem(
+                    label = { Text("DASHBOARD", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = true,
+                    onClick = { scope.launch { drawerState.close() } },
+                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                NavigationDrawerItem(
+                    label = { Text("RECORDS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { 
+                            drawerState.close()
+                            onRecordsClick()
+                        } 
+                    },
+                    icon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                NavigationDrawerItem(
+                    label = { Text("ANALYTICS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { 
+                            drawerState.close()
+                            onAnalyticsClick()
+                        } 
+                    },
+                    icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                NavigationDrawerItem(
+                    label = { Text("BUDGETS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { 
+                            drawerState.close()
+                            onBudgetsClick()
+                        } 
+                    },
+                    icon = { Icon(Icons.Default.PieChart, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                NavigationDrawerItem(
+                    label = { Text("LOANS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { 
+                            drawerState.close()
+                            onLoansClick()
+                        } 
+                    },
+                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+                
+                NavigationDrawerItem(
+                    label = { Text("SETTINGS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { 
+                            drawerState.close()
+                            onSettingsClick()
+                        } 
+                    },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    title = {
                         Column {
                             Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
                             Text("Personal Ledger", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                         }
                     }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Search, contentDescription = "Search") }
-                    IconButton(onClick = onSettingsClick) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onAddClick,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add")
                 }
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-                    label = { Text("DASHBOARD") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onRecordsClick,
-                    icon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null) },
-                    label = { Text("RECORDS") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onAnalyticsClick,
-                    icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
-                    label = { Text("ANALYTICS") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onBudgetsClick,
-                    icon = { Icon(Icons.Default.PieChart, contentDescription = null) },
-                    label = { Text("BUDGETS") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onLoansClick,
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
-                    label = { Text("LOANS") }
-                )
             }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(MaterialTheme.colorScheme.background)
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+                NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
+                AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
+                BudgetTrackingSection(baseCurrency)
+                Spacer(modifier = Modifier.height(16.dp))
             }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-            CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-            CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
-            AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-            RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
-            BudgetTrackingSection(baseCurrency)
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

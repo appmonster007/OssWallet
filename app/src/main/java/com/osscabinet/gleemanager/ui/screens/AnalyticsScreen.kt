@@ -40,10 +40,6 @@ fun AnalyticsScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Share, contentDescription = "Share") }
-                    IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, contentDescription = "More") }
                 }
             )
         }

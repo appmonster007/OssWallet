@@ -81,11 +81,27 @@ fun EditAccountScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        viewModel.deleteAccount(accountId)
-                        onBackClick()
-                    }) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                    val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank()
+                    
+                    TextButton(
+                        onClick = {
+                            if (canSave) {
+                                viewModel.updateAccount(account.copy(
+                                    name = accountName,
+                                    structureType = structureType,
+                                    currencyCode = primaryCurrency,
+                                    allowedCurrencies = allowedCurrencies.toList(),
+                                    colorHex = accentColorHex,
+                                    icon = selectedIconName
+                                ))
+                                onBackClick()
+                            }
+                        },
+                        enabled = canSave,
+                        colors = ButtonDefaults.textButtonColors(contentColor = currentAccentColor)
+                    ) {
+                        Text("SAVE", fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -171,18 +187,11 @@ fun EditAccountScreen(
                 onColorSelected = { accentColorHex = it }
             )
 
-            val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    viewModel.updateAccount(account.copy(
-                        name = accountName,
-                        structureType = structureType,
-                        currencyCode = primaryCurrency,
-                        allowedCurrencies = allowedCurrencies.toList(),
-                        colorHex = accentColorHex,
-                        icon = selectedIconName
-                    ))
+                    viewModel.deleteAccount(accountId)
                     onBackClick()
                 },
                 modifier = Modifier
@@ -190,13 +199,16 @@ fun EditAccountScreen(
                     .height(64.dp),
                 shape = RoundedCornerShape(32.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = currentAccentColor,
-                    contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
-                ),
-                enabled = accountName.isNotBlank() && primaryCurrency.isNotBlank()
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
             ) {
-                Text("SAVE CHANGES", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Icon(Icons.Rounded.Delete, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("DELETE ACCOUNT", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

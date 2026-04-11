@@ -354,10 +354,17 @@ fun AddTransactionScreen(
                             if (isTransfer) {
                                 val amountDouble = amount.toDoubleOrNull() ?: 0.0
                                 val convertedAmount = amountDouble * exchangeRate
+                                
+                                Icon(
+                                    Icons.Rounded.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp).padding(vertical = 4.dp),
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(top = 4.dp)
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
                                     Text(
                                         " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
@@ -365,8 +372,7 @@ fun AddTransactionScreen(
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(start = 8.dp)
                                     )
-                                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.outline)
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
                                     Text(
                                         text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
                                         style = TextStyle(

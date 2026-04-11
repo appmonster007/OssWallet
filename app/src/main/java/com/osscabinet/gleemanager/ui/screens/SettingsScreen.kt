@@ -58,55 +58,125 @@ fun SettingsScreen(
 
     if (showCurrencyDialog) {
         val currencies = remember { getAllCurrencies() }
-        AlertDialog(
+        var searchQuery by remember { mutableStateOf("") }
+        val filteredCurrencies = remember(searchQuery) {
+            currencies.filter { 
+                it.contains(searchQuery, ignoreCase = true) || 
+                getCurrencyName(it).contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+        BasicAlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
-            title = { Text("Base Currency") },
-            text = {
-                Box(modifier = Modifier.height(400.dp)) {
-                    LazyColumn {
-                        items(currencies) { code ->
-                            val symbol = getCurrencySymbol(code)
-                            val name = getCurrencyName(code)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxWidth().padding(24.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        "Select Base Currency",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Search currency...") },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Rounded.Close, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(filteredCurrencies) { code ->
+                                val symbol = getCurrencySymbol(code)
+                                val name = getCurrencyName(code)
+                                Surface(
+                                    onClick = {
                                         viewModel.setCurrency(code)
                                         showCurrencyDialog = false
-                                    }
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    modifier = Modifier.size(40.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primaryContainer
+                                    },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (code == currencyCode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            symbol,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Surface(
+                                            modifier = Modifier.size(40.dp),
+                                            shape = CircleShape,
+                                            color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondaryContainer
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    symbol,
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                name, 
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                                color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                code, 
+                                                style = MaterialTheme.typography.labelSmall, 
+                                                color = if (code == currencyCode) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline
+                                            )
+                                        }
+                                        if (code == currencyCode) {
+                                            Icon(
+                                                Icons.Rounded.Check, 
+                                                contentDescription = null, 
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
                                     }
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
-                                    Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                }
-                                if (code == currencyCode) {
-                                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
                     }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showCurrencyDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showCurrencyDialog = false }) { Text("Close") }
             }
-        )
+        }
     }
 
     if (showThemeDialog) {

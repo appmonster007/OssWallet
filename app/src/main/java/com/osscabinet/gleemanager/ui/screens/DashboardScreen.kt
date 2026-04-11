@@ -360,65 +360,6 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 }
 
 @Composable
-fun FlowBreakdownSection(
-    title: String,
-    items: List<Triple<String, Double, Double>>,
-    baseCurrency: String,
-    color: Color,
-    icon: ImageVector,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        color = color.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.1f))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(title, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items.forEach { (curr, amount, inBase) ->
-                    DashboardFlowItem(curr, amount, inBase, baseCurrency)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DashboardFlowItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                curr,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = MaterialTheme.colorScheme.outline
-            )
-            Text(
-                formatCurrency(amount, curr),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-            )
-        }
-        if (curr != baseCurrency) {
-            Text(
-                "≈ ${formatCurrency(inBase, baseCurrency)}",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-    }
-}
-
-@Composable
 fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
@@ -454,20 +395,6 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                     list.toList().sorted()
                 }
 
-                val incomeBreakdown = supportedCurrencies.map { curr ->
-                    val amount = accountTransactions.filter { it.isIncome && it.currency == curr }.sumOf { it.amount }
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val inBase = if (rate != 0.0) amount / rate else amount
-                    Triple(curr, amount, inBase)
-                }
-
-                val expenseBreakdown = supportedCurrencies.map { curr ->
-                    val amount = accountTransactions.filter { !it.isIncome && it.currency == curr }.sumOf { it.amount }
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val inBase = if (rate != 0.0) amount / rate else amount
-                    Triple(curr, amount, inBase)
-                }
-
                 val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
                     val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
                     if (curr == account.currencyCode) account.initialBalance + txSum else txSum
@@ -481,53 +408,20 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
 
                 val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable { onAccountClick(account.id) },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)),
-                    shape = RoundedCornerShape(32.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        AccountCard(
-                            title = account.name.uppercase(),
-                            balance = formatCurrency(balanceInBase, baseCurrency),
-                            currencyBalances = accountCurrencyBalances,
-                            icon = when(account.structureType) {
-                                "Savings" -> Icons.Default.Savings
-                                "Credit Card" -> Icons.Default.CreditCard
-                                else -> Icons.Default.AccountBalance
-                            },
-                            containerColor = accountColor,
-                            contentColor = if (accountColor.isDark()) Color.White else Color.Black,
-                            subAccounts = listOf(account.structureType.uppercase()),
-                            onClick = { onAccountClick(account.id) }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            FlowBreakdownSection(
-                                title = "INCOME",
-                                items = incomeBreakdown,
-                                baseCurrency = baseCurrency,
-                                color = Color(0xFF2E7D32),
-                                icon = Icons.Default.ArrowDownward,
-                                modifier = Modifier.weight(1f)
-                            )
-                            FlowBreakdownSection(
-                                title = "EXPENSE",
-                                items = expenseBreakdown,
-                                baseCurrency = baseCurrency,
-                                color = Color(0xFFC62828),
-                                icon = Icons.Default.ArrowUpward,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                }
+                AccountCard(
+                    title = account.name.uppercase(),
+                    balance = formatCurrency(balanceInBase, baseCurrency),
+                    currencyBalances = accountCurrencyBalances,
+                    icon = when(account.structureType) {
+                        "Savings" -> Icons.Default.Savings
+                        "Credit Card" -> Icons.Default.CreditCard
+                        else -> Icons.Default.AccountBalance
+                    },
+                    containerColor = accountColor,
+                    contentColor = if (accountColor.isDark()) Color.White else Color.Black,
+                    subAccounts = listOf(account.structureType.uppercase()),
+                    onClick = { onAccountClick(account.id) }
+                )
             }
         }
     }
@@ -606,12 +500,22 @@ fun AccountCard(
                             color = contentColor.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text(
-                                formatCurrency(bal, curr),
+                            Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = contentColor
-                            )
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    curr,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
+                                    color = contentColor.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    com.osscabinet.gleemanager.ui.util.formatAmount(bal),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                    color = contentColor
+                                )
+                            }
                         }
                     }
                 }

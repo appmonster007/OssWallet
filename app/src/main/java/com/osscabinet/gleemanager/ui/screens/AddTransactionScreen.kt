@@ -359,6 +359,12 @@ fun AddTransactionScreen(
                                     horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.padding(top = 4.dp)
                                 ) {
+                                    Text(
+                                        " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
                                     Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.outline)
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(

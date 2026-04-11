@@ -82,7 +82,8 @@ fun CurrencyManagementSection(
     currencyUsageMap: Map<String, Boolean> = emptyMap()
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL")
+    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
+    var isSelectionMenuExpanded by remember { mutableStateOf(false) }
     
     val filteredCurrencies = if (searchQuery.isBlank()) {
         commonCurrencies
@@ -98,7 +99,7 @@ fun CurrencyManagementSection(
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             
-            // Search Bar
+            // Search Bar with Multi-select toggle
             Surface(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = CircleShape,
@@ -118,6 +119,47 @@ fun CurrencyManagementSection(
                             innerTextField()
                         }
                     )
+                    Box {
+                        IconButton(onClick = { isSelectionMenuExpanded = true }) {
+                            Icon(Icons.Rounded.FilterList, contentDescription = "Selection List", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        DropdownMenu(
+                            expanded = isSelectionMenuExpanded,
+                            onDismissRequest = { isSelectionMenuExpanded = false },
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            commonCurrencies.forEach { code ->
+                                val isSelected = allowedCurrencies.contains(code)
+                                val isPrimary = primaryCurrency == code
+                                val hasTransactions = currencyUsageMap[code] ?: false
+                                val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else true
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = isSelected,
+                                                onCheckedChange = null,
+                                                enabled = canToggle
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(code)
+                                        }
+                                    },
+                                    onClick = {
+                                        if (canToggle) {
+                                            if (isSelected) {
+                                                if (!isPrimary) onAllowedCurrenciesChange(allowedCurrencies - code)
+                                            } else {
+                                                onAllowedCurrenciesChange(allowedCurrencies + code)
+                                                if (primaryCurrency.isBlank()) onPrimaryCurrencyChange(code)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -346,18 +388,28 @@ fun VisualIdentitySection(
     var iconSearchQuery by remember { mutableStateOf("") }
     val filteredIcons = if (iconSearchQuery.isBlank()) iconMap.keys.toList() else iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
     var showColorPicker by remember { mutableStateOf(false) }
+    var showAllIcons by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
-            AeonTextField(
-                value = iconSearchQuery,
-                onValueChange = { iconSearchQuery = it },
-                placeholder = "Search 100+ icons...",
-                leadingIcon = Icons.Rounded.Search
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                AeonTextField(
+                    value = iconSearchQuery,
+                    onValueChange = { iconSearchQuery = it },
+                    placeholder = "Search 100+ icons...",
+                    leadingIcon = Icons.Rounded.Search,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = { showAllIcons = true },
+                    modifier = Modifier.size(56.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), CircleShape)
+                ) {
+                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
+                }
+            }
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -414,33 +466,111 @@ fun VisualIdentitySection(
         }
     }
 
-    if (showColorPicker) {
-        val allColors = listOf(
-            "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", 
-            "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", 
-            "#795548", "#9E9E9E", "#607D8B", "#000000"
+    if (showAllIcons) {
+        AlertDialog(
+            onDismissRequest = { showAllIcons = false },
+            title = { Text("Select Icon") },
+            text = {
+                Box(modifier = Modifier.height(400.dp)) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        iconMap.forEach { (name, icon) ->
+                            val isSelected = selectedIconName == name
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                            Surface(
+                                modifier = Modifier.size(48.dp).clickable { 
+                                    onIconSelected(name)
+                                    showAllIcons = false
+                                },
+                                shape = CircleShape,
+                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                            ) {
+                                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAllIcons = false }) { Text("Close") }
+            }
         )
+    }
+
+    if (showColorPicker) {
+        var hsv by remember { 
+            val hsvOut = FloatArray(3)
+            android.graphics.Color.colorToHSV(android.graphics.Color.parseColor(accentColorHex), hsvOut)
+            mutableStateOf(Triple(hsvOut[0], hsvOut[1], hsvOut[2]))
+        }
+
         AlertDialog(
             onDismissRequest = { showColorPicker = false },
-            title = { Text("Select Color") },
+            title = { Text("Custom Color Picker") },
             text = {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    allColors.forEach { colorHex ->
-                        Box(
-                            modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(colorHex))).clickable { 
-                                onColorSelected(colorHex)
-                                showColorPicker = false
-                            }
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Current Color Preview
+                    val currentColor = Color.hsv(hsv.first, hsv.second, hsv.third)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(currentColor)
+                    )
+
+                    // Hue Slider
+                    Column {
+                        Text("Hue: ${hsv.first.toInt()}°", style = MaterialTheme.typography.labelMedium)
+                        Slider(
+                            value = hsv.first,
+                            onValueChange = { 
+                                hsv = hsv.copy(first = it)
+                                val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                                onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                            },
+                            valueRange = 0f..360f,
+                            colors = SliderDefaults.colors(thumbColor = currentColor)
+                        )
+                    }
+
+                    // Saturation Slider
+                    Column {
+                        Text("Saturation: ${(hsv.second * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
+                        Slider(
+                            value = hsv.second,
+                            onValueChange = { 
+                                hsv = hsv.copy(second = it)
+                                val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                                onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                            },
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(thumbColor = currentColor)
+                        )
+                    }
+
+                    // Value/Brightness Slider
+                    Column {
+                        Text("Brightness: ${(hsv.third * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
+                        Slider(
+                            value = hsv.third,
+                            onValueChange = { 
+                                hsv = hsv.copy(third = it)
+                                val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                                onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                            },
+                            valueRange = 0f..1f,
+                            colors = SliderDefaults.colors(thumbColor = currentColor)
                         )
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showColorPicker = false }) { Text("Close") }
+                TextButton(onClick = { showColorPicker = false }) { Text("Done") }
             }
         )
     }

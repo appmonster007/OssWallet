@@ -209,6 +209,7 @@ fun GleeNavGraph(
             AccountManagementScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
+                onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                 viewModel = accountViewModel
             )
         }

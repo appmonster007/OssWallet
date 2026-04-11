@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +30,7 @@ import com.osscabinet.gleemanager.ui.util.isDark
 fun AccountManagementScreen(
     onBackClick: () -> Unit,
     onAddAccountClick: () -> Unit,
+    onAccountClick: (String) -> Unit,
     viewModel: AccountViewModel
 ) {
     val accounts by viewModel.accounts.collectAsState()
@@ -81,7 +83,8 @@ fun AccountManagementScreen(
                         }
                     },
                     onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                    onDelete = { viewModel.deleteAccount(account.id) }
+                    onDelete = { viewModel.deleteAccount(account.id) },
+                    onAccountClick = { onAccountClick(account.id) }
                 )
             }
         }
@@ -94,7 +97,8 @@ fun AccountManagementListItem(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onToggleArchive: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onAccountClick: () -> Unit
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
     val contentColor = if (accountColor.isDark()) Color.White else Color.Black
@@ -144,66 +148,80 @@ fun AccountManagementListItem(
                 }
             }
 
-            // Account Icon
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = accountColor
+            // Account Icon and Info (Clickable)
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onAccountClick() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val icon = when(account.icon) {
-                        "Savings" -> Icons.Rounded.Savings
-                        "CreditCard" -> Icons.Rounded.CreditCard
-                        "AccountBalance" -> Icons.Rounded.AccountBalance
-                        "Wallet" -> Icons.Rounded.Wallet
-                        "RocketLaunch" -> Icons.Rounded.RocketLaunch
-                        "Payments" -> Icons.Rounded.Payments
-                        "Paid" -> Icons.Rounded.Paid
-                        "AccountBalanceWallet" -> Icons.Rounded.AccountBalanceWallet
-                        "MonetizationOn" -> Icons.Rounded.MonetizationOn
-                        "Analytics" -> Icons.Rounded.Analytics
-                        "Foundation" -> Icons.Rounded.Foundation
-                        "Stars" -> Icons.Rounded.Stars
-                        "Diamond" -> Icons.Rounded.Diamond
-                        "AccountTree" -> Icons.Rounded.AccountTree
-                        "AutoGraph" -> Icons.Rounded.AutoGraph
-                        else -> Icons.Rounded.AccountBalance
+                // Account Icon
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = CircleShape,
+                    color = accountColor
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        val icon = when(account.icon) {
+                            "Savings" -> Icons.Rounded.Savings
+                            "CreditCard" -> Icons.Rounded.CreditCard
+                            "AccountBalance" -> Icons.Rounded.AccountBalance
+                            "Wallet" -> Icons.Rounded.Wallet
+                            "RocketLaunch" -> Icons.Rounded.RocketLaunch
+                            "Payments" -> Icons.Rounded.Payments
+                            "Paid" -> Icons.Rounded.Paid
+                            "AccountBalanceWallet" -> Icons.Rounded.AccountBalanceWallet
+                            "MonetizationOn" -> Icons.Rounded.MonetizationOn
+                            "Analytics" -> Icons.Rounded.Analytics
+                            "Foundation" -> Icons.Rounded.Foundation
+                            "Stars" -> Icons.Rounded.Stars
+                            "Diamond" -> Icons.Rounded.Diamond
+                            "AccountTree" -> Icons.Rounded.AccountTree
+                            "AutoGraph" -> Icons.Rounded.AutoGraph
+                            else -> Icons.Rounded.AccountBalance
+                        }
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = contentColor
+                        )
                     }
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = contentColor
+                }
+
+                // Account Info
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        account.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        account.structureType,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
-            }
-
-            // Account Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    account.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    account.structureType,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
             }
 
             // Actions
-            Row {
-                IconButton(onClick = onToggleArchive) {
-                    Icon(
-                        if (account.isArchived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                        contentDescription = if (account.isArchived) "Unarchive" else "Archive",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (account.isArchived) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                    )
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(
+                    checked = !account.isArchived,
+                    onCheckedChange = { onToggleArchive() },
+                    modifier = Modifier.scale(0.7f),
+                    thumbContent = {
+                        Icon(
+                            if (account.isArchived) Icons.Rounded.Archive else Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize)
+                        )
+                    }
+                )
                 IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(
                         Icons.Rounded.Delete,

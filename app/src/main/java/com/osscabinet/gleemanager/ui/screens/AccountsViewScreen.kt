@@ -101,7 +101,7 @@ fun AccountsViewScreen(
                     title = {
                         Column {
                             Text("Accounts", style = MaterialTheme.typography.titleLarge)
-                            Text("Manage your ledgers", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Text("Manage your accounts", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                         }
                     }
                 )
@@ -139,7 +139,7 @@ fun AccountsViewScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Ledgers", style = MaterialTheme.typography.titleMedium)
+                        Text("Accounts", style = MaterialTheme.typography.titleMedium)
                         TextButton(onClick = onManageAccountsClick) {
                             Text("Manage", style = MaterialTheme.typography.labelLarge)
                         }

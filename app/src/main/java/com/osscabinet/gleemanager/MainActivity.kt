@@ -191,6 +191,7 @@ class MainActivity : FragmentActivity() {
                         EditAccountScreen(
                             accountId = accountId,
                             viewModel = accountViewModel,
+                            transactionViewModel = viewModel,
                             onBackClick = { navController.popBackStack() }
                         )
                     }

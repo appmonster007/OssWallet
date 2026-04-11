@@ -26,6 +26,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.gleemanager.ui.components.AeonTextField
+import com.osscabinet.gleemanager.ui.components.CurrencyManagementSection
+import com.osscabinet.gleemanager.ui.components.VisualIdentitySection
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
 
@@ -174,193 +177,21 @@ fun AccountSetupScreen(
             }
 
             // Allowed Currencies Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(48.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-            ) {
-                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                    
-                    // Search Bar
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier.weight(1f),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                decorationBox = { innerTextField ->
-                                    if (searchQuery.isEmpty()) Text("Search ISO codes...", color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                                    innerTextField()
-                                }
-                            )
-                        }
-                    }
-
-                    // Chips
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        filteredCurrencies.forEach { code ->
-                            val isSelected = allowedCurrencies.contains(code)
-                            val isPrimary = primaryCurrency == code
-                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-                            
-                            Surface(
-                                modifier = Modifier.clip(CircleShape).combinedClickable(
-                                    onClick = {
-                                        if (isSelected) {
-                                            if (!isPrimary) allowedCurrencies = allowedCurrencies - code
-                                        } else {
-                                            allowedCurrencies = allowedCurrencies + code
-                                            if (primaryCurrency.isBlank()) {
-                                                primaryCurrency = code
-                                            }
-                                        }
-                                    },
-                                    onLongClick = {
-                                        primaryCurrency = code
-                                        allowedCurrencies = allowedCurrencies + code
-                                    }
-                                ),
-                                shape = CircleShape,
-                                color = when {
-                                    isPrimary -> accentColor
-                                    isSelected -> accentColor.copy(alpha = 0.3f)
-                                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                },
-                                contentColor = when {
-                                    isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
-                                    isSelected -> MaterialTheme.colorScheme.onSurface
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                                    if (isPrimary) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Text("Tip: Long-press a currency to set as primary.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                }
-            }
+            CurrencyManagementSection(
+                primaryCurrency = primaryCurrency,
+                onPrimaryCurrencyChange = { primaryCurrency = it },
+                allowedCurrencies = allowedCurrencies,
+                onAllowedCurrenciesChange = { allowedCurrencies = it },
+                accentColorHex = accentColorHex
+            )
 
             // Visual Identity
-            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                        Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
-                        Text("LIBRARY OF ICONS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                    }
-                    
-                    AeonTextField(
-                        value = iconSearchQuery,
-                        onValueChange = { iconSearchQuery = it },
-                        placeholder = "Search icons (e.g. 'bank', 'wallet')...",
-                        leadingIcon = Icons.Rounded.Search
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        filteredIcons.forEach { name ->
-                            val icon = iconMap[name]!!
-                            val isSelected = selectedIconName == name
-                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-
-                            Surface(
-                                modifier = Modifier.size(48.dp).clickable { selectedIconName = name },
-                                shape = CircleShape,
-                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                contentColor = if (isSelected) {
-                                    if (accentColor.isDark()) Color.White else Color.Black
-                                } else MaterialTheme.colorScheme.onSurfaceVariant
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
-                    
-                    // Preset Colors
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        presetColors.forEach { colorHex ->
-                            val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(android.graphics.Color.parseColor(colorHex)))
-                                    .clickable { accentColorHex = colorHex }
-                                    .border(
-                                        width = if (isSelected) 2.dp else 0.dp,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Rounded.Check, 
-                                        contentDescription = null, 
-                                        tint = if (Color(android.graphics.Color.parseColor(colorHex)).isDark()) Color.White else Color.Black,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
-                        Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(color))
-                        AeonTextField(
-                            value = accentColorHex,
-                            onValueChange = { 
-                                val formatted = if (it.startsWith("#")) it else "#$it"
-                                if (formatted.length <= 7) {
-                                    accentColorHex = formatted
-                                }
-                            },
-                            placeholder = "#004D5F",
-                            prefix = "HEX",
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+            VisualIdentitySection(
+                selectedIconName = selectedIconName,
+                onIconSelected = { selectedIconName = it },
+                accentColorHex = accentColorHex,
+                onColorSelected = { accentColorHex = it }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -399,42 +230,6 @@ fun AccountSetupScreen(
 }
 
 @Composable
-fun AeonTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    prefix: String? = null
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (leadingIcon != null) {
-                Icon(leadingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            if (prefix != null) {
-                Text(prefix, style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold))
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                decorationBox = { innerTextField ->
-                    if (value.isEmpty()) Text(placeholder, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                    innerTextField()
-                }
-            )
-        }
-    }
+fun AeonTextFieldPlaceholder() {
+    // Placeholder to remove the local AeonTextField
 }

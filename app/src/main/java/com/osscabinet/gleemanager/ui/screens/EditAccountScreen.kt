@@ -26,7 +26,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.gleemanager.ui.components.AeonTextField
+import com.osscabinet.gleemanager.ui.components.CurrencyManagementSection
+import com.osscabinet.gleemanager.ui.components.VisualIdentitySection
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -34,9 +38,11 @@ import com.osscabinet.gleemanager.ui.util.isDark
 fun EditAccountScreen(
     accountId: String,
     viewModel: AccountViewModel,
+    transactionViewModel: TransactionViewModel,
     onBackClick: () -> Unit
 ) {
     val accounts by viewModel.accounts.collectAsState()
+    val allTransactions by transactionViewModel.transactions.collectAsState()
     val account = accounts.find { it.id == accountId }
 
     if (account == null) {
@@ -49,37 +55,21 @@ fun EditAccountScreen(
     var accountName by remember { mutableStateOf(account.name) }
     var structureType by remember { mutableStateOf(account.structureType) }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var iconSearchQuery by remember { mutableStateOf("") }
     
     var primaryCurrency by remember { mutableStateOf(account.currencyCode) }
     var allowedCurrencies by remember { mutableStateOf(account.allowedCurrencies.toSet()) }
     
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
-    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL")
-    
-    val iconMap = mapOf(
-        "AccountBalance" to Icons.Rounded.AccountBalance,
-        "Wallet" to Icons.Rounded.Wallet,
-        "RocketLaunch" to Icons.Rounded.RocketLaunch,
-        "ShowChart" to Icons.AutoMirrored.Rounded.ShowChart,
-        "Payments" to Icons.Rounded.Payments,
-        "Savings" to Icons.Rounded.Savings,
-        "Paid" to Icons.Rounded.Paid,
-        "AccountBalanceWallet" to Icons.Rounded.AccountBalanceWallet,
-        "CreditCard" to Icons.Rounded.CreditCard,
-        "MonetizationOn" to Icons.Rounded.MonetizationOn,
-        "Analytics" to Icons.Rounded.Analytics,
-        "Foundation" to Icons.Rounded.Foundation,
-        "Stars" to Icons.Rounded.Stars,
-        "Diamond" to Icons.Rounded.Diamond,
-        "AccountTree" to Icons.Rounded.AccountTree,
-        "AutoGraph" to Icons.Rounded.AutoGraph
-    )
+
+    // Map to check if a currency is used in any transaction for this account
+    val currencyUsageMap = remember(allTransactions, accountId) {
+        allTransactions.filter { it.accountId == accountId }
+            .groupBy { it.currency }
+            .mapValues { it.value.isNotEmpty() }
+    }
     
     var selectedIconName by remember { mutableStateOf(account.icon) }
     var accentColorHex by remember { mutableStateOf(account.colorHex) }
-    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121")
 
     Scaffold(
         topBar = {
@@ -105,56 +95,83 @@ fun EditAccountScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            AeonTextField(
-                value = accountName,
-                onValueChange = { accountName = it },
-                placeholder = "Account Name"
-            )
-
-            // Structure Type
-            Box {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                        .clickable { isStructureMenuExpanded = true }
-                        .padding(horizontal = 20.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(structureType)
-                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
-                    }
-                }
-                DropdownMenu(expanded = isStructureMenuExpanded, onDismissRequest = { isStructureMenuExpanded = false }) {
-                    structureTypes.forEach { type ->
-                        DropdownMenuItem(text = { Text(type) }, onClick = { structureType = type; isStructureMenuExpanded = false })
-                    }
-                }
+            Column {
+                Text("CONFIGURATION", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                Text("Edit Account Identity", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
             }
 
-            // Visuals
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Icon", style = MaterialTheme.typography.titleSmall)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    iconMap.forEach { (name, icon) ->
-                        val isSelected = selectedIconName == name
-                        Surface(
-                            modifier = Modifier.size(48.dp).clickable { selectedIconName = name },
-                            shape = CircleShape,
-                            color = if (isSelected) Color(android.graphics.Color.parseColor(accentColorHex)) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null) }
+            // Account Name
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Account Name", style = MaterialTheme.typography.titleSmall)
+                AeonTextField(
+                    value = accountName,
+                    onValueChange = { accountName = it },
+                    placeholder = "e.g. Global Treasury"
+                )
+            }
+
+            // Structure Type
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Structure Type", style = MaterialTheme.typography.titleSmall)
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .clickable { isStructureMenuExpanded = true }
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(structureType, style = MaterialTheme.typography.bodyLarge)
+                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = isStructureMenuExpanded,
+                        onDismissRequest = { isStructureMenuExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.85f).background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        structureTypes.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    structureType = type
+                                    isStructureMenuExpanded = false
+                                }
+                            )
                         }
                     }
                 }
             }
+
+            // Currency Management
+            CurrencyManagementSection(
+                primaryCurrency = primaryCurrency,
+                onPrimaryCurrencyChange = { primaryCurrency = it },
+                allowedCurrencies = allowedCurrencies,
+                onAllowedCurrenciesChange = { allowedCurrencies = it },
+                accentColorHex = accentColorHex,
+                isEditMode = true,
+                currencyUsageMap = currencyUsageMap
+            )
+
+            // Visual Identity
+            VisualIdentitySection(
+                selectedIconName = selectedIconName,
+                onIconSelected = { selectedIconName = it },
+                accentColorHex = accentColorHex,
+                onColorSelected = { accentColorHex = it }
+            )
+
+            val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
 
             Button(
                 onClick = {
@@ -168,11 +185,17 @@ fun EditAccountScreen(
                     ))
                     onBackClick()
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(android.graphics.Color.parseColor(accentColorHex)))
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                shape = RoundedCornerShape(32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = currentAccentColor,
+                    contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
+                ),
+                enabled = accountName.isNotBlank() && primaryCurrency.isNotBlank()
             ) {
-                Text("SAVE CHANGES", fontWeight = FontWeight.Bold)
+                Text("SAVE CHANGES", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
     }

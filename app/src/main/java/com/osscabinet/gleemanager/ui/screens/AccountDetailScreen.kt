@@ -195,7 +195,8 @@ fun AccountDetailScreen(
                         .padding(16.dp),
                     shape = RoundedCornerShape(32.dp),
                     color = accountColor,
-                    contentColor = if (accountColor.isDark()) Color.White else Color.Black
+                    contentColor = if (accountColor.isDark()) Color.White else Color.Black,
+                    shadowElevation = 0.dp // No shadow for No-Line philosophy
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Row(
@@ -203,17 +204,24 @@ fun AccountDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text(account.structureType.uppercase(), style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
+                                Text(
+                                    account.structureType.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.5.sp
+                                    ),
+                                    color = LocalContentColor.current.copy(alpha = 0.7f)
+                                )
                                 Text(
                                     formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
-                                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
+                                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                                 )
                                 if (account.currencyCode != baseCurrency) {
                                     val rate = exchangeRates[account.currencyCode] ?: 1.0
                                     val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
                                     Text(
                                         "≈ ${formatCurrency(convertedBalance, baseCurrency)}",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                         color = LocalContentColor.current.copy(alpha = 0.7f)
                                     )
                                 }
@@ -232,13 +240,21 @@ fun AccountDetailScreen(
                             verticalAlignment = Alignment.Bottom
                         ) {
                             Column {
-                                Text("MONTHLY NET", style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
+                                Text(
+                                    "MONTHLY NET",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = LocalContentColor.current.copy(alpha = 0.7f)
+                                )
                                 Text(
                                     formatCurrency(netInAccountCurrency, account.currencyCode),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                 )
                             }
-                            Text(account.id.takeLast(4).let { "**** $it" }, style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.5f))
+                            Text(
+                                account.id.takeLast(4).let { "**** $it" },
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = LocalContentColor.current.copy(alpha = 0.5f)
+                            )
                         }
                     }
                 }
@@ -252,14 +268,13 @@ fun AccountDetailScreen(
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFF2E7D32).copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.1f))
+                        color = Color(0xFF2E7D32).copy(alpha = 0.12f)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Black)
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -274,14 +289,13 @@ fun AccountDetailScreen(
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFFC62828).copy(alpha = 0.08f),
-                        border = BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.1f))
+                        color = Color(0xFFC62828).copy(alpha = 0.12f)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                                Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Black)
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,7 +381,7 @@ fun AccountDetailScreen(
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
                                     finalBalances.forEach { (curr, bal) ->
-                                        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,34 +389,34 @@ fun AccountDetailScreen(
                                             ) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Surface(
-                                                        modifier = Modifier.size(32.dp),
+                                                        modifier = Modifier.size(40.dp),
                                                         shape = CircleShape,
                                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {
                                                             Text(
                                                                 getCurrencySymbol(curr),
-                                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                                             )
                                                         }
                                                     }
-                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Spacer(modifier = Modifier.width(16.dp))
                                                     Text(
                                                         curr,
-                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                                                     )
                                                 }
                                                 Column(horizontalAlignment = Alignment.End) {
                                                     Text(
                                                         formatCurrency(bal, curr),
-                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                                     )
                                                     if (curr != baseCurrency) {
                                                         val rate = exchangeRates[curr] ?: 1.0
                                                         val convertedBal = if (rate != 0.0) bal / rate else bal
                                                         Text(
                                                             "≈ ${formatCurrency(convertedBal, baseCurrency)}",
-                                                            style = MaterialTheme.typography.labelSmall,
+                                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                                             color = MaterialTheme.colorScheme.outline
                                                         )
                                                     }
@@ -437,18 +451,18 @@ fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency
         Column {
             Text(
                 curr,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
                 color = MaterialTheme.colorScheme.outline
             )
             Text(
                 formatCurrency(amount, curr),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
             )
         }
         if (curr != baseCurrency) {
             Text(
                 "≈ ${formatCurrency(inBase, baseCurrency)}",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.outline
             )
         }
@@ -465,10 +479,10 @@ fun TransactionItem(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onClick() },
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        onClick = onClick // Using the built-in onClick which handles ripple
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -492,19 +506,19 @@ fun TransactionItem(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(transaction.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(transaction.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Text(transaction.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black)
+                Text(transaction.category, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
             }
             
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
                     color = if (transaction.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     dateFormat.format(Date(transaction.timestamp)),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.outline
                 )
             }

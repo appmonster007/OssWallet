@@ -30,6 +30,8 @@ import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.util.toContainerColor
+import com.osscabinet.gleemanager.ui.util.toOnContainerColor
 import com.osscabinet.gleemanager.ui.components.AccountIconMap
 import com.osscabinet.gleemanager.domain.model.Account
 import kotlinx.coroutines.launch
@@ -164,16 +166,26 @@ fun AccountsViewScreen(
                     }
 
                     val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-                    val contentColor = if (accountColor.isDark()) Color.White else Color.Black
+                    val currentTheme by settingsViewModel.theme.collectAsState()
+                    val isDarkTheme = when (currentTheme) {
+                        "Light" -> false
+                        "Dark", "Amoled" -> true
+                        else -> isSystemInDarkTheme()
+                    }
+                    val isAmoled = currentTheme == "Amoled"
+                    
+                    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
+                    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
 
                     AccountCard(
                         title = account.name.uppercase(),
                         balance = formatCurrency(balanceInBase, baseCurrency),
                         currencyBalances = accountCurrencyBalances,
                         icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
-                        containerColor = accountColor,
+                        containerColor = containerColor,
                         contentColor = contentColor,
                         subAccounts = listOf(account.structureType),
+                        border = isAmoled,
                         onClick = { onAccountClick(account.id) }
                     )
                 }
@@ -204,7 +216,7 @@ fun AccountCard(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(32.dp),
-        border = if (border) BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)) else null
+        border = if (border) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(

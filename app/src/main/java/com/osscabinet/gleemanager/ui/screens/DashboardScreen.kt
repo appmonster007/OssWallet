@@ -30,6 +30,8 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.util.toContainerColor
+import com.osscabinet.gleemanager.ui.util.toOnContainerColor
 import com.osscabinet.gleemanager.ui.components.AccountIconMap
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -67,6 +69,7 @@ fun DashboardScreen(
     
     // Using AnalyticsViewModel to get exchange rates
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
 
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
@@ -139,7 +142,7 @@ fun DashboardScreen(
                     CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
                 }
                 item {
-                    AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, gridColumns)
+                    AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
                 }
                 item {
                     RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
@@ -371,7 +374,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>, gridColumns: Int = 2) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>, currentTheme: String, gridColumns: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -392,6 +395,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 incomeInAccountCurrency = 0.0,
                 expenseInAccountCurrency = 0.0,
                 baseCurrency = baseCurrency,
+                currentTheme = currentTheme,
                 onClick = onManageClick,
                 modifier = Modifier.fillMaxWidth(),
                 gridColumns = gridColumns
@@ -447,6 +451,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         incomeInAccountCurrency = incomeInAccountCurrency,
                         expenseInAccountCurrency = expenseInAccountCurrency,
                         baseCurrency = baseCurrency,
+                        currentTheme = currentTheme,
                         onClick = { onAccountClick(account.id) },
                         modifier = Modifier.weight(1f),
                         gridColumns = gridColumns
@@ -470,13 +475,21 @@ fun AccountGridItem(
     incomeInAccountCurrency: Double,
     expenseInAccountCurrency: Double,
     baseCurrency: String,
+    currentTheme: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     gridColumns: Int = 2
 ) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-    val isDark = accountColor.isDark()
-    val contentColor = if (isDark) Color.White else Color.Black
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+    
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
+    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
 
     // Scaling factors based on grid columns
     val titleFontSize = when(gridColumns) {
@@ -509,8 +522,9 @@ fun AccountGridItem(
         modifier = modifier
             .clickable { onClick() },
         shape = RoundedCornerShape(if (gridColumns > 2) 16.dp else 24.dp),
-        color = accountColor,
-        contentColor = contentColor
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
     ) {
         Column(modifier = Modifier.padding(padding)) {
             Row(

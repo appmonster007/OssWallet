@@ -8,7 +8,25 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -329,18 +347,33 @@ fun ColorWheel(
         val radius = constraints.maxWidth / 2f
         val center = androidx.compose.ui.geometry.Offset(radius, radius)
 
-        Canvas(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-            detectTapGestures { offset ->
-                val dx = offset.x - center.x
-                val dy = offset.y - center.y
-                val dist = sqrt(dx * dx + dy * dy)
-                if (dist <= radius) {
-                    val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
-                    val saturation = (dist / radius).coerceIn(0f, 1f)
-                    onColorSelected(Color.hsv(angle, saturation, 1f))
-                }
+        val hsv = remember(selectedColor) {
+            val hsvOut = FloatArray(3)
+            android.graphics.Color.colorToHSV(selectedColor.toArgb(), hsvOut)
+            hsvOut
+        }
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "CURRENT",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.outline,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                )
+                Text(
+                    String.format("#%06X", 0xFFFFFF and selectedColor.toArgb()),
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+                )
             }
-        }.pointerInput(Unit) {
+        }
+
+        Canvas(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
             detectDragGestures { change, _ ->
                 val dx = change.position.x - center.x
                 val dy = change.position.y - center.y
@@ -348,13 +381,26 @@ fun ColorWheel(
                 if (dist <= radius) {
                     val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
                     val saturation = (dist / radius).coerceIn(0f, 1f)
-                    onColorSelected(Color.hsv(angle, saturation, 1f))
+                    onColorSelected(Color.hsv(angle, saturation, hsv[2]))
+                }
+            }
+        }.pointerInput(Unit) {
+            detectTapGestures { offset ->
+                val dx = offset.x - center.x
+                val dy = offset.y - center.y
+                val dist = sqrt(dx * dx + dy * dy)
+                if (dist <= radius) {
+                    val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
+                    val saturation = (dist / radius).coerceIn(0f, 1f)
+                    onColorSelected(Color.hsv(angle, saturation, hsv[2]))
                 }
             }
         }) {
             val colors = listOf(
                 Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
             )
+            
+            // Full Spectrum Disc
             drawCircle(
                 brush = Brush.sweepGradient(colors, center),
                 radius = radius
@@ -368,21 +414,26 @@ fun ColorWheel(
                 radius = radius
             )
 
-            val hsv = FloatArray(3)
-            android.graphics.Color.colorToHSV(selectedColor.toArgb(), hsv)
+            // Handle Position
             val angle = (hsv[0] * PI / 180).toFloat()
             val r = hsv[1] * radius
             val handleX = center.x + r * cos(angle)
             val handleY = center.y + r * sin(angle)
 
+            // Glass Handle (3D Effect)
             drawCircle(
                 color = Color.White,
-                radius = 12.dp.toPx(),
+                radius = 18.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(handleX, handleY)
             )
             drawCircle(
-                color = Color.Black.copy(alpha = 0.5f),
-                radius = 12.dp.toPx(),
+                color = selectedColor,
+                radius = 14.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(handleX, handleY)
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.3f),
+                radius = 14.dp.toPx(),
                 center = androidx.compose.ui.geometry.Offset(handleX, handleY),
                 style = Stroke(width = 2.dp.toPx())
             )
@@ -474,7 +525,7 @@ fun AdvancedColorPickerDialog(
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             ColorWheel(
                                 selectedColor = Color.hsv(hsv.first, hsv.second, hsv.third),
@@ -485,8 +536,37 @@ fun AdvancedColorPickerDialog(
                                     val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
                                     onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
                                 },
-                                modifier = Modifier.size(240.dp)
+                                modifier = Modifier.size(220.dp)
                             )
+                            
+                            // Brightness Slider for Wheel Page
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(Icons.Rounded.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                                Slider(
+                                    value = hsv.third,
+                                    onValueChange = { 
+                                        hsv = hsv.copy(third = it)
+                                        val colorInt = android.graphics.Color.HSVToColor(floatArrayOf(hsv.first, hsv.second, hsv.third))
+                                        onColorSelected(String.format("#%06X", 0xFFFFFF and colorInt))
+                                    },
+                                    valueRange = 0f..1f,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color.White,
+                                        activeTrackColor = Color.hsv(hsv.first, hsv.second, 1f),
+                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                )
+                                Text(
+                                    "${(hsv.third * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.width(36.dp)
+                                )
+                            }
                         }
                     }
                 }

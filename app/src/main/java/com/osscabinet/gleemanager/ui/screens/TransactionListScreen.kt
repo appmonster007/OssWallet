@@ -127,16 +127,18 @@ fun TransactionListScreen(
                     Text("No records found", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                 }
             } else {
+                val groupedTransactions = remember(transactions) {
+                    transactions.sortedByDescending { it.timestamp }.groupBy { 
+                        SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date(it.timestamp)) 
+                    }
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    val grouped = transactions.sortedByDescending { it.timestamp }.groupBy { 
-                        SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date(it.timestamp)) 
-                    }
-
-                    grouped.forEach { (date, items) ->
-                        item {
+                    groupedTransactions.forEach { (date, items) ->
+                        item(key = date) {
                             Text(
                                 text = date.uppercase(),
                                 modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
@@ -145,7 +147,7 @@ fun TransactionListScreen(
                                 letterSpacing = 1.sp
                             )
                         }
-                        items(items) { transaction ->
+                        items(items, key = { it.id }) { transaction ->
                             TransactionItemEditorial(
                                 transaction = transaction,
                                 accountName = accountMap[transaction.accountId] ?: "Unknown",

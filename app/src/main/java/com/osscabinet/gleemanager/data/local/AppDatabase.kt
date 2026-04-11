@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.osscabinet.gleemanager.data.local.dao.*
 import com.osscabinet.gleemanager.data.local.entity.*
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
     entities = [
@@ -19,7 +19,7 @@ import net.sqlcipher.database.SupportFactory
         TagEntity::class,
         ProfileEntity::class
     ],
-    version = 13,
+    version = 18,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -33,12 +33,16 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
 
     companion object {
+        init {
+            System.loadLibrary("sqlcipher")
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context, passphrase: ByteArray): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val factory = SupportFactory(passphrase)
+                val factory = SupportOpenHelperFactory(passphrase)
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,

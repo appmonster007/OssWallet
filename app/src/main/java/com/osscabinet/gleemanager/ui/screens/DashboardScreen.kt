@@ -3,8 +3,10 @@ package com.osscabinet.gleemanager.ui.screens
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -49,7 +51,6 @@ fun DashboardScreen(
     settingsViewModel: com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 ) {
-    val scrollState = rememberScrollState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val accounts by accountViewModel.accounts.collectAsState()
@@ -117,22 +118,34 @@ fun DashboardScreen(
                 }
             }
         ) { innerPadding ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(MaterialTheme.colorScheme.background)
-                    .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
-                AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, gridColumns)
-                RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
-                BudgetTrackingSection(baseCurrency)
-                Spacer(modifier = Modifier.height(16.dp))
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                }
+                item {
+                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                }
+                item {
+                    CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
+                }
+                item {
+                    AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, gridColumns)
+                }
+                item {
+                    RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
+                }
+                item {
+                    BudgetTrackingSection(baseCurrency)
+                }
             }
         }
     }

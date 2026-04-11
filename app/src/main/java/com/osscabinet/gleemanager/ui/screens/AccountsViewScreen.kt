@@ -2,6 +2,8 @@ package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -110,19 +112,23 @@ fun AccountsViewScreen(
                 }
             }
         ) { innerPadding ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                item {
+                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                }
                 
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                item {
+                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                }
+                
+                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -133,46 +139,50 @@ fun AccountsViewScreen(
                             Text("Manage", style = MaterialTheme.typography.labelLarge)
                         }
                     }
+                }
 
-                    nonArchivedAccounts.forEach { account ->
-                        val accountTransactions = transactions.filter { it.accountId == account.id }
-                        
-                        val supportedCurrencies = remember(account, accountTransactions) {
-                            val list = mutableSetOf<String>()
-                            list.add(account.currencyCode)
-                            list.addAll(account.allowedCurrencies)
-                            accountTransactions.forEach { list.add(it.currency) }
-                            list.toList().sorted()
-                        }
-
-                        val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
-                            val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
-                            if (curr == account.currencyCode) account.initialBalance + txSum else txSum
-                        }
-
-                        val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
-                            val rate = exchangeRates[curr] ?: 1.0
-                            if (rate != 0.0) amount / rate else amount
-                        }
-
-                        val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-                        val contentColor = if (accountColor.isDark()) Color.White else Color.Black
-
-                        AccountCard(
-                            title = account.name.uppercase(),
-                            balance = formatCurrency(balanceInBase, baseCurrency),
-                            currencyBalances = accountCurrencyBalances,
-                            icon = when(account.structureType) {
-                                "Savings" -> Icons.Default.Savings
-                                "Credit Card" -> Icons.Default.CreditCard
-                                else -> Icons.Default.AccountBalance
-                            },
-                            containerColor = accountColor,
-                            contentColor = contentColor,
-                            subAccounts = listOf(account.structureType),
-                            onClick = { onAccountClick(account.id) }
-                        )
+                items(nonArchivedAccounts, key = { it.id }) { account ->
+                    val accountTransactions = transactions.filter { it.accountId == account.id }
+                    
+                    val supportedCurrencies = remember(account, accountTransactions) {
+                        val list = mutableSetOf<String>()
+                        list.add(account.currencyCode)
+                        list.addAll(account.allowedCurrencies)
+                        accountTransactions.forEach { list.add(it.currency) }
+                        list.toList().sorted()
                     }
+
+                    val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
+                        val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
+                        if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+                    }
+
+                    val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
+                        val rate = exchangeRates[curr] ?: 1.0
+                        if (rate != 0.0) amount / rate else amount
+                    }
+
+                    val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
+                    val contentColor = if (accountColor.isDark()) Color.White else Color.Black
+
+                    AccountCard(
+                        title = account.name.uppercase(),
+                        balance = formatCurrency(balanceInBase, baseCurrency),
+                        currencyBalances = accountCurrencyBalances,
+                        icon = when(account.structureType) {
+                            "Savings" -> Icons.Default.Savings
+                            "Credit Card" -> Icons.Default.CreditCard
+                            else -> Icons.Default.AccountBalance
+                        },
+                        containerColor = accountColor,
+                        contentColor = contentColor,
+                        subAccounts = listOf(account.structureType),
+                        onClick = { onAccountClick(account.id) }
+                    )
+                }
+                
+                item {
+                    Spacer(modifier = Modifier.height(64.dp)) // Space for FAB
                 }
             }
         }

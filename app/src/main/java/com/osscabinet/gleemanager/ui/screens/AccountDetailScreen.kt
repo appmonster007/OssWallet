@@ -182,166 +182,174 @@ fun AccountDetailScreen(
                 CircularProgressIndicator()
             }
         } else {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                // Hero Account Card
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(32.dp),
-                    color = accountColor,
-                    contentColor = if (accountColor.isDark()) Color.White else Color.Black,
-                    shadowElevation = 0.dp // No shadow for No-Line philosophy
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(
-                                    account.structureType.uppercase(),
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = 1.5.sp
-                                    ),
-                                    color = LocalContentColor.current.copy(alpha = 0.7f)
-                                )
-                                Text(
-                                    formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
-                                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
-                                )
-                                if (account.currencyCode != baseCurrency) {
-                                    val rate = exchangeRates[account.currencyCode] ?: 1.0
-                                    val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
+                item {
+                    // Hero Account Card
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(32.dp),
+                        color = accountColor,
+                        contentColor = if (accountColor.isDark()) Color.White else Color.Black,
+                        shadowElevation = 0.dp // No shadow for No-Line philosophy
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
                                     Text(
-                                        "≈ ${formatCurrency(convertedBalance, baseCurrency)}",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        account.structureType.uppercase(),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.5.sp
+                                        ),
                                         color = LocalContentColor.current.copy(alpha = 0.7f)
                                     )
+                                    Text(
+                                        formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
+                                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
+                                    )
+                                    if (account.currencyCode != baseCurrency) {
+                                        val rate = exchangeRates[account.currencyCode] ?: 1.0
+                                        val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
+                                        Text(
+                                            "≈ ${formatCurrency(convertedBalance, baseCurrency)}",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = LocalContentColor.current.copy(alpha = 0.7f)
+                                        )
+                                    }
                                 }
+                                Icon(
+                                    iconMap[account.icon] ?: Icons.Rounded.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = LocalContentColor.current.copy(alpha = 0.7f)
+                                )
                             }
-                            Icon(
-                                iconMap[account.icon] ?: Icons.Rounded.AccountBalance,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = LocalContentColor.current.copy(alpha = 0.7f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            Column {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Bottom
+                              ) {
+                                Column {
+                                    Text(
+                                        "MONTHLY NET",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = LocalContentColor.current.copy(alpha = 0.7f)
+                                    )
+                                    Text(
+                                        formatCurrency(netInAccountCurrency, account.currencyCode),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                                    )
+                                }
                                 Text(
-                                    "MONTHLY NET",
+                                    account.id.takeLast(4).let { "**** $it" },
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = LocalContentColor.current.copy(alpha = 0.7f)
-                                )
-                                Text(
-                                    formatCurrency(netInAccountCurrency, account.currencyCode),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                                    color = LocalContentColor.current.copy(alpha = 0.5f)
                                 )
                             }
-                            Text(
-                                account.id.takeLast(4).let { "**** $it" },
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = LocalContentColor.current.copy(alpha = 0.5f)
-                            )
                         }
                     }
                 }
 
-                // Flow Breakdown
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Income Section
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFF2E7D32).copy(alpha = 0.12f)
+                item {
+                    // Flow Breakdown
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Black)
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                incomeBreakdown.forEach { (curr, amount, inBase) ->
-                                    FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                        // Income Section
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0xFF2E7D32).copy(alpha = 0.12f)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Black)
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    incomeBreakdown.forEach { (curr, amount, inBase) ->
+                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    // Expense Section
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0xFFC62828).copy(alpha = 0.12f)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Black)
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                expenseBreakdown.forEach { (curr, amount, inBase) ->
-                                    FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                        // Expense Section
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0xFFC62828).copy(alpha = 0.12f)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Black)
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    expenseBreakdown.forEach { (curr, amount, inBase) ->
+                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Transaction History
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "TRANSACTION HISTORY",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        "${accountTransactions.size} total",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    // Transaction History Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "TRANSACTION HISTORY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            "${accountTransactions.size} total",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
 
                 if (accountTransactions.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("No transactions yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("No transactions yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                            }
                         }
                     }
                 }
 
-                // Group by currency to show separate balances
-                val finalBalances by remember(account, accountTransactions, supportedCurrencies) {
-                    derivedStateOf {
-                        val currentAccount = account ?: return@derivedStateOf emptyMap<String, Double>()
+                item {
+                    // Group by currency to show separate balances
+                    val finalBalances = remember(account, accountTransactions, supportedCurrencies) {
+                        val currentAccount = account ?: return@remember emptyMap<String, Double>()
                         val initialBalance = currentAccount.initialBalance
                         
                         val txsByCurrency = accountTransactions.groupBy { it.currency }
@@ -350,91 +358,88 @@ fun AccountDetailScreen(
                             if (curr == currentAccount.currencyCode) initialBalance + txSum else txSum
                         }
                     }
-                }
 
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    item {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(28.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                            ) {
-                                Column(modifier = Modifier.padding(20.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "CURRENCY BREAKDOWN",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            letterSpacing = 0.5.sp
-                                        )
-                                        Icon(
-                                            Icons.Rounded.AccountBalanceWallet,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    finalBalances.forEach { (curr, bal) ->
-                                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Surface(
-                                                        modifier = Modifier.size(40.dp),
-                                                        shape = CircleShape,
-                                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                                    ) {
-                                                        Box(contentAlignment = Alignment.Center) {
-                                                            Text(
-                                                                getCurrencySymbol(curr),
-                                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                                                            )
-                                                        }
-                                                    }
-                                                    Spacer(modifier = Modifier.width(16.dp))
-                                                    Text(
-                                                        curr,
-                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                                    )
-                                                }
-                                                Column(horizontalAlignment = Alignment.End) {
-                                                    Text(
-                                                        formatCurrency(bal, curr),
-                                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                                                    )
-                                                    if (curr != baseCurrency) {
-                                                        val rate = exchangeRates[curr] ?: 1.0
-                                                        val convertedBal = if (rate != 0.0) bal / rate else bal
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(28.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "CURRENCY BREAKDOWN",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Icon(
+                                        Icons.Rounded.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                finalBalances.forEach { (curr, bal) ->
+                                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Surface(
+                                                    modifier = Modifier.size(40.dp),
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
                                                         Text(
-                                                            "≈ ${formatCurrency(convertedBal, baseCurrency)}",
-                                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                                            color = MaterialTheme.colorScheme.outline
+                                                            getCurrencySymbol(curr),
+                                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                                         )
                                                     }
+                                                }
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Text(
+                                                    curr,
+                                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                                )
+                                            }
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text(
+                                                    formatCurrency(bal, curr),
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                                                )
+                                                if (curr != baseCurrency) {
+                                                    val rate = exchangeRates[curr] ?: 1.0
+                                                    val convertedBal = if (rate != 0.0) bal / rate else bal
+                                                    Text(
+                                                        "≈ ${formatCurrency(convertedBal, baseCurrency)}",
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                        color = MaterialTheme.colorScheme.outline
+                                                    )
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-                    items(accountTransactions.sortedByDescending { it.timestamp }) { transaction ->
-                        TransactionItem(
-                            transaction = transaction,
-                            onClick = { onEditTransactionClick(transaction.id) }
-                        )
-                    }
+                }
+
+                items(accountTransactions.sortedByDescending { it.timestamp }, key = { it.id }) { transaction ->
+                    TransactionItem(
+                        transaction = transaction,
+                        onClick = { onEditTransactionClick(transaction.id) }
+                    )
                 }
             }
         }

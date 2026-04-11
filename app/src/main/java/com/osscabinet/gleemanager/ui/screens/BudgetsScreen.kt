@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Budget
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
+import com.osscabinet.gleemanager.ui.util.formatCurrency
+import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import java.util.*
 
@@ -27,15 +29,12 @@ import java.util.*
 @Composable
 fun BudgetsScreen(
     viewModel: BudgetViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit,
     onEditBudgetClick: (String) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsState()
-    // We should probably get the base currency here too if we want it to be accurate
-    // But for now let's assume USD or get it from a shared source if available.
-    // Since we don't have easy access to settingsViewModel here without passing it, 
-    // let's just use the symbol from the first budget if available or default to $
-    val currencySymbol = if (budgets.isNotEmpty()) getCurrencySymbol("USD") else "$" 
+    val baseCurrency by settingsViewModel.currency.collectAsState()
 
     Scaffold(
         topBar = {
@@ -76,20 +75,20 @@ fun BudgetsScreen(
                 }
             } else {
                 items(budgets) { budget ->
-                    BudgetGoalCard(budget, currencySymbol, onClick = { onEditBudgetClick(budget.category) })
+                    BudgetGoalCard(budget, baseCurrency, onClick = { onEditBudgetClick(budget.category) })
                 }
             }
 
             item {
                 // We'll use a local version of InsightSection to ensure theme consistency
-                BudgetInsightSection(currencySymbol)
+                BudgetInsightSection(baseCurrency)
             }
         }
     }
 }
 
 @Composable
-fun BudgetGoalCard(budget: Budget, currencySymbol: String, onClick: () -> Unit) {
+fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
     val progressColor = if (budget.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
     Surface(
@@ -102,7 +101,7 @@ fun BudgetGoalCard(budget: Budget, currencySymbol: String, onClick: () -> Unit) 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(budget.category, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "$currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.spent)} / $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.limit)}",
+                    "${formatCurrency(budget.spent, currency)} / ${formatCurrency(budget.limit, currency)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -119,7 +118,7 @@ fun BudgetGoalCard(budget: Budget, currencySymbol: String, onClick: () -> Unit) 
             )
             
             Text(
-                text = if (!budget.isOverBudget) "You have $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.remaining)} remaining" else "Over budget by $currencySymbol${String.format(Locale.getDefault(), "%,.0f", budget.spent - budget.limit)}",
+                text = if (!budget.isOverBudget) "You have ${formatCurrency(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrency(budget.spent - budget.limit, currency)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
             )
@@ -128,7 +127,7 @@ fun BudgetGoalCard(budget: Budget, currencySymbol: String, onClick: () -> Unit) 
 }
 
 @Composable
-fun BudgetInsightSection(currencySymbol: String) {
+fun BudgetInsightSection(currency: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
@@ -145,7 +144,7 @@ fun BudgetInsightSection(currencySymbol: String) {
                 Text("OPTIMIZATION TIP", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${currencySymbol}100 to your Savings goal.",
+                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrency(100.0, currency)} to your Savings goal.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
@@ -315,7 +316,7 @@ fun TransactionItemEditorial(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${if (transaction.isIncome) "+" else "-"} ${getCurrencySymbol(transaction.currency)}${String.format(Locale.getDefault(), "%,.2f", transaction.amount)}",
+                    text = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFeatureSettings = "tnum"

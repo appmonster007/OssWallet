@@ -29,6 +29,12 @@ android {
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
     }
 
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

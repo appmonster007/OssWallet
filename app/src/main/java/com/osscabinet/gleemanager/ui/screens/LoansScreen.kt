@@ -20,8 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Loan
 import com.osscabinet.gleemanager.domain.model.LoanType
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.LoanViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,9 +31,11 @@ import java.util.*
 @Composable
 fun LoansScreen(
     viewModel: LoanViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
     val loans by viewModel.loans.collectAsState()
+    val baseCurrency by settingsViewModel.currency.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -65,7 +69,7 @@ fun LoansScreen(
             val totalDebt = loans.filter { it.type == LoanType.DEBT }.sumOf { it.principal - it.repayments }
             val totalCredit = loans.filter { it.type == LoanType.LOAN }.sumOf { it.principal - it.repayments }
 
-            LoanSummaryHeader(totalDebt, totalCredit)
+            LoanSummaryHeader(totalDebt, totalCredit, baseCurrency)
 
             if (loans.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -91,6 +95,7 @@ fun LoansScreen(
 
     if (showAddDialog) {
         AddLoanDialog(
+            defaultCurrency = baseCurrency,
             onDismiss = { showAddDialog = false },
             onConfirm = { title, amount, rate, type ->
                 viewModel.addLoan(title, amount, rate, System.currentTimeMillis() + 2592000000L, type)
@@ -101,7 +106,7 @@ fun LoansScreen(
 }
 
 @Composable
-fun LoanSummaryHeader(debt: Double, credit: Double) {
+fun LoanSummaryHeader(debt: Double, credit: Double, currency: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -112,19 +117,21 @@ fun LoanSummaryHeader(debt: Double, credit: Double) {
             modifier = Modifier.weight(1f),
             label = "TOTAL DEBT",
             amount = debt,
+            currency = currency,
             color = Color(0xFFC62828)
         )
         SummaryCard(
             modifier = Modifier.weight(1f),
             label = "TOTAL CREDIT",
             amount = credit,
+            currency = currency,
             color = Color(0xFF2E7D32)
         )
     }
 }
 
 @Composable
-fun SummaryCard(modifier: Modifier, label: String, amount: Double, color: Color) {
+fun SummaryCard(modifier: Modifier, label: String, amount: Double, currency: String, color: Color) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -133,7 +140,7 @@ fun SummaryCard(modifier: Modifier, label: String, amount: Double, color: Color)
         Column(modifier = Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = color)
             Text(
-                "$${String.format(Locale.getDefault(), "%,.0f", amount)}",
+                formatCurrency(amount, currency),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
             )
         }
@@ -174,11 +181,11 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "$${String.format(Locale.getDefault(), "%,.0f", loan.repayments)} / $${String.format(Locale.getDefault(), "%,.0f", loan.principal)}",
+                    "${formatCurrency(loan.repayments, loan.currency)} / ${formatCurrency(loan.principal, loan.currency)}",
                     style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                 )
                 TextButton(onClick = onRepayClick) {
-                    Text("REPAY $100", color = color)
+                    Text("REPAY ${formatCurrency(100.0, loan.currency)}", color = color)
                 }
             }
         }
@@ -186,7 +193,7 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 }
 
 @Composable
-fun AddLoanDialog(onDismiss: () -> Unit, onConfirm: (String, Double, Double, LoanType) -> Unit) {
+fun AddLoanDialog(defaultCurrency: String, onDismiss: () -> Unit, onConfirm: (String, Double, Double, LoanType) -> Unit) {
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var rate by remember { mutableStateOf("") }

@@ -24,6 +24,7 @@ import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
@@ -193,7 +194,7 @@ fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Tran
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", expectedBalance)}",
+                        formatCurrency(expectedBalance, baseCurrency),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
                     )
                 }
@@ -206,7 +207,7 @@ fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Tran
                 )
                 
                 Text(
-                    "You are on track to save 12% more than last month. Current spending trend is down by ${getCurrencySymbol(baseCurrency)}420.",
+                    "You are on track to save 12% more than last month. Current spending trend is down by ${formatCurrency(420.0, baseCurrency)}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -236,20 +237,10 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.outline
         )
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                "${getCurrencySymbol(baseCurrency)}${String.format("%,.0f", totalBalanceInBase)}",
-                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Text(
-                ".${String.format("%02d", ((Math.abs(totalBalanceInBase) % 1) * 100).toInt())}",
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
+        Text(
+            formatCurrency(totalBalanceInBase, baseCurrency),
+            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Surface(
@@ -325,14 +316,14 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                                 if (currency != baseCurrency) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.0f", inBase)}",
+                                        "≈ ${formatCurrency(inBase, baseCurrency)}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                 }
                             }
                             Text(
-                                "${getCurrencySymbol(currency)}${String.format("%,.2f", amount)}",
+                                formatCurrency(amount, currency),
                                 style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
                             )
                         }
@@ -388,7 +379,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
 
                 AccountCard(
                     title = account.name.uppercase(),
-                    balance = "${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", balanceInBase)}",
+                    balance = formatCurrency(balanceInBase, baseCurrency),
                     currencyBalances = accountCurrencyBalances,
                     icon = when(account.structureType) {
                         "Savings" -> Icons.Default.Savings
@@ -479,7 +470,7 @@ fun AccountCard(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                "${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}",
+                                formatCurrency(bal, curr),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = contentColor
@@ -535,7 +526,7 @@ fun RecentActivitySection(onViewAll: () -> Unit, baseCurrency: String, transacti
             ActivityItem(
                 title = transaction.title,
                 sub = "${transaction.category} • $displayDate",
-                amount = "${if (transaction.isIncome) "+" else "-"} ${getCurrencySymbol(transaction.currency)}${String.format("%,.2f", transaction.amount)}",
+                amount = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                 account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
                 icon = icon,
                 iconBg = if (transaction.isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -617,7 +608,7 @@ fun BudgetTrackingSection(baseCurrency: String) {
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            "Your savings rate is 15% higher than last quarter. Consider moving ${getCurrencySymbol(baseCurrency)}5,000 to your Portfolio for 4.2% APY.",
+                            "Your savings rate is 15% higher than last quarter. Consider moving ${formatCurrency(5000.0, baseCurrency)} to your Portfolio for 4.2% APY.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -633,7 +624,7 @@ fun BudgetProgress(label: String, current: Float, total: Float, color: Color, ba
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${getCurrencySymbol(baseCurrency)}${current.toInt()} / ${getCurrencySymbol(baseCurrency)}${total.toInt()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text("${formatCurrency(current.toDouble(), baseCurrency)} / ${formatCurrency(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
         LinearProgressIndicator(
             progress = current / total,

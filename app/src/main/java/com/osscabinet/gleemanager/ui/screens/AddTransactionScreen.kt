@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.components.CalculatorDialog
 import com.osscabinet.gleemanager.ui.components.OCRScanner
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
@@ -383,7 +384,7 @@ fun AddTransactionScreen(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(account.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text("${getCurrencySymbol(account.currencyCode)}${String.format("%.2f", account.balance)}", style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.outline)
+                                Text(formatCurrency(account.balance, account.currencyCode), style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.outline)
                             }
                         }
                     }

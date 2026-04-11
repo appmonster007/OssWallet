@@ -45,6 +45,7 @@ import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.formatAmount
+import com.osscabinet.gleemanager.ui.util.isDark
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
 import java.text.SimpleDateFormat
@@ -281,7 +282,7 @@ fun AccountPickerSheet(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            Text("SELECT LEDGER", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            AeonSectionHeader(title = "Select Ledger")
             Spacer(modifier = Modifier.height(24.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(sortedAccounts) { account ->
@@ -526,14 +527,14 @@ fun CategoryPickerSheet(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            Text("CLASSIFICATION", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            AeonSectionHeader(title = "Classification")
             Spacer(modifier = Modifier.height(32.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(categoryIcons.toList()) { (name, icon) ->
+                items(categoryIcons.toList().sortedBy { it.first }) { (name, icon) ->
                     CategoryItem(
                         name = name,
                         icon = icon,
@@ -590,6 +591,167 @@ fun AeonFlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurr
             formatCurrencyRight(amount, curr),
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
         )
+    }
+}
+
+@Composable
+fun AeonSectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+            letterSpacing = 1.sp
+        )
+        trailing?.invoke()
+    }
+}
+
+@Composable
+fun AeonAccountHeroCard(
+    account: Account,
+    balance: Double,
+    netBalance: Double,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>,
+    modifier: Modifier = Modifier
+) {
+    val accountColor = try {
+        Color(android.graphics.Color.parseColor(account.colorHex))
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+
+    val isDark = accountColor.isDark()
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        color = accountColor,
+        contentColor = if (isDark) Color.White else Color.Black,
+        shadowElevation = 0.dp
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        account.structureType.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.5.sp
+                        ),
+                        color = LocalContentColor.current.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        formatCurrencyRight(balance, account.currencyCode),
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
+                    )
+                    if (account.currencyCode != baseCurrency) {
+                        val rate = exchangeRates[baseCurrency] ?: 1.0
+                        val convertedBalance = balance * rate
+                        Text(
+                            "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = LocalContentColor.current.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                Icon(
+                    AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = LocalContentColor.current.copy(alpha = 0.7f)
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        "MONTHLY NET",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = LocalContentColor.current.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        formatCurrencyRight(netBalance, account.currencyCode),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                    )
+                }
+                Text(
+                    account.id.takeLast(4).let { "**** $it" },
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonCurrencyBreakdown(
+    balances: Map<String, Double>,
+    baseCurrency: String,
+    accountCurrency: String,
+    exchangeRates: Map<String, Double>,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                "CURRENCY BREAKDOWN",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                letterSpacing = 0.5.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            balances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            curr,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                formatCurrencyRight(bal, curr),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                            )
+                            if (accountCurrency != baseCurrency) {
+                                val rate = exchangeRates[baseCurrency] ?: 1.0
+                                val convertedBal = bal * rate
+                                Text(
+                                    "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

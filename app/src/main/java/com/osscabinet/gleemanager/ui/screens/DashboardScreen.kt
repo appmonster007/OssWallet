@@ -176,11 +176,7 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
     }
 
     Column {
-        Text(
-            "TOTAL NET WORTH",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
+        AeonSectionHeader(title = "TOTAL NET WORTH")
         Text(
             formatCurrencyRight(totalBalanceInBase, baseCurrency),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
@@ -241,7 +237,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 
     if (allSupportedCurrencies.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("AGGREGATED CURRENCY BALANCES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            AeonSectionHeader(title = "AGGREGATED CURRENCY BALANCES")
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -284,16 +280,14 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 @Composable
 fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>, currentTheme: String, gridColumns: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Accounts", style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = onManageClick) {
-                Text("Manage", style = MaterialTheme.typography.labelLarge)
+        AeonSectionHeader(
+            title = "Accounts",
+            trailing = {
+                TextButton(onClick = onManageClick) {
+                    Text("Manage", style = MaterialTheme.typography.labelLarge)
+                }
             }
-        }
+        )
 
         if (accounts.isEmpty()) {
             AccountGridItem(
@@ -574,16 +568,14 @@ fun RecentActivitySection(onRecordsClick: () -> Unit, transactions: List<Transac
     val today = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date())
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Recent Activity", style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = onRecordsClick) {
-                Text("View all", color = MaterialTheme.colorScheme.primary)
+        AeonSectionHeader(
+            title = "Recent Activity",
+            trailing = {
+                TextButton(onClick = onRecordsClick) {
+                    Text("View all", color = MaterialTheme.colorScheme.primary)
+                }
             }
-        }
+        )
 
         recentTransactions.forEach { transaction ->
             val dateStr = dateFormat.format(Date(transaction.timestamp))
@@ -608,7 +600,7 @@ fun RecentActivitySection(onRecordsClick: () -> Unit, transactions: List<Transac
 @Composable
 fun BudgetTrackingSection(baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Budget Tracking", style = MaterialTheme.typography.titleMedium)
+        AeonSectionHeader(title = "Budget Tracking")
 
         Card(
             modifier = Modifier.fillMaxWidth(),

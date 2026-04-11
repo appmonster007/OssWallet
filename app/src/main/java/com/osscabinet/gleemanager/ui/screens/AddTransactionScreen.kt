@@ -749,10 +749,10 @@ fun AddTransactionScreen(
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                Text("QUICK TEMPLATES", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                AeonSectionHeader(title = "Quick Templates")
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(templates) { (name, info) ->
+                    items(templates.sortedBy { it.first }) { (name, info) ->
                         val (icon, cat) = info
                         Surface(
                             modifier = Modifier
@@ -788,7 +788,7 @@ fun AddTransactionScreen(
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
-                Text("SELECT TRANSACTION TO LINK", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                AeonSectionHeader(title = "Select Transaction To Link")
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(transactions.sortedByDescending { it.timestamp }) { tx ->

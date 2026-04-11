@@ -9,5 +9,7 @@ data class Account(
     val structureType: String,
     val colorHex: String,
     val icon: String,
-    val allowedCurrencies: List<String> = emptyList()
+    val allowedCurrencies: List<String> = emptyList(),
+    val isArchived: Boolean = false,
+    val displayOrder: Int = 0
 )

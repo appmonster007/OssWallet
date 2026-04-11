@@ -8,4 +8,5 @@ interface AccountRepository {
     suspend fun insertAccount(account: Account, profileId: Int)
     suspend fun updateBalance(accountId: String, amount: Double)
     suspend fun deleteAccount(accountId: String)
+    suspend fun updateAccounts(accounts: List<Account>, profileId: Int)
 }

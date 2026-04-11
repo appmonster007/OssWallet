@@ -24,6 +24,10 @@ class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountReposit
         accountDao.getAccountById(accountId)?.let { accountDao.deleteAccount(it) }
     }
 
+    override suspend fun updateAccounts(accounts: List<Account>, profileId: Int) {
+        accountDao.upsertAccounts(accounts.map { it.toEntity(profileId) })
+    }
+
     private fun AccountEntity.toDomain() = Account(
         id = id,
         name = name,
@@ -33,7 +37,9 @@ class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountReposit
         structureType = structureType,
         colorHex = colorHex,
         icon = icon,
-        allowedCurrencies = allowedCurrencies.split(",").filter { it.isNotBlank() }
+        allowedCurrencies = allowedCurrencies.split(",").filter { it.isNotBlank() },
+        isArchived = isArchived,
+        displayOrder = displayOrder
     )
 
     private fun Account.toEntity(profileId: Int) = AccountEntity(
@@ -45,6 +51,9 @@ class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountReposit
         structureType = structureType,
         colorHex = colorHex,
         icon = icon,
-        allowedCurrencies = allowedCurrencies.joinToString(",")
+        allowedCurrencies = allowedCurrencies.joinToString(","),
+        profileId = profileId,
+        isArchived = isArchived,
+        displayOrder = displayOrder
     )
 }

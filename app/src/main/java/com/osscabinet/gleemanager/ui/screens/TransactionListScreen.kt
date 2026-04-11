@@ -107,14 +107,23 @@ fun TransactionListScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(periodText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                if (dateRange.first != null) {
-                    TextButton(onClick = { viewModel.clearFilters() }) {
-                        Text("Clear", style = MaterialTheme.typography.labelSmall)
+                AeonSectionHeader(
+                    title = periodText,
+                    trailing = {
+                        if (dateRange.first != null) {
+                            TextButton(onClick = { viewModel.clearFilters() }) {
+                                Text("Clear", style = MaterialTheme.typography.labelSmall)
+                            }
+                        } else {
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
-                } else {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.outline)
-                }
+                )
             }
 
             if (transactions.isEmpty()) {
@@ -132,17 +141,17 @@ fun TransactionListScreen(
                 }
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     groupedTransactions.forEach { (date, items) ->
                         item(key = date) {
-                            Text(
-                                text = date.uppercase(),
-                                modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                letterSpacing = 1.sp
+                            AeonSectionHeader(
+                                title = date,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                             )
                         }
                         items(items, key = { it.id }) { transaction ->
@@ -153,8 +162,7 @@ fun TransactionListScreen(
                                 isIncome = transaction.isIncome,
                                 account = accountMap[transaction.accountId]?.uppercase(),
                                 icon = categoryIcons[transaction.category],
-                                onClick = { onEditTransactionClick(transaction.id) },
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                onClick = { onEditTransactionClick(transaction.id) }
                             )
                         }
                     }

@@ -101,31 +101,6 @@ fun AccountDetailScreen(
         }
     }
 
-    val accountColor = try {
-        Color(android.graphics.Color.parseColor(account?.colorHex ?: "#004D5F"))
-    } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary
-    }
-
-    val iconMap = mapOf(
-        "AccountBalance" to Icons.Rounded.AccountBalance,
-        "Wallet" to Icons.Rounded.Wallet,
-        "RocketLaunch" to Icons.Rounded.RocketLaunch,
-        "ShowChart" to Icons.Rounded.ShowChart,
-        "Payments" to Icons.Rounded.Payments,
-        "Savings" to Icons.Rounded.Savings,
-        "Paid" to Icons.Rounded.Paid,
-        "AccountBalanceWallet" to Icons.Rounded.AccountBalanceWallet,
-        "CreditCard" to Icons.Rounded.CreditCard,
-        "MonetizationOn" to Icons.Rounded.MonetizationOn,
-        "Analytics" to Icons.Rounded.Analytics,
-        "Foundation" to Icons.Rounded.Foundation,
-        "Stars" to Icons.Rounded.Stars,
-        "Diamond" to Icons.Rounded.Diamond,
-        "AccountTree" to Icons.Rounded.AccountTree,
-        "AutoGraph" to Icons.Rounded.AutoGraph
-    )
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -156,82 +131,22 @@ fun AccountDetailScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 item {
-                    // Hero Account Card
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(32.dp),
-                        color = accountColor,
-                        contentColor = if (accountColor.isDark()) Color.White else Color.Black,
-                        shadowElevation = 0.dp // No shadow for No-Line philosophy
-                    ) {
-                        Column(modifier = Modifier.padding(24.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(
-                                        account.structureType.uppercase(),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 1.5.sp
-                                        ),
-                                        color = LocalContentColor.current.copy(alpha = 0.7f)
-                                    )
-                                    Text(
-                                        formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
-                                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
-                                    )
-                                    if (account.currencyCode != baseCurrency) {
-                                        val rate = exchangeRates[baseCurrency] ?: 1.0
-                                        val convertedBalance = totalBalanceInAccountCurrency * rate
-                                        Text(
-                                            "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = LocalContentColor.current.copy(alpha = 0.7f)
-                                        )
-                                    }
-                                }
-                                Icon(
-                                    iconMap[account.icon] ?: Icons.Rounded.AccountBalance,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
-                                    tint = LocalContentColor.current.copy(alpha = 0.7f)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Bottom
-                              ) {
-                                Column {
-                                    Text(
-                                        "MONTHLY NET",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = LocalContentColor.current.copy(alpha = 0.7f)
-                                    )
-                                    Text(
-                                        formatCurrencyRight(netInAccountCurrency, account.currencyCode),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                                    )
-                                }
-                                Text(
-                                    account.id.takeLast(4).let { "**** $it" },
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = LocalContentColor.current.copy(alpha = 0.5f)
-                                )
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AeonAccountHeroCard(
+                        account = account,
+                        balance = totalBalanceInAccountCurrency,
+                        netBalance = netInAccountCurrency,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates
+                    )
                 }
 
                 item {
-                    // Flow Breakdown
                     AeonCashFlowSection(
                         transactions = accountTransactions,
                         baseCurrency = account.currencyCode,
@@ -242,35 +157,39 @@ fun AccountDetailScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Transaction History Header
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "TRANSACTION HISTORY",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline,
-                            letterSpacing = 1.sp
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        AeonSectionHeader(
+                            title = "TRANSACTION HISTORY",
+                            trailing = {
+                                Text(
+                                    "${accountTransactions.size} total",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
                         )
-                        Text(
-                            "${accountTransactions.size} total",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
 
-                if (accountTransactions.isEmpty()) {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("No transactions yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                        if (accountTransactions.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        Icons.Rounded.History,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "No transactions yet",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
                             }
                         }
                     }
@@ -279,7 +198,7 @@ fun AccountDetailScreen(
                 item {
                     // Group by currency to show separate balances
                     val finalBalances = remember(account, accountTransactions, supportedCurrencies) {
-                        val currentAccount = account ?: return@remember emptyMap<String, Double>()
+                        val currentAccount = account
                         val initialBalance = currentAccount.initialBalance
                         
                         val txsByCurrency = accountTransactions.groupBy { it.currency }
@@ -289,80 +208,12 @@ fun AccountDetailScreen(
                         }
                     }
 
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(28.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "CURRENCY BREAKDOWN",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline,
-                                        letterSpacing = 0.5.sp
-                                    )
-//                                    Icon(
-//                                        Icons.Rounded.AccountBalanceWallet,
-//                                        contentDescription = null,
-//                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-//                                        modifier = Modifier.size(16.dp)
-//                                    )
-                                }
-                                Spacer(modifier = Modifier.height(16.dp))
-                                finalBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
-                                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-//                                                Surface(
-//                                                    modifier = Modifier.size(40.dp),
-//                                                    shape = CircleShape,
-//                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-//                                                ) {
-//                                                    Box(contentAlignment = Alignment.Center) {
-//                                                        Text(
-//                                                            getCurrencySymbol(curr),
-//                                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-//                                                        )
-//                                                    }
-//                                                }
-//                                                Spacer(modifier = Modifier.width(16.dp))
-                                                Text(
-                                                    curr,
-                                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                                )
-                                            }
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Text(
-                                                    formatCurrencyRight(bal, curr),
-                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                                                )
-                                                if (account.currencyCode != baseCurrency) {
-                                                    val rate = exchangeRates[baseCurrency] ?: 1.0
-                                                    val convertedBal = bal * rate
-                                                    Text(
-                                                        "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
-                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.outline
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                    AeonCurrencyBreakdown(
+                        balances = finalBalances,
+                        baseCurrency = baseCurrency,
+                        accountCurrency = account.currencyCode,
+                        exchangeRates = exchangeRates
+                    )
                 }
 
                 items(accountTransactions.sortedByDescending { it.timestamp }, key = { it.id }) { transaction ->
@@ -373,8 +224,7 @@ fun AccountDetailScreen(
                         amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                         isIncome = transaction.isIncome,
                         icon = categoryIcons[transaction.category],
-                        onClick = { onEditTransactionClick(transaction.id) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        onClick = { onEditTransactionClick(transaction.id) }
                     )
                 }
             }

@@ -49,39 +49,34 @@ fun AccountDetailScreen(
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
 
-    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
             val currentAccount = account ?: return@derivedStateOf 0.0
             val initialBalance = currentAccount.initialBalance
             
             val convertedTxSum = accountTransactions.sumOf { tx ->
                 val amount = if (tx.isIncome) tx.amount else -tx.amount
-                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
-                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
-                if (rateFrom != 0.0) (amount / rateFrom) * rateTo else amount
+                val rate = exchangeRates[tx.currency] ?: 1.0
+                if (rate != 0.0) amount / rate else amount
             }
             initialBalance + convertedTxSum
         }
     }
 
-    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf 0.0
             accountTransactions.filter { it.isIncome }.sumOf { tx ->
-                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
-                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
-                if (rateFrom != 0.0) (tx.amount / rateFrom) * rateTo else tx.amount
+                val rate = exchangeRates[tx.currency] ?: 1.0
+                if (rate != 0.0) tx.amount / rate else tx.amount
             }
         }
     }
 
-    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates, baseCurrency) {
+    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf 0.0
             accountTransactions.filter { !it.isIncome }.sumOf { tx ->
-                val rateFrom = if (tx.currency == baseCurrency) 1.0 else (exchangeRates[tx.currency] ?: 1.0)
-                val rateTo = if (currentAccount.currencyCode == baseCurrency) 1.0 else (exchangeRates[currentAccount.currencyCode] ?: 1.0)
-                if (rateFrom != 0.0) (tx.amount / rateFrom) * rateTo else tx.amount
+                val rate = exchangeRates[tx.currency] ?: 1.0
+                if (rate != 0.0) tx.amount / rate else tx.amount
             }
         }
     }
@@ -100,8 +95,10 @@ fun AccountDetailScreen(
     }
 
 
-    LaunchedEffect(baseCurrency) {
-        analyticsViewModel.onCurrencySelected(baseCurrency)
+    LaunchedEffect(account?.currencyCode) {
+        account?.currencyCode?.let {
+            analyticsViewModel.onCurrencySelected(it)
+        }
     }
 
     val accountColor = try {
@@ -190,8 +187,8 @@ fun AccountDetailScreen(
                                         style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                                     )
                                     if (account.currencyCode != baseCurrency) {
-                                        val rate = exchangeRates[account.currencyCode] ?: 1.0
-                                        val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
+                                        val rate = exchangeRates[baseCurrency] ?: 1.0
+                                        val convertedBalance = totalBalanceInAccountCurrency * rate
                                         Text(
                                             "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -237,7 +234,7 @@ fun AccountDetailScreen(
                     // Flow Breakdown
                     AeonCashFlowSection(
                         transactions = accountTransactions,
-                        baseCurrency = baseCurrency,
+                        baseCurrency = account.currencyCode,
                         exchangeRates = exchangeRates,
                         currentTheme = currentTheme,
                         showTitle = false
@@ -318,7 +315,7 @@ fun AccountDetailScreen(
 //                                    )
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
-                                finalBalances.forEach { (curr, bal) ->
+                                finalBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                                     Column(modifier = Modifier.padding(vertical = 8.dp)) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -349,9 +346,9 @@ fun AccountDetailScreen(
                                                     formatCurrencyRight(bal, curr),
                                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                                 )
-                                                if (curr != baseCurrency) {
-                                                    val rate = exchangeRates[curr] ?: 1.0
-                                                    val convertedBal = if (rate != 0.0) bal / rate else bal
+                                                if (account.currencyCode != baseCurrency) {
+                                                    val rate = exchangeRates[baseCurrency] ?: 1.0
+                                                    val convertedBal = bal * rate
                                                     Text(
                                                         "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
                                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),

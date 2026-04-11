@@ -153,7 +153,7 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
 
-        nonArchivedAccounts.forEach { account ->
+        nonArchivedAccounts.sortedBy { it.name }.forEach { account ->
             NavigationDrawerItem(
                 label = { 
                     Row(

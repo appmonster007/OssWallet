@@ -2,6 +2,7 @@ package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -40,6 +41,7 @@ fun DashboardScreen(
     onAddClick: () -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onAccountsViewClick: () -> Unit,
     onLoansClick: () -> Unit,
     onSettingsClick: () -> Unit,
     accountViewModel: AccountViewModel,
@@ -70,123 +72,21 @@ fun DashboardScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(320.dp),
-                drawerContainerColor = MaterialTheme.colorScheme.surface,
-                drawerShape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                ) {
-                    Surface(
-                        modifier = Modifier.size(64.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        currentProfile?.name ?: "Intelligence",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        "Personal Ledger",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                
-                Spacer(modifier = Modifier.height(12.dp))
-
-                NavigationDrawerItem(
-                    label = { Text("DASHBOARD", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = true,
-                    onClick = { scope.launch { drawerState.close() } },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                NavigationDrawerItem(
-                    label = { Text("RECORDS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch { 
-                            drawerState.close()
-                            onRecordsClick()
-                        } 
-                    },
-                    icon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                NavigationDrawerItem(
-                    label = { Text("ANALYTICS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch { 
-                            drawerState.close()
-                            onAnalyticsClick()
-                        } 
-                    },
-                    icon = { Icon(Icons.Default.AutoGraph, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                NavigationDrawerItem(
-                    label = { Text("BUDGETS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch { 
-                            drawerState.close()
-                            onBudgetsClick()
-                        } 
-                    },
-                    icon = { Icon(Icons.Default.PieChart, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                NavigationDrawerItem(
-                    label = { Text("LOANS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch { 
-                            drawerState.close()
-                            onLoansClick()
-                        } 
-                    },
-                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-                
-                NavigationDrawerItem(
-                    label = { Text("SETTINGS", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch { 
-                            drawerState.close()
-                            onSettingsClick()
-                        } 
-                    },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-            }
+            com.osscabinet.gleemanager.ui.components.AppDrawerContent(
+                currentProfile = currentProfile,
+                nonArchivedAccounts = nonArchivedAccounts,
+                selectedDestination = "dashboard",
+                onDashboardClick = { scope.launch { drawerState.close() } },
+                onAccountsViewClick = onAccountsViewClick,
+                onRecordsClick = onRecordsClick,
+                onAnalyticsClick = onAnalyticsClick,
+                onBudgetsClick = onBudgetsClick,
+                onLoansClick = onLoansClick,
+                onManageAccountsClick = onManageAccountsClick,
+                onSettingsClick = onSettingsClick,
+                onAccountClick = onAccountClick,
+                onCloseDrawer = { scope.launch { drawerState.close() } }
+            )
         }
     ) {
         Scaffold(
@@ -454,6 +354,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -463,167 +364,123 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Accounts", style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = onManageClick) {
-                Text("Manage", color = MaterialTheme.colorScheme.primary)
-            }
         }
 
         if (accounts.isEmpty()) {
-            AccountCard(
-                title = "GET STARTED",
-                balance = "$0.00",
-                icon = Icons.Default.Add,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                subAccounts = emptyList(),
-                onClick = onManageClick
+            AccountGridItem(
+                account = Account("empty", "GET STARTED", 0.0, 0.0, baseCurrency, "Default", "#808080", "Add"),
+                balanceInBase = 0.0,
+                balanceInAccountCurrency = 0.0,
+                baseCurrency = baseCurrency,
+                onClick = onManageClick,
+                modifier = Modifier.fillMaxWidth()
             )
         } else {
-            accounts.forEach { account ->
-                val accountTransactions = transactions.filter { it.accountId == account.id }
-                
-                val supportedCurrencies = remember(account, accountTransactions) {
-                    val list = mutableSetOf<String>()
-                    list.add(account.currencyCode)
-                    list.addAll(account.allowedCurrencies)
-                    accountTransactions.forEach { list.add(it.currency) }
-                    list.toList().sorted()
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = 2
+            ) {
+                accounts.forEach { account ->
+                    val accountTransactions = transactions.filter { it.accountId == account.id }
+                    
+                    val supportedCurrencies = remember(account, accountTransactions) {
+                        val list = mutableSetOf<String>()
+                        list.add(account.currencyCode)
+                        list.addAll(account.allowedCurrencies)
+                        accountTransactions.forEach { list.add(it.currency) }
+                        list.toList().sorted()
+                    }
+
+                    val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
+                        val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
+                        if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+                    }
+
+                    // Total balance in base currency for the main display
+                    val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
+                        val rate = exchangeRates[curr] ?: 1.0
+                        if (rate != 0.0) amount / rate else amount
+                    }
+                    
+                    val balanceInAccountCurrency = accountCurrencyBalances[account.currencyCode] ?: 0.0
+
+                    AccountGridItem(
+                        account = account,
+                        balanceInBase = balanceInBase,
+                        balanceInAccountCurrency = balanceInAccountCurrency,
+                        baseCurrency = baseCurrency,
+                        onClick = { onAccountClick(account.id) },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-
-                val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
-                    val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
-                    if (curr == account.currencyCode) account.initialBalance + txSum else txSum
+                if (accounts.size % 2 != 0) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
-
-                // Total balance in base currency for the main display
-                val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
-                    val rate = exchangeRates[curr] ?: 1.0
-                    if (rate != 0.0) amount / rate else amount
-                }
-
-                val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-
-                AccountCard(
-                    title = account.name.uppercase(),
-                    balance = formatCurrency(balanceInBase, baseCurrency),
-                    currencyBalances = accountCurrencyBalances,
-                    icon = when(account.structureType) {
-                        "Savings" -> Icons.Default.Savings
-                        "Credit Card" -> Icons.Default.CreditCard
-                        else -> Icons.Default.AccountBalance
-                    },
-                    containerColor = accountColor,
-                    contentColor = if (accountColor.isDark()) Color.White else Color.Black,
-                    subAccounts = listOf(account.structureType.uppercase()),
-                    onClick = { onAccountClick(account.id) }
-                )
             }
         }
     }
 }
 
 @Composable
-fun AccountCard(
-    title: String,
-    balance: String,
-    currencyBalances: Map<String, Double> = emptyMap(),
-    icon: ImageVector,
-    containerColor: Color,
-    contentColor: Color,
-    subAccounts: List<String>,
-    cardNumber: String? = null,
-    extraLabel: String? = null,
-    border: Boolean = false,
-    onClick: () -> Unit = {}
+fun AccountGridItem(
+    account: Account,
+    balanceInBase: Double,
+    balanceInAccountCurrency: Double,
+    baseCurrency: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(32.dp),
-        border = if (border) BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)) else null
-    ) {
-        Column(modifier = Modifier.padding(24.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(title, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    balance,
-                    style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                    color = contentColor
-                )
-                Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Horizontal scrollable list for subAccounts and currency codes
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    subAccounts.forEach { sub ->
-                        Surface(
-                            color = contentColor.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text(
-                                sub.uppercase(),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = contentColor
-                            )
-                        }
-                    }
-                    
-                    currencyBalances.forEach { (curr, bal) ->
-                        Surface(
-                            color = contentColor.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    curr,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
-                                    color = contentColor.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    com.osscabinet.gleemanager.ui.util.formatAmount(bal),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                    color = contentColor
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.weight(1f))
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
+    val contentColor = if (accountColor.isDark()) Color.White else Color.Black
 
-                if (cardNumber != null) {
-                    Text(cardNumber, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.5f))
-                }
-                if (extraLabel != null) {
-                    Text(extraLabel, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.5f))
-                }
+    Surface(
+        modifier = modifier
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        color = accountColor,
+        contentColor = contentColor
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    when(account.structureType) {
+                        "Savings" -> Icons.Default.Savings
+                        "Credit Card" -> Icons.Default.CreditCard
+                        else -> Icons.Default.AccountBalance
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = contentColor.copy(alpha = 0.7f)
+                )
+                Text(
+                    account.name,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                formatCurrency(balanceInBase, baseCurrency),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Text(
+                formatCurrency(balanceInAccountCurrency, account.currencyCode),
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

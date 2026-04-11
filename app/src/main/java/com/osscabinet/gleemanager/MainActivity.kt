@@ -108,6 +108,24 @@ class MainActivity : FragmentActivity() {
                             onAccountClick = { accountId -> navController.navigate("account_detail/$accountId") },
                             onLoansClick = { navController.navigate("loans") },
                             onSettingsClick = { navController.navigate("settings") },
+                            onAccountsViewClick = { navController.navigate("accounts_view") },
+                            accountViewModel = accountViewModel,
+                            transactionViewModel = viewModel,
+                            settingsViewModel = settingsViewModel,
+                            analyticsViewModel = analyticsViewModel
+                        )
+                    }
+                    composable("accounts_view") {
+                        AccountsViewScreen(
+                            onDashboardClick = { navController.navigate("dashboard") { popUpTo("dashboard") { inclusive = true } } },
+                            onRecordsClick = { navController.navigate("list") },
+                            onAnalyticsClick = { navController.navigate("analytics") },
+                            onBudgetsClick = { navController.navigate("budgets") },
+                            onLoansClick = { navController.navigate("loans") },
+                            onManageAccountsClick = { navController.navigate("manage_accounts") },
+                            onSettingsClick = { navController.navigate("settings") },
+                            onAccountClick = { accountId -> navController.navigate("account_detail/$accountId") },
+                            onAddAccountClick = { navController.navigate("account_setup") },
                             accountViewModel = accountViewModel,
                             transactionViewModel = viewModel,
                             settingsViewModel = settingsViewModel,

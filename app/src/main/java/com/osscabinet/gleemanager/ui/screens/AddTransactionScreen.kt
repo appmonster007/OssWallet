@@ -102,13 +102,14 @@ fun AddTransactionScreen(
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
             val secondOperand = amount.toDoubleOrNull() ?: 0.0
-            val result = when (operator) {
+            val rawResult = when (operator) {
                 "+" -> firstOperand!! + secondOperand
                 "−" -> firstOperand!! - secondOperand
                 "×" -> firstOperand!! * secondOperand
                 "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
                 else -> secondOperand
             }
+            val result = kotlin.math.abs(rawResult)
             amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
             firstOperand = null
             operator = null
@@ -176,7 +177,7 @@ fun AddTransactionScreen(
                                     if (isTransfer) {
                                         // 1. Withdrawal from source
                                         viewModel.addTransaction(
-                                            title = if (title.isBlank()) "Transfer to ${targetAccount?.name}" else title,
+                                            title = title.ifBlank { "Transfer to ${targetAccount?.name}" },
                                             amount = amountDouble,
                                             category = "Transfer",
                                             isIncome = false,
@@ -201,7 +202,7 @@ fun AddTransactionScreen(
                                         targetAccount?.id?.let { targetId ->
                                             val targetAmount = amountDouble * exchangeRate
                                             viewModel.addTransaction(
-                                                title = if (title.isBlank()) "Transfer from ${selectedAccount?.name}" else title,
+                                                title = title.ifBlank { "Transfer from ${selectedAccount?.name}" },
                                                 amount = targetAmount,
                                                 category = "Transfer",
                                                 isIncome = true,
@@ -224,7 +225,7 @@ fun AddTransactionScreen(
                                         }
                                     } else {
                                         viewModel.addTransaction(
-                                            title = if (title.isBlank()) category else title,
+                                            title = title.ifBlank { category },
                                             amount = amountDouble,
                                             category = category,
                                             isIncome = isIncome || isRefund,
@@ -452,8 +453,6 @@ fun AddTransactionScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
-
                 // Number Pad
                 Numpad(
                     onNumberClick = { input ->
@@ -490,7 +489,7 @@ fun AddTransactionScreen(
                         operator = null
                         isEnteringSecondOperand = false
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().weight(1f)
                 )
             }
         }

@@ -79,6 +79,7 @@ fun Numpad(
                             else -> onNumberClick(key)
                         }
                     },
+                    modifier = Modifier.fillMaxHeight(),
                     shape = RoundedCornerShape(16.dp),
                     color = when (key) {
                         "=", "+", "−", "×", "÷" -> MaterialTheme.colorScheme.primaryContainer
@@ -87,7 +88,7 @@ fun Numpad(
                     }
                 ) {
                     Box(
-                        modifier = Modifier.padding(vertical = 12.dp),
+                        modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (key == "DEL") {
@@ -104,7 +105,7 @@ fun Numpad(
                     }
                 }
             } else {
-                Spacer(modifier = Modifier.size(48.dp))
+                Spacer(modifier = Modifier.fillMaxHeight())
             }
         }
     }

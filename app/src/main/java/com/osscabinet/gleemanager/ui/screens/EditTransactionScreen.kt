@@ -65,13 +65,14 @@ fun EditTransactionScreen(
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
             val secondOperand = amount.toDoubleOrNull() ?: 0.0
-            val result = when (operator) {
+            val rawResult = when (operator) {
                 "+" -> firstOperand!! + secondOperand
                 "−" -> firstOperand!! - secondOperand
                 "×" -> firstOperand!! * secondOperand
                 "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
                 else -> secondOperand
             }
+            val result = kotlin.math.abs(rawResult)
             amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
             firstOperand = null
             operator = null
@@ -268,7 +269,7 @@ fun EditTransactionScreen(
                         operator = null
                         isEnteringSecondOperand = false
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().weight(1f)
                 )
 
                 Button(

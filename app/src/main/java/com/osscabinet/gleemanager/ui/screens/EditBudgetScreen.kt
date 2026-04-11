@@ -21,6 +21,7 @@ import com.osscabinet.gleemanager.ui.components.Numpad
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,28 @@ fun EditBudgetScreen(
     val currency by settingsViewModel.currency.collectAsState()
     val budget = budgets.find { it.category == category }
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
+
+    // Calculator State
+    var firstOperand by remember { mutableStateOf<Double?>(null) }
+    var operator by remember { mutableStateOf<String?>(null) }
+    var isEnteringSecondOperand by remember { mutableStateOf(false) }
+
+    fun calculateResult() {
+        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
+            val secondOperand = amount.toDoubleOrNull() ?: 0.0
+            val result = when (operator) {
+                "+" -> firstOperand!! + secondOperand
+                "−" -> firstOperand!! - secondOperand
+                "×" -> firstOperand!! * secondOperand
+                "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
+                else -> secondOperand
+            }
+            amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
+            firstOperand = null
+            operator = null
+            isEnteringSecondOperand = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -149,16 +172,38 @@ fun EditBudgetScreen(
 
             Numpad(
                 onNumberClick = { input ->
-                    if (input == ".") {
-                        if (!amount.contains(".")) {
-                            amount += if (amount.isEmpty()) "0." else "."
-                        }
+                    if (isEnteringSecondOperand) {
+                        amount = if (input == ".") "0." else input
+                        isEnteringSecondOperand = false
                     } else {
-                        amount = if (amount == "0") input else amount + input
+                        if (input == ".") {
+                            if (!amount.contains(".")) {
+                                amount += if (amount.isEmpty()) "0." else "."
+                            }
+                        } else if (input == "00") {
+                            if (amount.isNotEmpty() && amount != "0") amount += "00"
+                        } else {
+                            amount = if (amount == "0") input else amount + input
+                        }
                     }
                 },
                 onDeleteClick = {
                     if (amount.isNotEmpty()) amount = amount.dropLast(1)
+                },
+                onOperatorClick = { op ->
+                    if (amount.isNotEmpty()) {
+                        if (operator != null) calculateResult()
+                        firstOperand = amount.toDoubleOrNull()
+                        operator = op
+                        isEnteringSecondOperand = true
+                    }
+                },
+                onEqualClick = { calculateResult() },
+                onClearClick = {
+                    amount = ""
+                    firstOperand = null
+                    operator = null
+                    isEnteringSecondOperand = false
                 },
                 modifier = Modifier.fillMaxWidth()
             )

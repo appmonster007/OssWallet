@@ -2,18 +2,16 @@ package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,14 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.gleemanager.ui.components.AeonTextField
-import com.osscabinet.gleemanager.ui.components.CurrencyManagementSection
-import com.osscabinet.gleemanager.ui.components.VisualIdentitySection
+import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
 
@@ -45,8 +39,8 @@ fun AccountSetupScreen(
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
 
     // Currency logic
-    var primaryCurrency by remember { mutableStateOf("") }
-    var allowedCurrencies by remember { mutableStateOf(setOf<String>()) }
+    var primaryCurrency by remember { mutableStateOf("USD") }
+    var allowedCurrencies by remember { mutableStateOf(setOf("USD")) }
 
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
 
@@ -55,9 +49,9 @@ fun AccountSetupScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { 
-                    Text("Aeon Ledger", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("New Ledger", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -65,11 +59,14 @@ fun AccountSetupScreen(
                     }
                 },
                 actions = {
-                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                     val isBalanceValid = initialBalance.isEmpty() || initialBalance.toDoubleOrNull() != null
                     val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
                     
-                    TextButton(
+                    Surface(
+                        modifier = Modifier.padding(end = 16.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (canCreate) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
                         onClick = {
                             if (canCreate) {
                                 viewModel.addAccount(
@@ -84,10 +81,16 @@ fun AccountSetupScreen(
                                 onAccountCreated()
                             }
                         },
-                        enabled = canCreate,
-                        colors = ButtonDefaults.textButtonColors(contentColor = currentAccentColor)
+                        enabled = canCreate
                     ) {
-                        Text("CREATE", fontWeight = FontWeight.Bold)
+                        Text(
+                            "CREATE",
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (canCreate) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
+                            )
+                        )
                     }
                 }
             )
@@ -99,74 +102,107 @@ fun AccountSetupScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Column {
-                Text("CONFIGURATION", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                Text("New Account Identity", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-            }
-
-            // Account Name & Balance
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Account Name", style = MaterialTheme.typography.titleSmall)
-                    AeonTextField(
-                        value = accountName,
-                        onValueChange = { accountName = it },
-                        placeholder = "e.g. Global Treasury"
-                    )
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Initial Balance", style = MaterialTheme.typography.titleSmall)
-                    AeonTextField(
-                        value = initialBalance,
-                        onValueChange = { initialBalance = it },
-                        placeholder = "0.00",
-                        prefix = primaryCurrency.ifEmpty { null }
-                    )
-                }
-            }
-
-            // Structure Type
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Structure Type", style = MaterialTheme.typography.titleSmall)
-                Box {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(28.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                            .clickable { isStructureMenuExpanded = true }
-                            .padding(horizontal = 20.dp),
-                        contentAlignment = Alignment.CenterStart
+            // Header Section
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(40.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+                    
+                    Surface(
+                        modifier = Modifier.size(80.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        color = currentAccentColor
                     ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(structureType, style = MaterialTheme.typography.bodyLarge)
-                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
-                        }
-                    }
-                    DropdownMenu(
-                        expanded = isStructureMenuExpanded,
-                        onDismissRequest = { isStructureMenuExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.85f).background(MaterialTheme.colorScheme.surface)
-                    ) {
-                        structureTypes.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type) },
-                                onClick = {
-                                    structureType = type
-                                    isStructureMenuExpanded = false
-                                }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.AccountBalance, // This should eventually use the selectedIconName mapping
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp),
+                                tint = if (currentAccentColor.isDark()) Color.White else Color.Black
                             )
                         }
                     }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = accountName.ifBlank { "Untitled Ledger" },
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "${primaryCurrency} ${initialBalance.ifBlank { "0.00" }}",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
                 }
             }
 
-            // Allowed Currencies Card
+            // Identity Section
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("IDENTITY", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                
+                EditorialInput(
+                    value = accountName,
+                    onValueChange = { accountName = it },
+                    label = "LEDGER NAME",
+                    icon = Icons.AutoMirrored.Rounded.Label
+                )
+
+                EditorialInput(
+                    value = initialBalance,
+                    onValueChange = { initialBalance = it },
+                    label = "INITIAL BALANCE",
+                    icon = Icons.Rounded.AccountBalanceWallet
+                )
+
+                RecordFieldCard(
+                    icon = Icons.Rounded.Layers,
+                    label = "STRUCTURE TYPE",
+                    value = structureType,
+                    onClick = { isStructureMenuExpanded = true },
+                    trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                )
+
+                if (isStructureMenuExpanded) {
+                    ModalBottomSheet(
+                        onDismissRequest = { isStructureMenuExpanded = false },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                            Text("STRUCTURE TYPE", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Spacer(modifier = Modifier.height(24.dp))
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(structureTypes) { type ->
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth().clickable { structureType = type; isStructureMenuExpanded = false },
+                                        shape = RoundedCornerShape(24.dp),
+                                        color = if (structureType == type) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                    ) {
+                                        Text(type, modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Currency Management Card
             CurrencyManagementSection(
                 primaryCurrency = primaryCurrency,
                 onPrimaryCurrencyChange = { primaryCurrency = it },
@@ -175,7 +211,7 @@ fun AccountSetupScreen(
                 accentColorHex = accentColorHex
             )
 
-            // Visual Identity
+            // Visual Identity Section
             VisualIdentitySection(
                 selectedIconName = selectedIconName,
                 onIconSelected = { selectedIconName = it },
@@ -183,7 +219,7 @@ fun AccountSetupScreen(
                 onColorSelected = { accentColorHex = it }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

@@ -47,41 +47,64 @@ import java.util.*
 fun Numpad(
     onNumberClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
+    onOperatorClick: (String) -> Unit,
+    onEqualClick: () -> Unit,
+    onClearClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val keys = listOf(
-        "7", "8", "9",
-        "4", "5", "6",
-        "1", "2", "3",
-        ".", "0", "DEL"
+        "C", "÷", "×", "DEL",
+        "7", "8", "9", "−",
+        "4", "5", "6", "+",
+        "1", "2", "3", "=",
+        ".", "0", "00", ""
     )
     
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Fixed(4),
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         userScrollEnabled = false
     ) {
         items(keys) { key ->
-            Surface(
-                onClick = { if (key == "DEL") onDeleteClick() else onNumberClick(key) },
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ) {
-                Box(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
+            if (key.isNotEmpty()) {
+                Surface(
+                    onClick = {
+                        when (key) {
+                            "DEL" -> onDeleteClick()
+                            "C" -> onClearClick()
+                            "=" -> onEqualClick()
+                            "+", "−", "×", "÷" -> onOperatorClick(key)
+                            else -> onNumberClick(key)
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = when (key) {
+                        "=", "+", "−", "×", "÷" -> MaterialTheme.colorScheme.primaryContainer
+                        "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    }
                 ) {
-                    if (key == "DEL") {
-                        Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = null, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text(
-                            text = key,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                        )
+                    Box(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (key == "DEL") {
+                            Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = null, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                text = key,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (key == "=" || key == "+" || key == "−" || key == "×" || key == "÷") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            )
+                        }
                     }
                 }
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
             }
         }
     }
@@ -393,15 +416,7 @@ fun DetailDrawer(
     val offset by animateDpAsState(if (isOpen) 0.dp else screenWidth)
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures { change, dragAmount ->
-                    change.consume()
-                    if (dragAmount < -20) onSwipeOpen()
-                    if (dragAmount > 20) onClose()
-                }
-            }
+        modifier = Modifier.fillMaxSize()
     ) {
         // Tab indicator on the right edge when closed
         if (!isOpen) {
@@ -411,7 +426,15 @@ fun DetailDrawer(
                     .offset(x = 8.dp) // Hide slightly
                     .width(48.dp)
                     .height(80.dp)
-                    .clickable { onSwipeOpen() },
+                    .clickable { onSwipeOpen() }
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, dragAmount ->
+                            if (dragAmount < -20) {
+                                change.consume()
+                                onSwipeOpen()
+                            }
+                        }
+                    },
                 shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 8.dp
@@ -427,32 +450,77 @@ fun DetailDrawer(
         }
 
         // Drawer content overlay
-        Surface(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(screenWidth)
-                .offset(x = offset),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 24.dp
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Back")
+        if (isOpen || offset < screenWidth) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(screenWidth)
+                    .offset(x = offset)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, dragAmount ->
+                            if (dragAmount > 20) {
+                                change.consume()
+                                onClose()
+                            }
+                        }
+                    },
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 24.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onClose) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Back")
+                        }
+                        Text(
+                            "Additional Details", 
+                            style = MaterialTheme.typography.titleMedium, 
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Text(
-                        "Additional Details", 
-                        style = MaterialTheme.typography.titleMedium, 
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        content()
+                    }
                 }
-                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    content()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoryPickerSheet(
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+            Text("CLASSIFICATION", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Spacer(modifier = Modifier.height(32.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(categoryIcons.toList()) { (name, icon) ->
+                    CategoryItem(
+                        name = name,
+                        icon = icon,
+                        isSelected = selectedCategory == name,
+                        onClick = {
+                            onCategorySelected(name)
+                        }
+                    )
                 }
             }
         }
@@ -470,5 +538,8 @@ val categoryIcons = mapOf(
     "Investment" to Icons.AutoMirrored.Rounded.TrendingUp,
     "Housing" to Icons.Rounded.Home,
     "Education" to Icons.Rounded.School,
+    "Income" to Icons.Rounded.Payments,
+    "Coffee" to Icons.Rounded.CoffeeMaker,
+    "Grocery" to Icons.Rounded.ShoppingCart,
     "Other" to Icons.Rounded.MoreHoriz
 )

@@ -753,7 +753,7 @@ fun VisualIdentitySection(
     )
     val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
-    val filteredIcons = if (iconSearchQuery.isBlank()) iconMap.keys.toList() else iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showAllIcons by remember { mutableStateOf(false) }
 
@@ -777,22 +777,40 @@ fun VisualIdentitySection(
                     Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                filteredIcons.forEach { name ->
-                    val icon = iconMap[name]!!
-                    val isSelected = selectedIconName == name
+
+            if (filteredIcons.isNotEmpty()) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    filteredIcons.forEach { name ->
+                        val icon = iconMap[name]!!
+                        val isSelected = selectedIconName == name
+                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                        Surface(
+                            modifier = Modifier.size(48.dp).clickable { onIconSelected(name) },
+                            shape = CircleShape,
+                            color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {
+                            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                        }
+                    }
+                }
+            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && iconMap.containsKey(selectedIconName)) {
+                // Show currently selected icon if search is blank
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                     Surface(
-                        modifier = Modifier.size(48.dp).clickable { onIconSelected(name) },
+                        modifier = Modifier.size(48.dp),
                         shape = CircleShape,
-                        color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = accentColor,
+                        contentColor = if (accentColor.isDark()) Color.White else Color.Black
                     ) {
-                        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                        Box(contentAlignment = Alignment.Center) { Icon(iconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
                     }
+                    Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                 }
             }
         }

@@ -130,6 +130,23 @@ fun AddTransactionScreen(
         }
     }
 
+    LaunchedEffect(selectedCurrency, targetCurrency, exchangeRates) {
+        if (isTransfer) {
+            val baseRates = exchangeRates
+            if (baseRates.isNotEmpty()) {
+                val sourceRateInUSD = baseRates[selectedCurrency] ?: 1.0
+                val destRateInUSD = baseRates[targetCurrency] ?: 1.0
+                // If rates are relative to USD (1 USD = X Currency)
+                // To get 1 Source = Y Dest:
+                // 1 Source = (1/sourceRateInUSD) USD
+                // (1/sourceRateInUSD) USD * destRateInUSD = destRateInUSD / sourceRateInUSD
+                if (sourceRateInUSD != 0.0) {
+                    exchangeRate = destRateInUSD / sourceRateInUSD
+                }
+            }
+        }
+    }
+
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -163,14 +180,16 @@ fun AddTransactionScreen(
                                     if (isTransfer) {
                                         // 1. Withdrawal from source
                                         viewModel.addTransaction(
-                                            title = "Transfer to ${targetAccount?.name}",
+                                            title = if (title.isBlank()) "Transfer to ${targetAccount?.name}" else title,
                                             amount = amountDouble,
                                             category = "Transfer",
                                             isIncome = false,
                                             accountId = accountId,
                                             currency = selectedCurrency,
                                             tags = tagsList,
-                                            timestamp = selectedDateMillis
+                                            timestamp = selectedDateMillis,
+                                            payee = payee,
+                                            note = note
                                         )
                                         accountViewModel.updateBalance(accountId, -amountDouble)
 
@@ -178,14 +197,16 @@ fun AddTransactionScreen(
                                         targetAccount?.id?.let { targetId ->
                                             val targetAmount = amountDouble * exchangeRate
                                             viewModel.addTransaction(
-                                                title = "Transfer from ${selectedAccount?.name}",
+                                                title = if (title.isBlank()) "Transfer from ${selectedAccount?.name}" else title,
                                                 amount = targetAmount,
                                                 category = "Transfer",
                                                 isIncome = true,
                                                 accountId = targetId,
                                                 currency = targetCurrency,
                                                 tags = tagsList,
-                                                timestamp = selectedDateMillis
+                                                timestamp = selectedDateMillis,
+                                                payee = payee,
+                                                note = note
                                             )
                                             accountViewModel.updateBalance(targetId, targetAmount)
                                         }
@@ -198,7 +219,9 @@ fun AddTransactionScreen(
                                             accountId = accountId,
                                             currency = selectedCurrency,
                                             tags = tagsList,
-                                            timestamp = selectedDateMillis
+                                            timestamp = selectedDateMillis,
+                                            payee = payee,
+                                            note = note
                                         )
                                         
                                         val amountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
@@ -217,7 +240,7 @@ fun AddTransactionScreen(
                                     onBackClick()
                                 }
                             },
-                            enabled = amount.isNotBlank() && selectedAccount != null
+                            enabled = selectedAccount != null
                         ) {
                             Text(
                                 "Save",
@@ -288,61 +311,69 @@ fun AddTransactionScreen(
                         }
 
                         // Amount & Currency Row
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            if (isTransfer) {
-                                IconButton(onClick = { showExchangeRateDialog = true }) {
-                                    Icon(Icons.Rounded.CurrencyExchange, contentDescription = "Exchange Rate", tint = MaterialTheme.colorScheme.primary)
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-
-                            Text(
-                                text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
-                                style = TextStyle(
-                                    fontSize = 48.sp,
-                                    fontWeight = FontWeight.Black,
-                                    textAlign = TextAlign.Center,
-                                    color = when {
-                                        isIncome || isRefund -> Color(0xFF2E7D32)
-                                        isTransfer -> MaterialTheme.colorScheme.onSurface
-                                        else -> MaterialTheme.colorScheme.error
-                                    }
-                                ),
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(12.dp))
-                            
-                            CurrencySelector(
-                                selectedCurrency = selectedCurrency,
-                                onCurrencySelected = { selectedCurrency = it },
-                                supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
-                            )
-                        }
-                        
-                        if (isTransfer) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.outline)
-                                Spacer(modifier = Modifier.width(12.dp))
-                                CurrencySelector(
-                                    selectedCurrency = targetCurrency,
-                                    onCurrencySelected = { targetCurrency = it },
-                                    supportedCurrencies = targetAccount?.allowedCurrencies ?: listOf("USD")
+                                if (isTransfer) {
+                                    IconButton(onClick = { showExchangeRateDialog = true }) {
+                                        Icon(Icons.Rounded.CurrencyExchange, contentDescription = "Exchange Rate", tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+
+                                Text(
+                                    text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
+                                    style = TextStyle(
+                                        fontSize = 48.sp,
+                                        fontWeight = FontWeight.Black,
+                                        textAlign = TextAlign.Center,
+                                        color = when {
+                                            isIncome || isRefund -> Color(0xFF2E7D32)
+                                            isTransfer -> MaterialTheme.colorScheme.onSurface
+                                            else -> MaterialTheme.colorScheme.error
+                                        }
+                                    ),
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
-                                if (exchangeRate != 1.0) {
+                                
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                CurrencySelector(
+                                    selectedCurrency = selectedCurrency,
+                                    onCurrencySelected = { selectedCurrency = it },
+                                    supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
+                                )
+                            }
+                            
+                            if (isTransfer) {
+                                val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                val convertedAmount = amountDouble * exchangeRate
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        " (1:${String.format(Locale.getDefault(), "%.2f", exchangeRate)})",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(start = 8.dp)
+                                        text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                        style = TextStyle(
+                                            fontSize = 32.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2E7D32)
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    CurrencySelector(
+                                        selectedCurrency = targetCurrency,
+                                        onCurrencySelected = { targetCurrency = it },
+                                        supportedCurrencies = targetAccount?.allowedCurrencies ?: listOf("USD")
                                     )
                                 }
                             }

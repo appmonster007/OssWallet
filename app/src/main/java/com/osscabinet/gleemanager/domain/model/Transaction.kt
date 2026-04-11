@@ -10,5 +10,7 @@ data class Transaction(
     val isIncome: Boolean,
     val accountId: String,
     val categoryId: Long? = null,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val payee: String = "",
+    val note: String = ""
 )

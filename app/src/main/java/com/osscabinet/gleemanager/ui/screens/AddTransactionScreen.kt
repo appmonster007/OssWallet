@@ -289,10 +289,9 @@ fun AddTransactionScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Transaction Type Row
+                        // Transaction Type Row (Fixed at top)
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(32.dp))
@@ -325,85 +324,88 @@ fun AddTransactionScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Amount & Currency Row
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                        // Amount & Currency Area (Fills remaining space and centers content)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                if (isTransfer) {
-                                    IconButton(onClick = { showExchangeRateDialog = true }) {
-                                        Icon(Icons.Rounded.CurrencyExchange, contentDescription = "Exchange Rate", tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                }
-
-                                Text(
-                                    text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
-                                    style = TextStyle(
-                                        fontSize = if (isTransfer) 48.sp else 64.sp,
-                                        fontWeight = FontWeight.Black,
-                                        textAlign = TextAlign.Center,
-                                        color = when {
-                                            isIncome || isRefund -> Color(0xFF2E7D32)
-                                            isTransfer -> MaterialTheme.colorScheme.onSurface
-                                            else -> MaterialTheme.colorScheme.error
-                                        }
-                                    ),
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                                
-                                Spacer(modifier = Modifier.width(12.dp))
-                                
-                                CurrencySelector(
-                                    selectedCurrency = selectedCurrency,
-                                    onCurrencySelected = { selectedCurrency = it },
-                                    supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
-                                )
-                            }
-                            
-                            if (isTransfer) {
-                                val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                                val convertedAmount = amountDouble * exchangeRate
-                                
-                                Icon(
-                                    Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp).padding(vertical = 4.dp),
-                                    tint = MaterialTheme.colorScheme.outline
-                                )
-
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
+                                    if (isTransfer) {
+                                        IconButton(onClick = { showExchangeRateDialog = true }) {
+                                            Icon(Icons.Rounded.CurrencyExchange, contentDescription = "Exchange Rate", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+
                                     Text(
-                                        " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
                                         style = TextStyle(
-                                            fontSize = 32.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF2E7D32)
-                                        )
+                                            fontSize = if (isTransfer) 48.sp else 64.sp,
+                                            fontWeight = FontWeight.Black,
+                                            textAlign = TextAlign.Center,
+                                            color = when {
+                                                isIncome || isRefund -> Color(0xFF2E7D32)
+                                                isTransfer -> MaterialTheme.colorScheme.onSurface
+                                                else -> MaterialTheme.colorScheme.error
+                                            }
+                                        ),
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
+                                    
                                     Spacer(modifier = Modifier.width(12.dp))
+                                    
                                     CurrencySelector(
-                                        selectedCurrency = targetCurrency,
-                                        onCurrencySelected = { targetCurrency = it },
-                                        supportedCurrencies = targetAccount?.allowedCurrencies ?: listOf("USD")
+                                        selectedCurrency = selectedCurrency,
+                                        onCurrencySelected = { selectedCurrency = it },
+                                        supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
                                     )
+                                }
+                                
+                                if (isTransfer) {
+                                    val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                    val convertedAmount = amountDouble * exchangeRate
+                                    
+                                    Icon(
+                                        Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp).padding(vertical = 4.dp),
+                                        tint = MaterialTheme.colorScheme.outline
+                                    )
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                            style = TextStyle(
+                                                fontSize = 32.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF2E7D32)
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        CurrencySelector(
+                                            selectedCurrency = targetCurrency,
+                                            onCurrencySelected = { targetCurrency = it },
+                                            supportedCurrencies = targetAccount?.allowedCurrencies ?: listOf("USD")
+                                        )
+                                    }
                                 }
                             }
                         }

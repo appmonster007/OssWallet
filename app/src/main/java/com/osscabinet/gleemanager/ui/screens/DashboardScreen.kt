@@ -364,13 +364,18 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Accounts", style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = onManageClick) {
+                Text("Manage", style = MaterialTheme.typography.labelLarge)
+            }
         }
 
         if (accounts.isEmpty()) {
             AccountGridItem(
                 account = Account("empty", "GET STARTED", 0.0, 0.0, baseCurrency, "Default", "#808080", "Add"),
                 balanceInBase = 0.0,
-                balanceInAccountCurrency = 0.0,
+                totalBalanceInAccountCurrency = 0.0,
+                incomeInAccountCurrency = 0.0,
+                expenseInAccountCurrency = 0.0,
                 baseCurrency = baseCurrency,
                 onClick = onManageClick,
                 modifier = Modifier.fillMaxWidth()
@@ -398,18 +403,33 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         if (curr == account.currencyCode) account.initialBalance + txSum else txSum
                     }
 
-                    // Total balance in base currency for the main display
+                    // Total balance in base currency
                     val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
                         val rate = exchangeRates[curr] ?: 1.0
                         if (rate != 0.0) amount / rate else amount
                     }
                     
-                    val balanceInAccountCurrency = accountCurrencyBalances[account.currencyCode] ?: 0.0
+                    val accountRate = exchangeRates[account.currencyCode] ?: 1.0
+                    val totalBalanceInAccountCurrency = if (accountRate != 0.0) balanceInBase * accountRate else balanceInBase
+
+                    val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.sumOf { tx ->
+                        val rate = exchangeRates[tx.currency] ?: 1.0
+                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
+                        if (accountRate != 0.0) inBase * accountRate else inBase
+                    }
+
+                    val expenseInAccountCurrency = accountTransactions.filter { !it.isIncome }.sumOf { tx ->
+                        val rate = exchangeRates[tx.currency] ?: 1.0
+                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
+                        if (accountRate != 0.0) inBase * accountRate else inBase
+                    }
 
                     AccountGridItem(
                         account = account,
                         balanceInBase = balanceInBase,
-                        balanceInAccountCurrency = balanceInAccountCurrency,
+                        totalBalanceInAccountCurrency = totalBalanceInAccountCurrency,
+                        incomeInAccountCurrency = incomeInAccountCurrency,
+                        expenseInAccountCurrency = expenseInAccountCurrency,
                         baseCurrency = baseCurrency,
                         onClick = { onAccountClick(account.id) },
                         modifier = Modifier.weight(1f)
@@ -427,13 +447,16 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
 fun AccountGridItem(
     account: Account,
     balanceInBase: Double,
-    balanceInAccountCurrency: Double,
+    totalBalanceInAccountCurrency: Double,
+    incomeInAccountCurrency: Double,
+    expenseInAccountCurrency: Double,
     baseCurrency: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-    val contentColor = if (accountColor.isDark()) Color.White else Color.Black
+    val isDark = accountColor.isDark()
+    val contentColor = if (isDark) Color.White else Color.Black
 
     Surface(
         modifier = modifier
@@ -466,21 +489,69 @@ fun AccountGridItem(
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            
+
+            // Primary (Base) Currency Balance - Smaller
             Text(
                 formatCurrency(balanceInBase, baseCurrency),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            Text(
-                formatCurrency(balanceInAccountCurrency, account.currencyCode),
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
+            // Account Default Currency Balance - Bigger
+            Text(
+                formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Income and Expense combined (converted to account currency)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val incomeBg = Color(0xFF2E7D32)
+                val expenseBg = Color(0xFFC62828)
+                val badgeTextColor = Color.White
+
+                // Income Badge
+                Surface(
+                    color = incomeBg,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(
+                        "+${com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency)}",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold),
+                        color = badgeTextColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Expense Badge
+                Surface(
+                    color = expenseBg,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(
+                        "-${com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency)}",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.ExtraBold),
+                        color = badgeTextColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

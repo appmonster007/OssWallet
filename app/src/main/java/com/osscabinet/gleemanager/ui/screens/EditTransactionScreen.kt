@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.components.*
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
@@ -54,6 +55,7 @@ fun EditTransactionScreen(
 
     var title by remember { mutableStateOf(transaction.title) }
     var amount by remember { mutableStateOf(if (transaction.amount % 1 == 0.0) transaction.amount.toLong().toString() else String.format(Locale.getDefault(), "%.2f", transaction.amount)) }
+    var linkedTransactionId by remember { mutableStateOf(transaction.linkedTransactionId) }
     
     // Calculator State
     var firstOperand by remember { mutableStateOf<Double?>(null) }
@@ -81,9 +83,7 @@ fun EditTransactionScreen(
     var category by remember { mutableStateOf(transaction.category) }
     var tagsInput by remember { mutableStateOf(transaction.tags.joinToString(", ")) }
     
-    // Inferred transaction type: 0: Expense, 1: Income, 2: Transfer, 3: Refund
-    // Assuming category "Transfer" means it's a transfer. Refund is harder to infer if not stored, 
-    // but for now let's map isIncome to 1 (Income) and !isIncome to 0 (Expense).
+    // Inferred transaction type: 0: Expense, 1: Income, 2: Transfer
     var transactionType by remember { 
         mutableStateOf(
             when {
@@ -96,7 +96,6 @@ fun EditTransactionScreen(
     
     val isIncome = transactionType == 1
     val isTransfer = transactionType == 2
-    val isRefund = transactionType == 3
     
     var selectedDateMillis by remember { mutableStateOf(transaction.timestamp) }
     var payee by remember { mutableStateOf(transaction.payee) }
@@ -119,6 +118,7 @@ fun EditTransactionScreen(
     var showExchangeRateDialog by remember { mutableStateOf(false) }
     var isDetailDrawerOpen by remember { mutableStateOf(false) }
     var showTemplateSheet by remember { mutableStateOf(false) }
+    var showLinkedTransactionSheet by remember { mutableStateOf(false) }
 
     val templates = listOf(
         "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
@@ -214,7 +214,7 @@ fun EditTransactionScreen(
                                     }
                                     accountViewModel.updateBalance(
                                         account.id, 
-                                        if (isIncome || isRefund) newAmountInAccountCurrency else -newAmountInAccountCurrency
+                                        if (isIncome) newAmountInAccountCurrency else -newAmountInAccountCurrency
                                     )
 
                                     // 3. Update transaction record
@@ -223,13 +223,14 @@ fun EditTransactionScreen(
                                         title = title.ifBlank { if (isTransfer) "Transfer" else category },
                                         amount = amountDouble,
                                         category = if (isTransfer) "Transfer" else category,
-                                        isIncome = isIncome || isRefund,
+                                        isIncome = isIncome,
                                         accountId = account.id,
                                         currency = selectedCurrency,
                                         tags = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() },
                                         timestamp = selectedDateMillis,
                                         payee = payee,
-                                        note = note
+                                        note = note,
+                                        linkedTransactionId = linkedTransactionId
                                     )
                                     onBackClick()
                                 }
@@ -282,8 +283,7 @@ fun EditTransactionScreen(
                             val types = listOf(
                                 Icons.Rounded.RemoveCircleOutline,
                                 Icons.Rounded.AddCircleOutline,
-                                Icons.Rounded.SyncAlt,
-                                Icons.Rounded.Restore
+                                Icons.Rounded.SyncAlt
                             )
                             types.forEachIndexed { index, icon ->
                                 Box(
@@ -326,13 +326,13 @@ fun EditTransactionScreen(
                                     }
 
                                     Text(
-                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome || isRefund) "+" else if (isTransfer) "" else "-") + amount,
+                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
                                         style = TextStyle(
                                             fontSize = if (isTransfer) 48.sp else 64.sp,
                                             fontWeight = FontWeight.Black,
                                             textAlign = TextAlign.Center,
                                             color = when {
-                                                isIncome || isRefund -> Color(0xFF2E7D32)
+                                                isIncome -> Color(0xFF2E7D32)
                                                 isTransfer -> MaterialTheme.colorScheme.onSurface
                                                 else -> MaterialTheme.colorScheme.error
                                             }
@@ -519,6 +519,35 @@ fun EditTransactionScreen(
                                     innerTextField()
                                 }
                             )
+                        }
+
+                        // Linked Transaction Field
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { showLinkedTransactionSheet = true },
+                            color = Color.Transparent
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    val linkedTx = transactions.find { it.id == linkedTransactionId }
+                                    Text(
+                                        text = linkedTx?.let { "${it.title} (${it.amount})" } ?: "Link to Transaction",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (linkedTransactionId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                    )
+                                    if (linkedTransactionId != null) {
+                                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                    }
+                                }
+                                if (linkedTransactionId != null) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    IconButton(onClick = { linkedTransactionId = null }) {
+                                        Icon(Icons.Rounded.Close, contentDescription = "Unlink", modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            }
                         }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -724,6 +753,49 @@ fun EditTransactionScreen(
                                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showLinkedTransactionSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showLinkedTransactionSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
+                Text("SELECT TRANSACTION TO LINK", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(24.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    linkedTransactionId = tx.id
+                                    showLinkedTransactionSheet = false
+                                },
+                            shape = RoundedCornerShape(24.dp),
+                            color = if (linkedTransactionId == tx.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(tx.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                    Text(tx.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                }
+                                Text(
+                                    text = "${if (tx.isIncome) "+" else "-"} ${formatCurrency(tx.amount, tx.currency)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (tx.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     }

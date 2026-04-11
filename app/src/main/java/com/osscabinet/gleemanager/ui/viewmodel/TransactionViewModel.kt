@@ -78,7 +78,8 @@ class TransactionViewModel(
         tags: List<String> = emptyList(),
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
-        note: String = ""
+        note: String = "",
+        linkedTransactionId: Long? = null
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -93,7 +94,8 @@ class TransactionViewModel(
                 categoryId = categoryId,
                 tags = tags,
                 payee = payee,
-                note = note
+                note = note,
+                linkedTransactionId = linkedTransactionId
             )
             insertTransactionUseCase(transaction, profileId)
         }
@@ -110,7 +112,8 @@ class TransactionViewModel(
         tags: List<String> = emptyList(),
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
-        note: String = ""
+        note: String = "",
+        linkedTransactionId: Long? = null
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -124,7 +127,8 @@ class TransactionViewModel(
                 accountId = accountId,
                 tags = tags,
                 payee = payee,
-                note = note
+                note = note,
+                linkedTransactionId = linkedTransactionId
             )
             updateTransactionUseCase(oldTransaction, newTransaction, profileId)
         }

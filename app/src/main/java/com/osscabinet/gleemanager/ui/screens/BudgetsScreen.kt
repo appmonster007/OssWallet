@@ -14,16 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Budget
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
-import com.osscabinet.gleemanager.ui.util.formatCurrency
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
-import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,7 +98,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(budget.category, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "${formatCurrency(budget.spent, currency)} / ${formatCurrency(budget.limit, currency)}",
+                    "${formatCurrencyRight(budget.spent, currency)} / ${formatCurrencyRight(budget.limit, currency)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -118,7 +115,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
             )
             
             Text(
-                text = if (!budget.isOverBudget) "You have ${formatCurrency(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrency(budget.spent - budget.limit, currency)}",
+                text = if (!budget.isOverBudget) "You have ${formatCurrencyRight(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrencyRight(budget.spent - budget.limit, currency)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
             )
@@ -144,7 +141,7 @@ fun BudgetInsightSection(currency: String) {
                 Text("OPTIMIZATION TIP", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrency(100.0, currency)} to your Savings goal.",
+                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrencyRight(100.0, currency)} to your Savings goal.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

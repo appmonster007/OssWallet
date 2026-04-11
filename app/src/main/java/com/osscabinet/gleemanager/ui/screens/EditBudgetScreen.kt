@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.components.EditorialInput
 import com.osscabinet.gleemanager.ui.components.Numpad
-import com.osscabinet.gleemanager.ui.util.formatCurrency
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import java.util.Locale
@@ -157,7 +157,7 @@ fun EditBudgetScreen(
                                     color = MaterialTheme.colorScheme.outline
                                 )
                                 Text(
-                                    formatCurrency(it.spent, currency),
+                                    formatCurrencyRight(it.spent, currency),
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface

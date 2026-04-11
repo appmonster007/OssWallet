@@ -1,6 +1,5 @@
 package com.osscabinet.gleemanager.ui.screens
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.components.*
-import com.osscabinet.gleemanager.ui.util.formatCurrency
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
@@ -791,7 +790,7 @@ fun EditTransactionScreen(
                                     Text(tx.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                                 }
                                 Text(
-                                    text = "${if (tx.isIncome) "+" else "-"} ${formatCurrency(tx.amount, tx.currency)}",
+                                    text = "${if (tx.isIncome) "+" else "-"} ${formatCurrencyRight(tx.amount, tx.currency)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = if (tx.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error

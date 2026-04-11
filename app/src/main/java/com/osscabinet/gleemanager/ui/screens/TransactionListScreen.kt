@@ -16,14 +16,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
@@ -317,7 +314,7 @@ fun TransactionItemEditorial(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                    text = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontFeatureSettings = "tnum"

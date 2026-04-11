@@ -1,34 +1,26 @@
 package com.osscabinet.gleemanager.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
-import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
 import java.util.*
@@ -214,14 +206,14 @@ fun AccountDetailScreen(
                                         color = LocalContentColor.current.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
+                                        formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
                                         style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                                     )
                                     if (account.currencyCode != baseCurrency) {
                                         val rate = exchangeRates[account.currencyCode] ?: 1.0
                                         val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
                                         Text(
-                                            "≈ ${formatCurrency(convertedBalance, baseCurrency)}",
+                                            "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                             color = LocalContentColor.current.copy(alpha = 0.7f)
                                         )
@@ -247,7 +239,7 @@ fun AccountDetailScreen(
                                         color = LocalContentColor.current.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        formatCurrency(netInAccountCurrency, account.currencyCode),
+                                        formatCurrencyRight(netInAccountCurrency, account.currencyCode),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                     )
                                 }
@@ -413,14 +405,14 @@ fun AccountDetailScreen(
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
                                                 Text(
-                                                    formatCurrency(bal, curr),
+                                                    formatCurrencyRight(bal, curr),
                                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                                                 )
                                                 if (curr != baseCurrency) {
                                                     val rate = exchangeRates[curr] ?: 1.0
                                                     val convertedBal = if (rate != 0.0) bal / rate else bal
                                                     Text(
-                                                        "≈ ${formatCurrency(convertedBal, baseCurrency)}",
+                                                        "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
                                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                                         color = MaterialTheme.colorScheme.outline
                                                     )
@@ -459,18 +451,19 @@ fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
                 color = MaterialTheme.colorScheme.outline
             )
-            Text(
-                formatCurrency(amount, curr),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
-            )
+            if (curr != baseCurrency) {
+                Text(
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
         }
-        if (curr != baseCurrency) {
-            Text(
-                "≈ ${formatCurrency(inBase, baseCurrency)}",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
+        Text(
+            formatCurrencyRight(amount, curr),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
+        )
+
     }
 }
 
@@ -517,7 +510,7 @@ fun TransactionItem(
             
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                    formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
                     color = if (transaction.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
                 )

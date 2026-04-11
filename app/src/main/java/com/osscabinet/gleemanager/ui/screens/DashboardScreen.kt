@@ -6,11 +6,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -35,8 +33,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
 import com.osscabinet.gleemanager.ui.components.AccountIconMap
@@ -146,7 +143,7 @@ fun DashboardScreen(
                     CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
                 }
                 item {
-                    CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates)
+                    CashFlowSummarySection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
                 }
                 item {
                     AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
@@ -166,11 +163,28 @@ fun DashboardScreen(
 fun CashFlowSummarySection(
     transactions: List<Transaction>,
     baseCurrency: String,
-    exchangeRates: Map<String, Double>
+    exchangeRates: Map<String, Double>,
+    currentTheme: String
 ) {
     val allSupportedCurrencies = remember(transactions) {
         transactions.map { it.currency }.distinct().sorted()
     }
+
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+
+    val incomeColor = Color(0xFF2E7D32)
+    val expenseColor = Color(0xFFC62828)
+
+    val incomeContainer = if (isAmoled) Color.Black else incomeColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
+    val expenseContainer = if (isAmoled) Color.Black else expenseColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
+    
+    val incomeBorder = if (isAmoled) BorderStroke(1.dp, incomeColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, incomeColor.copy(alpha = 0.1f))
+    val expenseBorder = if (isAmoled) BorderStroke(1.dp, expenseColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, expenseColor.copy(alpha = 0.1f))
 
     val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
         derivedStateOf {
@@ -193,6 +207,10 @@ fun CashFlowSummarySection(
     val totalIncomeInBase = flowData.sumOf { it.second.second }
     val totalExpenseInBase = flowData.sumOf { it.third.second }
 
+    val density = LocalDensity.current
+    var incomeSize by remember { mutableStateOf(IntSize.Zero) }
+    var expenseSize by remember { mutableStateOf(IntSize.Zero) }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("CASH FLOW SUMMARY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
 
@@ -202,26 +220,37 @@ fun CashFlowSummarySection(
         ) {
             // Income Section
             Surface(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).onSizeChanged { incomeSize = it },
                 shape = RoundedCornerShape(24.dp),
-                color = Color(0xFF2E7D32).copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.1f))
+                color = incomeContainer,
+                border = incomeBorder
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        formatCurrency(totalIncomeInBase, baseCurrency),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                Box {
+                    val iconHeight = with(density) { (incomeSize.height * 0.75f).toDp() }
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset { IntOffset(x = (incomeSize.width * 0.25f).toInt(), y = 0) }
+                            .size(iconHeight)
+                            .alpha(0.2f),
+                        tint = Color(0xFF2E7D32)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, income, _) ->
-                            FlowBreakdownItem(curr, income.first, income.second, baseCurrency)
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            formatCurrencyRight(totalIncomeInBase, baseCurrency),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            flowData.forEach { (curr, income, _) ->
+                                FlowBreakdownItem(curr, income.first, income.second, baseCurrency)
+                            }
                         }
                     }
                 }
@@ -229,26 +258,37 @@ fun CashFlowSummarySection(
 
             // Expense Section
             Surface(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).onSizeChanged { expenseSize = it },
                 shape = RoundedCornerShape(24.dp),
-                color = Color(0xFFC62828).copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.1f))
+                color = expenseContainer,
+                border = expenseBorder
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        formatCurrency(totalExpenseInBase, baseCurrency),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                Box {
+                    val iconHeight = with(density) { (expenseSize.height * 0.75f).toDp() }
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowUpward,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset { IntOffset(x = (expenseSize.width * 0.25f).toInt(), y = 0) }
+                            .size(iconHeight)
+                            .alpha(0.2f),
+                        tint = Color(0xFFC62828)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, _, expense) ->
-                            FlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            formatCurrencyRight(totalExpenseInBase, baseCurrency),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            flowData.forEach { (curr, _, expense) ->
+                                FlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
+                            }
                         }
                     }
                 }
@@ -279,7 +319,7 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
             color = MaterialTheme.colorScheme.outline
         )
         Text(
-            formatCurrency(totalBalanceInBase, baseCurrency),
+            formatCurrencyRight(totalBalanceInBase, baseCurrency),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -359,14 +399,14 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                                 if (currency != baseCurrency) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "≈ ${formatCurrency(inBase, baseCurrency)}",
+                                        "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                 }
                             }
                             Text(
-                                formatCurrency(amount, currency),
+                                formatCurrencyRight(amount, currency),
                                 style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
                             )
                         }
@@ -569,7 +609,7 @@ fun AccountGridItem(
                 Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
 
                 Text(
-                    formatCurrency(balanceInBase, baseCurrency),
+                    formatCurrencyRight(balanceInBase, baseCurrency),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -577,7 +617,7 @@ fun AccountGridItem(
                 )
 
                 Text(
-                    formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
+                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -697,7 +737,7 @@ fun RecentActivitySection(onRecordsClick: () -> Unit, transactions: List<Transac
             ActivityItem(
                 title = transaction.title,
                 sub = "${transaction.category} • $displayDate",
-                amount = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                 account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
                 icon = icon,
                 iconBg = if (transaction.isIncome) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -767,7 +807,7 @@ fun BudgetProgress(label: String, current: Float, total: Float, color: Color, ba
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${formatCurrency(current.toDouble(), baseCurrency)} / ${formatCurrency(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text("${formatCurrencyRight(current.toDouble(), baseCurrency)} / ${formatCurrencyRight(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
         LinearProgressIndicator(
             progress = { current / total },

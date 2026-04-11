@@ -7,7 +7,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,17 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.style.TextAlign
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
 import java.util.*
@@ -99,7 +99,7 @@ fun DashboardScreen(
                 NavigationBarItem(
                     selected = false,
                     onClick = onRecordsClick,
-                    icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null) },
                     label = { Text("RECORDS") }
                 )
                 NavigationBarItem(
@@ -144,9 +144,9 @@ fun DashboardScreen(
         ) {
             NetWorthSection(accounts, transactions, baseCurrency, exchangeRates)
             CurrencyAggregationSection(accounts, transactions, baseCurrency, exchangeRates)
-            IntelligenceInsightsSection(accounts, transactions, baseCurrency, exchangeRates, analyticsViewModel)
+            CashFlowSummarySection(transactions, baseCurrency, exchangeRates)
             AccountsSection(onManageAccountsClick, onAccountClick, accounts, transactions, baseCurrency, exchangeRates)
-            RecentActivitySection(onRecordsClick, baseCurrency, transactions, accounts)
+            RecentActivitySection(onRecordsClick, transactions, accounts)
             BudgetTrackingSection(baseCurrency)
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -154,90 +154,101 @@ fun DashboardScreen(
 }
 
 @Composable
-fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap(), analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel) {
-    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
-    
-    val totalBalanceInBase by remember(accounts, transactions, exchangeRates, baseCurrency) {
+fun CashFlowSummarySection(
+    transactions: List<Transaction>,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>
+) {
+    val allSupportedCurrencies = remember(transactions) {
+        transactions.map { it.currency }.distinct().sorted()
+    }
+
+    val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
         derivedStateOf {
-            val accountInitialBalances = accounts.sumOf { account ->
-                val rate = exchangeRates[account.currencyCode] ?: 1.0
-                if (rate != 0.0) account.initialBalance / rate else account.initialBalance
+            allSupportedCurrencies.mapNotNull { curr ->
+                val txsForCurr = transactions.filter { it.currency == curr }
+                val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
+                val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }
+
+                if (income == 0.0 && expense == 0.0) null
+                else {
+                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                    val incomeInBase = if (rate != 0.0) income / rate else income
+                    val expenseInBase = if (rate != 0.0) expense / rate else expense
+                    Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
+                }
             }
-            val transactionSumInBase = transactions.sumOf { tx ->
-                val amount = if (tx.isIncome) tx.amount else -tx.amount
-                val rate = exchangeRates[tx.currency] ?: 1.0
-                if (rate != 0.0) amount / rate else amount
-            }
-            accountInitialBalances + transactionSumInBase
         }
     }
-    
-    val expectedBalance = analyticsUiState.forecast.values.lastOrNull() ?: totalBalanceInBase
-    
+
+    val totalIncomeInBase = flowData.sumOf { it.second.second }
+    val totalExpenseInBase = flowData.sumOf { it.third.second }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("INTELLIGENCE INSIGHTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-        
-        Card(
+        Text("CASH FLOW SUMMARY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+            // Income Section
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF2E7D32).copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.1f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        formatCurrency(totalIncomeInBase, baseCurrency),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        flowData.forEach { (curr, income, _) ->
+                            FlowBreakdownItem(curr, income.first, income.second, baseCurrency)
                         }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("PREDICTIVE BALANCE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
                 }
-                
-                Column {
-                    Text(
-                        "Expected by month-end:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        formatCurrency(expectedBalance, baseCurrency),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
-                    )
-                }
-                
-                LinearProgressIndicator(
-                    progress = (analyticsUiState.savingsRate.toFloat()).coerceIn(0f, 1f),
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surface
-                )
-                
-                val savingsDiff = (analyticsUiState.savingsRate - analyticsUiState.lastMonthSavingsRate) * 100
-                val spendingDiff = analyticsUiState.thisMonthSpending - analyticsUiState.lastMonthSpending
-                
-                val insightText = buildString {
-                    if (savingsDiff >= 0) {
-                        append("You are on track to save ${String.format(Locale.getDefault(), "%.1f", savingsDiff)}% more than last month. ")
-                    } else {
-                        append("Your savings rate is ${String.format(Locale.getDefault(), "%.1f", -savingsDiff)}% lower than last month. ")
-                    }
-                    
-                    if (spendingDiff <= 0) {
-                        append("Current spending trend is down by ${formatCurrency(-spendingDiff, baseCurrency)}.")
-                    } else {
-                        append("Current spending trend is up by ${formatCurrency(spendingDiff, baseCurrency)}.")
-                    }
-                }
+            }
 
-                Text(
-                    insightText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // Expense Section
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFFC62828).copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, Color(0xFFC62828).copy(alpha = 0.1f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        formatCurrency(totalExpenseInBase, baseCurrency),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        flowData.forEach { (curr, _, expense) ->
+                            FlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
+                        }
+                    }
+                }
             }
         }
     }
 }
+
+
 
 @Composable
 fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
@@ -406,7 +417,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                     if (rate != 0.0) amount / rate else amount
                 }
 
-                val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+                val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
 
                 AccountCard(
                     title = account.name.uppercase(),
@@ -534,7 +545,7 @@ fun AccountCard(
 }
 
 @Composable
-fun RecentActivitySection(onViewAll: () -> Unit, baseCurrency: String, transactions: List<Transaction>, accounts: List<Account>) {
+fun RecentActivitySection(onViewAll: () -> Unit, transactions: List<Transaction>, accounts: List<Account>) {
     val accountMap = accounts.associate { it.id to it.name }
     val recentTransactions = transactions.sortedByDescending { it.timestamp }.take(3)
     val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
@@ -627,34 +638,6 @@ fun BudgetTrackingSection(baseCurrency: String) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 BudgetProgress("Lifestyle & Leisure", 1420f, 2000f, MaterialTheme.colorScheme.primary, baseCurrency)
                 BudgetProgress("Housing & Utilities", 3800f, 4000f, Color(0xFFE57373), baseCurrency)
-                
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                modifier = Modifier.size(32.dp),
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            "Your savings rate is 15% higher than last quarter. Consider moving ${formatCurrency(5000.0, baseCurrency)} to your Portfolio for 4.2% APY.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
             }
         }
     }
@@ -668,7 +651,7 @@ fun BudgetProgress(label: String, current: Float, total: Float, color: Color, ba
             Text("${formatCurrency(current.toDouble(), baseCurrency)} / ${formatCurrency(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
         LinearProgressIndicator(
-            progress = current / total,
+            progress = { current / total },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)

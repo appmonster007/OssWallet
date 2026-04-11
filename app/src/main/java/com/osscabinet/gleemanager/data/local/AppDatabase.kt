@@ -19,7 +19,7 @@ import net.sqlcipher.database.SupportFactory
         TagEntity::class,
         ProfileEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.util.isDark
+import java.util.Currency.getAvailableCurrencies
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -162,8 +163,14 @@ fun CurrencyManagementSection(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
-    var isSelectionMenuExpanded by remember { mutableStateOf(false) }
     
+    val allCurrencies = remember {
+        getAvailableCurrencies()
+            .map { it.currencyCode }
+            .distinct()
+            .sorted()
+    }
+
     LaunchedEffect(allowedCurrencies) {
         if (allowedCurrencies.isEmpty()) {
             onPrimaryCurrencyChange("")
@@ -177,7 +184,7 @@ fun CurrencyManagementSection(
     val filteredCurrencies = if (searchQuery.isBlank()) {
         commonCurrencies
     } else {
-        commonCurrencies.filter { it.contains(searchQuery, ignoreCase = true) }
+        allCurrencies.filter { it.contains(searchQuery, ignoreCase = true) }
     }
 
     Surface(
@@ -188,7 +195,7 @@ fun CurrencyManagementSection(
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             
-            // Search Bar with Multi-select toggle
+            // Search Bar
             Surface(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = CircleShape,
@@ -208,101 +215,127 @@ fun CurrencyManagementSection(
                             innerTextField()
                         }
                     )
-                    Box {
-                        IconButton(onClick = { isSelectionMenuExpanded = true }) {
-                            Icon(Icons.Rounded.FilterList, contentDescription = "Selection List", tint = MaterialTheme.colorScheme.primary)
-                        }
-                        DropdownMenu(
-                            expanded = isSelectionMenuExpanded,
-                            onDismissRequest = { isSelectionMenuExpanded = false },
-                            modifier = Modifier.heightIn(max = 300.dp)
+                }
+            }
+
+            // Top 10 Currencies in 5x2 grid or search results
+            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+
+            if (searchQuery.isBlank()) {
+                val topCurrencies = commonCurrencies.take(10)
+                val otherSelectedCurrencies = allowedCurrencies.filter { !topCurrencies.contains(it) }
+                
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Top 10 grid
+                    topCurrencies.chunked(5).forEach { rowCurrencies ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            commonCurrencies.forEach { code ->
+                            rowCurrencies.forEach { code ->
                                 val isSelected = allowedCurrencies.contains(code)
                                 val isPrimary = primaryCurrency == code
                                 val hasTransactions = currencyUsageMap[code] ?: false
                                 val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else true
 
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Checkbox(
-                                                checked = isSelected,
-                                                onCheckedChange = null,
-                                                enabled = canToggle
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(code)
+                                CurrencyGridItem(
+                                    code = code,
+                                    isSelected = isSelected,
+                                    isPrimary = isPrimary,
+                                    canToggle = canToggle,
+                                    accentColor = accentColor,
+                                    onClick = {
+                                        if (isSelected) {
+                                            if (isPrimary) onPrimaryCurrencyChange("")
+                                            onAllowedCurrenciesChange(allowedCurrencies - code)
+                                        } else {
+                                            onAllowedCurrenciesChange(allowedCurrencies + code)
                                         }
                                     },
-                                    onClick = {
-                                        if (canToggle) {
-                                            if (isSelected) {
-                                                if (isPrimary) onPrimaryCurrencyChange("")
-                                                onAllowedCurrenciesChange(allowedCurrencies - code)
-                                            } else {
-                                                onAllowedCurrenciesChange(allowedCurrencies + code)
-                                            }
-                                        }
-                                    }
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
                     }
-                }
-            }
 
-            // Chips
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                filteredCurrencies.forEach { code ->
-                    val isSelected = allowedCurrencies.contains(code)
-                    val isPrimary = primaryCurrency == code
-                    val hasTransactions = currencyUsageMap[code] ?: false
-                    
-                    val canToggle = if (isEditMode) {
-                        !isSelected || (!isPrimary && !hasTransactions)
-                    } else {
-                        true
-                    }
+                    // Extra rows for other selected currencies
+                    if (otherSelectedCurrencies.isNotEmpty()) {
+                        otherSelectedCurrencies.chunked(5).forEach { rowCurrencies ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                rowCurrencies.forEach { code ->
+                                    val isPrimary = primaryCurrency == code
+                                    val hasTransactions = currencyUsageMap[code] ?: false
+                                    val canToggle = if (isEditMode) !isPrimary && !hasTransactions else true
 
-                    val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-                    
-                    Surface(
-                        modifier = Modifier
-                            .alpha(if (canToggle) 1f else 0.5f)
-                            .clip(CircleShape)
-                            .clickable(enabled = canToggle) {
-                                if (isSelected) {
-                                    if (isPrimary) onPrimaryCurrencyChange("")
-                                    onAllowedCurrenciesChange(allowedCurrencies - code)
-                                } else {
-                                    onAllowedCurrenciesChange(allowedCurrencies + code)
+                                    CurrencyGridItem(
+                                        code = code,
+                                        isSelected = true,
+                                        isPrimary = isPrimary,
+                                        canToggle = canToggle,
+                                        accentColor = accentColor,
+                                        onClick = {
+                                            if (isPrimary) onPrimaryCurrencyChange("")
+                                            onAllowedCurrenciesChange(allowedCurrencies - code)
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
                                 }
-                            },
-                        shape = CircleShape,
-                        color = when {
-                            isPrimary -> accentColor
-                            isSelected -> accentColor.copy(alpha = 0.3f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        },
-                        contentColor = when {
-                            isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
-                            isSelected -> MaterialTheme.colorScheme.onSurface
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                // Fill empty spaces to maintain grid alignment
+                                repeat(5 - rowCurrencies.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    }
+                }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    filteredCurrencies.forEach { code ->
+                        val isSelected = allowedCurrencies.contains(code)
+                        val isPrimary = primaryCurrency == code
+                        val hasTransactions = currencyUsageMap[code] ?: false
+                        val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else true
+                        
+                        Surface(
+                            modifier = Modifier
+                                .alpha(if (canToggle) 1f else 0.5f)
+                                .clip(CircleShape)
+                                .clickable(enabled = canToggle) {
+                                    if (isSelected) {
+                                        if (isPrimary) onPrimaryCurrencyChange("")
+                                        onAllowedCurrenciesChange(allowedCurrencies - code)
+                                    } else {
+                                        onAllowedCurrenciesChange(allowedCurrencies + code)
+                                    }
+                                },
+                            shape = CircleShape,
+                            color = when {
+                                isPrimary -> accentColor
+                                isSelected -> accentColor.copy(alpha = 0.3f)
+                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            },
+                            contentColor = when {
+                                isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
+                                isSelected -> MaterialTheme.colorScheme.onSurface
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         ) {
-                            Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
-                            if (isPrimary) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(code, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                                if (isPrimary) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(14.dp))
+                                }
                             }
                         }
                     }
@@ -375,6 +408,54 @@ fun CurrencyManagementSection(
 
             if (isEditMode) {
                 Text("Note: Currencies with existing transactions cannot be removed.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            }
+        }
+    }
+}
+
+@Composable
+fun CurrencyGridItem(
+    code: String,
+    isSelected: Boolean,
+    isPrimary: Boolean,
+    canToggle: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .alpha(if (canToggle) 1f else 0.5f)
+            .clip(CircleShape)
+            .clickable(enabled = canToggle) { onClick() },
+        shape = CircleShape,
+        color = when {
+            isPrimary -> accentColor
+            isSelected -> accentColor.copy(alpha = 0.3f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        },
+        contentColor = when {
+            isPrimary -> if (accentColor.isDark()) Color.White else Color.Black
+            isSelected -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    ) {
+        Box(
+            modifier = Modifier.padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    code,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                )
+                if (isPrimary) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(Icons.Rounded.Star, contentDescription = "Primary", modifier = Modifier.size(12.dp))
+                }
             }
         }
     }

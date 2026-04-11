@@ -14,7 +14,7 @@ import com.osscabinet.gleemanager.domain.usecase.*
  */
 class AppContainer(private val context: Context) {
 
-    private val db: AppDatabase by lazy {
+    val db: AppDatabase by lazy {
         AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
     }
 

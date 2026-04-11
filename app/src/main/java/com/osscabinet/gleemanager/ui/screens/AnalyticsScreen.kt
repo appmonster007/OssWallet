@@ -3,10 +3,9 @@ package com.osscabinet.gleemanager.ui.screens
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -30,7 +29,6 @@ fun AnalyticsScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -44,34 +42,41 @@ fun AnalyticsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(scrollState)
-                .padding(24.dp),
+                .background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency)
+            item {
+                AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency)
+            }
 
             // Cash Flow Chart
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("CASH FLOW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                EditorialChartCard(MaterialTheme.colorScheme.primaryContainer) {
-                    SimpleBarChart(uiState.dailyNetFlow, MaterialTheme.colorScheme.onPrimaryContainer)
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("CASH FLOW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                    EditorialChartCard(MaterialTheme.colorScheme.primaryContainer) {
+                        SimpleBarChart(uiState.dailyNetFlow, MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
                 }
             }
 
             // Balance Outlook Chart
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("BALANCE OUTLOOK", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                EditorialChartCard(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
-                    SimpleLineChart(uiState.forecast, MaterialTheme.colorScheme.primary)
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("BALANCE OUTLOOK", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                    EditorialChartCard(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
+                        SimpleLineChart(uiState.forecast, MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
 
-            InsightSection(uiState.selectedCurrency)
+            item {
+                InsightSection(uiState.selectedCurrency)
+            }
         }
     }
 }

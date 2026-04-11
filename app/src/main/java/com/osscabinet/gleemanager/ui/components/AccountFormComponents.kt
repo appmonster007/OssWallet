@@ -437,24 +437,6 @@ fun ColorWheel(
                 style = Stroke(width = 2.dp.toPx())
             )
         }
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "CURRENT",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = MaterialTheme.colorScheme.outline,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
-            )
-            Text(
-                String.format("#%06X", 0xFFFFFF and selectedColor.toArgb()),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    color = Color.White
-                )
-            )
-        }
     }
 }
 
@@ -482,7 +464,7 @@ fun AdvancedColorPickerDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Done") }
         },
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,
         title = { Text("Color Selection") },
         text = {

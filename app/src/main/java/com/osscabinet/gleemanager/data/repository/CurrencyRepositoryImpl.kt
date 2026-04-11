@@ -12,29 +12,13 @@ class CurrencyRepositoryImpl(
     private val dao: CurrencyDao
 ) : CurrencyRepository {
 
-    override suspend fun getExchangeRates(baseCurrency: String): Map<String, Double> {
+    override suspend fun getExchangeRates(baseCurrency: String, forceRefresh: Boolean): Map<String, Double> {
         return withContext(Dispatchers.IO) {
             val localRates = dao.getAllRates()
             val firstRate = localRates.firstOrNull()
             
-            if (firstRate != null && isCacheValid(firstRate)) {
-                if (firstRate.baseCurrency == baseCurrency) {
-                    localRates.associate { it.currencyCode to it.rate }
-                } else {
-                    // Derive rates relative to the requested baseCurrency using math
-                    // 1 StoredBase = R_new RequestedBase
-                    // 1 StoredBase = R_any AnyCurrency
-                    // => 1 RequestedBase = R_any / R_new AnyCurrency
-                    val ratesInStoredBase = localRates.associate { it.currencyCode to it.rate }
-                    val storedBaseToNewBaseRate = ratesInStoredBase[baseCurrency]
-                    
-                    if (storedBaseToNewBaseRate != null && storedBaseToNewBaseRate != 0.0) {
-                        ratesInStoredBase.mapValues { it.value / storedBaseToNewBaseRate }
-                    } else {
-                        // If we can't derive (e.g. requested base not in cache), fetch new
-                        updateRates(baseCurrency)
-                    }
-                }
+            if (!forceRefresh && firstRate != null && isCacheValid(firstRate) && firstRate.baseCurrency == baseCurrency) {
+                localRates.associate { it.currencyCode to it.rate }
             } else {
                 updateRates(baseCurrency)
             }

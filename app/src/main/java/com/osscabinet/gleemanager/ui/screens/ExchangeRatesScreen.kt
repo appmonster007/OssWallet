@@ -52,8 +52,8 @@ fun ExchangeRatesScreen(
                     },
                     actions = {
                         if (pagerState.currentPage == 0) {
-                            val dateFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
-                            val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "--:--"
+                            val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
+                            val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "Never"
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
@@ -107,33 +107,11 @@ fun ExchangeRatesScreen(
 
 @Composable
 fun RatesTab(uiState: com.osscabinet.gleemanager.ui.viewmodel.CurrencyUiState, viewModel: CurrencyViewModel) {
-    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
-    val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "Never"
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text("Last Updated", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                    Text(lastUpdatedStr, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()

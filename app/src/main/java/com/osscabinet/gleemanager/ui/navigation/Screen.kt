@@ -12,6 +12,7 @@ sealed class Screen(val route: String) {
     object SharedWallet : Screen("shared")
     object AccountSetup : Screen("account_setup")
     object AccountManagement : Screen("manage_accounts")
+    object ExchangeRates : Screen("exchange_rates")
     
     object EditBudget : Screen("edit_budget/{category}") {
         fun createRoute(category: String) = "edit_budget/$category"

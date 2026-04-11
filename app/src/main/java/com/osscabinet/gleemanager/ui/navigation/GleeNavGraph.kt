@@ -65,6 +65,12 @@ fun GleeNavGraph(
         }
     )
 
+    val currencyViewModel: CurrencyViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            CurrencyViewModel(appContainer.currencyRepository, appContainer.db.currencyDao(), appContainer.settingsDataStore)
+        }
+    )
+
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
@@ -75,6 +81,7 @@ fun GleeNavGraph(
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
+                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
                 accountViewModel = accountViewModel,
@@ -95,6 +102,7 @@ fun GleeNavGraph(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
+                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
@@ -103,6 +111,13 @@ fun GleeNavGraph(
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel
+            )
+        }
+
+        composable(Screen.ExchangeRates.route) {
+            ExchangeRatesScreen(
+                viewModel = currencyViewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
 

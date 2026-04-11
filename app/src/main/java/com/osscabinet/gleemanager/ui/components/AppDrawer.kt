@@ -34,6 +34,7 @@ fun AppDrawerContent(
     onLoansClick: () -> Unit,
     onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onExchangeRatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onCloseDrawer: () -> Unit
 ) {
@@ -140,6 +141,17 @@ fun AppDrawerContent(
                 onCloseDrawer()
             },
             icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+            modifier = Modifier.padding(horizontal = 12.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+        NavigationDrawerItem(
+            label = { Text("EXCHANGE RATES", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+            selected = selectedDestination == "exchange_rates",
+            onClick = { 
+                onExchangeRatesClick()
+                onCloseDrawer()
+            },
+            icon = { Icon(Icons.Default.CurrencyExchange, contentDescription = null) },
             modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )

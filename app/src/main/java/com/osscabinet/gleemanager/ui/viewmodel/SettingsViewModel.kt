@@ -25,6 +25,9 @@ class SettingsViewModel(
     private val _theme = MutableStateFlow("System")
     val theme: StateFlow<String> = _theme.asStateFlow()
 
+    private val _dashboardGridColumns = MutableStateFlow(2)
+    val dashboardGridColumns: StateFlow<Int> = _dashboardGridColumns.asStateFlow()
+
     private val _currentProfile = MutableStateFlow<ProfileEntity?>(null)
     val currentProfile: StateFlow<ProfileEntity?> = _currentProfile.asStateFlow()
 
@@ -37,6 +40,9 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             settingsDataStore.theme.collect { _theme.value = it }
+        }
+        viewModelScope.launch {
+            settingsDataStore.dashboardGridColumns.collect { _dashboardGridColumns.value = it }
         }
         viewModelScope.launch {
             profileRepository.getAllProfiles().collect { _profiles.value = it }
@@ -57,6 +63,12 @@ class SettingsViewModel(
     fun setTheme(theme: String) {
         viewModelScope.launch {
             settingsDataStore.saveTheme(theme)
+        }
+    }
+
+    fun setDashboardGridColumns(columns: Int) {
+        viewModelScope.launch {
+            settingsDataStore.saveDashboardGridColumns(columns)
         }
     }
 

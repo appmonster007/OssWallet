@@ -30,6 +30,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.components.AccountIconMap
 import com.osscabinet.gleemanager.domain.model.Account
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
@@ -169,11 +170,7 @@ fun AccountsViewScreen(
                         title = account.name.uppercase(),
                         balance = formatCurrency(balanceInBase, baseCurrency),
                         currencyBalances = accountCurrencyBalances,
-                        icon = when(account.structureType) {
-                            "Savings" -> Icons.Default.Savings
-                            "Credit Card" -> Icons.Default.CreditCard
-                            else -> Icons.Default.AccountBalance
-                        },
+                        icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
                         containerColor = accountColor,
                         contentColor = contentColor,
                         subAccounts = listOf(account.structureType),

@@ -35,9 +35,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -677,127 +677,9 @@ fun VisualIdentitySection(
     accentColorHex: String,
     onColorSelected: (String) -> Unit
 ) {
-    val iconMap = mapOf(
-        "AccountBalance" to Icons.Rounded.AccountBalance,
-        "Wallet" to Icons.Rounded.Wallet,
-        "RocketLaunch" to Icons.Rounded.RocketLaunch,
-        "ShowChart" to Icons.AutoMirrored.Rounded.ShowChart,
-        "Payments" to Icons.Rounded.Payments,
-        "Savings" to Icons.Rounded.Savings,
-        "Paid" to Icons.Rounded.Paid,
-        "AccountBalanceWallet" to Icons.Rounded.AccountBalanceWallet,
-        "CreditCard" to Icons.Rounded.CreditCard,
-        "MonetizationOn" to Icons.Rounded.MonetizationOn,
-        "Analytics" to Icons.Rounded.Analytics,
-        "Foundation" to Icons.Rounded.Foundation,
-        "Stars" to Icons.Rounded.Stars,
-        "Diamond" to Icons.Rounded.Diamond,
-        "AccountTree" to Icons.Rounded.AccountTree,
-        "AutoGraph" to Icons.Rounded.AutoGraph,
-        "Home" to Icons.Rounded.Home,
-        "Work" to Icons.Rounded.Work,
-        "School" to Icons.Rounded.School,
-        "ShoppingBag" to Icons.Rounded.ShoppingBag,
-        "ShoppingCart" to Icons.Rounded.ShoppingCart,
-        "Restaurant" to Icons.Rounded.Restaurant,
-        "Flight" to Icons.Rounded.Flight,
-        "DirectionsCar" to Icons.Rounded.DirectionsCar,
-        "DirectionsBus" to Icons.Rounded.DirectionsBus,
-        "DirectionsBike" to Icons.Rounded.DirectionsBike,
-        "Hotel" to Icons.Rounded.Hotel,
-        "LocalPharmacy" to Icons.Rounded.LocalPharmacy,
-        "LocalHospital" to Icons.Rounded.LocalHospital,
-        "FitnessCenter" to Icons.Rounded.FitnessCenter,
-        "Fastfood" to Icons.Rounded.Fastfood,
-        "Coffee" to Icons.Rounded.Coffee,
-        "LocalDrink" to Icons.Rounded.LocalDrink,
-        "Storefront" to Icons.Rounded.Storefront,
-        "Build" to Icons.Rounded.Build,
-        "Settings" to Icons.Rounded.Settings,
-        "Lock" to Icons.Rounded.Lock,
-        "Key" to Icons.Rounded.Key,
-        "VpnKey" to Icons.Rounded.VpnKey,
-        "Face" to Icons.Rounded.Face,
-        "Groups" to Icons.Rounded.Groups,
-        "Person" to Icons.Rounded.Person,
-        "Pets" to Icons.Rounded.Pets,
-        "Favorite" to Icons.Rounded.Favorite,
-        "EmojiEvents" to Icons.Rounded.EmojiEvents,
-        "SportsBasketball" to Icons.Rounded.SportsBasketball,
-        "SportsSoccer" to Icons.Rounded.SportsSoccer,
-        "SportsEsports" to Icons.Rounded.SportsEsports,
-        "Gamepad" to Icons.Rounded.Gamepad,
-        "Headphones" to Icons.Rounded.Headphones,
-        "MusicNote" to Icons.Rounded.MusicNote,
-        "Movie" to Icons.Rounded.Movie,
-        "CameraAlt" to Icons.Rounded.CameraAlt,
-        "PhotoCamera" to Icons.Rounded.PhotoCamera,
-        "Smartphone" to Icons.Rounded.Smartphone,
-        "Laptop" to Icons.Rounded.Laptop,
-        "DesktopWindows" to Icons.Rounded.DesktopWindows,
-        "Print" to Icons.Rounded.Print,
-        "Cloud" to Icons.Rounded.Cloud,
-        "Email" to Icons.Rounded.Email,
-        "Phone" to Icons.Rounded.Phone,
-        "Chat" to Icons.Rounded.Chat,
-        "Forum" to Icons.Rounded.Forum,
-        "Public" to Icons.Rounded.Public,
-        "Language" to Icons.Rounded.Language,
-        "Map" to Icons.Rounded.Map,
-        "Place" to Icons.Rounded.Place,
-        "Explore" to Icons.Rounded.Explore,
-        "Terrain" to Icons.Rounded.Terrain,
-        "Nature" to Icons.Rounded.Nature,
-        "LocalFlorist" to Icons.Rounded.LocalFlorist,
-        "Park" to Icons.Rounded.Park,
-        "Lightbulb" to Icons.Rounded.Lightbulb,
-        "FlashOn" to Icons.Rounded.FlashOn,
-        "Eco" to Icons.Rounded.Eco,
-        "WaterDrop" to Icons.Rounded.WaterDrop,
-        "ElectricBolt" to Icons.Rounded.ElectricBolt,
-        "Agriculture" to Icons.Rounded.Agriculture,
-        "Construction" to Icons.Rounded.Construction,
-        "Engineering" to Icons.Rounded.Engineering,
-        "Gavel" to Icons.Rounded.Gavel,
-        "HistoryEdu" to Icons.Rounded.HistoryEdu,
-        "MenuBook" to Icons.Rounded.MenuBook,
-        "Book" to Icons.Rounded.Book,
-        "Receipt" to Icons.Rounded.Receipt,
-        "ReceiptLong" to Icons.AutoMirrored.Rounded.ReceiptLong,
-        "Inventory" to Icons.Rounded.Inventory,
-        "Archive" to Icons.Rounded.Archive,
-        "PushPin" to Icons.Rounded.PushPin,
-        "Flag" to Icons.Rounded.Flag,
-        "Terminal" to Icons.Rounded.Terminal,
-        "Code" to Icons.Rounded.Code,
-        "BugReport" to Icons.Rounded.BugReport,
-        "Security" to Icons.Rounded.Security,
-        "Shield" to Icons.Rounded.Shield,
-        "Policy" to Icons.Rounded.Policy,
-        "ListAlt" to Icons.AutoMirrored.Rounded.ListAlt,
-        "TaskAlt" to Icons.Rounded.TaskAlt,
-        "CheckCircle" to Icons.Rounded.CheckCircle,
-        "Cancel" to Icons.Rounded.Cancel,
-        "Error" to Icons.Rounded.Error,
-        "Warning" to Icons.Rounded.Warning,
-        "Info" to Icons.Rounded.Info,
-        "Help" to Icons.Rounded.Help,
-        "Add" to Icons.Rounded.Add,
-        "Remove" to Icons.Rounded.Remove,
-        "Check" to Icons.Rounded.Check,
-        "Close" to Icons.Rounded.Close,
-        "Search" to Icons.Rounded.Search,
-        "Refresh" to Icons.Rounded.Refresh,
-        "Sync" to Icons.Rounded.Sync,
-        "Timer" to Icons.Rounded.Timer,
-        "Schedule" to Icons.Rounded.Schedule,
-        "Today" to Icons.Rounded.Today,
-        "Event" to Icons.Rounded.Event,
-        "CalendarMonth" to Icons.Rounded.CalendarMonth
-    )
     val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
-    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AccountIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showAllIcons by remember { mutableStateOf(false) }
 
@@ -829,7 +711,7 @@ fun VisualIdentitySection(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     filteredIcons.forEach { name ->
-                        val icon = iconMap[name]!!
+                        val icon = AccountIconMap[name]!!
                         val isSelected = selectedIconName == name
                         val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                         Surface(
@@ -842,7 +724,7 @@ fun VisualIdentitySection(
                         }
                     }
                 }
-            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && iconMap.containsKey(selectedIconName)) {
+            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AccountIconMap.containsKey(selectedIconName)) {
                 // Show currently selected icon if search is blank
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
@@ -852,7 +734,7 @@ fun VisualIdentitySection(
                         color = accentColor,
                         contentColor = if (accentColor.isDark()) Color.White else Color.Black
                     ) {
-                        Box(contentAlignment = Alignment.Center) { Icon(iconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                        Box(contentAlignment = Alignment.Center) { Icon(AccountIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
                     }
                     Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                 }
@@ -930,7 +812,7 @@ fun VisualIdentitySection(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        iconMap.forEach { (name, icon) ->
+                        AccountIconMap.forEach { (name, icon) ->
                             val isSelected = selectedIconName == name
                             val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                             Surface(

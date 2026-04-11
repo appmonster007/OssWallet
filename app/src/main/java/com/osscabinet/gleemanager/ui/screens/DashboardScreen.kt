@@ -30,6 +30,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.components.AccountIconMap
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -517,11 +518,7 @@ fun AccountGridItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    when(account.structureType) {
-                        "Savings" -> Icons.Default.Savings
-                        "Credit Card" -> Icons.Default.CreditCard
-                        else -> Icons.Default.AccountBalance
-                    },
+                    AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
                     contentDescription = null,
                     modifier = Modifier.size(iconSize),
                     tint = contentColor.copy(alpha = 0.7f)

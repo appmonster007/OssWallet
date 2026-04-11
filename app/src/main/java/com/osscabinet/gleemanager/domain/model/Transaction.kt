@@ -13,5 +13,6 @@ data class Transaction(
     val tags: List<String> = emptyList(),
     val payee: String = "",
     val note: String = "",
-    val recurring: String? = null
+    val recurring: String? = null,
+    val linkedTransactionId: Long? = null
 )

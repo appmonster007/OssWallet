@@ -85,14 +85,23 @@ fun AeonTextField(
                 Spacer(modifier = Modifier.width(12.dp))
             }
             if (prefix != null) {
-                Text(prefix, style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold))
+                Text(
+                    prefix,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.outline,
+                        fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Bold
+                    )
+                )
                 Spacer(modifier = Modifier.width(8.dp))
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (prefix == "HEX") FontWeight.Black else FontWeight.Normal
+                ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
                     if (value.isEmpty()) Text(placeholder, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
@@ -299,7 +308,7 @@ fun VerticalColorSlider(
     brush: Brush,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Canvas(
         modifier = modifier
             .width(48.dp)
             .fillMaxHeight()
@@ -319,21 +328,19 @@ fun VerticalColorSlider(
             }
     ) {
         val thumbY = (1f - (value - range.start) / (range.endInclusive - range.start))
+        val y = thumbY * size.height
         
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val y = thumbY * size.height
-            drawCircle(
-                color = Color.White,
-                radius = 12.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(size.width / 2, y)
-            )
-            drawCircle(
-                color = Color.Black.copy(alpha = 0.2f),
-                radius = 12.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(size.width / 2, y),
-                style = Stroke(width = 1.dp.toPx())
-            )
-        }
+        drawCircle(
+            color = Color.White,
+            radius = 12.dp.toPx(),
+            center = androidx.compose.ui.geometry.Offset(size.width / 2, y)
+        )
+        drawCircle(
+            color = Color.Black.copy(alpha = 0.2f),
+            radius = 12.dp.toPx(),
+            center = androidx.compose.ui.geometry.Offset(size.width / 2, y),
+            style = Stroke(width = 1.dp.toPx())
+        )
     }
 }
 
@@ -343,59 +350,51 @@ fun ColorWheel(
     onColorSelected: (Color) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
-        val radius = constraints.maxWidth / 2f
-        val center = androidx.compose.ui.geometry.Offset(radius, radius)
-
+    Box(
+        modifier = modifier.aspectRatio(1f),
+        contentAlignment = Alignment.Center
+    ) {
         val hsv = remember(selectedColor) {
             val hsvOut = FloatArray(3)
             android.graphics.Color.colorToHSV(selectedColor.toArgb(), hsvOut)
             hsvOut
         }
 
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "CURRENT",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.outline,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                )
-                Text(
-                    String.format("#%06X", 0xFFFFFF and selectedColor.toArgb()),
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
-                )
-            }
-        }
-
-        Canvas(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-            detectDragGestures { change, _ ->
-                val dx = change.position.x - center.x
-                val dy = change.position.y - center.y
-                val dist = sqrt(dx * dx + dy * dy)
-                if (dist <= radius) {
-                    val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
-                    val saturation = (dist / radius).coerceIn(0f, 1f)
-                    onColorSelected(Color.hsv(angle, saturation, hsv[2]))
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(hsv[2]) {
+                    detectDragGestures { change, _ ->
+                        val radius = size.width / 2f
+                        val center = androidx.compose.ui.geometry.Offset(radius, radius)
+                        val dx = change.position.x - center.x
+                        val dy = change.position.y - center.y
+                        val dist = sqrt(dx * dx + dy * dy)
+                        if (dist <= radius) {
+                            val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
+                            val saturation = (dist / radius).coerceIn(0f, 1f)
+                            onColorSelected(Color.hsv(angle, saturation, hsv[2]))
+                        }
+                    }
                 }
-            }
-        }.pointerInput(Unit) {
-            detectTapGestures { offset ->
-                val dx = offset.x - center.x
-                val dy = offset.y - center.y
-                val dist = sqrt(dx * dx + dy * dy)
-                if (dist <= radius) {
-                    val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
-                    val saturation = (dist / radius).coerceIn(0f, 1f)
-                    onColorSelected(Color.hsv(angle, saturation, hsv[2]))
+                .pointerInput(hsv[2]) {
+                    detectTapGestures { offset ->
+                        val radius = size.width / 2f
+                        val center = androidx.compose.ui.geometry.Offset(radius, radius)
+                        val dx = offset.x - center.x
+                        val dy = offset.y - center.y
+                        val dist = sqrt(dx * dx + dy * dy)
+                        if (dist <= radius) {
+                            val angle = (atan2(dy, dx) * 180 / PI).toFloat().let { if (it < 0) it + 360f else it }
+                            val saturation = (dist / radius).coerceIn(0f, 1f)
+                            onColorSelected(Color.hsv(angle, saturation, hsv[2]))
+                        }
+                    }
                 }
-            }
-        }) {
+        ) {
+            val radius = size.minDimension / 2f
+            val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+            
             val colors = listOf(
                 Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
             )
@@ -438,6 +437,24 @@ fun ColorWheel(
                 style = Stroke(width = 2.dp.toPx())
             )
         }
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "CURRENT",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.outline,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            )
+            Text(
+                String.format("#%06X", 0xFFFFFF and selectedColor.toArgb()),
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                )
+            )
+        }
     }
 }
 
@@ -465,6 +482,8 @@ fun AdvancedColorPickerDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Done") }
         },
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        tonalElevation = 8.dp,
         title = { Text("Color Selection") },
         text = {
             Column(
@@ -819,15 +838,39 @@ fun VisualIdentitySection(
             Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 presetColors.forEach { colorHex ->
                     val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
+                    val color = Color(android.graphics.Color.parseColor(colorHex))
                     Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(colorHex))).clickable { onColorSelected(colorHex) }.border(width = if (isSelected) 2.dp else 0.dp, color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent, shape = CircleShape),
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                else Color.Transparent
+                            )
+                            .clickable { onColorSelected(colorHex) },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isSelected) Icon(Icons.Rounded.Check, contentDescription = null, tint = if (Color(android.graphics.Color.parseColor(colorHex)).isDark()) Color.White else Color.Black, modifier = Modifier.size(20.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(color),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = if (color.isDark()) Color.White else Color.Black,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

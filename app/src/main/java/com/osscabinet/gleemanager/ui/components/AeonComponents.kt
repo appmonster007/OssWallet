@@ -1,9 +1,7 @@
 package com.osscabinet.gleemanager.ui.components
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,19 +25,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
+import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
+import com.osscabinet.gleemanager.ui.util.formatAmount
+import com.osscabinet.gleemanager.ui.util.toContainerColor
+import com.osscabinet.gleemanager.ui.util.toOnContainerColor
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun Numpad(
@@ -554,3 +563,247 @@ val categoryIcons = mapOf(
     "Grocery" to Icons.Rounded.ShoppingCart,
     "Other" to Icons.Rounded.MoreHoriz
 )
+
+@Composable
+fun AeonFlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                curr,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
+                color = MaterialTheme.colorScheme.outline
+            )
+            if (curr != baseCurrency) {
+                Text(
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+        Text(
+            formatCurrencyRight(amount, curr),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
+        )
+    }
+}
+
+@Composable
+fun AeonCashFlowSection(
+    transactions: List<Transaction>,
+    baseCurrency: String,
+    exchangeRates: Map<String, Double>,
+    currentTheme: String,
+    showTitle: Boolean = true
+) {
+    val allSupportedCurrencies = remember(transactions) {
+        transactions.map { it.currency }.distinct().sorted()
+    }
+
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+
+    val incomeColor = Color(0xFF2E7D32)
+    val expenseColor = Color(0xFFC62828)
+
+    val incomeContainer = if (isAmoled) Color.Black else incomeColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
+    val expenseContainer = if (isAmoled) Color.Black else expenseColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
+    
+    val incomeBorder = if (isAmoled) BorderStroke(1.dp, incomeColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, incomeColor.copy(alpha = 0.1f))
+    val expenseBorder = if (isAmoled) BorderStroke(1.dp, expenseColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, expenseColor.copy(alpha = 0.1f))
+
+    val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            allSupportedCurrencies.mapNotNull { curr ->
+                val txsForCurr = transactions.filter { it.currency == curr }
+                val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
+                val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }
+
+                if (income == 0.0 && expense == 0.0) null
+                else {
+                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                    val incomeInBase = if (rate != 0.0) income / rate else income
+                    val expenseInBase = if (rate != 0.0) expense / rate else expense
+                    Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
+                }
+            }
+        }
+    }
+
+    val totalIncomeInBase = flowData.sumOf { it.second.second }
+    val totalExpenseInBase = flowData.sumOf { it.third.second }
+
+    val density = LocalDensity.current
+    var incomeSize by remember { mutableStateOf(IntSize.Zero) }
+    var expenseSize by remember { mutableStateOf(IntSize.Zero) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (showTitle) {
+            Text("CASH FLOW SUMMARY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Income Section
+            Surface(
+                modifier = Modifier.weight(1f).onSizeChanged { incomeSize = it },
+                shape = RoundedCornerShape(24.dp),
+                color = incomeContainer,
+                border = incomeBorder
+            ) {
+                Box {
+                    val iconHeight = with(density) { (incomeSize.height * 0.75f).toDp() }
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowDownward,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset { IntOffset(x = (incomeSize.width * 0.25f).toInt(), y = 0) }
+                            .size(iconHeight)
+                            .alpha(0.2f),
+                        tint = Color(0xFF2E7D32)
+                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            formatCurrencyRight(totalIncomeInBase, baseCurrency),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            flowData.forEach { (curr, income, _) ->
+                                AeonFlowBreakdownItem(curr, income.first, income.second, baseCurrency)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Expense Section
+            Surface(
+                modifier = Modifier.weight(1f).onSizeChanged { expenseSize = it },
+                shape = RoundedCornerShape(24.dp),
+                color = expenseContainer,
+                border = expenseBorder
+            ) {
+                Box {
+                    val iconHeight = with(density) { (expenseSize.height * 0.75f).toDp() }
+                    Icon(
+                        imageVector = Icons.Rounded.ArrowUpward,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset { IntOffset(x = (expenseSize.width * 0.25f).toInt(), y = 0) }
+                            .size(iconHeight)
+                            .alpha(0.2f),
+                        tint = Color(0xFFC62828)
+                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            formatCurrencyRight(totalExpenseInBase, baseCurrency),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            flowData.forEach { (curr, _, expense) ->
+                                AeonFlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonTransactionItem(
+    title: String,
+    sub: String,
+    amount: String,
+    isIncome: Boolean,
+    account: String? = null,
+    icon: ImageVector? = null,
+    iconBg: Color? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = iconBg ?: (if (isIncome) Color(0xFF2E7D32).copy(alpha = 0.1f) else Color(0xFFC62828).copy(alpha = 0.1f))
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon ?: (if (isIncome) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                Text(sub, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    amount,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                    color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
+                )
+                if (account != null) {
+                    Text(account, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonBudgetProgress(label: String, current: Float, total: Float, color: Color, baseCurrency: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+            Text("${formatCurrencyRight(current.toDouble(), baseCurrency)} / ${formatCurrencyRight(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        }
+        LinearProgressIndicator(
+            progress = { current / total },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape),
+            color = color,
+            trackColor = MaterialTheme.colorScheme.surface
+        )
+    }
+}

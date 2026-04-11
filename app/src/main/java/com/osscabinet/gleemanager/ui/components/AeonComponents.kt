@@ -274,6 +274,7 @@ fun AccountPickerSheet(
     onAccountSelected: (Account) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val sortedAccounts = remember(accounts) { accounts.sortedBy { it.name } }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -283,7 +284,7 @@ fun AccountPickerSheet(
             Text("SELECT LEDGER", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             Spacer(modifier = Modifier.height(24.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(accounts) { account ->
+                items(sortedAccounts) { account ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -346,7 +347,7 @@ fun CurrencySelector(
             if (supportedCurrencies.isEmpty()) {
                 DropdownMenuItem(text = { Text("USD") }, onClick = { onCurrencySelected("USD"); expanded = false })
             } else {
-                supportedCurrencies.forEach { currency ->
+                supportedCurrencies.sorted().forEach { currency ->
                     DropdownMenuItem(
                         text = { Text(currency) },
                         onClick = {
@@ -622,7 +623,7 @@ fun AeonCashFlowSection(
 
     val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
         derivedStateOf {
-            allSupportedCurrencies.mapNotNull { curr ->
+            allSupportedCurrencies.sorted().mapNotNull { curr ->
                 val txsForCurr = transactions.filter { it.currency == curr }
                 val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
                 val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }

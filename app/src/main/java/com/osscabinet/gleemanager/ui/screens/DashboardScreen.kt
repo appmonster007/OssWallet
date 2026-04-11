@@ -247,7 +247,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
-                items(currencyTotals.toList()) { (currency, amount) ->
+                items(currencyTotals.toList().sortedBy { it.first }) { (currency, amount) ->
                     val rate = exchangeRates[currency] ?: 1.0
                     val inBase = if (rate != 0.0) amount / rate else amount
 
@@ -315,7 +315,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 maxItemsInEachRow = gridColumns
             ) {
-                accounts.forEach { account ->
+                accounts.sortedBy { it.name }.forEach { account ->
                     val accountTransactions = transactions.filter { it.accountId == account.id }
 
                     val supportedCurrencies = remember(account, accountTransactions) {

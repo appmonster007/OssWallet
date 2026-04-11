@@ -2,33 +2,26 @@ package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ShowChart
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.gleemanager.ui.components.AeonTextField
-import com.osscabinet.gleemanager.ui.components.CurrencyManagementSection
-import com.osscabinet.gleemanager.ui.components.VisualIdentitySection
+import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
@@ -73,7 +66,7 @@ fun EditAccountScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("Edit Account", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -84,7 +77,10 @@ fun EditAccountScreen(
                     val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                     val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank()
                     
-                    TextButton(
+                    Surface(
+                        modifier = Modifier.padding(end = 16.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (canSave) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
                         onClick = {
                             if (canSave) {
                                 viewModel.updateAccount(account.copy(
@@ -98,10 +94,16 @@ fun EditAccountScreen(
                                 onBackClick()
                             }
                         },
-                        enabled = canSave,
-                        colors = ButtonDefaults.textButtonColors(contentColor = currentAccentColor)
+                        enabled = canSave
                     ) {
-                        Text("SAVE", fontWeight = FontWeight.Bold)
+                        Text(
+                            "SAVE",
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = if (canSave) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
+                            )
+                        )
                     }
                 }
             )
@@ -113,62 +115,64 @@ fun EditAccountScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Column {
-                Text("CONFIGURATION", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
-                Text("Edit Account Identity", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-            }
+            // Header Section
+            AccountHeroHeader(
+                name = accountName,
+                balance = account.balance.toString(),
+                currencyCode = primaryCurrency,
+                colorHex = accentColorHex,
+                iconName = selectedIconName
+            )
 
-            // Account Name
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Account Name", style = MaterialTheme.typography.titleSmall)
-                AeonTextField(
+            // Identity Section
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("IDENTITY", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                
+                EditorialInput(
                     value = accountName,
                     onValueChange = { accountName = it },
-                    placeholder = "e.g. Global Treasury"
+                    label = "ACCOUNT NAME",
+                    icon = Icons.AutoMirrored.Rounded.Label
                 )
-            }
 
-            // Structure Type
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Structure Type", style = MaterialTheme.typography.titleSmall)
-                Box {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(28.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                            .clickable { isStructureMenuExpanded = true }
-                            .padding(horizontal = 20.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(structureType, style = MaterialTheme.typography.bodyLarge)
-                            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
-                        }
-                    }
-                    DropdownMenu(
-                        expanded = isStructureMenuExpanded,
+                RecordFieldCard(
+                    icon = Icons.Rounded.Layers,
+                    label = "STRUCTURE TYPE",
+                    value = structureType,
+                    onClick = { isStructureMenuExpanded = true },
+                    trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                )
+
+                if (isStructureMenuExpanded) {
+                    ModalBottomSheet(
                         onDismissRequest = { isStructureMenuExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.85f).background(MaterialTheme.colorScheme.surface)
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                     ) {
-                        structureTypes.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type) },
-                                onClick = {
-                                    structureType = type
-                                    isStructureMenuExpanded = false
+                        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                            Text("STRUCTURE TYPE", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Spacer(modifier = Modifier.height(24.dp))
+                            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                items(structureTypes) { type ->
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth().clickable { structureType = type; isStructureMenuExpanded = false },
+                                        shape = RoundedCornerShape(24.dp),
+                                        color = if (structureType == type) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                                    ) {
+                                        Text(type, modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    }
                                 }
-                            )
+                            }
                         }
                     }
                 }
             }
 
-            // Currency Management
+            // Currency Management Card
             CurrencyManagementSection(
                 primaryCurrency = primaryCurrency,
                 onPrimaryCurrencyChange = { primaryCurrency = it },
@@ -179,7 +183,7 @@ fun EditAccountScreen(
                 currencyUsageMap = currencyUsageMap
             )
 
-            // Visual Identity
+            // Visual Identity Section
             VisualIdentitySection(
                 selectedIconName = selectedIconName,
                 onIconSelected = { selectedIconName = it },
@@ -187,7 +191,7 @@ fun EditAccountScreen(
                 onColorSelected = { accentColorHex = it }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
@@ -208,7 +212,7 @@ fun EditAccountScreen(
                 Text("DELETE ACCOUNT", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

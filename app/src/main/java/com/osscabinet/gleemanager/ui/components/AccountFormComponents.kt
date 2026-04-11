@@ -1,15 +1,18 @@
 package com.osscabinet.gleemanager.ui.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ListAlt
+import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.automirrored.rounded.ShowChart
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -67,7 +70,7 @@ fun AeonTextField(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CurrencyManagementSection(
     primaryCurrency: String,
@@ -95,37 +98,6 @@ fun CurrencyManagementSection(
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             
-            // Default/Primary Currency Selection (Separate Field as requested)
-            if (allowedCurrencies.size > 1) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Default Currency", style = MaterialTheme.typography.titleSmall)
-                    var isExpanded by remember { mutableStateOf(false) }
-                    Box {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(56.dp).clickable { isExpanded = true },
-                            shape = RoundedCornerShape(28.dp),
-                            color = MaterialTheme.colorScheme.surface
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(primaryCurrency.ifEmpty { "Select Default" })
-                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
-                            }
-                        }
-                        DropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
-                            allowedCurrencies.forEach { code ->
-                                DropdownMenuItem(
-                                    text = { Text(code) },
-                                    onClick = {
-                                        onPrimaryCurrencyChange(code)
-                                        isExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             // Search Bar
             Surface(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -160,7 +132,6 @@ fun CurrencyManagementSection(
                     val isPrimary = primaryCurrency == code
                     val hasTransactions = currencyUsageMap[code] ?: false
                     
-                    // In edit mode: Only allow adding more, or deleting if NO transactions use it
                     val canToggle = if (isEditMode) {
                         !isSelected || (!isPrimary && !hasTransactions)
                     } else {
@@ -206,6 +177,38 @@ fun CurrencyManagementSection(
                     }
                 }
             }
+
+            // Default Currency Selection (Moved after allowed currencies)
+            if (allowedCurrencies.size > 1) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Default Currency", style = MaterialTheme.typography.titleSmall)
+                    var isExpanded by remember { mutableStateOf(false) }
+                    Box {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(56.dp).clickable { isExpanded = true },
+                            shape = RoundedCornerShape(28.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(primaryCurrency.ifEmpty { "Select Default" })
+                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
+                            }
+                        }
+                        DropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
+                            allowedCurrencies.forEach { code ->
+                                DropdownMenuItem(
+                                    text = { Text(code) },
+                                    onClick = {
+                                        onPrimaryCurrencyChange(code)
+                                        isExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             if (isEditMode) {
                 Text("Note: Currencies with existing transactions cannot be removed.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             }
@@ -213,7 +216,7 @@ fun CurrencyManagementSection(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun VisualIdentitySection(
     selectedIconName: String,
@@ -237,11 +240,112 @@ fun VisualIdentitySection(
         "Stars" to Icons.Rounded.Stars,
         "Diamond" to Icons.Rounded.Diamond,
         "AccountTree" to Icons.Rounded.AccountTree,
-        "AutoGraph" to Icons.Rounded.AutoGraph
+        "AutoGraph" to Icons.Rounded.AutoGraph,
+        "Home" to Icons.Rounded.Home,
+        "Work" to Icons.Rounded.Work,
+        "School" to Icons.Rounded.School,
+        "ShoppingBag" to Icons.Rounded.ShoppingBag,
+        "ShoppingCart" to Icons.Rounded.ShoppingCart,
+        "Restaurant" to Icons.Rounded.Restaurant,
+        "Flight" to Icons.Rounded.Flight,
+        "DirectionsCar" to Icons.Rounded.DirectionsCar,
+        "DirectionsBus" to Icons.Rounded.DirectionsBus,
+        "DirectionsBike" to Icons.Rounded.DirectionsBike,
+        "Hotel" to Icons.Rounded.Hotel,
+        "LocalPharmacy" to Icons.Rounded.LocalPharmacy,
+        "LocalHospital" to Icons.Rounded.LocalHospital,
+        "FitnessCenter" to Icons.Rounded.FitnessCenter,
+        "Fastfood" to Icons.Rounded.Fastfood,
+        "Coffee" to Icons.Rounded.Coffee,
+        "LocalDrink" to Icons.Rounded.LocalDrink,
+        "Storefront" to Icons.Rounded.Storefront,
+        "Build" to Icons.Rounded.Build,
+        "Settings" to Icons.Rounded.Settings,
+        "Lock" to Icons.Rounded.Lock,
+        "Key" to Icons.Rounded.Key,
+        "VpnKey" to Icons.Rounded.VpnKey,
+        "Face" to Icons.Rounded.Face,
+        "Groups" to Icons.Rounded.Groups,
+        "Person" to Icons.Rounded.Person,
+        "Pets" to Icons.Rounded.Pets,
+        "Favorite" to Icons.Rounded.Favorite,
+        "EmojiEvents" to Icons.Rounded.EmojiEvents,
+        "SportsBasketball" to Icons.Rounded.SportsBasketball,
+        "SportsSoccer" to Icons.Rounded.SportsSoccer,
+        "SportsEsports" to Icons.Rounded.SportsEsports,
+        "Gamepad" to Icons.Rounded.Gamepad,
+        "Headphones" to Icons.Rounded.Headphones,
+        "MusicNote" to Icons.Rounded.MusicNote,
+        "Movie" to Icons.Rounded.Movie,
+        "CameraAlt" to Icons.Rounded.CameraAlt,
+        "PhotoCamera" to Icons.Rounded.PhotoCamera,
+        "Smartphone" to Icons.Rounded.Smartphone,
+        "Laptop" to Icons.Rounded.Laptop,
+        "DesktopWindows" to Icons.Rounded.DesktopWindows,
+        "Print" to Icons.Rounded.Print,
+        "Cloud" to Icons.Rounded.Cloud,
+        "Email" to Icons.Rounded.Email,
+        "Phone" to Icons.Rounded.Phone,
+        "Chat" to Icons.Rounded.Chat,
+        "Forum" to Icons.Rounded.Forum,
+        "Public" to Icons.Rounded.Public,
+        "Language" to Icons.Rounded.Language,
+        "Map" to Icons.Rounded.Map,
+        "Place" to Icons.Rounded.Place,
+        "Explore" to Icons.Rounded.Explore,
+        "Terrain" to Icons.Rounded.Terrain,
+        "Nature" to Icons.Rounded.Nature,
+        "LocalFlorist" to Icons.Rounded.LocalFlorist,
+        "Park" to Icons.Rounded.Park,
+        "Lightbulb" to Icons.Rounded.Lightbulb,
+        "FlashOn" to Icons.Rounded.FlashOn,
+        "Eco" to Icons.Rounded.Eco,
+        "WaterDrop" to Icons.Rounded.WaterDrop,
+        "ElectricBolt" to Icons.Rounded.ElectricBolt,
+        "Agriculture" to Icons.Rounded.Agriculture,
+        "Construction" to Icons.Rounded.Construction,
+        "Engineering" to Icons.Rounded.Engineering,
+        "Gavel" to Icons.Rounded.Gavel,
+        "HistoryEdu" to Icons.Rounded.HistoryEdu,
+        "MenuBook" to Icons.Rounded.MenuBook,
+        "Book" to Icons.Rounded.Book,
+        "Receipt" to Icons.Rounded.Receipt,
+        "ReceiptLong" to Icons.AutoMirrored.Rounded.ReceiptLong,
+        "Inventory" to Icons.Rounded.Inventory,
+        "Archive" to Icons.Rounded.Archive,
+        "PushPin" to Icons.Rounded.PushPin,
+        "Flag" to Icons.Rounded.Flag,
+        "Terminal" to Icons.Rounded.Terminal,
+        "Code" to Icons.Rounded.Code,
+        "BugReport" to Icons.Rounded.BugReport,
+        "Security" to Icons.Rounded.Security,
+        "Shield" to Icons.Rounded.Shield,
+        "Policy" to Icons.Rounded.Policy,
+        "ListAlt" to Icons.AutoMirrored.Rounded.ListAlt,
+        "TaskAlt" to Icons.Rounded.TaskAlt,
+        "CheckCircle" to Icons.Rounded.CheckCircle,
+        "Cancel" to Icons.Rounded.Cancel,
+        "Error" to Icons.Rounded.Error,
+        "Warning" to Icons.Rounded.Warning,
+        "Info" to Icons.Rounded.Info,
+        "Help" to Icons.Rounded.Help,
+        "Add" to Icons.Rounded.Add,
+        "Remove" to Icons.Rounded.Remove,
+        "Check" to Icons.Rounded.Check,
+        "Close" to Icons.Rounded.Close,
+        "Search" to Icons.Rounded.Search,
+        "Refresh" to Icons.Rounded.Refresh,
+        "Sync" to Icons.Rounded.Sync,
+        "Timer" to Icons.Rounded.Timer,
+        "Schedule" to Icons.Rounded.Schedule,
+        "Today" to Icons.Rounded.Today,
+        "Event" to Icons.Rounded.Event,
+        "CalendarMonth" to Icons.Rounded.CalendarMonth
     )
-    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121")
+    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
     val filteredIcons = if (iconSearchQuery.isBlank()) iconMap.keys.toList() else iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    var showColorPicker by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
         Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
@@ -251,13 +355,12 @@ fun VisualIdentitySection(
             AeonTextField(
                 value = iconSearchQuery,
                 onValueChange = { iconSearchQuery = it },
-                placeholder = "Search icons...",
+                placeholder = "Search 100+ icons...",
                 leadingIcon = Icons.Rounded.Search
             )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 filteredIcons.forEach { name ->
                     val icon = iconMap[name]!!
@@ -277,10 +380,9 @@ fun VisualIdentitySection(
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 presetColors.forEach { colorHex ->
                     val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
@@ -302,7 +404,44 @@ fun VisualIdentitySection(
                     prefix = "HEX",
                     modifier = Modifier.weight(1f)
                 )
+                IconButton(
+                    onClick = { showColorPicker = true },
+                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), CircleShape)
+                ) {
+                    Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
+                }
             }
         }
+    }
+
+    if (showColorPicker) {
+        val allColors = listOf(
+            "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", 
+            "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", 
+            "#795548", "#9E9E9E", "#607D8B", "#000000"
+        )
+        AlertDialog(
+            onDismissRequest = { showColorPicker = false },
+            title = { Text("Select Color") },
+            text = {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    allColors.forEach { colorHex ->
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(colorHex))).clickable { 
+                                onColorSelected(colorHex)
+                                showColorPicker = false
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showColorPicker = false }) { Text("Close") }
+            }
+        )
     }
 }

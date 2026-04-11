@@ -43,51 +43,15 @@ fun AccountSetupScreen(
     var initialBalance by remember { mutableStateOf("") }
     var structureType by remember { mutableStateOf("Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var iconSearchQuery by remember { mutableStateOf("") }
-    
+
     // Currency logic
     var primaryCurrency by remember { mutableStateOf("") }
     var allowedCurrencies by remember { mutableStateOf(setOf<String>()) }
-    
+
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
-    
-    val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL")
-    val filteredCurrencies = if (searchQuery.isBlank()) {
-        commonCurrencies
-    } else {
-        commonCurrencies.filter { it.contains(searchQuery, ignoreCase = true) }
-    }
-    
-    val iconMap = mapOf(
-        "AccountBalance" to Icons.Rounded.AccountBalance,
-        "Wallet" to Icons.Rounded.Wallet,
-        "RocketLaunch" to Icons.Rounded.RocketLaunch,
-        "ShowChart" to Icons.AutoMirrored.Rounded.ShowChart,
-        "Payments" to Icons.Rounded.Payments,
-        "Savings" to Icons.Rounded.Savings,
-        "Paid" to Icons.Rounded.Paid,
-        "AccountBalanceWallet" to Icons.Rounded.AccountBalanceWallet,
-        "CreditCard" to Icons.Rounded.CreditCard,
-        "MonetizationOn" to Icons.Rounded.MonetizationOn,
-        "Analytics" to Icons.Rounded.Analytics,
-        "Foundation" to Icons.Rounded.Foundation,
-        "Stars" to Icons.Rounded.Stars,
-        "Diamond" to Icons.Rounded.Diamond,
-        "AccountTree" to Icons.Rounded.AccountTree,
-        "AutoGraph" to Icons.Rounded.AutoGraph
-    )
-    
+
     var selectedIconName by remember { mutableStateOf("AccountBalance") }
     var accentColorHex by remember { mutableStateOf("#004D5F") }
-
-    val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121")
-    
-    val filteredIcons = if (iconSearchQuery.isBlank()) {
-        iconMap.keys.toList()
-    } else {
-        iconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
-    }
 
     Scaffold(
         topBar = {
@@ -98,6 +62,32 @@ fun AccountSetupScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                    val isBalanceValid = initialBalance.isEmpty() || initialBalance.toDoubleOrNull() != null
+                    val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
+                    
+                    TextButton(
+                        onClick = {
+                            if (canCreate) {
+                                viewModel.addAccount(
+                                    name = accountName,
+                                    balance = initialBalance.toDoubleOrNull() ?: 0.0,
+                                    currency = primaryCurrency,
+                                    structureType = structureType,
+                                    colorHex = accentColorHex,
+                                    icon = selectedIconName,
+                                    allowedCurrencies = allowedCurrencies.toList()
+                                )
+                                onAccountCreated()
+                            }
+                        },
+                        enabled = canCreate,
+                        colors = ButtonDefaults.textButtonColors(contentColor = currentAccentColor)
+                    ) {
+                        Text("CREATE", fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -194,42 +184,6 @@ fun AccountSetupScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-            val isBalanceValid = initialBalance.isEmpty() || initialBalance.toDoubleOrNull() != null
-
-            Button(
-                onClick = {
-                    if (isBalanceValid) {
-                        viewModel.addAccount(
-                            name = accountName,
-                            balance = initialBalance.toDoubleOrNull() ?: 0.0,
-                            currency = primaryCurrency,
-                            structureType = structureType,
-                            colorHex = accentColorHex,
-                            icon = selectedIconName,
-                            allowedCurrencies = allowedCurrencies.toList()
-                        )
-                        onAccountCreated()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = currentAccentColor,
-                    contentColor = if (currentAccentColor.isDark()) Color.White else Color.Black
-                ),
-                enabled = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
-            ) {
-                Text("INITIALIZE LEDGER", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            }
         }
     }
-}
-
-@Composable
-fun AeonTextFieldPlaceholder() {
-    // Placeholder to remove the local AeonTextField
 }

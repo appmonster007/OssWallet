@@ -17,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,7 +50,7 @@ fun AccountSetupScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { 
-                    Text("New Ledger", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text("New Account", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -102,53 +101,17 @@ fun AccountSetupScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Header Section
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(40.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    
-                    Surface(
-                        modifier = Modifier.size(80.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        color = currentAccentColor
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.AccountBalance, // This should eventually use the selectedIconName mapping
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = if (currentAccentColor.isDark()) Color.White else Color.Black
-                            )
-                        }
-                    }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = accountName.ifBlank { "Untitled Ledger" },
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            maxLines = 1
-                        )
-                        Text(
-                            text = "${primaryCurrency} ${initialBalance.ifBlank { "0.00" }}",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
-                    }
-                }
-            }
+            AccountHeroHeader(
+                name = accountName,
+                balance = initialBalance,
+                currencyCode = primaryCurrency,
+                colorHex = accentColorHex,
+                iconName = selectedIconName
+            )
 
             // Identity Section
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -157,7 +120,7 @@ fun AccountSetupScreen(
                 EditorialInput(
                     value = accountName,
                     onValueChange = { accountName = it },
-                    label = "LEDGER NAME",
+                    label = "ACCOUNT NAME",
                     icon = Icons.AutoMirrored.Rounded.Label
                 )
 

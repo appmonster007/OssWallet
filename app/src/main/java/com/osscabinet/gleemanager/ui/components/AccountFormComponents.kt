@@ -8,25 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -35,9 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
-import androidx.compose.material.icons.automirrored.rounded.ShowChart
-import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -112,6 +91,64 @@ fun AeonTextField(
     }
 }
 
+@Composable
+fun AccountHeroHeader(
+    name: String,
+    balance: String,
+    currencyCode: String,
+    colorHex: String,
+    iconName: String,
+    modifier: Modifier = Modifier
+) {
+    val currentAccentColor = try {
+        Color(android.graphics.Color.parseColor(colorHex))
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(40.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(80.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = currentAccentColor
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        AccountIconMap[iconName] ?: Icons.Rounded.AccountBalance,
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp),
+                        tint = if (currentAccentColor.isDark()) Color.White else Color.Black
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = name.ifBlank { "Untitled Account" },
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 1
+                )
+                Text(
+                    text = "$currencyCode ${balance.ifBlank { "0.00" }}",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CurrencyManagementSection(
@@ -145,7 +182,7 @@ fun CurrencyManagementSection(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(48.dp),
+        shape = RoundedCornerShape(40.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -683,119 +720,125 @@ fun VisualIdentitySection(
     var showColorPicker by remember { mutableStateOf(false) }
     var showAllIcons by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
-        Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-        
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AeonTextField(
-                    value = iconSearchQuery,
-                    onValueChange = { iconSearchQuery = it },
-                    placeholder = "Search 100+ icons...",
-                    leadingIcon = Icons.Rounded.Search,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(
-                    onClick = { showAllIcons = true },
-                    modifier = Modifier.size(56.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), CircleShape)
-                ) {
-                    Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(40.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(32.dp)) {
+            Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AeonTextField(
+                        value = iconSearchQuery,
+                        onValueChange = { iconSearchQuery = it },
+                        placeholder = "Search 100+ icons...",
+                        leadingIcon = Icons.Rounded.Search,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { showAllIcons = true },
+                        modifier = Modifier.size(56.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), CircleShape)
+                    ) {
+                        Icon(Icons.Rounded.GridView, contentDescription = "View All Icons")
+                    }
                 }
-            }
 
-            if (filteredIcons.isNotEmpty()) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    filteredIcons.forEach { name ->
-                        val icon = AccountIconMap[name]!!
-                        val isSelected = selectedIconName == name
-                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-                        Surface(
-                            modifier = Modifier.size(48.dp).clickable { onIconSelected(name) },
-                            shape = CircleShape,
-                            color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
-                        ) {
-                            Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                if (filteredIcons.isNotEmpty()) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        filteredIcons.forEach { name ->
+                            val icon = AccountIconMap[name]!!
+                            val isSelected = selectedIconName == name
+                            val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                            Surface(
+                                modifier = Modifier.size(48.dp).clickable { onIconSelected(name) },
+                                shape = CircleShape,
+                                color = if (isSelected) accentColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                contentColor = if (isSelected) (if (accentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.onSurfaceVariant
+                            ) {
+                                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                            }
                         }
                     }
-                }
-            } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AccountIconMap.containsKey(selectedIconName)) {
-                // Show currently selected icon if search is blank
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-                    Surface(
-                        modifier = Modifier.size(48.dp),
-                        shape = CircleShape,
-                        color = accentColor,
-                        contentColor = if (accentColor.isDark()) Color.White else Color.Black
-                    ) {
-                        Box(contentAlignment = Alignment.Center) { Icon(AccountIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AccountIconMap.containsKey(selectedIconName)) {
+                    // Show currently selected icon if search is blank
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape = CircleShape,
+                            color = accentColor,
+                            contentColor = if (accentColor.isDark()) Color.White else Color.Black
+                        ) {
+                            Box(contentAlignment = Alignment.Center) { Icon(AccountIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                        }
+                        Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                     }
-                    Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                 }
             }
-        }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                presetColors.forEach { colorHex ->
-                    val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
-                    val color = Color(android.graphics.Color.parseColor(colorHex))
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                else Color.Transparent
-                            )
-                            .clickable { onColorSelected(colorHex) },
-                        contentAlignment = Alignment.Center
-                    ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    presetColors.forEach { colorHex ->
+                        val isSelected = accentColorHex.equals(colorHex, ignoreCase = true)
+                        val color = Color(android.graphics.Color.parseColor(colorHex))
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
-                                .background(color),
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                    else Color.Transparent
+                                )
+                                .clickable { onColorSelected(colorHex) },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    tint = if (color.isDark()) Color.White else Color.Black,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(color),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = if (color.isDark()) Color.White else Color.Black,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
-                Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(color))
-                AeonTextField(
-                    value = accentColorHex,
-                    onValueChange = { if (it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
-                    placeholder = "#004D5F",
-                    prefix = "HEX",
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(
-                    onClick = { showColorPicker = true },
-                    modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), CircleShape)
-                ) {
-                    Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
+                    Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(color))
+                    AeonTextField(
+                        value = accentColorHex,
+                        onValueChange = { if (it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
+                        placeholder = "#004D5F",
+                        prefix = "HEX",
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { showColorPicker = true },
+                        modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), CircleShape)
+                    ) {
+                        Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")
+                    }
                 }
             }
         }

@@ -14,5 +14,7 @@ data class AccountEntity(
     val colorHex: String,
     val icon: String,
     val allowedCurrencies: String, // JSON or Comma separated
-    val profileId: Int = 1
+    val profileId: Int = 1,
+    val isArchived: Boolean = false,
+    val displayOrder: Int = 0
 )

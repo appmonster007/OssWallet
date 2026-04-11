@@ -104,7 +104,7 @@ class MainActivity : FragmentActivity() {
                             onRecordsClick = { navController.navigate("list") },
                             onBudgetsClick = { navController.navigate("budgets") },
                             onAddClick = { navController.navigate("add") },
-                            onManageAccountsClick = { navController.navigate("account_setup") },
+                            onManageAccountsClick = { navController.navigate("manage_accounts") },
                             onAccountClick = { accountId -> navController.navigate("account_detail/$accountId") },
                             onLoansClick = { navController.navigate("loans") },
                             onSettingsClick = { navController.navigate("settings") },
@@ -198,6 +198,13 @@ class MainActivity : FragmentActivity() {
                         AccountSetupScreen(
                             onBackClick = { navController.popBackStack() },
                             onAccountCreated = { navController.popBackStack() },
+                            viewModel = accountViewModel
+                        )
+                    }
+                    composable("manage_accounts") {
+                        AccountManagementScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onAddAccountClick = { navController.navigate("account_setup") },
                             viewModel = accountViewModel
                         )
                     }

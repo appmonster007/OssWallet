@@ -47,7 +47,9 @@ class AccountViewModel(
                 structureType = structureType,
                 colorHex = colorHex,
                 icon = icon,
-                allowedCurrencies = allowedCurrencies
+                allowedCurrencies = allowedCurrencies,
+                isArchived = false,
+                displayOrder = accounts.value.size
             )
             repository.insertAccount(account, profileId)
         }
@@ -69,6 +71,23 @@ class AccountViewModel(
     fun deleteAccount(accountId: String) {
         viewModelScope.launch {
             repository.deleteAccount(accountId)
+        }
+    }
+
+    fun updateAccountsOrder(orderedAccounts: List<Account>) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
+            val entities = orderedAccounts.mapIndexed { index, account ->
+                account.copy(displayOrder = index)
+            }
+            repository.updateAccounts(entities, profileId)
+        }
+    }
+
+    fun toggleArchiveAccount(account: Account) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
+            repository.insertAccount(account.copy(isArchived = !account.isArchived), profileId)
         }
     }
 }

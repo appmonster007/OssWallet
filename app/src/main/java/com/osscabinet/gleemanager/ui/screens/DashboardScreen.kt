@@ -48,6 +48,7 @@ fun DashboardScreen(
 ) {
     val scrollState = rememberScrollState()
     val accounts by accountViewModel.accounts.collectAsState()
+    val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val transactions by transactionViewModel.transactions.collectAsState()
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
     val baseCurrency by settingsViewModel.currency.collectAsState()
@@ -145,7 +146,7 @@ fun DashboardScreen(
             NetWorthSection(accounts, transactions, baseCurrency, exchangeRates)
             CurrencyAggregationSection(accounts, transactions, baseCurrency, exchangeRates)
             CashFlowSummarySection(transactions, baseCurrency, exchangeRates)
-            AccountsSection(onManageAccountsClick, onAccountClick, accounts, transactions, baseCurrency, exchangeRates)
+            AccountsSection(onManageClick = onManageAccountsClick, onAccountClick, nonArchivedAccounts, transactions, baseCurrency, exchangeRates)
             RecentActivitySection(onRecordsClick, transactions, accounts)
             BudgetTrackingSection(baseCurrency)
             Spacer(modifier = Modifier.height(16.dp))

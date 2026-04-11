@@ -93,29 +93,38 @@ fun AccountDetailScreen(
 
     val netInAccountCurrency = incomeInAccountCurrency - expenseInAccountCurrency
 
-    val incomeBreakdown by remember(accountTransactions, exchangeRates, baseCurrency) {
+    val supportedCurrencies = remember(account, accountTransactions) {
+        val list = mutableSetOf<String>()
+        account?.let {
+            list.add(it.currencyCode)
+            list.addAll(it.allowedCurrencies)
+        }
+        // Also add any currencies present in transactions even if not in "allowed"
+        accountTransactions.forEach { list.add(it.currency) }
+        list.toList().sorted()
+    }
+
+    val incomeBreakdown by remember(supportedCurrencies, accountTransactions, exchangeRates, baseCurrency) {
         derivedStateOf {
-            accountTransactions.filter { it.isIncome }
-                .groupBy { it.currency }
-                .map { (curr, txs) ->
-                    val amount = txs.sumOf { it.amount }
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val inBase = if (rate != 0.0) amount / rate else amount
-                    Triple(curr, amount, inBase)
-                }
+            val txsByCurrency = accountTransactions.filter { it.isIncome }.groupBy { it.currency }
+            supportedCurrencies.map { curr ->
+                val amount = txsByCurrency[curr]?.sumOf { it.amount } ?: 0.0
+                val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                val inBase = if (rate != 0.0) amount / rate else amount
+                Triple(curr, amount, inBase)
+            }
         }
     }
 
-    val expenseBreakdown by remember(accountTransactions, exchangeRates, baseCurrency) {
+    val expenseBreakdown by remember(supportedCurrencies, accountTransactions, exchangeRates, baseCurrency) {
         derivedStateOf {
-            accountTransactions.filter { !it.isIncome }
-                .groupBy { it.currency }
-                .map { (curr, txs) ->
-                    val amount = txs.sumOf { it.amount }
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val inBase = if (rate != 0.0) amount / rate else amount
-                    Triple(curr, amount, inBase)
-                }
+            val txsByCurrency = accountTransactions.filter { !it.isIncome }.groupBy { it.currency }
+            supportedCurrencies.map { curr ->
+                val amount = txsByCurrency[curr]?.sumOf { it.amount } ?: 0.0
+                val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
+                val inBase = if (rate != 0.0) amount / rate else amount
+                Triple(curr, amount, inBase)
+            }
         }
     }
 
@@ -253,13 +262,9 @@ fun AccountDetailScreen(
                                 Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            if (incomeBreakdown.isEmpty()) {
-                                Text("-", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                            } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    incomeBreakdown.forEach { (curr, amount, inBase) ->
-                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
-                                    }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                incomeBreakdown.forEach { (curr, amount, inBase) ->
+                                    FlowBreakdownItem(curr, amount, inBase, baseCurrency)
                                 }
                             }
                         }
@@ -279,13 +284,9 @@ fun AccountDetailScreen(
                                 Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            if (expenseBreakdown.isEmpty()) {
-                                Text("-", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                            } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    expenseBreakdown.forEach { (curr, amount, inBase) ->
-                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
-                                    }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                expenseBreakdown.forEach { (curr, amount, inBase) ->
+                                    FlowBreakdownItem(curr, amount, inBase, baseCurrency)
                                 }
                             }
                         }
@@ -314,64 +315,60 @@ fun AccountDetailScreen(
                 }
 
                 if (accountTransactions.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize().padding(bottom = 64.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("No transactions yet", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
+                            Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("No transactions yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                         }
                     }
-                } else {
-                    // Group by currency to show separate balances
-                    val finalBalances by remember(account, accountTransactions) {
-                        derivedStateOf {
-                            val currentAccount = account ?: return@derivedStateOf emptyMap<String, Double>()
-                            val initialBalance = currentAccount.initialBalance
-                            
-                            val currencyBalances = accountTransactions.groupBy { it.currency }.mapValues { (curr, txs) ->
-                                val txSum = txs.sumOf { if (it.isIncome) it.amount else -it.amount }
-                                if (curr == currentAccount.currencyCode) initialBalance + txSum else txSum
-                            }.toMutableMap()
-                            
-                            if (!currencyBalances.containsKey(currentAccount.currencyCode)) {
-                                currencyBalances[currentAccount.currencyCode] = initialBalance
-                            }
-                            currencyBalances.toMap()
-                        }
-                    }
+                }
 
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        item {
-                            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                                Text("CURRENCY BREAKDOWN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                finalBalances.forEach { (curr, bal) ->
-                                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Text(curr, style = MaterialTheme.typography.bodyMedium)
-                                            Text(formatCurrency(bal, curr), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                        }
-                                        if (curr != baseCurrency) {
-                                            val rate = exchangeRates[curr] ?: 1.0
-                                            val convertedBal = if (rate != 0.0) bal / rate else bal
-                                            Text(
-                                                "≈ ${formatCurrency(convertedBal, baseCurrency)}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.outline,
-                                                modifier = Modifier.align(Alignment.End)
-                                            )
-                                        }
+                // Group by currency to show separate balances
+                val finalBalances by remember(account, accountTransactions, supportedCurrencies) {
+                    derivedStateOf {
+                        val currentAccount = account ?: return@derivedStateOf emptyMap<String, Double>()
+                        val initialBalance = currentAccount.initialBalance
+                        
+                        val txsByCurrency = accountTransactions.groupBy { it.currency }
+                        supportedCurrencies.associateWith { curr ->
+                            val txSum = txsByCurrency[curr]?.sumOf { if (it.isIncome) it.amount else -it.amount } ?: 0.0
+                            if (curr == currentAccount.currencyCode) initialBalance + txSum else txSum
+                        }
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    item {
+                        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                            Text("CURRENCY BREAKDOWN", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            finalBalances.forEach { (curr, bal) ->
+                                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text(curr, style = MaterialTheme.typography.bodyMedium)
+                                        Text(formatCurrency(bal, curr), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                    }
+                                    if (curr != baseCurrency) {
+                                        val rate = exchangeRates[curr] ?: 1.0
+                                        val convertedBal = if (rate != 0.0) bal / rate else bal
+                                        Text(
+                                            "≈ ${formatCurrency(convertedBal, baseCurrency)}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.outline,
+                                            modifier = Modifier.align(Alignment.End)
+                                        )
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                        items(accountTransactions.sortedByDescending { it.timestamp }) { transaction ->
-                            TransactionItem(
-                                transaction = transaction,
-                                onClick = { onEditTransactionClick(transaction.id) }
-                            )
-                        }
+                    }
+                    items(accountTransactions.sortedByDescending { it.timestamp }) { transaction ->
+                        TransactionItem(
+                            transaction = transaction,
+                            onClick = { onEditTransactionClick(transaction.id) }
+                        )
                     }
                 }
             }

@@ -64,8 +64,32 @@ class AnalyticsViewModel(
         val totalExpense = convertedTransactions.filter { !it.isIncome }.sumOf { it.amount }
         val currentBalance = totalIncome - totalExpense
         
-        // Savings Rate = (Income - Expense) / Income
-        val savingsRate = if (totalIncome > 0) (totalIncome - totalExpense) / totalIncome else 0.0
+        // Month-over-month analysis
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val currentYear = calendar.get(Calendar.YEAR)
+        
+        calendar.add(Calendar.MONTH, -1)
+        val lastMonth = calendar.get(Calendar.MONTH)
+        val lastYear = calendar.get(Calendar.YEAR)
+        
+        val thisMonthTransactions = convertedTransactions.filter { 
+            val cal = Calendar.getInstance().apply { timeInMillis = it.timestamp }
+            cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+        }
+        
+        val lastMonthTransactions = convertedTransactions.filter { 
+            val cal = Calendar.getInstance().apply { timeInMillis = it.timestamp }
+            cal.get(Calendar.MONTH) == lastMonth && cal.get(Calendar.YEAR) == lastYear
+        }
+
+        val thisMonthIncome = thisMonthTransactions.filter { it.isIncome }.sumOf { it.amount }
+        val thisMonthExpense = thisMonthTransactions.filter { !it.isIncome }.sumOf { it.amount }
+        val thisMonthSavingsRate = if (thisMonthIncome > 0) (thisMonthIncome - thisMonthExpense) / thisMonthIncome else 0.0
+
+        val lastMonthIncome = lastMonthTransactions.filter { it.isIncome }.sumOf { it.amount }
+        val lastMonthExpense = lastMonthTransactions.filter { !it.isIncome }.sumOf { it.amount }
+        val lastMonthSavingsRate = if (lastMonthIncome > 0) (lastMonthIncome - lastMonthExpense) / lastMonthIncome else 0.0
         
         // Burn Rate = Monthly Expense Average
         val firstTx = convertedTransactions.minByOrNull { it.timestamp }
@@ -104,8 +128,11 @@ class AnalyticsViewModel(
         _uiState.update { 
             it.copy(
                 currentBalance = currentBalance,
-                savingsRate = savingsRate,
+                savingsRate = thisMonthSavingsRate,
+                lastMonthSavingsRate = lastMonthSavingsRate,
                 burnRate = monthlyBurnRate,
+                thisMonthSpending = thisMonthExpense,
+                lastMonthSpending = lastMonthExpense,
                 dailyNetFlow = dailyNetFlow,
                 forecast = forecast.toMap(),
                 isLoading = false
@@ -117,7 +144,10 @@ class AnalyticsViewModel(
 data class AnalyticsUiState(
     val currentBalance: Double = 0.0,
     val savingsRate: Double = 0.0,
+    val lastMonthSavingsRate: Double = 0.0,
     val burnRate: Double = 0.0,
+    val thisMonthSpending: Double = 0.0,
+    val lastMonthSpending: Double = 0.0,
     val dailyNetFlow: Map<Long, Double> = emptyMap(),
     val forecast: Map<Long, Double> = emptyMap(),
     val selectedCurrency: String = "USD",

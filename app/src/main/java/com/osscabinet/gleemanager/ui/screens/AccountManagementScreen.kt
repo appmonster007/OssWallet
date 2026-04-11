@@ -2,6 +2,8 @@ package com.osscabinet.gleemanager.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,7 +24,7 @@ import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountManagementScreen(
     onBackClick: () -> Unit,
@@ -48,63 +51,50 @@ fun AccountManagementScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = 2
-            ) {
-                editList.forEachIndexed { index, account ->
-                    AccountManagementCard(
-                        account = account,
-                        onMoveUp = {
-                            if (index > 0) {
-                                val newList = editList.toMutableList()
-                                val item = newList.removeAt(index)
-                                newList.add(index - 1, item)
-                                editList = newList
-                                viewModel.updateAccountsOrder(newList)
-                            }
-                        },
-                        onMoveDown = {
-                            if (index < editList.size - 1) {
-                                val newList = editList.toMutableList()
-                                val item = newList.removeAt(index)
-                                newList.add(index + 1, item)
-                                editList = newList
-                                viewModel.updateAccountsOrder(newList)
-                            }
-                        },
-                        onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                        onDelete = { viewModel.deleteAccount(account.id) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (editList.size % 2 != 0) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+            itemsIndexed(editList) { index, account ->
+                AccountManagementListItem(
+                    account = account,
+                    onMoveUp = {
+                        if (index > 0) {
+                            val newList = editList.toMutableList()
+                            val item = newList.removeAt(index)
+                            newList.add(index - 1, item)
+                            editList = newList
+                            viewModel.updateAccountsOrder(newList)
+                        }
+                    },
+                    onMoveDown = {
+                        if (index < editList.size - 1) {
+                            val newList = editList.toMutableList()
+                            val item = newList.removeAt(index)
+                            newList.add(index + 1, item)
+                            editList = newList
+                            viewModel.updateAccountsOrder(newList)
+                        }
+                    },
+                    onToggleArchive = { viewModel.toggleArchiveAccount(account) },
+                    onDelete = { viewModel.deleteAccount(account.id) }
+                )
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-fun AccountManagementCard(
+fun AccountManagementListItem(
     account: Account,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onToggleArchive: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    onDelete: () -> Unit
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
     val contentColor = if (accountColor.isDark()) Color.White else Color.Black
@@ -132,25 +122,35 @@ fun AccountManagementCard(
     }
 
     Surface(
-        modifier = modifier.then(
-            if (account.isArchived) Modifier.alpha(0.6f) else Modifier
-        ),
-        shape = RoundedCornerShape(24.dp),
-        color = accountColor,
-        contentColor = contentColor,
-        border = if (account.isArchived) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (account.isArchived) 0.6f else 1f),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Reorder Controls
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Move Up")
+                }
+                IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Move Down")
+                }
+            }
+
+            // Account Icon
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = accountColor
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     val icon = when(account.icon) {
                         "Savings" -> Icons.Rounded.Savings
                         "CreditCard" -> Icons.Rounded.CreditCard
@@ -172,60 +172,45 @@ fun AccountManagementCard(
                     Icon(
                         icon,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = contentColor.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        account.name,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                if (account.isArchived) {
-                    Icon(
-                        Icons.Rounded.Archive,
-                        contentDescription = "Archived",
-                        modifier = Modifier.size(14.dp),
-                        tint = contentColor.copy(alpha = 0.5f)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                account.structureType,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action Buttons Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onMoveUp, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Move Up", tint = contentColor)
-                }
-                IconButton(onClick = onMoveDown, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Move Down", tint = contentColor)
-                }
-                IconButton(onClick = onToggleArchive, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        if (account.isArchived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                        contentDescription = if (account.isArchived) "Unarchive" else "Archive",
+                        modifier = Modifier.size(20.dp),
                         tint = contentColor
                     )
                 }
-                IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = contentColor)
+            }
+
+            // Account Info
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    account.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    account.structureType,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            // Actions
+            Row {
+                IconButton(onClick = onToggleArchive) {
+                    Icon(
+                        if (account.isArchived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                        contentDescription = if (account.isArchived) "Unarchive" else "Archive",
+                        modifier = Modifier.size(20.dp),
+                        tint = if (account.isArchived) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    )
+                }
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(
+                        Icons.Rounded.Delete,
+                        contentDescription = "Delete",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
                 }
             }
         }

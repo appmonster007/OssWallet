@@ -25,6 +25,8 @@ import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.util.isDark
 
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountManagementScreen(
@@ -35,19 +37,90 @@ fun AccountManagementScreen(
 ) {
     val accounts by viewModel.accounts.collectAsState()
     var editList by remember(accounts) { mutableStateOf(accounts) }
+    
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var selectedAccountIds by remember { mutableStateOf(setOf<String>()) }
+    var showMoreMenu by remember { mutableStateOf(false) }
+    var showMultiDeleteDialog by remember { mutableStateOf(false) }
+
+    val selectedAccounts = remember(selectedAccountIds, accounts) {
+        accounts.filter { it.id in selectedAccountIds }
+    }
+
+    if (showMultiDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showMultiDeleteDialog = false },
+            title = { Text("Delete Selected Accounts") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Are you sure you want to delete these accounts? This cannot be undone.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    selectedAccounts.forEach { account ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(account.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                            Text(formatCurrencyRight(account.balance, account.currencyCode), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedAccountIds.forEach { viewModel.deleteAccount(it) }
+                    selectedAccountIds = emptySet()
+                    isSelectionMode = false
+                    showMultiDeleteDialog = false
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMultiDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Accounts", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                title = { 
+                    Text(
+                        if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts", 
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    ) 
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = if (isSelectionMode) { { isSelectionMode = false; selectedAccountIds = emptySet() } } else onBackClick) {
+                        Icon(
+                            if (isSelectionMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack, 
+                            contentDescription = if (isSelectionMode) "Exit Selection" else "Back"
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = onAddAccountClick) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Account")
+                    if (!isSelectionMode) {
+                        Box {
+                            IconButton(onClick = { showMoreMenu = true }) {
+                                Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                            }
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Select to Delete") },
+                                    onClick = {
+                                        isSelectionMode = true
+                                        showMoreMenu = false
+                                    },
+                                    leadingIcon = { Icon(Icons.Rounded.Checklist, contentDescription = null) }
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -64,6 +137,15 @@ fun AccountManagementScreen(
             itemsIndexed(editList) { index, account ->
                 AccountManagementListItem(
                     account = account,
+                    isSelectionMode = isSelectionMode,
+                    isSelected = account.id in selectedAccountIds,
+                    onSelect = {
+                        selectedAccountIds = if (account.id in selectedAccountIds) {
+                            selectedAccountIds - account.id
+                        } else {
+                            selectedAccountIds + account.id
+                        }
+                    },
                     onMoveUp = {
                         if (index > 0) {
                             val newList = editList.toMutableList()
@@ -83,9 +165,45 @@ fun AccountManagementScreen(
                         }
                     },
                     onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                    onDelete = { viewModel.deleteAccount(account.id) },
                     onAccountClick = { onAccountClick(account.id) }
                 )
+            }
+
+            item {
+                if (isSelectionMode) {
+                    Button(
+                        onClick = { showMultiDeleteDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        enabled = selectedAccountIds.isNotEmpty()
+                    ) {
+                        Icon(Icons.Rounded.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete Selected Accounts (${selectedAccountIds.size})", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Button(
+                        onClick = onAddAccountClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Account", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
@@ -94,57 +212,48 @@ fun AccountManagementScreen(
 @Composable
 fun AccountManagementListItem(
     account: Account,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onToggleArchive: () -> Unit,
-    onDelete: () -> Unit,
     onAccountClick: () -> Unit
 ) {
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
     val contentColor = if (accountColor.isDark()) Color.White else Color.Black
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Account") },
-            text = { Text("Are you sure you want to delete '${account.name}'? This action cannot be undone.") },
-            confirmButton = {
-                TextButton(onClick = { 
-                    onDelete()
-                    showDeleteDialog = false
-                }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (account.isArchived) 0.6f else 1f),
+            .alpha(if (account.isArchived) 0.6f else 1f)
+            .clickable(enabled = isSelectionMode) { onSelect() },
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(
+            1.dp, 
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+        )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Reorder Controls
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Move Up")
-                }
-                IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Move Down")
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onSelect() }
+                )
+            } else {
+                // Reorder Controls
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "Move Up")
+                    }
+                    IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Move Down")
+                    }
                 }
             }
 
@@ -153,7 +262,7 @@ fun AccountManagementListItem(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { onAccountClick() },
+                    .clickable(enabled = !isSelectionMode) { onAccountClick() },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -222,14 +331,6 @@ fun AccountManagementListItem(
                         )
                     }
                 )
-                IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(
-                        Icons.Rounded.Delete,
-                        contentDescription = "Delete",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                    )
-                }
             }
         }
     }

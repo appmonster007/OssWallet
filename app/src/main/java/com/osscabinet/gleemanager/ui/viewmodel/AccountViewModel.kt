@@ -21,6 +21,7 @@ class AccountViewModel(
         .flatMapLatest { profileId ->
             repository.getAllAccounts(profileId)
         }
+        .map { it.sortedBy { account -> account.displayOrder } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

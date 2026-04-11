@@ -309,7 +309,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 maxItemsInEachRow = gridColumns
             ) {
-                accounts.sortedBy { it.name }.forEach { account ->
+                accounts.forEach { account ->
                     val accountTransactions = transactions.filter { it.accountId == account.id }
 
                     val supportedCurrencies = remember(account, accountTransactions) {

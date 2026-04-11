@@ -107,11 +107,42 @@ fun ExchangeRatesScreen(
 
 @Composable
 fun RatesTab(uiState: com.osscabinet.gleemanager.ui.viewmodel.CurrencyUiState, viewModel: CurrencyViewModel) {
+    var searchQuery by remember { mutableStateOf("") }
+    
+    val filteredRates = remember(uiState.rates, searchQuery) {
+        uiState.rates.filter { 
+            it.currencyCode.contains(searchQuery, ignoreCase = true) 
+        }.sortedBy { it.currencyCode }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search currencies...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear")
+                    }
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,7 +156,7 @@ fun RatesTab(uiState: com.osscabinet.gleemanager.ui.viewmodel.CurrencyUiState, v
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(uiState.rates.sortedBy { it.currencyCode }) { rate ->
+            items(filteredRates) { rate ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -293,6 +324,15 @@ fun CurrencySelector(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var textValue by remember(selected) { mutableStateOf(selected) }
+
+    val filteredCurrencies = remember(currencies, textValue, expanded) {
+        if (expanded) {
+            currencies.filter { it.contains(textValue, ignoreCase = true) }
+        } else {
+            currencies
+        }
+    }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -300,26 +340,38 @@ fun CurrencySelector(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            readOnly = true,
+            value = textValue,
+            onValueChange = { 
+                textValue = it
+                expanded = true
+            },
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true),
+            singleLine = true
         )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            currencies.forEach { curr ->
-                DropdownMenuItem(
-                    text = { Text(curr) },
-                    onClick = {
-                        onSelected(curr)
-                        expanded = false
+        
+        if (filteredCurrencies.isNotEmpty()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { 
+                    expanded = false
+                    if (!currencies.contains(textValue)) {
+                        textValue = selected
                     }
-                )
+                }
+            ) {
+                filteredCurrencies.forEach { curr ->
+                    DropdownMenuItem(
+                        text = { Text(curr) },
+                        onClick = {
+                            onSelected(curr)
+                            textValue = curr
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }

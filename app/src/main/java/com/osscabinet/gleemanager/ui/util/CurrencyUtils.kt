@@ -5,13 +5,16 @@ import java.text.DecimalFormatSymbols
 import java.util.*
 
 fun formatCurrency(amount: Double, currencyCode: String): String {
+    val symbol = getCurrencySymbol(currencyCode)
+    val absAmount = Math.abs(amount)
+    val absFormatted = formatAmount(absAmount)
+    return if (amount < 0) "-$symbol$absFormatted" else "$symbol$absFormatted"
+}
+
+fun formatAmount(amount: Double): String {
     val symbols = DecimalFormatSymbols(Locale.getDefault())
     val format = DecimalFormat("#,##0.000", symbols)
-    val symbol = getCurrencySymbol(currencyCode)
-    // Handle negative values correctly with the symbol
-    val absoluteAmount = Math.abs(amount)
-    val formattedAmount = format.format(absoluteAmount)
-    return if (amount < 0) "-$symbol$formattedAmount" else "$symbol$formattedAmount"
+    return format.format(amount)
 }
 
 fun getCurrencySymbol(currencyCode: String): String {

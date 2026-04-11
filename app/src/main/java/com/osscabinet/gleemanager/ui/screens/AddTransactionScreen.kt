@@ -348,20 +348,20 @@ fun AddTransactionScreen(
                                         ),
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
-                                    
+
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    
+
                                     CurrencySelector(
                                         selectedCurrency = selectedCurrency,
                                         onCurrencySelected = { selectedCurrency = it },
                                         supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
                                     )
                                 }
-                                
+
                                 if (isTransfer) {
                                     val amountDouble = amount.toDoubleOrNull() ?: 0.0
                                     val convertedAmount = amountDouble * exchangeRate
-                                    
+
                                     Icon(
                                         Icons.Rounded.KeyboardArrowDown,
                                         contentDescription = null,
@@ -423,7 +423,7 @@ fun AddTransactionScreen(
                             iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                             isSlim = true
                         )
-                        
+
                         if (isTransfer) {
                             RecordFieldCard(
                                 icon = Icons.Rounded.AccountBalance,
@@ -493,7 +493,9 @@ fun AddTransactionScreen(
         DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
-            onSwipeOpen = { isDetailDrawerOpen = true }
+            onSwipeOpen = { isDetailDrawerOpen = true },
+            tabAlignment = Alignment.TopEnd,
+            tabOffsetY = 180.dp
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Metadata Section

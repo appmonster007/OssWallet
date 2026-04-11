@@ -95,7 +95,7 @@ fun EditBudgetScreen(
                         color = MaterialTheme.colorScheme.outline,
                         letterSpacing = 1.sp
                     )
-                    
+
                     Text(
                         text = amount.ifEmpty { "0.00" },
                         style = TextStyle(
@@ -124,7 +124,7 @@ fun EditBudgetScreen(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                 )
-                
+
                 EditorialInput(
                     value = category,
                     onValueChange = { },
@@ -133,7 +133,7 @@ fun EditBudgetScreen(
                     readOnly = true
                 )
 
-                budget?.let { 
+                budget?.let {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),

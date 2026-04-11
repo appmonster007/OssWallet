@@ -480,7 +480,9 @@ fun EditTransactionScreen(
         DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
-            onSwipeOpen = { isDetailDrawerOpen = true }
+            onSwipeOpen = { isDetailDrawerOpen = true },
+            tabAlignment = Alignment.TopEnd,
+            tabOffsetY = 180.dp
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Metadata Section

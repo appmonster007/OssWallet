@@ -59,53 +59,65 @@ fun Numpad(
         "1", "2", "3", "=",
         ".", "0", "00", ""
     )
-    
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
+
+    val rows = keys.chunked(4)
+
+    Column(
         modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        userScrollEnabled = false
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(keys) { key ->
-            if (key.isNotEmpty()) {
-                Surface(
-                    onClick = {
-                        when (key) {
-                            "DEL" -> onDeleteClick()
-                            "C" -> onClearClick()
-                            "=" -> onEqualClick()
-                            "+", "−", "×", "÷" -> onOperatorClick(key)
-                            else -> onNumberClick(key)
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { key ->
+                    if (key.isNotEmpty()) {
+                        Surface(
+                            onClick = {
+                                when (key) {
+                                    "DEL" -> onDeleteClick()
+                                    "C" -> onClearClick()
+                                    "=" -> onEqualClick()
+                                    "+", "−", "×", "÷" -> onOperatorClick(key)
+                                    else -> onNumberClick(key)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            shape = RoundedCornerShape(20.dp),
+                            color = when (key) {
+                                "=", "+", "−", "×", "÷" -> MaterialTheme.colorScheme.primaryContainer
+                                "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            }
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (key == "DEL") {
+                                    Icon(
+                                        Icons.AutoMirrored.Rounded.Backspace,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = key,
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (key == "=" || key == "+" || key == "−" || key == "×" || key == "÷") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    )
+                                }
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxHeight(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = when (key) {
-                        "=", "+", "−", "×", "÷" -> MaterialTheme.colorScheme.primaryContainer
-                        "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    }
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (key == "DEL") {
-                            Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = null, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text(
-                                text = key,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (key == "=" || key == "+" || key == "−" || key == "×" || key == "÷") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            )
-                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                 }
-            } else {
-                Spacer(modifier = Modifier.fillMaxHeight())
             }
         }
     }

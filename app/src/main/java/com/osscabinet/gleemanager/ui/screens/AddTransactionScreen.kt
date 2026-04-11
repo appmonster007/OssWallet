@@ -263,7 +263,7 @@ fun AddTransactionScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Header Card: Type & Amount (Aeon Style)
@@ -275,7 +275,7 @@ fun AddTransactionScreen(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Transaction Type Row (Fixed at top)
@@ -413,7 +413,7 @@ fun AddTransactionScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         RecordFieldCard(
                             icon = Icons.Rounded.AccountBalance,
-                            label = if (isTransfer) "FROM" else "LEDGER",
+                            label = if (isTransfer) "FROM" else "ACCOUNT",
                             value = selectedAccount?.name ?: "Select",
                             onClick = { showAccountSheet = true },
                             modifier = Modifier.weight(1f),
@@ -492,14 +492,14 @@ fun AddTransactionScreen(
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true }
         ) {
-            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Metadata Section
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                 ) {
-                    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                             Spacer(modifier = Modifier.width(12.dp))

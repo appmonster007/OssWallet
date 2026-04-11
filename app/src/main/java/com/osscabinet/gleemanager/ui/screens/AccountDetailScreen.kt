@@ -95,9 +95,12 @@ fun AccountDetailScreen(
     }
 
 
-    LaunchedEffect(account?.currencyCode) {
-        account?.currencyCode?.let {
-            analyticsViewModel.onCurrencySelected(it)
+    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
+
+    LaunchedEffect(account?.id) {
+        val newCurrency = account?.currencyCode
+        if (newCurrency != null && newCurrency != analyticsUiState.selectedCurrency) {
+            analyticsViewModel.onCurrencySelected(newCurrency)
         }
     }
 

@@ -67,7 +67,7 @@ fun AppDrawerContent(
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                "Personal Ledger",
+                "Personal Account",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -147,7 +147,7 @@ fun AppDrawerContent(
         HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         
         Text(
-            "LEDGERS",
+            "ACCOUNTS",
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
             color = MaterialTheme.colorScheme.outline,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)

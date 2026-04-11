@@ -282,7 +282,7 @@ fun AccountPickerSheet(
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            AeonSectionHeader(title = "Select Ledger")
+            AeonSectionHeader(title = "Select Account")
             Spacer(modifier = Modifier.height(24.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(sortedAccounts) { account ->

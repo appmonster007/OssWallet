@@ -110,7 +110,7 @@ fun DashboardScreen(
                     title = {
                         Column {
                             Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                            Text("Personal Ledger", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                         }
                     }
                 )

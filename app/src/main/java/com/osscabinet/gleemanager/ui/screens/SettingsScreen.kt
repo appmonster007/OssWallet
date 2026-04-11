@@ -254,7 +254,7 @@ fun SettingsScreen(
                 )
                 SettingsItem(
                     title = "Delete All Data",
-                    subtitle = "Permanently clear your ledger",
+                    subtitle = "Permanently clear your account",
                     icon = Icons.Rounded.DeleteForever,
                     color = MaterialTheme.colorScheme.error,
                     onClick = { /* Handle delete */ }
@@ -268,7 +268,7 @@ fun SettingsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("GleeManager v1.1.0", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                Text("Built for the Modern Ledger", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                Text("Built for the Modern Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Currency rates provided by",

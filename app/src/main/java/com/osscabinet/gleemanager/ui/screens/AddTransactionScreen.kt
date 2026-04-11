@@ -130,16 +130,12 @@ fun AddTransactionScreen(
         }
     }
 
-    LaunchedEffect(selectedCurrency, targetCurrency, exchangeRates) {
+    LaunchedEffect(isTransfer, selectedCurrency, targetCurrency, exchangeRates) {
         if (isTransfer) {
             val baseRates = exchangeRates
             if (baseRates.isNotEmpty()) {
                 val sourceRateInUSD = baseRates[selectedCurrency] ?: 1.0
                 val destRateInUSD = baseRates[targetCurrency] ?: 1.0
-                // If rates are relative to USD (1 USD = X Currency)
-                // To get 1 Source = Y Dest:
-                // 1 Source = (1/sourceRateInUSD) USD
-                // (1/sourceRateInUSD) USD * destRateInUSD = destRateInUSD / sourceRateInUSD
                 if (sourceRateInUSD != 0.0) {
                     exchangeRate = destRateInUSD / sourceRateInUSD
                 }
@@ -191,7 +187,15 @@ fun AddTransactionScreen(
                                             payee = payee,
                                             note = note
                                         )
-                                        accountViewModel.updateBalance(accountId, -amountDouble)
+                                        
+                                        val sourceAmountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
+                                            amountDouble
+                                        } else {
+                                            val txRate = exchangeRates[selectedCurrency] ?: 1.0
+                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: 1.0
+                                            if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                                        }
+                                        accountViewModel.updateBalance(accountId, -sourceAmountInAccountCurrency)
 
                                         // 2. Deposit to target
                                         targetAccount?.id?.let { targetId ->
@@ -208,7 +212,15 @@ fun AddTransactionScreen(
                                                 payee = payee,
                                                 note = note
                                             )
-                                            accountViewModel.updateBalance(targetId, targetAmount)
+                                            
+                                            val destAmountInAccountCurrency = if (targetCurrency == targetAccount?.currencyCode) {
+                                                targetAmount
+                                            } else {
+                                                val txRate = exchangeRates[targetCurrency] ?: 1.0
+                                                val accountRate = exchangeRates[targetAccount?.currencyCode] ?: 1.0
+                                                if (txRate != 0.0) (targetAmount / txRate) * accountRate else targetAmount
+                                            }
+                                            accountViewModel.updateBalance(targetId, destAmountInAccountCurrency)
                                         }
                                     } else {
                                         viewModel.addTransaction(

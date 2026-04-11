@@ -6,6 +6,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +78,9 @@ fun DashboardScreen(
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
 
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val tabs = listOf("Glance", "Recent Activities")
+
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
     }
@@ -101,19 +107,49 @@ fun DashboardScreen(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                Column {
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        },
+                        title = {
+                            Column {
+                                Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
+                                Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            }
                         }
-                    },
-                    title = {
-                        Column {
-                            Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                            Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    )
+                    TabRow(
+                        selectedTabIndex = pagerState.currentPage,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        divider = {},
+                        indicator = { tabPositions ->
+                            if (pagerState.currentPage < tabPositions.size) {
+                                TabRowDefaults.SecondaryIndicator(
+                                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = pagerState.currentPage == index,
+                                onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                                text = {
+                                    Text(
+                                        title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            )
                         }
                     }
-                )
+                }
             },
             floatingActionButton = {
                 FloatingActionButton(
@@ -126,33 +162,83 @@ fun DashboardScreen(
                 }
             }
         ) { innerPadding ->
-            LazyColumn(
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                }
-                item {
-                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                }
-                item {
-                    AeonCashFlowSection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
-                }
-                item {
-                    AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
-                }
-                item {
-                    RecentActivitySection(onRecordsClick, activeTransactions, nonArchivedAccounts)
-                }
-                item {
-                    BudgetTrackingSection(baseCurrency)
+                    .padding(innerPadding),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                        ) {
+                            item {
+                                NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                            }
+                            item {
+                                CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                            }
+                            item {
+                                AeonCashFlowSection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
+                            }
+                            item {
+                                AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
+                            }
+                            item {
+                                BudgetTrackingSection(baseCurrency)
+                            }
+                        }
+                    }
+                    1 -> {
+                        val accountMap = remember(nonArchivedAccounts) { nonArchivedAccounts.associate { it.id to it.name } }
+                        val recentTransactions = remember(activeTransactions) { activeTransactions.sortedByDescending { it.timestamp }.take(20) }
+                        val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
+                        val today = remember { SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date()) }
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                        ) {
+                            item {
+                                AeonSectionHeader(
+                                    title = "Recent Activities",
+                                    trailing = {
+                                        TextButton(onClick = onRecordsClick) {
+                                            Text("View all", color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                )
+                            }
+
+                            items(recentTransactions) { transaction ->
+                                val dateStr = dateFormat.format(Date(transaction.timestamp))
+                                val displayDate = if (dateStr == today) "Today" else dateStr
+
+                                val icon = categoryIcons[transaction.category] ?: Icons.Default.Receipt
+
+                                AeonTransactionItem(
+                                    title = transaction.title,
+                                    sub = "${transaction.category} • $displayDate",
+                                    amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                                    isIncome = transaction.isIncome,
+                                    account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
+                                    icon = icon,
+                                    onClick = { /* Navigate to edit? Dashboard doesn't seem to have onEditTransactionClick yet but let's keep it consistent */ }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -561,43 +647,6 @@ fun AccountGridItem(
 }
 
 @Composable
-fun RecentActivitySection(onRecordsClick: () -> Unit, transactions: List<Transaction>, accounts: List<Account>) {
-    val accountMap = accounts.associate { it.id to it.name }
-    val recentTransactions = transactions.sortedByDescending { it.timestamp }.take(3)
-    val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
-    val today = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date())
-
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        AeonSectionHeader(
-            title = "Recent Activity",
-            trailing = {
-                TextButton(onClick = onRecordsClick) {
-                    Text("View all", color = MaterialTheme.colorScheme.primary)
-                }
-            }
-        )
-
-        recentTransactions.forEach { transaction ->
-            val dateStr = dateFormat.format(Date(transaction.timestamp))
-            val displayDate = if (dateStr == today) "Today" else dateStr
-
-            val icon = categoryIcons[transaction.category] ?: Icons.Default.Receipt
-
-            AeonTransactionItem(
-                title = transaction.title,
-                sub = "${transaction.category} • $displayDate",
-                amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                isIncome = transaction.isIncome,
-                account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
-                icon = icon,
-                onClick = { /* Navigate to edit? Dashboard doesn't seem to have onEditTransactionClick yet but let's keep it consistent */ }
-            )
-        }
-    }
-}
-
-
-@Composable
 fun BudgetTrackingSection(baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AeonSectionHeader(title = "Budget Tracking")
@@ -614,4 +663,3 @@ fun BudgetTrackingSection(baseCurrency: String) {
         }
     }
 }
-

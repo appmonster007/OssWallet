@@ -712,7 +712,8 @@ fun AeonCurrencyBreakdown(
     baseCurrency: String,
     accountCurrency: String,
     exchangeRates: Map<String, Double>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTitle: Boolean = true
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -720,13 +721,15 @@ fun AeonCurrencyBreakdown(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                "CURRENCY BREAKDOWN",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
-                letterSpacing = 0.5.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            if (showTitle) {
+                Text(
+                    "CURRENCY BREAKDOWN",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             balances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     Row(

@@ -7,7 +7,9 @@ sealed class Screen(val route: String) {
     object Loans : Screen("loans")
     object Budgets : Screen("budgets")
     object TransactionList : Screen("list")
-    object AddTransaction : Screen("add")
+    object AddTransaction : Screen("add?accountId={accountId}") {
+        fun createRoute(accountId: String? = null) = if (accountId != null) "add?accountId=$accountId" else "add"
+    }
     object Analytics : Screen("analytics")
     object SharedWallet : Screen("shared")
     object AccountSetup : Screen("account_setup")

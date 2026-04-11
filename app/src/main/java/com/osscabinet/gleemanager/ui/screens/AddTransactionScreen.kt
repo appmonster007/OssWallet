@@ -34,6 +34,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
+    accountId: String? = null,
     viewModel: TransactionViewModel,
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
@@ -105,11 +106,13 @@ fun AddTransactionScreen(
 
     LaunchedEffect(accounts) {
         if (selectedAccount == null && accounts.isNotEmpty()) {
-            selectedAccount = accounts.find { it.name == "Aeon Prime Savings" } ?: accounts.first()
+            selectedAccount = accounts.find { it.id == accountId } 
+                ?: accounts.find { it.name == "Aeon Prime Savings" } 
+                ?: accounts.first()
             selectedCurrency = selectedAccount?.currencyCode ?: "USD"
         }
         if (targetAccount == null && accounts.size > 1) {
-            targetAccount = accounts.find { it.id != selectedAccount?.id } ?: accounts.last()
+            targetAccount = accounts.find { it.id != (selectedAccount?.id ?: accountId) } ?: accounts.last()
             targetCurrency = targetAccount?.currencyCode ?: "USD"
         } else if (targetAccount == null && accounts.isNotEmpty()) {
             targetAccount = accounts.first()

@@ -3,8 +3,10 @@ package com.osscabinet.gleemanager.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.osscabinet.gleemanager.di.AppContainer
 import com.osscabinet.gleemanager.ui.screens.*
 import com.osscabinet.gleemanager.ui.viewmodel.*
@@ -167,8 +169,17 @@ fun GleeNavGraph(
             )
         }
 
-        composable(Screen.AddTransaction.route) {
+        composable(
+            Screen.AddTransaction.route,
+            arguments = listOf(navArgument("accountId") { 
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId")
             AddTransactionScreen(
+                accountId = accountId,
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
@@ -198,7 +209,8 @@ fun GleeNavGraph(
                 analyticsViewModel = analyticsViewModel,
                 onBackClick = { navController.popBackStack() },
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
-                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) }
+                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                onAddTransactionClick = { id -> navController.navigate(Screen.AddTransaction.createRoute(id)) }
             )
         }
 

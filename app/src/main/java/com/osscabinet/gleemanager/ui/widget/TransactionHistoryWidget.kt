@@ -18,15 +18,12 @@ import androidx.glance.unit.ColorProvider
 import com.osscabinet.gleemanager.MainActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
-import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import com.osscabinet.gleemanager.data.local.AppDatabase
 import com.osscabinet.gleemanager.data.repository.TransactionRepositoryImpl
-import com.osscabinet.gleemanager.ui.util.formatCurrency
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.domain.model.Transaction
 import kotlinx.coroutines.flow.first
-import java.util.*
 
 class TransactionHistoryWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -72,7 +69,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                         )
                     )
                     Text(
-                        text = formatCurrency(balance, "USD"), // Default to USD for display if currency not found
+                        text = formatCurrencyRight(balance, "USD"), // Default to USD for display if currency not found
                         style = TextStyle(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -142,7 +139,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                 )
             }
             Text(
-                text = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                text = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                 style = TextStyle(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,

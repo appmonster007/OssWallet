@@ -7,25 +7,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Alignment
@@ -40,12 +31,10 @@ import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.isDark
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
 import com.osscabinet.gleemanager.ui.components.AccountIconMap
-import com.osscabinet.gleemanager.domain.model.Account
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
 
@@ -192,7 +181,7 @@ fun AccountsViewScreen(
 
                     AccountCard(
                         title = account.name.uppercase(),
-                        balance = formatCurrency(balanceInBase, baseCurrency),
+                        balance = formatCurrencyRight(balanceInBase, baseCurrency),
                         currencyBalances = accountCurrencyBalances,
                         icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
                         containerColor = containerColor,

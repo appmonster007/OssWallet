@@ -4,11 +4,18 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.*
 
-fun formatCurrency(amount: Double, currencyCode: String): String {
+fun formatCurrencyRight(amount: Double, currencyCode: String): String {
     val symbol = getCurrencySymbol(currencyCode)
     val absAmount = Math.abs(amount)
     val absFormatted = formatAmount(absAmount)
-    return if (amount < 0) "-$symbol$absFormatted" else "$symbol$absFormatted"
+    return if (amount < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
+}
+
+fun formatCurrencyLeft(amount: Double, currencyCode: String): String {
+    val symbol = getCurrencySymbol(currencyCode)
+    val absAmount = Math.abs(amount)
+    val absFormatted = formatAmount(absAmount)
+    return if (amount < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
 }
 
 fun formatAmount(amount: Double): String {

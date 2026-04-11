@@ -17,11 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip as composeClip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Loan
 import com.osscabinet.gleemanager.domain.model.LoanType
-import com.osscabinet.gleemanager.ui.util.formatCurrency
-import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
+import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.LoanViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
@@ -140,7 +138,7 @@ fun SummaryCard(modifier: Modifier, label: String, amount: Double, currency: Str
         Column(modifier = Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = color)
             Text(
-                formatCurrency(amount, currency),
+                formatCurrencyRight(amount, currency),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
             )
         }
@@ -181,11 +179,11 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${formatCurrency(loan.repayments, loan.currency)} / ${formatCurrency(loan.principal, loan.currency)}",
+                    "${formatCurrencyRight(loan.repayments, loan.currency)} / ${formatCurrencyRight(loan.principal, loan.currency)}",
                     style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                 )
                 TextButton(onClick = onRepayClick) {
-                    Text("REPAY ${formatCurrency(100.0, loan.currency)}", color = color)
+                    Text("REPAY ${formatCurrencyRight(100.0, loan.currency)}", color = color)
                 }
             }
         }

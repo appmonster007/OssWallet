@@ -144,7 +144,7 @@ fun DashboardScreen(
         ) {
             NetWorthSection(accounts, transactions, baseCurrency, exchangeRates)
             CurrencyAggregationSection(accounts, transactions, baseCurrency, exchangeRates)
-            IntelligenceInsightsSection(accounts, transactions, baseCurrency, exchangeRates)
+            IntelligenceInsightsSection(accounts, transactions, baseCurrency, exchangeRates, analyticsViewModel)
             AccountsSection(onManageAccountsClick, onAccountClick, accounts, transactions, baseCurrency, exchangeRates)
             RecentActivitySection(onRecordsClick, baseCurrency, transactions, accounts)
             BudgetTrackingSection(baseCurrency)
@@ -154,19 +154,25 @@ fun DashboardScreen(
 }
 
 @Composable
-fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-        val accountInitialBalances = accounts.sumOf { account ->
-            val rate = exchangeRates[account.currencyCode] ?: 1.0
-            if (rate != 0.0) account.initialBalance / rate else account.initialBalance
-        }
-        val transactionSumInBase = transactions.sumOf { tx ->
-            val amount = if (tx.isIncome) tx.amount else -tx.amount
-            val rate = exchangeRates[tx.currency] ?: 1.0
-            if (rate != 0.0) amount / rate else amount
-        }
-        val totalBalanceInBase = accountInitialBalances + transactionSumInBase
+fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap(), analyticsViewModel: com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel) {
+    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
     
-    val expectedBalance = totalBalanceInBase * 1.05
+    val totalBalanceInBase by remember(accounts, transactions, exchangeRates, baseCurrency) {
+        derivedStateOf {
+            val accountInitialBalances = accounts.sumOf { account ->
+                val rate = exchangeRates[account.currencyCode] ?: 1.0
+                if (rate != 0.0) account.initialBalance / rate else account.initialBalance
+            }
+            val transactionSumInBase = transactions.sumOf { tx ->
+                val amount = if (tx.isIncome) tx.amount else -tx.amount
+                val rate = exchangeRates[tx.currency] ?: 1.0
+                if (rate != 0.0) amount / rate else amount
+            }
+            accountInitialBalances + transactionSumInBase
+        }
+    }
+    
+    val expectedBalance = analyticsUiState.forecast.values.lastOrNull() ?: totalBalanceInBase
     
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("INTELLIGENCE INSIGHTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
@@ -200,14 +206,31 @@ fun IntelligenceInsightsSection(accounts: List<Account>, transactions: List<Tran
                 }
                 
                 LinearProgressIndicator(
-                    progress = 0.85f,
+                    progress = (analyticsUiState.savingsRate.toFloat()).coerceIn(0f, 1f),
                     modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surface
                 )
                 
+                val savingsDiff = (analyticsUiState.savingsRate - analyticsUiState.lastMonthSavingsRate) * 100
+                val spendingDiff = analyticsUiState.thisMonthSpending - analyticsUiState.lastMonthSpending
+                
+                val insightText = buildString {
+                    if (savingsDiff >= 0) {
+                        append("You are on track to save ${String.format(Locale.getDefault(), "%.1f", savingsDiff)}% more than last month. ")
+                    } else {
+                        append("Your savings rate is ${String.format(Locale.getDefault(), "%.1f", -savingsDiff)}% lower than last month. ")
+                    }
+                    
+                    if (spendingDiff <= 0) {
+                        append("Current spending trend is down by ${formatCurrency(-spendingDiff, baseCurrency)}.")
+                    } else {
+                        append("Current spending trend is up by ${formatCurrency(spendingDiff, baseCurrency)}.")
+                    }
+                }
+
                 Text(
-                    "You are on track to save 12% more than last month. Current spending trend is down by ${formatCurrency(420.0, baseCurrency)}.",
+                    insightText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -277,23 +300,25 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
 
 @Composable
 fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
-    val currencyTotals = remember(accounts, transactions) {
-        val totals = mutableMapOf<String, Double>()
-        
-        // Add initial balances from accounts
+    val allSupportedCurrencies = remember(accounts, transactions) {
+        val list = mutableSetOf<String>()
         accounts.forEach { account ->
-            totals[account.currencyCode] = (totals[account.currencyCode] ?: 0.0) + account.initialBalance
+            list.add(account.currencyCode)
+            list.addAll(account.allowedCurrencies)
         }
-        
-        // Add transaction sums
-        transactions.forEach { tx ->
-            val amount = if (tx.isIncome) tx.amount else -tx.amount
-            totals[tx.currency] = (totals[tx.currency] ?: 0.0) + amount
+        transactions.forEach { list.add(it.currency) }
+        list.toList().sorted()
+    }
+
+    val currencyTotals = remember(accounts, transactions, allSupportedCurrencies) {
+        allSupportedCurrencies.associateWith { curr ->
+            val initialBalanceSum = accounts.filter { it.currencyCode == curr }.sumOf { it.initialBalance }
+            val txSum = transactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
+            initialBalanceSum + txSum
         }
-        totals.toMap()
     }
     
-    if (currencyTotals.isNotEmpty()) {
+    if (allSupportedCurrencies.isNotEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("AGGREGATED CURRENCY BALANCES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             

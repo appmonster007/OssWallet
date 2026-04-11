@@ -46,7 +46,7 @@ class CurrencyViewModel(
         val baseCurrency = _uiState.value.baseCurrency
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            repository.getExchangeRates(baseCurrency)
+            repository.getExchangeRates(baseCurrency, forceRefresh = true)
             val rates = dao.getAllRates()
             _uiState.update {
                 it.copy(

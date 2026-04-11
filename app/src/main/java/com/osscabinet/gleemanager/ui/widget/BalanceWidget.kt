@@ -19,6 +19,7 @@ import com.osscabinet.gleemanager.MainActivity
 import androidx.glance.appwidget.appWidgetBackground
 import com.osscabinet.gleemanager.data.local.AppDatabase
 import com.osscabinet.gleemanager.data.repository.TransactionRepositoryImpl
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import kotlinx.coroutines.flow.first
 import java.util.*
 
@@ -58,7 +59,7 @@ class BalanceWidget : GlanceAppWidget() {
             )
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
-                text = "$${String.format(Locale.getDefault(), "%,.2f", balance)}",
+                text = formatCurrency(balance, "USD"), // Default to USD if currency not found, or fetch from settings
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,

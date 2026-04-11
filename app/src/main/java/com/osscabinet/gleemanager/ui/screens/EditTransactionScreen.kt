@@ -30,9 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.ui.components.CalculatorDialog
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,6 +46,7 @@ fun EditTransactionScreen(
     viewModel: TransactionViewModel,
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
@@ -240,6 +243,12 @@ fun EditTransactionScreen(
                                 Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(account.colorHex))))
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(account.name, fontWeight = FontWeight.Medium)
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text(
+                                    formatCurrency(account.balance, account.currencyCode),
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                                    color = MaterialTheme.colorScheme.outline
+                                )
                             }
                         }
                     }

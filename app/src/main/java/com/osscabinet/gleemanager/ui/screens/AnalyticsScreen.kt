@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import java.util.*
@@ -137,17 +138,10 @@ fun SimpleLineChart(data: Map<Long, Double>, lineColor: Color) {
 fun AnalyticsHeroSection(balance: Double, currency: String) {
     Column {
         Text("PROJECTED BALANCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                "${getCurrencySymbol(currency)}${String.format(Locale.getDefault(), "%,.0f", balance)}",
-                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)
-            )
-            Text(
-                ".${String.format(Locale.getDefault(), "%02d", ((balance % 1) * 100).toInt())}",
-                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), fontFeatureSettings = "tnum"),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
+        Text(
+            formatCurrency(balance, currency),
+            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)
+        )
         Spacer(modifier = Modifier.height(8.dp))
         Surface(
             color = Color(0xFF4CAF50).copy(alpha = 0.2f),
@@ -194,7 +188,7 @@ fun InsightSection(currency: String) {
                 Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${getCurrencySymbol(currency)}400 for your upcoming trip.",
+                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrency(400.0, currency)} for your upcoming trip.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

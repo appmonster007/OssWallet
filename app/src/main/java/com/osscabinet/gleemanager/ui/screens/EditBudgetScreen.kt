@@ -14,15 +14,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.viewmodel.BudgetViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditBudgetScreen(
     category: String,
     viewModel: BudgetViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsState()
+    val currency by settingsViewModel.currency.collectAsState()
     val budget = budgets.find { it.category == category }
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
 
@@ -66,6 +70,14 @@ fun EditBudgetScreen(
                 placeholder = "0.00",
                 icon = Icons.Default.Payments
             )
+
+            budget?.let { 
+                Text(
+                    "Currently spent: ${formatCurrency(it.spent, currency)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 

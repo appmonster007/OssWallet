@@ -123,12 +123,14 @@ class MainActivity : FragmentActivity() {
                     composable("loans") {
                         LoansScreen(
                             viewModel = loanViewModel,
+                            settingsViewModel = settingsViewModel,
                             onBackClick = { navController.popBackStack() }
                         )
                     }
                     composable("budgets") {
                         BudgetsScreen(
                             viewModel = budgetViewModel,
+                            settingsViewModel = settingsViewModel,
                             onBackClick = { navController.popBackStack() },
                             onEditBudgetClick = { category -> navController.navigate("edit_budget/$category") }
                         )
@@ -138,6 +140,7 @@ class MainActivity : FragmentActivity() {
                         EditBudgetScreen(
                             category = category,
                             viewModel = budgetViewModel,
+                            settingsViewModel = settingsViewModel,
                             onBackClick = { navController.popBackStack() }
                         )
                     }
@@ -166,6 +169,7 @@ class MainActivity : FragmentActivity() {
                             viewModel = viewModel,
                             accountViewModel = accountViewModel,
                             analyticsViewModel = analyticsViewModel,
+                            settingsViewModel = settingsViewModel,
                             onBackClick = { navController.popBackStack() }
                         )
                     }

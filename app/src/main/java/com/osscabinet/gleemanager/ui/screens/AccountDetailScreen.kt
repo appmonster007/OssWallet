@@ -27,6 +27,7 @@ import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.ui.util.getCurrencySymbol
 import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
@@ -195,14 +196,14 @@ fun AccountDetailScreen(
                             Column {
                                 Text(account.structureType.uppercase(), style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
                                 Text(
-                                    "${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", totalBalanceInAccountCurrency)}",
+                                    formatCurrency(totalBalanceInAccountCurrency, account.currencyCode),
                                     style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold)
                                 )
                                 if (account.currencyCode != baseCurrency) {
                                     val rate = exchangeRates[account.currencyCode] ?: 1.0
                                     val convertedBalance = if (rate != 0.0) totalBalanceInAccountCurrency / rate else 0.0
                                     Text(
-                                        "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", convertedBalance)}",
+                                        "≈ ${formatCurrency(convertedBalance, baseCurrency)}",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = LocalContentColor.current.copy(alpha = 0.7f)
                                     )
@@ -224,7 +225,7 @@ fun AccountDetailScreen(
                             Column {
                                 Text("MONTHLY NET", style = MaterialTheme.typography.labelSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
                                 Text(
-                                    "${if (netInAccountCurrency >= 0) "+" else ""}${getCurrencySymbol(account.currencyCode)}${String.format("%,.2f", netInAccountCurrency)}",
+                                    formatCurrency(netInAccountCurrency, account.currencyCode),
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -348,13 +349,13 @@ fun AccountDetailScreen(
                                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(curr, style = MaterialTheme.typography.bodyMedium)
-                                            Text("${getCurrencySymbol(curr)}${String.format("%,.2f", bal)}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                            Text(formatCurrency(bal, curr), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                                         }
                                         if (curr != baseCurrency) {
                                             val rate = exchangeRates[curr] ?: 1.0
                                             val convertedBal = if (rate != 0.0) bal / rate else bal
                                             Text(
-                                                "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.2f", convertedBal)}",
+                                                "≈ ${formatCurrency(convertedBal, baseCurrency)}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.outline,
                                                 modifier = Modifier.align(Alignment.End)
@@ -368,7 +369,6 @@ fun AccountDetailScreen(
                         items(accountTransactions.sortedByDescending { it.timestamp }) { transaction ->
                             TransactionItem(
                                 transaction = transaction,
-                                currencySymbol = getCurrencySymbol(transaction.currency),
                                 onClick = { onEditTransactionClick(transaction.id) }
                             )
                         }
@@ -393,13 +393,13 @@ fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency
                 color = MaterialTheme.colorScheme.outline
             )
             Text(
-                "${getCurrencySymbol(curr)}${String.format("%,.2f", amount)}",
+                formatCurrency(amount, curr),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
             )
         }
         if (curr != baseCurrency) {
             Text(
-                "≈ ${getCurrencySymbol(baseCurrency)}${String.format("%,.0f", inBase)}",
+                "≈ ${formatCurrency(inBase, baseCurrency)}",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = MaterialTheme.colorScheme.outline
             )
@@ -410,7 +410,6 @@ fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency
 @Composable
 fun TransactionItem(
     transaction: Transaction,
-    currencySymbol: String,
     onClick: () -> Unit
 ) {
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -451,7 +450,7 @@ fun TransactionItem(
             
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    "${if (transaction.isIncome) "+" else "-"}$currencySymbol${String.format("%,.2f", transaction.amount)}",
+                    formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = if (transaction.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
                 )

@@ -23,6 +23,7 @@ import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import com.osscabinet.gleemanager.data.local.AppDatabase
 import com.osscabinet.gleemanager.data.repository.TransactionRepositoryImpl
+import com.osscabinet.gleemanager.ui.util.formatCurrency
 import com.osscabinet.gleemanager.domain.model.Transaction
 import kotlinx.coroutines.flow.first
 import java.util.*
@@ -71,7 +72,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                         )
                     )
                     Text(
-                        text = "$${String.format(Locale.getDefault(), "%,.2f", balance)}",
+                        text = formatCurrency(balance, "USD"), // Default to USD for display if currency not found
                         style = TextStyle(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -141,7 +142,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                 )
             }
             Text(
-                text = "${if (transaction.isIncome) "+" else "-"} $${String.format(Locale.getDefault(), "%,.2f", transaction.amount)}",
+                text = formatCurrency(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                 style = TextStyle(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,

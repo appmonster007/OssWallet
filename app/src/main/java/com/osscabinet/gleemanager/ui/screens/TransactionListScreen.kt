@@ -65,7 +65,6 @@ fun TransactionListScreen(
                                       MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         ) 
                     }
-                    IconButton(onClick = {}) { Icon(Icons.Default.Search, contentDescription = "Search") }
                 }
             )
         },

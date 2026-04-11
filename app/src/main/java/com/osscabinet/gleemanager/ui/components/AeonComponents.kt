@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
@@ -65,73 +66,104 @@ fun Numpad(
     onClearClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val keys = listOf(
-        "C", "÷", "×", "DEL",
-        "7", "8", "9", "−",
-        "4", "5", "6", "+",
-        "1", "2", "3", "=",
-        ".", "0", "00", ""
-    )
-
-    val rows = keys.chunked(4)
-
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        val operators = listOf("+", "−", "×", "÷")
+
+        @Composable
+        fun NumpadKey(
+            key: String,
+            onClick: () -> Unit,
+            modifier: Modifier = Modifier,
+            color: Color? = null,
+            contentColor: Color? = null
+        ) {
+            val backgroundColor = color ?: when (key) {
+                in operators -> MaterialTheme.colorScheme.primaryContainer
+                "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            }
+            val textColor = contentColor ?: if (key in operators) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+
+            Surface(
+                onClick = onClick,
+                modifier = modifier.fillMaxHeight(),
+                shape = RoundedCornerShape(20.dp),
+                color = backgroundColor
             ) {
-                row.forEach { key ->
-                    if (key.isNotEmpty()) {
-                        Surface(
-                            onClick = {
-                                when (key) {
-                                    "DEL" -> onDeleteClick()
-                                    "C" -> onClearClick()
-                                    "=" -> onEqualClick()
-                                    "+", "−", "×", "÷" -> onOperatorClick(key)
-                                    else -> onNumberClick(key)
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            shape = RoundedCornerShape(20.dp),
-                            color = when (key) {
-                                "=", "+", "−", "×", "÷" -> MaterialTheme.colorScheme.primaryContainer
-                                "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                            }
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (key == "DEL") {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.Backspace,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                } else {
-                                    Text(
-                                        text = key,
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (key == "=" || key == "+" || key == "−" || key == "×" || key == "÷") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (key == "DEL") {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Backspace,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = textColor
+                        )
                     } else {
-                        Spacer(modifier = Modifier.weight(1f).fillMaxHeight())
+                        Text(
+                            text = key,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = textColor
+                            )
+                        )
                     }
                 }
             }
+        }
+
+        // Row 1: C, ÷, ×, DEL
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("C", onClearClick, Modifier.weight(1f))
+            NumpadKey("÷", { onOperatorClick("÷") }, Modifier.weight(1f))
+            NumpadKey("×", { onOperatorClick("×") }, Modifier.weight(1f))
+            NumpadKey("DEL", onDeleteClick, Modifier.weight(1f))
+        }
+        // Row 2: 7, 8, 9, −
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("7", { onNumberClick("7") }, Modifier.weight(1f))
+            NumpadKey("8", { onNumberClick("8") }, Modifier.weight(1f))
+            NumpadKey("9", { onNumberClick("9") }, Modifier.weight(1f))
+            NumpadKey("−", { onOperatorClick("−") }, Modifier.weight(1f))
+        }
+        // Row 3: 4, 5, 6, +
+        Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("4", { onNumberClick("4") }, Modifier.weight(1f))
+            NumpadKey("5", { onNumberClick("5") }, Modifier.weight(1f))
+            NumpadKey("6", { onNumberClick("6") }, Modifier.weight(1f))
+            NumpadKey("+", { onOperatorClick("+") }, Modifier.weight(1f))
+        }
+        // Rows 4 & 5
+        Row(modifier = Modifier.weight(2f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.weight(3f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumpadKey("1", { onNumberClick("1") }, Modifier.weight(1f))
+                    NumpadKey("2", { onNumberClick("2") }, Modifier.weight(1f))
+                    NumpadKey("3", { onNumberClick("3") }, Modifier.weight(1f))
+                }
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumpadKey(".", { onNumberClick(".") }, Modifier.weight(1f))
+                    NumpadKey("0", { onNumberClick("0") }, Modifier.weight(1f))
+                    NumpadKey("00", { onNumberClick("00") }, Modifier.weight(1f))
+                }
+            }
+            // Equal button spanning two rows
+            NumpadKey(
+                key = "=",
+                onClick = onEqualClick,
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         }
     }
 }
@@ -437,6 +469,8 @@ fun DetailDrawer(
     isOpen: Boolean,
     onClose: () -> Unit,
     onSwipeOpen: () -> Unit,
+    tabAlignment: Alignment = Alignment.CenterEnd,
+    tabOffsetY: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
@@ -449,8 +483,8 @@ fun DetailDrawer(
         if (!isOpen) {
             Surface(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 8.dp) // Hide slightly
+                    .align(tabAlignment)
+                    .offset(x = 8.dp, y = tabOffsetY) // Hide slightly
                     .width(48.dp)
                     .height(80.dp)
                     .clickable { onSwipeOpen() }

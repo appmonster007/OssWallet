@@ -39,8 +39,8 @@ fun AccountSetupScreen(
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
 
     // Currency logic
-    var primaryCurrency by remember { mutableStateOf("USD") }
-    var allowedCurrencies by remember { mutableStateOf(setOf("USD")) }
+    var primaryCurrency by remember { mutableStateOf("") }
+    var allowedCurrencies by remember { mutableStateOf(emptySet<String>()) }
 
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
 

@@ -127,6 +127,16 @@ fun CurrencyManagementSection(
     val commonCurrencies = listOf("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "INR", "SGD", "HKD", "CNY", "BRL", "IDR", "MYR", "THB", "PHP", "VND", "KRW", "RUB", "TRY", "ZAR", "MXN", "ILS")
     var isSelectionMenuExpanded by remember { mutableStateOf(false) }
     
+    LaunchedEffect(allowedCurrencies) {
+        if (allowedCurrencies.isEmpty()) {
+            onPrimaryCurrencyChange("")
+        } else if (allowedCurrencies.size == 1) {
+            onPrimaryCurrencyChange(allowedCurrencies.first())
+        } else if (primaryCurrency.isNotEmpty() && !allowedCurrencies.contains(primaryCurrency)) {
+            onPrimaryCurrencyChange(allowedCurrencies.first())
+        }
+    }
+
     val filteredCurrencies = if (searchQuery.isBlank()) {
         commonCurrencies
     } else {
@@ -191,10 +201,10 @@ fun CurrencyManagementSection(
                                     onClick = {
                                         if (canToggle) {
                                             if (isSelected) {
-                                                if (!isPrimary) onAllowedCurrenciesChange(allowedCurrencies - code)
+                                                if (isPrimary) onPrimaryCurrencyChange("")
+                                                onAllowedCurrenciesChange(allowedCurrencies - code)
                                             } else {
                                                 onAllowedCurrenciesChange(allowedCurrencies + code)
-                                                if (primaryCurrency.isBlank()) onPrimaryCurrencyChange(code)
                                             }
                                         }
                                     }
@@ -230,10 +240,10 @@ fun CurrencyManagementSection(
                             .clip(CircleShape)
                             .clickable(enabled = canToggle) {
                                 if (isSelected) {
-                                    if (!isPrimary) onAllowedCurrenciesChange(allowedCurrencies - code)
+                                    if (isPrimary) onPrimaryCurrencyChange("")
+                                    onAllowedCurrenciesChange(allowedCurrencies - code)
                                 } else {
                                     onAllowedCurrenciesChange(allowedCurrencies + code)
-                                    if (primaryCurrency.isBlank()) onPrimaryCurrencyChange(code)
                                 }
                             },
                         shape = CircleShape,
@@ -265,32 +275,65 @@ fun CurrencyManagementSection(
             // Default Currency Selection (Moved after allowed currencies)
             if (allowedCurrencies.size > 1) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Default Currency", style = MaterialTheme.typography.titleSmall)
+                    val isInvalid = primaryCurrency.isBlank()
+                    Text(
+                        "Primary Currency" + if (isInvalid) " (Required)" else "",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (isInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
                     var isExpanded by remember { mutableStateOf(false) }
                     Box {
                         Surface(
-                            modifier = Modifier.fillMaxWidth().height(56.dp).clickable { isExpanded = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .border(
+                                    width = if (isInvalid) 2.dp else 0.dp,
+                                    color = if (isInvalid) MaterialTheme.colorScheme.error else Color.Transparent,
+                                    shape = RoundedCornerShape(28.dp)
+                                )
+                                .clickable { isExpanded = true },
                             shape = RoundedCornerShape(28.dp),
-                            color = MaterialTheme.colorScheme.surface
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = if (isInvalid) 2.dp else 0.dp
                         ) {
                             Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(primaryCurrency.ifEmpty { "Select Default" })
-                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
+                                Text(
+                                    primaryCurrency.ifEmpty { "Select Primary Currency" },
+                                    color = if (primaryCurrency.isEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (primaryCurrency.isEmpty()) FontWeight.Normal else FontWeight.Bold
+                                )
+                                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = if (isInvalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
                             }
                         }
-                        DropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
+                        DropdownMenu(
+                            expanded = isExpanded,
+                            onDismissRequest = { isExpanded = false },
+                            modifier = Modifier.fillMaxWidth(0.8f).background(MaterialTheme.colorScheme.surface)
+                        ) {
                             allowedCurrencies.forEach { code ->
                                 DropdownMenuItem(
-                                    text = { Text(code) },
+                                    text = { Text(code, fontWeight = if (code == primaryCurrency) FontWeight.Bold else FontWeight.Normal) },
                                     onClick = {
                                         onPrimaryCurrencyChange(code)
                                         isExpanded = false
+                                    },
+                                    leadingIcon = {
+                                        if (code == primaryCurrency) Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                                     }
                                 )
                             }
                         }
                     }
                 }
+            } else if (allowedCurrencies.size == 1) {
+                // If only one, it's already primary, but we can show a confirmation label
+                Text(
+                    "Primary Currency: $primaryCurrency",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
 
             if (isEditMode) {

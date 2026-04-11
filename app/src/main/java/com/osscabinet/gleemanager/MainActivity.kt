@@ -135,6 +135,7 @@ class MainActivity : FragmentActivity() {
                     composable("settings") {
                         SettingsScreen(
                             viewModel = settingsViewModel,
+                            onManageAccountsClick = { navController.navigate("manage_accounts") },
                             onBackClick = { navController.popBackStack() }
                         )
                     }

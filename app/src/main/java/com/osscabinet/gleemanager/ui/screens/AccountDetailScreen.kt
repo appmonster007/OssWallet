@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.isDark
 import java.text.SimpleDateFormat
@@ -37,6 +38,8 @@ fun AccountDetailScreen(
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit
 ) {
+    val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
+    
     val accounts by accountViewModel.accounts.collectAsState()
     val account = accounts.find { it.id == accountId }
     
@@ -96,29 +99,6 @@ fun AccountDetailScreen(
         list.toList().sorted()
     }
 
-    val incomeBreakdown by remember(supportedCurrencies, accountTransactions, exchangeRates, baseCurrency) {
-        derivedStateOf {
-            val txsByCurrency = accountTransactions.filter { it.isIncome }.groupBy { it.currency }
-            supportedCurrencies.map { curr ->
-                val amount = txsByCurrency[curr]?.sumOf { it.amount } ?: 0.0
-                val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                val inBase = if (rate != 0.0) amount / rate else amount
-                Triple(curr, amount, inBase)
-            }
-        }
-    }
-
-    val expenseBreakdown by remember(supportedCurrencies, accountTransactions, exchangeRates, baseCurrency) {
-        derivedStateOf {
-            val txsByCurrency = accountTransactions.filter { !it.isIncome }.groupBy { it.currency }
-            supportedCurrencies.map { curr ->
-                val amount = txsByCurrency[curr]?.sumOf { it.amount } ?: 0.0
-                val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                val inBase = if (rate != 0.0) amount / rate else amount
-                Triple(curr, amount, inBase)
-            }
-        }
-    }
 
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
@@ -255,52 +235,13 @@ fun AccountDetailScreen(
 
                 item {
                     // Flow Breakdown
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Income Section
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color(0xFF2E7D32).copy(alpha = 0.12f)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Black)
-                                }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    incomeBreakdown.forEach { (curr, amount, inBase) ->
-                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Expense Section
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color(0xFFC62828).copy(alpha = 0.12f)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = Color(0xFFC62828), modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Black)
-                                }
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    expenseBreakdown.forEach { (curr, amount, inBase) ->
-                                        FlowBreakdownItem(curr, amount, inBase, baseCurrency)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    AeonCashFlowSection(
+                        transactions = accountTransactions,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
+                        currentTheme = currentTheme,
+                        showTitle = false
+                    )
                 }
 
                 item {
@@ -428,9 +369,15 @@ fun AccountDetailScreen(
                 }
 
                 items(accountTransactions.sortedByDescending { it.timestamp }, key = { it.id }) { transaction ->
-                    TransactionItem(
-                        transaction = transaction,
-                        onClick = { onEditTransactionClick(transaction.id) }
+                    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                    AeonTransactionItem(
+                        title = transaction.title,
+                        sub = "${transaction.category} • ${dateFormat.format(Date(transaction.timestamp))}",
+                        amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                        isIncome = transaction.isIncome,
+                        icon = categoryIcons[transaction.category],
+                        onClick = { onEditTransactionClick(transaction.id) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -438,88 +385,3 @@ fun AccountDetailScreen(
     }
 }
 
-@Composable
-fun FlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                curr,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
-                color = MaterialTheme.colorScheme.outline
-            )
-            if (curr != baseCurrency) {
-                Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-        Text(
-            formatCurrencyRight(amount, curr),
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
-        )
-
-    }
-}
-
-@Composable
-fun TransactionItem(
-    transaction: Transaction,
-    onClick: () -> Unit
-) {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        onClick = onClick // Using the built-in onClick which handles ripple
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = if (transaction.isIncome) Color(0xFF2E7D32).copy(alpha = 0.1f) else Color(0xFFC62828).copy(alpha = 0.1f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        if (transaction.isIncome) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = if (transaction.isIncome) Color(0xFF2E7D32) else Color(0xFFC62828)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(transaction.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black)
-                Text(transaction.category, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
-            }
-            
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
-                    color = if (transaction.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    dateFormat.format(Date(transaction.timestamp)),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-    }
-}

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.domain.model.Transaction
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
@@ -145,11 +146,15 @@ fun TransactionListScreen(
                             )
                         }
                         items(items, key = { it.id }) { transaction ->
-                            TransactionItemEditorial(
-                                transaction = transaction,
-                                accountName = accountMap[transaction.accountId] ?: "Unknown",
+                            AeonTransactionItem(
+                                title = transaction.title,
+                                sub = transaction.category,
+                                amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                                isIncome = transaction.isIncome,
+                                account = accountMap[transaction.accountId]?.uppercase(),
+                                icon = categoryIcons[transaction.category],
                                 onClick = { onEditTransactionClick(transaction.id) },
-                                showTonalShift = false
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -264,69 +269,3 @@ fun FilterBottomSheet(
     }
 }
 
-@Composable
-fun TransactionItemEditorial(
-    transaction: Transaction,
-    accountName: String,
-    onClick: () -> Unit,
-    showTonalShift: Boolean
-) {
-    val bg = if (showTonalShift) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else Color.Transparent
-    
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        color = bg
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val icon = when(transaction.category.lowercase()) {
-                        "food", "dining" -> Icons.Default.Restaurant
-                        "shopping" -> Icons.Default.ShoppingBag
-                        "transport" -> Icons.Default.DirectionsCar
-                        "salary", "income" -> Icons.Default.Payments
-                        else -> Icons.Default.Receipt
-                    }
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = transaction.category,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = if (transaction.isIncome) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = accountName.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-    }
-}

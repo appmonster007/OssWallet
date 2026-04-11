@@ -377,12 +377,12 @@ fun AccountDetailScreen(
                                         color = MaterialTheme.colorScheme.outline,
                                         letterSpacing = 0.5.sp
                                     )
-                                    Icon(
-                                        Icons.Rounded.AccountBalanceWallet,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(16.dp)
-                                    )
+//                                    Icon(
+//                                        Icons.Rounded.AccountBalanceWallet,
+//                                        contentDescription = null,
+//                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+//                                        modifier = Modifier.size(16.dp)
+//                                    )
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                                 finalBalances.forEach { (curr, bal) ->
@@ -393,19 +393,19 @@ fun AccountDetailScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Surface(
-                                                    modifier = Modifier.size(40.dp),
-                                                    shape = CircleShape,
-                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                                ) {
-                                                    Box(contentAlignment = Alignment.Center) {
-                                                        Text(
-                                                            getCurrencySymbol(curr),
-                                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                                                        )
-                                                    }
-                                                }
-                                                Spacer(modifier = Modifier.width(16.dp))
+//                                                Surface(
+//                                                    modifier = Modifier.size(40.dp),
+//                                                    shape = CircleShape,
+//                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+//                                                ) {
+//                                                    Box(contentAlignment = Alignment.Center) {
+//                                                        Text(
+//                                                            getCurrencySymbol(curr),
+//                                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+//                                                        )
+//                                                    }
+//                                                }
+//                                                Spacer(modifier = Modifier.width(16.dp))
                                                 Text(
                                                     curr,
                                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)

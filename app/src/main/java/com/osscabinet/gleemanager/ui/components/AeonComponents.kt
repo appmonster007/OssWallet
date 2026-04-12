@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.domain.model.CashFlowType
 import com.osscabinet.gleemanager.domain.model.TransactionWithBalance
 import com.osscabinet.gleemanager.data.local.entity.CategoryEntity
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
@@ -762,51 +763,6 @@ fun CategoryPickerSheet(
     }
 }
 
-val categoryIcons = mapOf(
-    "Food" to Icons.Rounded.Restaurant,
-    "Transport" to Icons.Rounded.DirectionsCar,
-    "Shopping" to Icons.Rounded.ShoppingBag,
-    "Electronics" to Icons.Rounded.Smartphone,
-    "Entertainment" to Icons.Rounded.SportsEsports,
-    "Health" to Icons.Rounded.MedicalServices,
-    "Bills" to Icons.Rounded.Receipt,
-    "Investment" to Icons.AutoMirrored.Rounded.TrendingUp,
-    "Housing" to Icons.Rounded.Home,
-    "Education" to Icons.Rounded.School,
-    "Income" to Icons.Rounded.Payments,
-    "Coffee" to Icons.Rounded.CoffeeMaker,
-    "Grocery" to Icons.Rounded.ShoppingCart,
-    "Other" to Icons.Rounded.MoreHoriz
-)
-
-@Composable
-fun AeonFlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                curr,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Black),
-                color = MaterialTheme.colorScheme.outline
-            )
-            if (curr != baseCurrency) {
-                Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-        Text(
-            formatCurrencyRight(amount, curr),
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
-        )
-    }
-}
-
 @Composable
 fun AeonSectionHeader(
     title: String,
@@ -972,146 +928,23 @@ fun AeonCurrencyBreakdown(
     }
 }
 
-@Composable
-fun AeonCashFlowSection(
-    transactions: List<Transaction>,
-    baseCurrency: String,
-    exchangeRates: Map<String, Double>,
-    currentTheme: String,
-    showTitle: Boolean = true
-) {
-    val allSupportedCurrencies = remember(transactions) {
-        transactions.map { it.currency }.distinct().sorted()
-    }
+val categoryIcons = mapOf(
+    "Food" to Icons.Rounded.Restaurant,
+    "Transport" to Icons.Rounded.DirectionsCar,
+    "Shopping" to Icons.Rounded.ShoppingBag,
+    "Electronics" to Icons.Rounded.Smartphone,
+    "Entertainment" to Icons.Rounded.SportsEsports,
+    "Health" to Icons.Rounded.MedicalServices,
+    "Bills" to Icons.Rounded.Receipt,
+    "Investment" to Icons.AutoMirrored.Rounded.TrendingUp,
+    "Housing" to Icons.Rounded.Home,
+    "Education" to Icons.Rounded.School,
+    "Income" to Icons.Rounded.Payments,
+    "Coffee" to Icons.Rounded.CoffeeMaker,
+    "Grocery" to Icons.Rounded.ShoppingCart,
+    "Other" to Icons.Rounded.MoreHoriz
+)
 
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
-
-    val incomeColor = Color(0xFF2E7D32)
-    val expenseColor = Color(0xFFC62828)
-
-    val incomeContainer = if (isAmoled) Color.Black else incomeColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
-    val expenseContainer = if (isAmoled) Color.Black else expenseColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
-    
-    val incomeBorder = if (isAmoled) BorderStroke(1.dp, incomeColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, incomeColor.copy(alpha = 0.1f))
-    val expenseBorder = if (isAmoled) BorderStroke(1.dp, expenseColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, expenseColor.copy(alpha = 0.1f))
-
-    val flowData by remember(allSupportedCurrencies, transactions, exchangeRates, baseCurrency) {
-        derivedStateOf {
-            allSupportedCurrencies.sorted().mapNotNull { curr ->
-                val txsForCurr = transactions.filter { it.currency == curr }
-                val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
-                val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }
-
-                if (income == 0.0 && expense == 0.0) null
-                else {
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val incomeInBase = if (rate != 0.0) income / rate else income
-                    val expenseInBase = if (rate != 0.0) expense / rate else expense
-                    Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
-                }
-            }
-        }
-    }
-
-    val totalIncomeInBase = flowData.sumOf { it.second.second }
-    val totalExpenseInBase = flowData.sumOf { it.third.second }
-
-    val density = LocalDensity.current
-    var incomeSize by remember { mutableStateOf(IntSize.Zero) }
-    var expenseSize by remember { mutableStateOf(IntSize.Zero) }
-
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (showTitle) {
-            Text("CASH FLOW SUMMARY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Income Section
-            Surface(
-                modifier = Modifier.weight(1f).onSizeChanged { incomeSize = it },
-                shape = RoundedCornerShape(24.dp),
-                color = incomeContainer,
-                border = incomeBorder
-            ) {
-                Box {
-                    val iconHeight = with(density) { (incomeSize.height * 0.75f).toDp() }
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowDownward,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .offset { IntOffset(x = (incomeSize.width * 0.25f).toInt(), y = 0) }
-                            .size(iconHeight)
-                            .alpha(0.2f),
-                        tint = Color(0xFF2E7D32)
-                    )
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Income", style = MaterialTheme.typography.labelMedium, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            formatCurrencyRight(totalIncomeInBase, baseCurrency),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            flowData.forEach { (curr, income, _) ->
-                                AeonFlowBreakdownItem(curr, income.first, income.second, baseCurrency)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Expense Section
-            Surface(
-                modifier = Modifier.weight(1f).onSizeChanged { expenseSize = it },
-                shape = RoundedCornerShape(24.dp),
-                color = expenseContainer,
-                border = expenseBorder
-            ) {
-                Box {
-                    val iconHeight = with(density) { (expenseSize.height * 0.75f).toDp() }
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowUpward,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .offset { IntOffset(x = (expenseSize.width * 0.25f).toInt(), y = 0) }
-                            .size(iconHeight)
-                            .alpha(0.2f),
-                        tint = Color(0xFFC62828)
-                    )
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Expense", style = MaterialTheme.typography.labelMedium, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            formatCurrencyRight(totalExpenseInBase, baseCurrency),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            flowData.forEach { (curr, _, expense) ->
-                                AeonFlowBreakdownItem(curr, expense.first, expense.second, baseCurrency)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1226,7 +1059,7 @@ fun AeonTransactionList(
                     amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
                     balanceBefore = formatCurrencyRight(balanceBeforeValue, tx.currency),
                     balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency),
-                    isIncome = tx.isIncome,
+                    type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = displayTimestamp,
                     note = tx.note,
                     tags = tx.tags,
@@ -1247,7 +1080,7 @@ fun AeonTransactionItem(
     amount: String,
     balanceBefore: String,
     balanceAfter: String,
-    isIncome: Boolean,
+    type: CashFlowType,
     timestamp: String,
     note: String? = null,
     tags: List<String> = emptyList(),
@@ -1266,6 +1099,7 @@ fun AeonTransactionItem(
             modifier = Modifier.padding(vertical = 12.dp),
             verticalAlignment = Alignment.Top
         ) {
+            val isIncome = type == CashFlowType.INCOME
             // Category Icon
             Surface(
                 modifier = Modifier.size(48.dp),

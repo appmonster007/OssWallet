@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
+import com.osscabinet.gleemanager.domain.model.CashFlowType
 import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
@@ -31,6 +32,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TagViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -789,32 +791,23 @@ fun EditTransactionScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    linkedTransactionId = tx.id
-                                    showLinkedTransactionSheet = false
-                                },
-                            shape = RoundedCornerShape(24.dp),
-                            color = if (linkedTransactionId == tx.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(tx.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    Text(tx.category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                }
-                                Text(
-                                    text = "${if (tx.isIncome) "+" else "-"} ${formatCurrencyRight(tx.amount, tx.currency)}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (tx.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
+                        AeonTransactionItem(
+                            category = tx.category,
+                            account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
+                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
+                            balanceBefore = "",
+                            balanceAfter = "",
+                            type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                            timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(tx.timestamp)),
+                            note = tx.note,
+                            tags = tx.tags,
+                            icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
+                            onClick = {
+                                linkedTransactionId = tx.id
+                                showLinkedTransactionSheet = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }

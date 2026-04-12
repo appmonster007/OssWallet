@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.domain.model.CashFlowType
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
@@ -224,7 +225,7 @@ fun DashboardScreen(
                                     CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
                                 }
                                 item {
-                                    AeonCashFlowSection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
+                                    AeonCashFlowSummary(activeTransactions, baseCurrency, exchangeRates, currentTheme)
                                 }
                                 item {
                                     AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
@@ -272,7 +273,7 @@ fun DashboardScreen(
                                         amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
                                         balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency),
                                         balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
-                                        isIncome = transaction.isIncome,
+                                        type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                                         timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                                         note = transaction.note,
                                         tags = transaction.tags,

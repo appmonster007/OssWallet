@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TemplateDao {
-    @Query("SELECT * FROM templates ORDER BY isStarred DESC, name ASC")
+    @Query("SELECT * FROM templates ORDER BY name ASC")
     fun getAllTemplates(): Flow<List<TemplateEntity>>
 
-    @Query("SELECT * FROM templates WHERE isStarred = 1 LIMIT 5")
+    @Query("SELECT * FROM templates WHERE isStarred = 1 ORDER BY displayOrder ASC")
     fun getStarredTemplates(): Flow<List<TemplateEntity>>
 
     @Query("UPDATE templates SET isStarred = :isStarred WHERE id = :templateId")
@@ -26,4 +26,7 @@ interface TemplateDao {
 
     @Query("SELECT * FROM templates WHERE name = :name LIMIT 1")
     suspend fun getTemplateByName(name: String): TemplateEntity?
+
+    @Update
+    suspend fun updateTemplates(templates: List<TemplateEntity>)
 }

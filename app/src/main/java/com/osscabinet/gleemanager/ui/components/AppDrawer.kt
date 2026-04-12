@@ -158,7 +158,7 @@ fun AppDrawerContent(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
 
-                    starredTemplates.take(5).forEach { template ->
+                    starredTemplates.forEach { template ->
                         NavigationDrawerItem(
                             label = { Text(template.name, style = MaterialTheme.typography.labelLarge) },
                             selected = false,

@@ -97,7 +97,7 @@ fun DashboardScreen(
     
     val templates = remember(dbTemplates, starredTemplates) {
         val displayTemplates = if (starredTemplates.isNotEmpty()) {
-            starredTemplates.take(5)
+            starredTemplates
         } else if (dbTemplates.isNotEmpty()) {
             dbTemplates.take(5)
         } else {

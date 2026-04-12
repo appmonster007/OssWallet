@@ -18,5 +18,6 @@ data class TemplateEntity(
     val location: String? = null,
     val paymentMethod: String? = null,
     val currency: String? = null,
-    val isStarred: Boolean = false
+    val isStarred: Boolean = false,
+    val displayOrder: Int = 0
 )

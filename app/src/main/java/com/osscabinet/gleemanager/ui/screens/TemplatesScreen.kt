@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,7 +34,10 @@ fun TemplatesScreen(
     onBackClick: () -> Unit
 ) {
     val templates by viewModel.templates.collectAsState()
+    val starredTemplates by viewModel.starredTemplates.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
+
+    var isReorderMode by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -41,6 +46,16 @@ fun TemplatesScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (starredTemplates.isNotEmpty()) {
+                        IconButton(onClick = { isReorderMode = !isReorderMode }) {
+                            Icon(
+                                if (isReorderMode) Icons.Rounded.Check else Icons.Rounded.SwapVert,
+                                contentDescription = if (isReorderMode) "Done" else "Reorder Starred"
+                            )
+                        }
                     }
                 }
             )
@@ -59,6 +74,39 @@ fun TemplatesScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (isReorderMode) {
+                item {
+                    Text(
+                        "Reorder Starred Templates",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                itemsIndexed(starredTemplates) { index, template ->
+                    ReorderTemplateItem(
+                        template = template,
+                        isFirst = index == 0,
+                        isLast = index == starredTemplates.size - 1,
+                        onMoveUp = {
+                            val newList = starredTemplates.toMutableList()
+                            val item = newList.removeAt(index)
+                            newList.add(index - 1, item)
+                            viewModel.updateTemplatesOrder(newList)
+                        },
+                        onMoveDown = {
+                            val newList = starredTemplates.toMutableList()
+                            val item = newList.removeAt(index)
+                            newList.add(index + 1, item)
+                            viewModel.updateTemplatesOrder(newList)
+                        }
+                    )
+                }
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                }
+            }
+
             items(templates) { template ->
                 TemplateItem(
                     template = template,
@@ -66,6 +114,38 @@ fun TemplatesScreen(
                     onDelete = { viewModel.deleteTemplate(template) },
                     onToggleStar = { viewModel.toggleStar(template) }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ReorderTemplateItem(
+    template: TemplateEntity,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Rounded.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            
+            IconButton(onClick = onMoveUp, enabled = !isFirst) {
+                Icon(Icons.Rounded.ArrowUpward, contentDescription = "Move Up")
+            }
+            IconButton(onClick = onMoveDown, enabled = !isLast) {
+                Icon(Icons.Rounded.ArrowDownward, contentDescription = "Move Down")
             }
         }
     }

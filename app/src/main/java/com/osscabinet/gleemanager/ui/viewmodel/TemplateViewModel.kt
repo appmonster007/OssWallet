@@ -35,10 +35,10 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
             val list = templateDao.getAllTemplates().first()
             if (list.isEmpty()) {
                 val initialTemplates = listOf(
-                    TemplateEntity(name = "Grocery Run", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id"),
-                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = 0.0, transactionType = 1, isStarred = true, accountId = "default-cash-id"),
-                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id"),
-                    TemplateEntity(name = "Coffee", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id")
+                    TemplateEntity(name = "Grocery Run", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 0),
+                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = 0.0, transactionType = 1, isStarred = true, accountId = "default-cash-id", displayOrder = 1),
+                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 2),
+                    TemplateEntity(name = "Coffee", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 3)
                 )
                 initialTemplates.forEach { templateDao.insertTemplate(it) }
             }
@@ -90,6 +90,15 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
     fun deleteTemplate(template: TemplateEntity) {
         viewModelScope.launch {
             templateDao.deleteTemplate(template)
+        }
+    }
+
+    fun updateTemplatesOrder(orderedTemplates: List<TemplateEntity>) {
+        viewModelScope.launch {
+            val entities = orderedTemplates.mapIndexed { index, template ->
+                template.copy(displayOrder = index)
+            }
+            templateDao.updateTemplates(entities)
         }
     }
 }

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.data.local.entity.TemplateEntity
 import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TagViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TemplateViewModel
 import java.util.*
 
@@ -33,6 +34,7 @@ fun AddTemplateScreen(
     templateId: Long? = null,
     templateViewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
+    tagViewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
@@ -391,7 +393,8 @@ fun AddTemplateScreen(
         LabelPickerSheet(
             selectedTags = tags,
             onTagsChanged = { tags = it },
-            onDismiss = { showLabelSheet = false }
+            onDismiss = { showLabelSheet = false },
+            tagViewModel = tagViewModel
         )
     }
 }

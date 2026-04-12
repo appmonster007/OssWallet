@@ -79,6 +79,12 @@ fun GleeNavGraph(
         }
     )
 
+    val tagViewModel: TagViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            TagViewModel(appContainer.tagRepository)
+        }
+    )
+
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
@@ -142,7 +148,15 @@ fun GleeNavGraph(
             SettingsScreen(
                 viewModel = settingsViewModel,
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                onManageLabelsClick = { navController.navigate(Screen.ManageLabels.route) },
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ManageLabels.route) {
+            ManageLabelsScreen(
+                viewModel = tagViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -172,6 +186,7 @@ fun GleeNavGraph(
                 templateId = templateId,
                 templateViewModel = templateViewModel,
                 accountViewModel = accountViewModel,
+                tagViewModel = tagViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -244,6 +259,7 @@ fun GleeNavGraph(
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
+                tagViewModel = tagViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -256,6 +272,7 @@ fun GleeNavGraph(
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
                 settingsViewModel = settingsViewModel,
+                tagViewModel = tagViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

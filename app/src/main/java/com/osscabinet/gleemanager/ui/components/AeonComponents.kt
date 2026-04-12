@@ -55,6 +55,8 @@ import com.osscabinet.gleemanager.ui.util.formatAmount
 import com.osscabinet.gleemanager.ui.util.isDark
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
+import com.osscabinet.gleemanager.ui.viewmodel.TagViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -559,10 +561,12 @@ fun DetailDrawer(
 fun LabelPickerSheet(
     selectedTags: List<String>,
     onTagsChanged: (List<String>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    tagViewModel: TagViewModel
 ) {
     var tagInput by remember { mutableStateOf("") }
-    val suggestedTags = listOf("Personal", "Work", "Family", "Holiday", "Urgent", "Subscription", "Gift")
+    val dbTags by tagViewModel.tags.collectAsState()
+    val sortedTags = remember(dbTags) { dbTags.sortedBy { it.name.lowercase() } }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -618,7 +622,11 @@ fun LabelPickerSheet(
                     IconButton(
                         onClick = {
                             if (tagInput.isNotBlank()) {
-                                onTagsChanged((selectedTags + tagInput.trim()).distinct())
+                                val newTag = tagInput.trim()
+                                if (newTag !in dbTags.map { it.name }) {
+                                    tagViewModel.addTag(newTag)
+                                }
+                                onTagsChanged((selectedTags + newTag).distinct())
                                 tagInput = ""
                             }
                         }
@@ -643,10 +651,10 @@ fun LabelPickerSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                suggestedTags.filter { it !in selectedTags }.forEach { tag ->
+                sortedTags.filter { it.name !in selectedTags }.forEach { tag ->
                     SuggestionChip(
-                        onClick = { onTagsChanged((selectedTags + tag).distinct()) },
-                        label = { Text(tag) },
+                        onClick = { onTagsChanged((selectedTags + tag.name).distinct()) },
+                        label = { Text(tag.name) },
                         shape = RoundedCornerShape(12.dp)
                     )
                 }

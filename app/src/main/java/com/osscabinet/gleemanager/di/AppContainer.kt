@@ -55,6 +55,10 @@ class AppContainer(private val context: Context) {
         BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao())
     }
 
+    val tagRepository: TagRepositoryImpl by lazy {
+        TagRepositoryImpl(db.tagDao(), db.transactionDao())
+    }
+
     // Use Cases
     val getTransactionsUseCase get() = GetTransactionsUseCase(transactionRepository)
     val insertTransactionUseCase get() = InsertTransactionUseCase(transactionRepository)

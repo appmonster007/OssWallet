@@ -26,4 +26,10 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions")
     suspend fun clearAll()
+
+    @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
+    suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
+
+    @Update
+    suspend fun updateTransactions(transactions: List<TransactionEntity>)
 }

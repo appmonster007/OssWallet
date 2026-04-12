@@ -33,6 +33,7 @@ import com.osscabinet.gleemanager.ui.util.getAllCurrencies
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onManageAccountsClick: () -> Unit,
+    onManageLabelsClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -307,6 +308,12 @@ fun SettingsScreen(
                     subtitle = "Reorder, hide, or edit your accounts",
                     icon = Icons.Rounded.AccountBalance,
                     onClick = onManageAccountsClick
+                )
+                SettingsItem(
+                    title = "Manage Labels",
+                    subtitle = "Create, edit, or delete tags",
+                    icon = Icons.Rounded.Label,
+                    onClick = onManageLabelsClick
                 )
                 SettingsItem(
                     title = "Transaction Templates",

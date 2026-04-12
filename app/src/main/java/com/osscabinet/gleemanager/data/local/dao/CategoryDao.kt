@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
-    @Query("SELECT * FROM categories")
+    @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE ASC")
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

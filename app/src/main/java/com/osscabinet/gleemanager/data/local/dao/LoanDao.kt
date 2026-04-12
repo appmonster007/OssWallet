@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LoanDao {
-    @Query("SELECT * FROM loans")
+    @Query("SELECT * FROM loans ORDER BY title COLLATE NOCASE ASC")
     fun getAllLoans(): Flow<List<LoanEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -102,18 +102,15 @@ fun TemplatesScreen(
                         }
                     )
                 }
-                item {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            } else {
+                items(templates) { template ->
+                    TemplateItem(
+                        template = template,
+                        onEdit = { onAddTemplateClick(template.id) },
+                        onDelete = { viewModel.deleteTemplate(template) },
+                        onToggleStar = { viewModel.toggleStar(template) }
+                    )
                 }
-            }
-
-            items(templates) { template ->
-                TemplateItem(
-                    template = template,
-                    onEdit = { onAddTemplateClick(template.id) },
-                    onDelete = { viewModel.deleteTemplate(template) },
-                    onToggleStar = { viewModel.toggleStar(template) }
-                )
             }
         }
     }

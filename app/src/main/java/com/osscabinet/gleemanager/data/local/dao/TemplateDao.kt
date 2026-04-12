@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TemplateDao {
-    @Query("SELECT * FROM templates ORDER BY name ASC")
+    @Query("SELECT * FROM templates ORDER BY name COLLATE NOCASE ASC")
     fun getAllTemplates(): Flow<List<TemplateEntity>>
 
     @Query("SELECT * FROM templates WHERE isStarred = 1 ORDER BY displayOrder ASC")

@@ -1231,16 +1231,19 @@ fun AeonTransactionList(
                     }.timeInMillis
 
                     when (txDay) {
-                        today -> "Today"
-                        today - 86400000 -> "Yesterday"
+                        today -> "Today, " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
+                        today - 86400000 -> "Yesterday, " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
                         else -> SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
                     }
                 }
+
+                val balanceBeforeValue = item.balanceAfter - (if (tx.isIncome) tx.amount else -tx.amount)
 
                 AeonTransactionItem(
                     category = tx.category,
                     account = accountMap[tx.accountId] ?: "Unknown",
                     amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
+                    balanceBefore = formatCurrencyRight(balanceBeforeValue, tx.currency),
                     balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency),
                     isIncome = tx.isIncome,
                     timestamp = displayTimestamp,
@@ -1261,6 +1264,7 @@ fun AeonTransactionItem(
     category: String,
     account: String,
     amount: String,
+    balanceBefore: String,
     balanceAfter: String,
     isIncome: Boolean,
     timestamp: String,
@@ -1358,9 +1362,12 @@ fun AeonTransactionItem(
                         color = MaterialTheme.colorScheme.outline
                     )
                     Text(
-                        "($balanceAfter)",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = Color(0xFF66BB6A) // Green for running balance
+                        "$balanceBefore → $balanceAfter",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontFeatureSettings = "tnum"
+                        ),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
                     )
                 }
 

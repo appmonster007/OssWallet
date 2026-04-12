@@ -40,7 +40,7 @@ class BudgetViewModelFactory(
     private val syncBudgetSpentUseCase: SyncBudgetSpentUseCase,
     private val upsertBudgetUseCase: UpsertBudgetUseCase
 ) : ViewModelProvider.Factory {
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return BudgetViewModel(syncBudgetSpentUseCase, upsertBudgetUseCase) as T
     }
 }

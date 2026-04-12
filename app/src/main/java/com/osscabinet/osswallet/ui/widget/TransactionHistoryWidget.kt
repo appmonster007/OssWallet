@@ -79,7 +79,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                 }
                 
                 // Quick Action
-                androidx.glance.layout.Box(
+                Box(
                     modifier = GlanceModifier
                         .background(Color(0xFF006064))
                         .cornerRadius(16.dp)
@@ -104,7 +104,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (transactions.isEmpty()) {
-                androidx.glance.layout.Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No records", style = TextStyle(color = ColorProvider(Color.Gray), fontSize = 12.sp))
                 }
             } else {

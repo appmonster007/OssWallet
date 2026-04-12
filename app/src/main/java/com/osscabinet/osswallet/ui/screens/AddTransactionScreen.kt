@@ -78,7 +78,7 @@ fun AddTransactionScreen(
     var isEnteringSecondOperand by remember { mutableStateOf(false) }
 
     val dbTemplates by templateViewModel.templates.collectAsState()
-    val templates = remember(dbTemplates) {
+    remember(dbTemplates) {
         if (dbTemplates.isEmpty()) {
             listOf(
                 Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
@@ -184,7 +184,7 @@ fun AddTransactionScreen(
         }
     }
 
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
+    rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(

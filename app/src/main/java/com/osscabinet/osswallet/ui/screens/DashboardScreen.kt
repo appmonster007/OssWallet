@@ -133,7 +133,7 @@ fun DashboardScreen(
             drawerState = drawerState,
             modifier = Modifier.fillMaxSize(),
             drawerContent = {
-                com.osscabinet.ossWallet.ui.components.AppDrawerContent(
+                AppDrawerContent(
                     currentProfile = currentProfile,
                     nonArchivedAccounts = nonArchivedAccounts,
                     starredTemplates = starredTemplates,
@@ -637,13 +637,13 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                     val accountRate = exchangeRates[account.currencyCode] ?: 1.0
                     val totalBalanceInAccountCurrency = if (accountRate != 0.0) balanceInBase * accountRate else balanceInBase
 
-                    val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.sumOf { tx ->
+                    accountTransactions.filter { it.isIncome }.sumOf { tx ->
                         val rate = exchangeRates[tx.currency] ?: 1.0
                         val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
                         if (accountRate != 0.0) inBase * accountRate else inBase
                     }
 
-                    val expenseInAccountCurrency = accountTransactions.filter { !it.isIncome }.sumOf { tx ->
+                    accountTransactions.filter { !it.isIncome }.sumOf { tx ->
                         val rate = exchangeRates[tx.currency] ?: 1.0
                         val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
                         if (accountRate != 0.0) inBase * accountRate else inBase

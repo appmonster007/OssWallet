@@ -180,12 +180,12 @@ class TransactionViewModelFactory(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
-    private val settingsDataStore: com.osscabinet.ossWallet.data.local.SettingsDataStore,
+    private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore, categoryDao, accountRepository) as T
     }
 }

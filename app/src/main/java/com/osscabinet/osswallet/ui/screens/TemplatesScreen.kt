@@ -35,7 +35,6 @@ fun TemplatesScreen(
 ) {
     val templates by viewModel.templates.collectAsState()
     val starredTemplates by viewModel.starredTemplates.collectAsState()
-    val accounts by accountViewModel.accounts.collectAsState()
 
     var isReorderMode by remember { mutableStateOf(false) }
 

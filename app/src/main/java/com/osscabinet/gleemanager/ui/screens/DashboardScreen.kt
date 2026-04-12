@@ -735,7 +735,7 @@ fun AccountGridItem(
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .offset { IntOffset(x = (cardSize.width * 0.1f).toInt(), y = 0) }
+//                    .offset { IntOffset(x = (cardSize.width * 0.1f).toInt(), y = 0) }
                     .size(iconHeight)
                     .alpha(0.15f),
                 tint = contentColor

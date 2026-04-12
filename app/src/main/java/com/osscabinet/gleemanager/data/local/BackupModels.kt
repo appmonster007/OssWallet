@@ -9,7 +9,8 @@ data class GleeBackup(
     val accounts: List<AccountBackup>,
     val transactions: List<TransactionBackup>,
     val categories: List<CategoryBackup>,
-    val tags: List<TagBackup>
+    val tags: List<TagBackup>,
+    val templates: List<TemplateBackup> = emptyList()
 )
 
 @Serializable
@@ -40,7 +41,26 @@ data class TransactionBackup(
     val accountId: String,
     val categoryId: Long?,
     val tags: String,
+    val paymentMethod: String = "Cash",
     val profileId: Int
+)
+
+@Serializable
+data class TemplateBackup(
+    val id: Long,
+    val name: String,
+    val category: String,
+    val amount: Double,
+    val transactionType: Int,
+    val accountId: String?,
+    val note: String?,
+    val payee: String?,
+    val location: String?,
+    val paymentMethod: String?,
+    val currency: String?,
+    val tags: String,
+    val isStarred: Boolean,
+    val displayOrder: Int
 )
 
 @Serializable

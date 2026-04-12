@@ -52,7 +52,7 @@ class AppContainer(private val context: Context) {
     }
 
     val backupRepository: BackupRepositoryImpl by lazy {
-        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao())
+        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao())
     }
 
     // Use Cases

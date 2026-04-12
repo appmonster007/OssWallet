@@ -17,7 +17,8 @@ class BackupRepositoryImpl(
     private val accountDao: AccountDao,
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
-    private val tagDao: TagDao
+    private val tagDao: TagDao,
+    private val templateDao: TemplateDao
 ) : BackupRepository {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -39,12 +40,30 @@ class BackupRepositoryImpl(
                 ) 
             },
             transactions = transactionDao.getAllTransactionsSync().map { 
-                TransactionBackup(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.profileId)
+                TransactionBackup(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.profileId)
             },
             categories = categoryDao.getAllCategoriesSync().map { 
                 CategoryBackup(it.id, it.name, it.iconName, it.colorHex, it.isDefault)
             },
-            tags = tagDao.getAllTagsSync().map { TagBackup(it.id, it.name, it.colorHex) }
+            tags = tagDao.getAllTagsSync().map { TagBackup(it.id, it.name, it.colorHex) },
+            templates = templateDao.getAllTemplatesSync().map {
+                TemplateBackup(
+                    id = it.id,
+                    name = it.name,
+                    category = it.category,
+                    amount = it.amount,
+                    transactionType = it.transactionType,
+                    accountId = it.accountId,
+                    note = it.note,
+                    payee = it.payee,
+                    location = it.location,
+                    paymentMethod = it.paymentMethod,
+                    currency = it.currency,
+                    tags = it.tags,
+                    isStarred = it.isStarred,
+                    displayOrder = it.displayOrder
+                )
+            }
         )
 
         val jsonString = json.encodeToString(backup)
@@ -66,6 +85,7 @@ class BackupRepositoryImpl(
         transactionDao.clearAll()
         categoryDao.clearAll()
         tagDao.clearAll()
+        templateDao.clearAll()
 
         // Restore data
         backup.profiles.forEach { profileDao.insertProfile(ProfileEntity(it.id, it.name, it.type)) }
@@ -85,13 +105,33 @@ class BackupRepositoryImpl(
             )
         }
         backup.transactions.forEach { 
-            transactionDao.insertTransaction(TransactionEntity(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.profileId))
+            transactionDao.insertTransaction(TransactionEntity(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.profileId))
         }
         backup.categories.forEach { 
             categoryDao.insertCategory(CategoryEntity(it.id, it.name, it.iconName, it.colorHex, it.isDefault))
         }
         backup.tags.forEach { 
             tagDao.insertTag(TagEntity(it.id, it.name, it.colorHex))
+        }
+        backup.templates.forEach {
+            templateDao.insertTemplate(
+                TemplateEntity(
+                    id = it.id,
+                    name = it.name,
+                    category = it.category,
+                    amount = it.amount,
+                    transactionType = it.transactionType,
+                    accountId = it.accountId,
+                    note = it.note,
+                    payee = it.payee,
+                    location = it.location,
+                    paymentMethod = it.paymentMethod,
+                    currency = it.currency,
+                    tags = it.tags,
+                    isStarred = it.isStarred,
+                    displayOrder = it.displayOrder
+                )
+            )
         }
     }
 }

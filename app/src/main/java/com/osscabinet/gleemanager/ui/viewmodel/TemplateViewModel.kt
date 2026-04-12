@@ -61,7 +61,8 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
         payee: String? = null,
         location: String? = null,
         paymentMethod: String? = null,
-        currency: String? = null
+        currency: String? = null,
+        tags: List<String> = emptyList()
     ) {
         viewModelScope.launch {
             templateDao.insertTemplate(
@@ -75,7 +76,8 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
                     payee = payee,
                     location = location,
                     paymentMethod = paymentMethod,
-                    currency = currency
+                    currency = currency,
+                    tags = tags.joinToString(",")
                 )
             )
         }

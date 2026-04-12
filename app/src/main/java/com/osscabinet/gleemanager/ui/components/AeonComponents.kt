@@ -819,10 +819,11 @@ fun AeonSectionHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            title.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
-            letterSpacing = 1.sp
+            title,
+            style = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         )
         trailing?.invoke()
     }
@@ -1054,12 +1055,12 @@ fun AeonCashFlowSection(
                     )
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("INCOME", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            Text("Income", style = MaterialTheme.typography.labelMedium, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             formatCurrencyRight(totalIncomeInBase, baseCurrency),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1092,12 +1093,12 @@ fun AeonCashFlowSection(
                     )
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                            Text("Expense", style = MaterialTheme.typography.labelMedium, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             formatCurrencyRight(totalExpenseInBase, baseCurrency),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1146,63 +1147,43 @@ fun AeonTransactionList(
                     val dayTotal = dayTransactions.sumOf {
                         if (it.transaction.isIncome) it.transaction.amount else -it.transaction.amount
                     }
-                    val latestBalance = dayTransactions.first().balanceAfter
                     val currency = dayTransactions.first().transaction.currency
 
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
                     ) {
-                        Column {
-                            // Date Row
-                            Text(
-                                text = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.getDefault()).format(Date(dateMillis)).uppercase(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                            )
-
-                            // Balance & Total Row (Matches screenshot)
+                        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date(dateMillis)),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Column(horizontalAlignment = Alignment.End) {
                                     Text(
-                                        text = "Balance ",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                    Text(
-                                        text = formatCurrencyRight(latestBalance, currency),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Σ ",
-                                        style = MaterialTheme.typography.labelSmall,
+                                        text = "DAILY NET",
+                                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                     Text(
                                         text = formatCurrencyRight(dayTotal, currency),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = if (dayTotal >= 0) Color(0xFF2E7D32) else Color(0xFFEF5350)
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFeatureSettings = "tnum"
+                                        ),
+                                        color = if (dayTotal >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
                             HorizontalDivider(
                                 modifier = Modifier.padding(top = 8.dp),
                                 thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                             )
                         }
                     }
@@ -1285,37 +1266,18 @@ fun AeonTransactionItem(
             modifier = Modifier.padding(vertical = 12.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Category Icon with Badge
-            Box(modifier = Modifier.size(56.dp)) {
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    color = iconBg ?: (if (isIncome) Color(0xFF2E7D32).copy(alpha = 0.1f) else Color(0xFFC62828).copy(alpha = 0.1f))
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            icon ?: Icons.Rounded.Category,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (iconBg != null) Color.White else (if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828))
-                        )
-                    }
-                }
-                // Small checkmark badge seen in screenshot
-                Surface(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .align(Alignment.BottomEnd)
-                        .offset(x = (-4).dp, y = (-4).dp),
-                    shape = CircleShape,
-                    color = Color(0xFF2E7D32),
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
-                ) {
+            // Category Icon
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = iconBg?.copy(alpha = 0.15f) ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Rounded.Check,
+                        icon ?: Icons.Rounded.Category,
                         contentDescription = null,
-                        modifier = Modifier.padding(2.dp),
-                        tint = Color.White
+                        modifier = Modifier.size(24.dp),
+                        tint = iconBg ?: MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -1323,7 +1285,7 @@ fun AeonTransactionItem(
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // Top Row: Category & Amount
+                // Category and Amount
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1331,26 +1293,23 @@ fun AeonTransactionItem(
                 ) {
                     Text(
                         category,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     Text(
                         amount,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFeatureSettings = "tnum"
                         ),
-                        color = if (isIncome) Color(0xFF2E7D32) else Color(0xFFEF5350)
+                        color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
                     )
                 }
 
-                // Middle Row: Account & Balance
+                // Account and Balance
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1359,19 +1318,20 @@ fun AeonTransactionItem(
                     Text(
                         account,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "$balanceBefore → $balanceAfter",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontFeatureSettings = "tnum"
+//                        "$balanceBefore → $balanceAfter",
+                        balanceAfter,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFeatureSettings = "tnum",
+                            fontWeight = FontWeight.Medium
                         ),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
 
-                // Bottom Row: Note & Timestamp
+                // Note and Timestamp
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1379,22 +1339,19 @@ fun AeonTransactionItem(
                 ) {
                     if (!note.isNullOrBlank()) {
                         Text(
-                            "\"$note\"",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                            ),
+                            note,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
                             color = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.weight(1f).padding(top = 2.dp),
+                            modifier = Modifier.weight(1f).padding(top = 2.dp, end = 8.dp),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
                     }
-                    
                     Text(
                         timestamp,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(top = 2.dp)
                     )
@@ -1404,20 +1361,21 @@ fun AeonTransactionItem(
                 if (tags.isNotEmpty()) {
                     Row(
                         modifier = Modifier
-                            .padding(top = 8.dp)
+                            .padding(top = 10.dp)
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         tags.forEach { tag ->
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF3B4D7B), // Matching screenshot tag background
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                             ) {
                                 Text(
                                     tag,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
                         }

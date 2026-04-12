@@ -599,8 +599,6 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 account = Account("empty", "GET STARTED", 0.0, 0.0, baseCurrency, "Default", "#808080", "Add"),
                 balanceInBase = 0.0,
                 totalBalanceInAccountCurrency = 0.0,
-                incomeInAccountCurrency = 0.0,
-                expenseInAccountCurrency = 0.0,
                 baseCurrency = baseCurrency,
                 currentTheme = currentTheme,
                 onClick = onManageClick,
@@ -654,8 +652,6 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         account = account,
                         balanceInBase = balanceInBase,
                         totalBalanceInAccountCurrency = totalBalanceInAccountCurrency,
-                        incomeInAccountCurrency = incomeInAccountCurrency,
-                        expenseInAccountCurrency = expenseInAccountCurrency,
                         baseCurrency = baseCurrency,
                         currentTheme = currentTheme,
                         onClick = { onAccountClick(account.id) },
@@ -678,8 +674,6 @@ fun AccountGridItem(
     account: Account,
     balanceInBase: Double,
     totalBalanceInAccountCurrency: Double,
-    incomeInAccountCurrency: Double,
-    expenseInAccountCurrency: Double,
     baseCurrency: String,
     currentTheme: String,
     onClick: () -> Unit,
@@ -716,12 +710,6 @@ fun AccountGridItem(
         1 -> 14.sp
         2 -> 12.sp
         else -> 10.sp
-    }
-    val badgeFontSize = when(gridColumns) {
-        1 -> 12.sp
-        2 -> 9.sp
-        3 -> 8.sp
-        else -> 7.sp
     }
     val iconSize = if (gridColumns > 2) 14.dp else 18.dp
     val padding = if (gridColumns > 2) 12.dp else 16.dp
@@ -785,6 +773,7 @@ fun AccountGridItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
+                /*
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val badges = @Composable {
@@ -860,6 +849,7 @@ fun AccountGridItem(
                         badges()
                     }
                 }
+                */
             }
         }
     }

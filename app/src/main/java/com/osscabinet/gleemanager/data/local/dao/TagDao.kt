@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TagDao {
-    @Query("SELECT * FROM tags")
+    @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE ASC")
     fun getAllTags(): Flow<List<TagEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

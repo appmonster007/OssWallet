@@ -207,7 +207,7 @@ fun AccountDetailScreen(
                         item {
                             AeonSectionHeader(title = "Monthly Cash Flow")
                             Spacer(modifier = Modifier.height(4.dp))
-                            AeonCashFlowSection(
+                            AeonCashFlowSummary(
                                 transactions = accountTransactions,
                                 baseCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,

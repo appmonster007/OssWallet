@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.ui.components.AppDrawerContent
+import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.domain.model.CashFlowType
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
@@ -36,7 +38,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
-import com.osscabinet.gleemanager.ui.components.AccountIconMap
+import com.osscabinet.gleemanager.ui.components.*
 import kotlinx.coroutines.launch
 import android.graphics.Color as AndroidColor
 
@@ -282,47 +284,16 @@ fun AccountCard(
                     
                     // Income/Expense Badges
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val incomeColor = Color(0xFF4CAF50)
-                        val expenseColor = Color(0xFFF44336)
-                        val badgeTextColor = contentColor
-
-                        Surface(
-                            color = incomeColor.copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, incomeColor.copy(alpha = 0.2f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = incomeColor, modifier = Modifier.size(12.dp))
-                                Text(
-                                    com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                    color = badgeTextColor
-                                )
-                            }
-                        }
-
-                        Surface(
-                            color = expenseColor.copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, expenseColor.copy(alpha = 0.2f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = expenseColor, modifier = Modifier.size(12.dp))
-                                Text(
-                                    com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                    color = badgeTextColor
-                                )
-                            }
-                        }
+                        AeonFlowBadge(
+                            amount = incomeInAccountCurrency,
+                            type = CashFlowType.INCOME,
+                            contentColor = contentColor
+                        )
+                        AeonFlowBadge(
+                            amount = expenseInAccountCurrency,
+                            type = CashFlowType.EXPENSE,
+                            contentColor = contentColor
+                        )
                     }
                 }
                 

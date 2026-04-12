@@ -282,21 +282,21 @@ fun AccountCard(
                     
                     // Income/Expense Badges
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val incomeBg = Color(0xFF2E7D32)
-                        val expenseBg = Color(0xFFC62828)
-                        val badgeTextColor = Color.White
+                        val incomeColor = Color(0xFF4CAF50)
+                        val expenseColor = Color(0xFFF44336)
+                        val badgeTextColor = contentColor
 
                         Surface(
-                            color = incomeBg.copy(alpha = 0.8f),
+                            color = incomeColor.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f))
+                            border = BorderStroke(1.dp, incomeColor.copy(alpha = 0.2f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = badgeTextColor, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = incomeColor, modifier = Modifier.size(12.dp))
                                 Text(
                                     com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
@@ -306,16 +306,16 @@ fun AccountCard(
                         }
 
                         Surface(
-                            color = expenseBg.copy(alpha = 0.8f),
+                            color = expenseColor.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f))
+                            border = BorderStroke(1.dp, expenseColor.copy(alpha = 0.2f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = badgeTextColor, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = expenseColor, modifier = Modifier.size(12.dp))
                                 Text(
                                     com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),

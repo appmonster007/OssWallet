@@ -7,6 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,12 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.data.local.entity.ProfileEntity
+import com.osscabinet.gleemanager.data.local.entity.TemplateEntity
 import android.graphics.Color as AndroidColor
 
 @Composable
 fun AppDrawerContent(
     currentProfile: ProfileEntity?,
     nonArchivedAccounts: List<Account>,
+    starredTemplates: List<TemplateEntity>,
     selectedDestination: String,
     onDashboardClick: () -> Unit,
     onAccountsViewClick: () -> Unit,
@@ -35,7 +40,9 @@ fun AppDrawerContent(
     onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onExchangeRatesClick: () -> Unit,
+    onTemplatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onTemplateClick: (TemplateEntity) -> Unit,
     onCloseDrawer: () -> Unit
 ) {
     ModalDrawerSheet(
@@ -155,6 +162,53 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
+        NavigationDrawerItem(
+            label = { Text("TEMPLATES", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)) },
+            selected = selectedDestination == "templates",
+            onClick = { 
+                onTemplatesClick()
+                onCloseDrawer()
+            },
+            icon = { Icon(Icons.Default.AutoAwesome, contentDescription = null) },
+            modifier = Modifier.padding(horizontal = 12.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+
+        if (starredTemplates.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            
+            Text(
+                "QUICK ACCESS",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+
+            starredTemplates.take(5).forEach { template ->
+                NavigationDrawerItem(
+                    label = { Text(template.name, style = MaterialTheme.typography.labelLarge) },
+                    selected = false,
+                    onClick = { 
+                        onTemplateClick(template)
+                        onCloseDrawer()
+                    },
+                    icon = { 
+                        Icon(
+                            when (template.transactionType) {
+                                1 -> Icons.Rounded.ArrowUpward
+                                2 -> Icons.Rounded.SwapHoriz
+                                else -> Icons.Rounded.ArrowDownward
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+            }
+        }
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         

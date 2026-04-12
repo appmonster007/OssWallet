@@ -67,6 +67,12 @@ fun GleeNavGraph(
         }
     )
 
+    val templateViewModel: TemplateViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            TemplateViewModel(appContainer.db.templateDao())
+        }
+    )
+
     val currencyViewModel: CurrencyViewModel = viewModel(
         factory = GenericViewModelFactory {
             CurrencyViewModel(appContainer.currencyRepository, appContainer.db.currencyDao(), appContainer.settingsDataStore)
@@ -86,12 +92,14 @@ fun GleeNavGraph(
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
                 onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
-                analyticsViewModel = analyticsViewModel
+                analyticsViewModel = analyticsViewModel,
+                templateViewModel = templateViewModel
             )
         }
         
@@ -107,14 +115,19 @@ fun GleeNavGraph(
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
                 onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
                 onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
+                onAddClick = { type, template -> 
+                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
+                },
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
-                analyticsViewModel = analyticsViewModel
+                analyticsViewModel = analyticsViewModel,
+                templateViewModel = templateViewModel
             )
         }
 
@@ -129,6 +142,36 @@ fun GleeNavGraph(
             SettingsScreen(
                 viewModel = settingsViewModel,
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Templates.route) {
+            TemplatesScreen(
+                viewModel = templateViewModel,
+                accountViewModel = accountViewModel,
+                onAddTemplateClick = { templateId -> 
+                    navController.navigate(Screen.AddTemplate.createRoute(templateId))
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            Screen.AddTemplate.route,
+            arguments = listOf(
+                navArgument("templateId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { backStackEntry ->
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
+            AddTemplateScreen(
+                templateId = templateId,
+                templateViewModel = templateViewModel,
+                accountViewModel = accountViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -200,6 +243,7 @@ fun GleeNavGraph(
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
+                templateViewModel = templateViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

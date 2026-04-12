@@ -44,6 +44,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.toContainerColor
 import com.osscabinet.gleemanager.ui.util.toOnContainerColor
+import com.osscabinet.gleemanager.ui.viewmodel.TemplateViewModel
 import com.osscabinet.gleemanager.ui.components.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -61,11 +62,13 @@ fun DashboardScreen(
     onAccountsViewClick: () -> Unit,
     onLoansClick: () -> Unit,
     onExchangeRatesClick: () -> Unit,
+    onTemplatesClick: () -> Unit,
     onSettingsClick: () -> Unit,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
-    analyticsViewModel: AnalyticsViewModel
+    analyticsViewModel: AnalyticsViewModel,
+    templateViewModel: TemplateViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -89,12 +92,35 @@ fun DashboardScreen(
 
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val templates = listOf(
-        "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
-        "Salary Deposit" to (Icons.Rounded.Payments to "Income"),
-        "Rent Payment" to (Icons.Rounded.Home to "Housing"),
-        "Coffee" to (Icons.Rounded.CoffeeMaker to "Food")
-    )
+    val dbTemplates by templateViewModel.templates.collectAsState()
+    val starredTemplates by templateViewModel.starredTemplates.collectAsState()
+    
+    val templates = remember(dbTemplates, starredTemplates) {
+        val displayTemplates = if (starredTemplates.isNotEmpty()) {
+            starredTemplates.take(5)
+        } else if (dbTemplates.isNotEmpty()) {
+            dbTemplates.take(5)
+        } else {
+            emptyList()
+        }
+
+        if (displayTemplates.isEmpty()) {
+            listOf(
+                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
+                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
+                Triple("Rent Payment", Icons.Rounded.Home, 0),
+                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
+            )
+        } else {
+            displayTemplates.map {
+                Triple(it.name, when(it.transactionType) {
+                    1 -> Icons.Rounded.Payments
+                    2 -> Icons.Rounded.SwapHoriz
+                    else -> Icons.Rounded.ShoppingCart
+                }, it.transactionType)
+            }
+        }
+    }
 
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
@@ -108,6 +134,7 @@ fun DashboardScreen(
                 com.osscabinet.gleemanager.ui.components.AppDrawerContent(
                     currentProfile = currentProfile,
                     nonArchivedAccounts = nonArchivedAccounts,
+                    starredTemplates = starredTemplates,
                     selectedDestination = "dashboard",
                     onDashboardClick = { scope.launch { drawerState.close() } },
                     onAccountsViewClick = onAccountsViewClick,
@@ -116,9 +143,11 @@ fun DashboardScreen(
                     onBudgetsClick = onBudgetsClick,
                     onLoansClick = onLoansClick,
                     onExchangeRatesClick = onExchangeRatesClick,
+                    onTemplatesClick = onTemplatesClick,
                     onManageAccountsClick = onManageAccountsClick,
                     onSettingsClick = onSettingsClick,
                     onAccountClick = onAccountClick,
+                    onTemplateClick = { template -> onAddClick(template.transactionType, template.name) },
                     onCloseDrawer = { scope.launch { drawerState.close() } }
                 )
             }
@@ -283,7 +312,7 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(bottom = 72.dp, end = 4.dp)
             ) {
-                templates.forEach { (name, info) ->
+                templates.forEach { (name, icon, type) ->
                     AnimatedVisibility(
                         visible = isFabExpanded,
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -299,7 +328,7 @@ fun DashboardScreen(
                                 shadowElevation = 4.dp,
                                 onClick = { 
                                     isFabExpanded = false
-                                    onAddClick(0, name)
+                                    onAddClick(type, name)
                                 }
                             ) {
                                 Text(
@@ -311,14 +340,14 @@ fun DashboardScreen(
                             FloatingActionButton(
                                 onClick = { 
                                     isFabExpanded = false
-                                    onAddClick(0, name)
+                                    onAddClick(type, name)
                                 },
                                 modifier = Modifier.size(40.dp),
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                 shape = CircleShape
                             ) {
-                                Icon(info.first, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
                             }
                         }
                     }

@@ -47,14 +47,17 @@ fun AccountsViewScreen(
     onBudgetsClick: () -> Unit,
     onLoansClick: () -> Unit,
     onExchangeRatesClick: () -> Unit,
+    onTemplatesClick: () -> Unit,
     onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAddAccountClick: () -> Unit,
+    onAddClick: (Int, String?) -> Unit,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
-    analyticsViewModel: AnalyticsViewModel
+    analyticsViewModel: AnalyticsViewModel,
+    templateViewModel: com.osscabinet.gleemanager.ui.viewmodel.TemplateViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -70,6 +73,7 @@ fun AccountsViewScreen(
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
+    val starredTemplates by templateViewModel.starredTemplates.collectAsState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -77,6 +81,7 @@ fun AccountsViewScreen(
             AppDrawerContent(
                 currentProfile = currentProfile,
                 nonArchivedAccounts = nonArchivedAccounts,
+                starredTemplates = starredTemplates,
                 selectedDestination = "accounts_view",
                 onDashboardClick = onDashboardClick,
                 onAccountsViewClick = { scope.launch { drawerState.close() } },
@@ -85,9 +90,13 @@ fun AccountsViewScreen(
                 onBudgetsClick = onBudgetsClick,
                 onLoansClick = onLoansClick,
                 onExchangeRatesClick = onExchangeRatesClick,
+                onTemplatesClick = onTemplatesClick,
                 onManageAccountsClick = onManageAccountsClick,
                 onSettingsClick = onSettingsClick,
                 onAccountClick = onAccountClick,
+                onTemplateClick = { template ->
+                    onAddClick(template.transactionType, template.name)
+                },
                 onCloseDrawer = { scope.launch { drawerState.close() } }
             )
         }

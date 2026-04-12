@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -29,6 +30,7 @@ import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TemplateViewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +42,7 @@ fun AddTransactionScreen(
     viewModel: TransactionViewModel,
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
+    templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit
 ) {
     var title by remember { mutableStateOf("") }
@@ -70,19 +73,47 @@ fun AddTransactionScreen(
     var operator by remember { mutableStateOf<String?>(null) }
     var isEnteringSecondOperand by remember { mutableStateOf(false) }
 
-    val templates = listOf(
-        "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
-        "Salary Deposit" to (Icons.Rounded.Payments to "Income"),
-        "Rent Payment" to (Icons.Rounded.Home to "Housing"),
-        "Coffee" to (Icons.Rounded.CoffeeMaker to "Food")
-    )
-    var selectedTemplate by remember { mutableStateOf(initialTemplate) }
+    val dbTemplates by templateViewModel.templates.collectAsState()
+    val templates = remember(dbTemplates) {
+        if (dbTemplates.isEmpty()) {
+            listOf(
+                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
+                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
+                Triple("Rent Payment", Icons.Rounded.Home, 0),
+                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
+            )
+        } else {
+            dbTemplates.map { Triple(it.name, Icons.Rounded.Category, it.transactionType) }
+        }
+    }
+    var selectedTemplateName by remember { mutableStateOf(initialTemplate) }
 
-    LaunchedEffect(initialTemplate) {
-        initialTemplate?.let { name ->
-            templates.find { it.first == name }?.let { (_, info) ->
-                category = info.second
-                title = name
+    LaunchedEffect(initialTemplate, dbTemplates, accounts) {
+        if (initialTemplate != null) {
+            val template = dbTemplates.find { it.name == initialTemplate }
+            if (template != null) {
+                title = template.name
+                category = template.category
+                transactionType = template.transactionType
+                if (template.amount > 0) amount = template.amount.toString()
+                selectedTemplateName = template.name
+                template.note?.let { note = it }
+                template.accountId?.let { id ->
+                    val acc = accounts.find { it.id == id }
+                    if (acc != null) {
+                        selectedAccount = acc
+                        selectedCurrency = acc.currencyCode
+                    }
+                }
+            } else {
+                // Fallback for default templates if DB is empty or template not found
+                when (initialTemplate) {
+                    "Grocery Run" -> { category = "Food"; transactionType = 0; title = "Grocery Run" }
+                    "Salary Deposit" -> { category = "Salary"; transactionType = 1; title = "Salary Deposit" }
+                    "Rent Payment" -> { category = "Rent"; transactionType = 0; title = "Rent Payment" }
+                    "Coffee" -> { category = "Food"; transactionType = 0; title = "Coffee" }
+                }
+                selectedTemplateName = initialTemplate
             }
         }
     }
@@ -417,7 +448,7 @@ fun AddTransactionScreen(
                     RecordFieldCard(
                         icon = Icons.Rounded.AutoAwesome,
                         label = "SELECT TEMPLATE",
-                        value = selectedTemplate ?: "None Selected",
+                        value = selectedTemplateName ?: "None Selected",
                         trailingIcon = Icons.Rounded.KeyboardArrowDown,
                         onClick = { showTemplateSheet = true },
                         iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
@@ -768,27 +799,44 @@ fun AddTransactionScreen(
                 AeonSectionHeader(title = "Quick Templates")
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(templates.sortedBy { it.first }) { (name, info) ->
-                        val (icon, cat) = info
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedTemplate = name
-                                    category = cat
-                                    transactionType = if (cat == "Income") 1 else 0
-                                    showTemplateSheet = false
-                                },
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                    if (dbTemplates.isEmpty()) {
+                        val defaultTemplates = listOf(
+                            Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
+                            Triple("Salary Deposit", Icons.Rounded.Payments, 1),
+                            Triple("Rent Payment", Icons.Rounded.Home, 0),
+                            Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
+                        )
+                        items(defaultTemplates) { (name, icon, type) ->
+                            TemplateItemRow(name, icon) {
+                                selectedTemplateName = name
+                                title = name
+                                transactionType = type
+                                when (name) {
+                                    "Grocery Run" -> category = "Food"
+                                    "Salary Deposit" -> category = "Salary"
+                                    "Rent Payment" -> category = "Rent"
+                                    "Coffee" -> category = "Food"
+                                }
+                                showTemplateSheet = false
+                            }
+                        }
+                    } else {
+                        items(dbTemplates) { template ->
+                            TemplateItemRow(template.name, Icons.Rounded.Category) {
+                                selectedTemplateName = template.name
+                                title = template.name
+                                category = template.category
+                                transactionType = template.transactionType
+                                if (template.amount > 0) amount = template.amount.toString()
+                                template.note?.let { note = it }
+                                template.accountId?.let { id ->
+                                    val acc = accounts.find { it.id == id }
+                                    if (acc != null) {
+                                        selectedAccount = acc
+                                        selectedCurrency = acc.currencyCode
+                                    }
+                                }
+                                showTemplateSheet = false
                             }
                         }
                     }
@@ -837,6 +885,26 @@ fun AddTransactionScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun TemplateItemRow(name: String, icon: ImageVector, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
         }
     }
 }

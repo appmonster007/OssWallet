@@ -41,4 +41,6 @@ sealed class Screen(val route: String) {
     object EditAccount : Screen("edit_account/{accountId}") {
         fun createRoute(accountId: String) = "edit_account/$accountId"
     }
+
+    object ManageLabels : Screen("manage_labels")
 }

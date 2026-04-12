@@ -20,7 +20,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ProfileEntity::class,
         TemplateEntity::class
     ],
-    version = 21,
+    version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,6 +50,16 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "glee_manager_db"
                 ).openHelperFactory(factory)
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            // Default tags
+                            val defaultTags = listOf("Personal", "Work", "Family", "Holiday", "Urgent", "Subscription", "Gift")
+                            defaultTags.forEach { name ->
+                                db.execSQL("INSERT INTO tags (name, colorHex) VALUES ('$name', -1)")
+                            }
+                        }
+                    })
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

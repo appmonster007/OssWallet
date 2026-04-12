@@ -29,6 +29,7 @@ import com.osscabinet.gleemanager.ui.components.*
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TagViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TemplateViewModel
 import java.util.*
@@ -43,6 +44,7 @@ fun AddTransactionScreen(
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
+    tagViewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
     var title by remember { mutableStateOf("") }
@@ -99,6 +101,9 @@ fun AddTransactionScreen(
                 if (template.amount > 0) amount = template.amount.toString()
                 selectedTemplateName = template.name
                 template.note?.let { note = it }
+                if (template.tags.isNotEmpty()) {
+                    selectedTags = template.tags.split(",").filter { it.isNotBlank() }
+                }
                 template.accountId?.let { id ->
                     val acc = accounts.find { it.id == id }
                     if (acc != null) {
@@ -770,7 +775,8 @@ fun AddTransactionScreen(
         LabelPickerSheet(
             selectedTags = selectedTags,
             onTagsChanged = { selectedTags = it },
-            onDismiss = { showLabelSheet = false }
+            onDismiss = { showLabelSheet = false },
+            tagViewModel = tagViewModel
         )
     }
 

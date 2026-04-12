@@ -29,6 +29,7 @@ import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
+import com.osscabinet.gleemanager.ui.viewmodel.TagViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.util.*
 
@@ -40,6 +41,7 @@ fun EditTransactionScreen(
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
     settingsViewModel: SettingsViewModel,
+    tagViewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
@@ -118,6 +120,7 @@ fun EditTransactionScreen(
     var isDetailDrawerOpen by remember { mutableStateOf(false) }
     var showTemplateSheet by remember { mutableStateOf(false) }
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
+    var showLabelSheet by remember { mutableStateOf(false) }
 
     val templates = listOf(
         "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
@@ -562,11 +565,15 @@ fun EditTransactionScreen(
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
-                                onClick = { /* Tag dialog */ }
+                                onClick = { showLabelSheet = true }
                             ) {
                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
-                                    Text("LABEL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        if (tagsInput.isEmpty()) "LABEL" else "${tagsInput.split(",").filter { it.isNotBlank() }.size} LABELS",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
@@ -720,6 +727,15 @@ fun EditTransactionScreen(
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }
+        )
+    }
+
+    if (showLabelSheet) {
+        LabelPickerSheet(
+            selectedTags = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() },
+            onTagsChanged = { tagsInput = it.joinToString(", ") },
+            onDismiss = { showLabelSheet = false },
+            tagViewModel = tagViewModel
         )
     }
 

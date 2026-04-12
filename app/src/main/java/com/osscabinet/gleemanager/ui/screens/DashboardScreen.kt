@@ -1,6 +1,9 @@
 package com.osscabinet.gleemanager.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,8 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -30,8 +33,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.ui.navigation.Screen
 import com.osscabinet.gleemanager.ui.viewmodel.AccountViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import com.osscabinet.gleemanager.ui.viewmodel.SettingsViewModel
@@ -50,7 +55,7 @@ fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
     onRecordsClick: () -> Unit,
     onBudgetsClick: () -> Unit,
-    onAddClick: () -> Unit,
+    onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAccountsViewClick: () -> Unit,
@@ -82,166 +87,341 @@ fun DashboardScreen(
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
 
+    var isFabExpanded by remember { mutableStateOf(false) }
+
+    val templates = listOf(
+        "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
+        "Salary Deposit" to (Icons.Rounded.Payments to "Income"),
+        "Rent Payment" to (Icons.Rounded.Home to "Housing"),
+        "Coffee" to (Icons.Rounded.CoffeeMaker to "Food")
+    )
+
     LaunchedEffect(baseCurrency) {
         analyticsViewModel.onCurrencySelected(baseCurrency)
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            com.osscabinet.gleemanager.ui.components.AppDrawerContent(
-                currentProfile = currentProfile,
-                nonArchivedAccounts = nonArchivedAccounts,
-                selectedDestination = "dashboard",
-                onDashboardClick = { scope.launch { drawerState.close() } },
-                onAccountsViewClick = onAccountsViewClick,
-                onRecordsClick = onRecordsClick,
-                onAnalyticsClick = onAnalyticsClick,
-                onBudgetsClick = onBudgetsClick,
-                onLoansClick = onLoansClick,
-                onExchangeRatesClick = onExchangeRatesClick,
-                onManageAccountsClick = onManageAccountsClick,
-                onSettingsClick = onSettingsClick,
-                onAccountClick = onAccountClick,
-                onCloseDrawer = { scope.launch { drawerState.close() } }
-            )
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                Column {
-                    TopAppBar(
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+    Box(modifier = Modifier.fillMaxSize()) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            modifier = Modifier.fillMaxSize(),
+            drawerContent = {
+                com.osscabinet.gleemanager.ui.components.AppDrawerContent(
+                    currentProfile = currentProfile,
+                    nonArchivedAccounts = nonArchivedAccounts,
+                    selectedDestination = "dashboard",
+                    onDashboardClick = { scope.launch { drawerState.close() } },
+                    onAccountsViewClick = onAccountsViewClick,
+                    onRecordsClick = onRecordsClick,
+                    onAnalyticsClick = onAnalyticsClick,
+                    onBudgetsClick = onBudgetsClick,
+                    onLoansClick = onLoansClick,
+                    onExchangeRatesClick = onExchangeRatesClick,
+                    onManageAccountsClick = onManageAccountsClick,
+                    onSettingsClick = onSettingsClick,
+                    onAccountClick = onAccountClick,
+                    onCloseDrawer = { scope.launch { drawerState.close() } }
+                )
+            }
+        ) {
+            Scaffold(
+                topBar = {
+                    Column {
+                        TopAppBar(
+                            navigationIcon = {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                                }
+                            },
+                            title = {
+                                Column {
+                                    Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
+                                    Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                }
                             }
-                        },
-                        title = {
-                            Column {
-                                Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                                Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            }
-                        }
-                    )
-                    TabRow(
-                        selectedTabIndex = pagerState.currentPage,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        divider = {},
-                        indicator = { tabPositions ->
-                            if (pagerState.currentPage < tabPositions.size) {
-                                TabRowDefaults.SecondaryIndicator(
-                                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    ) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = pagerState.currentPage == index,
-                                onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                                text = {
-                                    Text(
-                                        title,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
+                        )
+                        TabRow(
+                            selectedTabIndex = pagerState.currentPage,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            divider = {},
+                            indicator = { tabPositions ->
+                                if (pagerState.currentPage < tabPositions.size) {
+                                    TabRowDefaults.SecondaryIndicator(
+                                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
-                            )
-                        }
-                    }
-                }
-            },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = onAddClick,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add")
-                }
-            }
-        ) { innerPadding ->
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(24.dp),
-                            contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                            }
                         ) {
-                            item {
-                                NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                            }
-                            item {
-                                CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                            }
-                            item {
-                                AeonCashFlowSection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
-                            }
-                            item {
-                                AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
-                            }
-                            item {
-                                BudgetTrackingSection(baseCurrency)
-                            }
-                        }
-                    }
-                    1 -> {
-                        val accountMap = remember(nonArchivedAccounts) { nonArchivedAccounts.associate { it.id to it.name } }
-                        val recentTransactions = remember(activeTransactions) { activeTransactions.sortedByDescending { it.timestamp }.take(20) }
-                        val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
-                        val today = remember { SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date()) }
-
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
-                        ) {
-                            item {
-                                AeonSectionHeader(
-                                    title = "Recent Activities",
-                                    trailing = {
-                                        TextButton(onClick = onRecordsClick) {
-                                            Text("View all", color = MaterialTheme.colorScheme.primary)
-                                        }
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = pagerState.currentPage == index,
+                                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                                    text = {
+                                        Text(
+                                            title,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
+                                        )
                                     }
                                 )
                             }
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    verticalAlignment = Alignment.Top
+                ) { page ->
+                    when (page) {
+                        0 -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(24.dp),
+                                contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                            ) {
+                                item {
+                                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                                }
+                                item {
+                                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                                }
+                                item {
+                                    AeonCashFlowSection(activeTransactions, baseCurrency, exchangeRates, currentTheme)
+                                }
+                                item {
+                                    AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
+                                }
+                                item {
+                                    BudgetTrackingSection(baseCurrency)
+                                }
+                            }
+                        }
+                        1 -> {
+                            val accountMap = remember(nonArchivedAccounts) { nonArchivedAccounts.associate { it.id to it.name } }
+                            val recentTransactions = remember(activeTransactions) { activeTransactions.sortedByDescending { it.timestamp }.take(20) }
+                            val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
+                            val today = remember { SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date()) }
 
-                            items(recentTransactions) { transaction ->
-                                val dateStr = dateFormat.format(Date(transaction.timestamp))
-                                val displayDate = if (dateStr == today) "Today" else dateStr
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                            ) {
+                                item {
+                                    AeonSectionHeader(
+                                        title = "Recent Activities",
+                                        trailing = {
+                                            TextButton(onClick = onRecordsClick) {
+                                                Text("View all", color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    )
+                                }
 
-                                val icon = categoryIcons[transaction.category] ?: Icons.Default.Receipt
+                                items(recentTransactions) { transaction ->
+                                    val dateStr = dateFormat.format(Date(transaction.timestamp))
+                                    val displayDate = if (dateStr == today) "Today" else dateStr
 
-                                AeonTransactionItem(
-                                    title = transaction.title,
-                                    sub = "${transaction.category} • $displayDate",
-                                    amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                                    isIncome = transaction.isIncome,
-                                    account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
-                                    icon = icon,
-                                    onClick = { /* Navigate to edit? Dashboard doesn't seem to have onEditTransactionClick yet but let's keep it consistent */ }
-                                )
+                                    val icon = categoryIcons[transaction.category] ?: Icons.Default.Receipt
+
+                                    AeonTransactionItem(
+                                        title = transaction.title,
+                                        sub = "${transaction.category} • $displayDate",
+                                        amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                                        isIncome = transaction.isIncome,
+                                        account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
+                                        icon = icon,
+                                        onClick = { /* Navigate to edit? */ }
+                                    )
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // Background dimming - outside the drawer/scaffold to cover everything
+        AnimatedVisibility(
+            visible = isFabExpanded,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.fillMaxSize().zIndex(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { isFabExpanded = false }
+            )
+        }
+
+        // Expandable FAB Menu - Moved to root Box for better z-index control
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .zIndex(2f),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(bottom = 72.dp, end = 4.dp)
+            ) {
+                templates.forEach { (name, info) ->
+                    AnimatedVisibility(
+                        visible = isFabExpanded,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(8.dp),
+                                shadowElevation = 4.dp,
+                                onClick = { 
+                                    isFabExpanded = false
+                                    onAddClick(0, name)
+                                }
+                            ) {
+                                Text(
+                                    "Template: $name",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                            FloatingActionButton(
+                                onClick = { 
+                                    isFabExpanded = false
+                                    onAddClick(0, name)
+                                },
+                                modifier = Modifier.size(40.dp),
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                shape = CircleShape
+                            ) {
+                                Icon(info.first, contentDescription = null, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+
+                // Transfer
+                AnimatedVisibility(
+                    visible = isFabExpanded,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp),
+                            shadowElevation = 4.dp,
+                            onClick = { 
+                                isFabExpanded = false
+                                onAddClick(2, null)
+                            }
+                        ) {
+                            Text(
+                                "Transfer",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                        FloatingActionButton(
+                            onClick = { 
+                                isFabExpanded = false
+                                onAddClick(2, null)
+                            },
+                            modifier = Modifier.size(40.dp),
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.SyncAlt, contentDescription = null, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+
+                // New Transaction
+                AnimatedVisibility(
+                    visible = isFabExpanded,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp),
+                            shadowElevation = 4.dp,
+                            onClick = { 
+                                isFabExpanded = false
+                                onAddClick(0, null)
+                            }
+                        ) {
+                            Text(
+                                "New Transaction",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                        FloatingActionButton(
+                            onClick = { 
+                                isFabExpanded = false
+                                onAddClick(0, null)
+                            },
+                            modifier = Modifier.size(40.dp),
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+
+            val rotation by animateFloatAsState(
+                targetValue = if (isFabExpanded) 45f else 0f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+            )
+
+            FloatingActionButton(
+                onClick = { isFabExpanded = !isFabExpanded },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+                modifier = Modifier.zIndex(3f)
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = if (isFabExpanded) "Close" else "Add",
+                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
+                )
             }
         }
     }

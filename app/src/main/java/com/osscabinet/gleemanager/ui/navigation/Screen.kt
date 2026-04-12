@@ -7,8 +7,14 @@ sealed class Screen(val route: String) {
     object Loans : Screen("loans")
     object Budgets : Screen("budgets")
     object TransactionList : Screen("list")
-    object AddTransaction : Screen("add?accountId={accountId}") {
-        fun createRoute(accountId: String? = null) = if (accountId != null) "add?accountId=$accountId" else "add"
+    object AddTransaction : Screen("add?accountId={accountId}&type={type}&template={template}") {
+        fun createRoute(accountId: String? = null, type: Int? = null, template: String? = null): String {
+            val params = mutableListOf<String>()
+            accountId?.let { params.add("accountId=$it") }
+            type?.let { params.add("type=$it") }
+            template?.let { params.add("template=$it") }
+            return if (params.isEmpty()) "add" else "add?${params.joinToString("&")}"
+        }
     }
     object Analytics : Screen("analytics")
     object SharedWallet : Screen("shared")

@@ -79,7 +79,9 @@ fun GleeNavGraph(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onAddClick = { navController.navigate(Screen.AddTransaction.route) },
+                onAddClick = { type, template -> 
+                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
+                },
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
@@ -171,15 +173,30 @@ fun GleeNavGraph(
 
         composable(
             Screen.AddTransaction.route,
-            arguments = listOf(navArgument("accountId") { 
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            })
+            arguments = listOf(
+                navArgument("accountId") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("type") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                },
+                navArgument("template") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId")
+            val type = backStackEntry.arguments?.getInt("type") ?: 0
+            val template = backStackEntry.arguments?.getString("template")
             AddTransactionScreen(
                 accountId = accountId,
+                initialType = type,
+                initialTemplate = template,
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,

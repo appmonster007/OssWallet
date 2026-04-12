@@ -1028,7 +1028,7 @@ fun AeonTransactionList(
                 val categoryEntity = categoryMap[tx.category.lowercase()]
 
                 val displayTimestamp = remember(tx.timestamp) {
-                    val now = Calendar.getInstance()
+                    Calendar.getInstance()
                     val today = Calendar.getInstance().apply {
                         set(Calendar.HOUR_OF_DAY, 0)
                         set(Calendar.MINUTE, 0)

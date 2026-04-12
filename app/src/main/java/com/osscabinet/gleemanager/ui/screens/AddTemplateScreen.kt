@@ -48,12 +48,15 @@ fun AddTemplateScreen(
     var note by remember { mutableStateOf(template?.note ?: "") }
     var payee by remember { mutableStateOf(template?.payee ?: "") }
     var location by remember { mutableStateOf(template?.location ?: "") }
-    var paymentMethod by remember { mutableStateOf(template?.paymentMethod ?: "") }
+    var paymentMethod by remember { mutableStateOf(template?.paymentMethod ?: "Cash") }
+    var tags by remember { mutableStateOf(template?.tags?.split(",")?.filter { it.isNotBlank() } ?: emptyList<String>()) }
 
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
     
     var showAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var showPaymentMethodSheet by remember { mutableStateOf(false) }
+    var showLabelSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
     val isIncome = transactionType == 1
@@ -101,6 +104,7 @@ fun AddTemplateScreen(
                                         location = location.ifBlank { null },
                                         paymentMethod = paymentMethod.ifBlank { null },
                                         currency = currency.ifBlank { null },
+                                        tags = tags.joinToString(","),
                                         isStarred = template?.isStarred ?: false
                                     )
                                     if (templateId == null) {
@@ -114,7 +118,8 @@ fun AddTemplateScreen(
                                             payee = entity.payee,
                                             location = entity.location,
                                             paymentMethod = entity.paymentMethod,
-                                            currency = entity.currency
+                                            currency = entity.currency,
+                                            tags = tags
                                         )
                                     } else {
                                         templateViewModel.updateTemplate(entity)
@@ -259,7 +264,18 @@ fun AddTemplateScreen(
                     value = paymentMethod,
                     onValueChange = { paymentMethod = it },
                     label = "Payment Method",
-                    icon = Icons.Rounded.Payment
+                    icon = Icons.Rounded.Payment,
+                    readOnly = true,
+                    onClick = { showPaymentMethodSheet = true }
+                )
+
+                EditorialInput(
+                    value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
+                    onValueChange = { },
+                    label = "Labels",
+                    icon = Icons.Rounded.Label,
+                    readOnly = true,
+                    onClick = { showLabelSheet = true }
                 )
 
                 EditorialInput(
@@ -322,7 +338,7 @@ fun AddTemplateScreen(
         }
         
         // Background dimming for Sheets
-        if (showAccountSheet || showCategorySheet) {
+        if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showLabelSheet) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -333,6 +349,8 @@ fun AddTemplateScreen(
                     ) { 
                         showAccountSheet = false
                         showCategorySheet = false
+                        showPaymentMethodSheet = false
+                        showLabelSheet = false
                     }
             )
         }
@@ -358,6 +376,22 @@ fun AddTemplateScreen(
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }
+        )
+    }
+
+    if (showPaymentMethodSheet) {
+        PaymentMethodPickerSheet(
+            selectedMethod = paymentMethod,
+            onMethodSelected = { paymentMethod = it },
+            onDismiss = { showPaymentMethodSheet = false }
+        )
+    }
+
+    if (showLabelSheet) {
+        LabelPickerSheet(
+            selectedTags = tags,
+            onTagsChanged = { tags = it },
+            onDismiss = { showLabelSheet = false }
         )
     }
 }

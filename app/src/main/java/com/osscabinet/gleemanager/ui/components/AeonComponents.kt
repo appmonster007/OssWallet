@@ -40,6 +40,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -546,6 +547,169 @@ fun DetailDrawer(
                     }
                     Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         content()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun LabelPickerSheet(
+    selectedTags: List<String>,
+    onTagsChanged: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var tagInput by remember { mutableStateOf("") }
+    val suggestedTags = listOf("Personal", "Work", "Family", "Holiday", "Urgent", "Subscription", "Gift")
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        ) {
+            AeonSectionHeader(title = "Labels")
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Current Tags
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedTags.forEach { tag ->
+                    InputChip(
+                        selected = true,
+                        onClick = { onTagsChanged(selectedTags - tag) },
+                        label = { Text(tag) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = InputChipDefaults.inputChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = null,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            if (selectedTags.isNotEmpty()) Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = tagInput,
+                onValueChange = { tagInput = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Add custom label (multi-word)") },
+                shape = RoundedCornerShape(16.dp),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (tagInput.isNotBlank()) {
+                                onTagsChanged((selectedTags + tagInput.trim()).distinct())
+                                tagInput = ""
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "SUGGESTIONS",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestedTags.filter { it !in selectedTags }.forEach { tag ->
+                    SuggestionChip(
+                        onClick = { onTagsChanged((selectedTags + tag).distinct()) },
+                        label = { Text(tag) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PaymentMethodPickerSheet(
+    selectedMethod: String,
+    onMethodSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val methods = listOf(
+        "Cash" to Icons.Rounded.Payments,
+        "Credit Card" to Icons.Rounded.CreditCard,
+        "Debit Card" to Icons.Rounded.CreditCard,
+        "Bank Transfer" to Icons.Rounded.AccountBalance,
+        "Digital Wallet" to Icons.Rounded.Wallet,
+        "Mobile Payment" to Icons.Rounded.Contactless,
+        "Check" to Icons.Rounded.Description,
+        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+        "Other" to Icons.Rounded.MoreHoriz
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+            AeonSectionHeader(title = "Payment Method")
+            Spacer(modifier = Modifier.height(24.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(methods) { (name, icon) ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onMethodSelected(name)
+                                onDismiss()
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (selectedMethod == name) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(icon, contentDescription = null, tint = if (selectedMethod == name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = if (selectedMethod == name) FontWeight.Bold else FontWeight.Medium
+                            )
+                            if (selectedMethod == name) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                     }
                 }
             }

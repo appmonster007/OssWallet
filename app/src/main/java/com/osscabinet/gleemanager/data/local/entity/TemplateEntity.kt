@@ -18,6 +18,7 @@ data class TemplateEntity(
     val location: String? = null,
     val paymentMethod: String? = null,
     val currency: String? = null,
+    val tags: String = "", // Comma-separated tags
     val isStarred: Boolean = false,
     val displayOrder: Int = 0
 )

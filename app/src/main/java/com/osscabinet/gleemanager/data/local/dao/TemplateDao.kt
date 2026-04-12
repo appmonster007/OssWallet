@@ -29,4 +29,10 @@ interface TemplateDao {
 
     @Update
     suspend fun updateTemplates(templates: List<TemplateEntity>)
+
+    @Query("SELECT * FROM templates ORDER BY name COLLATE NOCASE ASC")
+    suspend fun getAllTemplatesSync(): List<TemplateEntity>
+
+    @Query("DELETE FROM templates")
+    suspend fun clearAll()
 }

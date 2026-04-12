@@ -38,5 +38,6 @@ data class TransactionEntity(
     val accountId: String,
     val categoryId: Long? = null,
     val tags: String = "", // Comma-separated tags
+    val paymentMethod: String = "Cash",
     val profileId: Int = 1
 )

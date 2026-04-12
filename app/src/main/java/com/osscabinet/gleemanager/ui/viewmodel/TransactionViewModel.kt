@@ -76,6 +76,7 @@ class TransactionViewModel(
         currency: String,
         categoryId: Long? = null,
         tags: List<String> = emptyList(),
+        paymentMethod: String = "Cash",
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
@@ -93,6 +94,7 @@ class TransactionViewModel(
                 accountId = accountId,
                 categoryId = categoryId,
                 tags = tags,
+                paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
                 linkedTransactionId = linkedTransactionId
@@ -110,6 +112,7 @@ class TransactionViewModel(
         accountId: String,
         currency: String,
         tags: List<String> = emptyList(),
+        paymentMethod: String = "Cash",
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
@@ -126,6 +129,7 @@ class TransactionViewModel(
                 isIncome = isIncome,
                 accountId = accountId,
                 tags = tags,
+                paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
                 linkedTransactionId = linkedTransactionId

@@ -48,7 +48,8 @@ fun AddTransactionScreen(
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Shopping") }
-    var tagsInput by remember { mutableStateOf("") }
+    var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
+    var paymentMethod by remember { mutableStateOf("Cash") }
     var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
     val isIncome = transactionType == 1
     val isTransfer = transactionType == 2
@@ -127,6 +128,8 @@ fun AddTransactionScreen(
     var isDetailDrawerOpen by remember { mutableStateOf(false) }
     var showTemplateSheet by remember { mutableStateOf(false) }
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
+    var showLabelSheet by remember { mutableStateOf(false) }
+    var showPaymentMethodSheet by remember { mutableStateOf(false) }
 
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
@@ -203,8 +206,6 @@ fun AddTransactionScreen(
                             onClick = {
                                 val amountDouble = amount.toDoubleOrNull() ?: 0.0
                                 selectedAccount?.id?.let { accountId ->
-                                    val tagsList = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() }
-                                    
                                     if (isTransfer) {
                                         // 1. Withdrawal from source
                                         viewModel.addTransaction(
@@ -214,7 +215,8 @@ fun AddTransactionScreen(
                                             isIncome = false,
                                             accountId = accountId,
                                             currency = selectedCurrency,
-                                            tags = tagsList,
+                                            tags = selectedTags,
+                                            paymentMethod = paymentMethod,
                                             timestamp = selectedDateMillis,
                                             payee = payee,
                                             note = note
@@ -239,7 +241,8 @@ fun AddTransactionScreen(
                                                 isIncome = true,
                                                 accountId = targetId,
                                                 currency = targetCurrency,
-                                                tags = tagsList,
+                                                tags = selectedTags,
+                                                paymentMethod = paymentMethod,
                                                 timestamp = selectedDateMillis,
                                                 payee = payee,
                                                 note = note
@@ -262,7 +265,8 @@ fun AddTransactionScreen(
                                             isIncome = isIncome,
                                             accountId = accountId,
                                             currency = selectedCurrency,
-                                            tags = tagsList,
+                                            tags = selectedTags,
+                                            paymentMethod = paymentMethod,
                                             timestamp = selectedDateMillis,
                                             payee = payee,
                                             note = note,
@@ -617,11 +621,15 @@ fun AddTransactionScreen(
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
-                                onClick = { /* Tag dialog */ }
+                                onClick = { showLabelSheet = true }
                             ) {
                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
-                                    Text("LABEL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        if (selectedTags.isEmpty()) "LABEL" else "${selectedTags.size} LABELS",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }
@@ -641,21 +649,22 @@ fun AddTransactionScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF42A5F5))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Today, 14:30", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                Text(formatDateTime(selectedDateMillis), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                     Surface(
                         modifier = Modifier.weight(1f).height(80.dp),
                         shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                        onClick = { showPaymentMethodSheet = true }
                     ) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
                             Text("PAYMENT METHOD", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Contactless, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF26C6DA))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Digital Wallet", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                                Text(paymentMethod, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -750,20 +759,27 @@ fun AddTransactionScreen(
     }
 
     if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-                    showDatePicker = false
-                }) { Text("CONFIRM") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("CANCEL") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        AeonDateTimePicker(
+            initialDateTime = selectedDateMillis,
+            onDateTimeSelected = { selectedDateMillis = it },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+
+    if (showLabelSheet) {
+        LabelPickerSheet(
+            selectedTags = selectedTags,
+            onTagsChanged = { selectedTags = it },
+            onDismiss = { showLabelSheet = false }
+        )
+    }
+
+    if (showPaymentMethodSheet) {
+        PaymentMethodPickerSheet(
+            selectedMethod = paymentMethod,
+            onMethodSelected = { paymentMethod = it },
+            onDismiss = { showPaymentMethodSheet = false }
+        )
     }
 
     if (showCategorySheet) {

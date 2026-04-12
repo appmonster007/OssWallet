@@ -11,6 +11,7 @@ data class Transaction(
     val accountId: String,
     val categoryId: Long? = null,
     val tags: List<String> = emptyList(),
+    val paymentMethod: String = "Cash",
     val payee: String = "",
     val note: String = "",
     val recurring: String? = null,

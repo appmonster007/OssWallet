@@ -17,9 +17,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         AccountEntity::class,
         CategoryEntity::class,
         TagEntity::class,
-        ProfileEntity::class
+        ProfileEntity::class,
+        TemplateEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun tagDao(): TagDao
     abstract fun profileDao(): ProfileDao
+    abstract fun templateDao(): TemplateDao
 
     companion object {
         init {

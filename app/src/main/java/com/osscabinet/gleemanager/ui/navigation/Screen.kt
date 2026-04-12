@@ -21,6 +21,10 @@ sealed class Screen(val route: String) {
     object AccountSetup : Screen("account_setup")
     object AccountManagement : Screen("manage_accounts")
     object ExchangeRates : Screen("exchange_rates")
+    object Templates : Screen("templates")
+    object AddTemplate : Screen("add_template?templateId={templateId}") {
+        fun createRoute(templateId: Long? = null) = if (templateId != null) "add_template?templateId=$templateId" else "add_template"
+    }
     
     object EditBudget : Screen("edit_budget/{category}") {
         fun createRoute(category: String) = "edit_budget/$category"

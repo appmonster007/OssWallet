@@ -35,10 +35,10 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
             val list = templateDao.getAllTemplates().first()
             if (list.isEmpty()) {
                 val initialTemplates = listOf(
-                    TemplateEntity(name = "Grocery Run", category = "Food", amount = 0.0, transactionType = 0, isStarred = true),
-                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = 0.0, transactionType = 1, isStarred = true),
-                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = 0.0, transactionType = 0, isStarred = true),
-                    TemplateEntity(name = "Coffee", category = "Food", amount = 0.0, transactionType = 0, isStarred = true)
+                    TemplateEntity(name = "Grocery Run", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id"),
+                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = 0.0, transactionType = 1, isStarred = true, accountId = "default-cash-id"),
+                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id"),
+                    TemplateEntity(name = "Coffee", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id")
                 )
                 initialTemplates.forEach { templateDao.insertTemplate(it) }
             }

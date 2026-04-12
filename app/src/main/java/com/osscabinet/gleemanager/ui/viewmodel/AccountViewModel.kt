@@ -28,6 +28,35 @@ class AccountViewModel(
             initialValue = emptyList()
         )
 
+    init {
+        seedDefaultAccount()
+    }
+
+    private fun seedDefaultAccount() {
+        viewModelScope.launch {
+            settingsDataStore.currentProfileId.collectLatest { profileId ->
+                val existingAccounts = repository.getAllAccounts(profileId).first()
+                if (existingAccounts.isEmpty()) {
+                    val defaultCurrency = settingsDataStore.currency.first()
+                    val cashAccount = Account(
+                        id = "default-cash-id",
+                        name = "Cash",
+                        balance = 0.0,
+                        initialBalance = 0.0,
+                        currencyCode = defaultCurrency,
+                        structureType = "Cash",
+                        colorHex = "#4CAF50",
+                        icon = "Payments",
+                        allowedCurrencies = listOf(defaultCurrency),
+                        isArchived = false,
+                        displayOrder = 0
+                    )
+                    repository.insertAccount(cashAccount, profileId)
+                }
+            }
+        }
+    }
+
     fun addAccount(
         name: String, 
         balance: Double, 

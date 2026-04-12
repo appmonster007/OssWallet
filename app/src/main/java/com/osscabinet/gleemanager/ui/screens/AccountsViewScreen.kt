@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -178,6 +180,19 @@ fun AccountsViewScreen(
                         if (rate != 0.0) amount / rate else amount
                     }
 
+                    val accountRate = exchangeRates[account.currencyCode] ?: 1.0
+                    val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.sumOf { tx ->
+                        val rate = exchangeRates[tx.currency] ?: 1.0
+                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
+                        if (accountRate != 0.0) inBase * accountRate else inBase
+                    }
+
+                    val expenseInAccountCurrency = accountTransactions.filter { !it.isIncome }.sumOf { tx ->
+                        val rate = exchangeRates[tx.currency] ?: 1.0
+                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
+                        if (accountRate != 0.0) inBase * accountRate else inBase
+                    }
+
                     val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
 
                     val isDarkTheme = when (currentTheme) {
@@ -194,6 +209,9 @@ fun AccountsViewScreen(
                         title = account.name.uppercase(),
                         balance = formatCurrencyRight(balanceInBase, baseCurrency),
                         currencyBalances = accountCurrencyBalances,
+                        incomeInAccountCurrency = incomeInAccountCurrency,
+                        expenseInAccountCurrency = expenseInAccountCurrency,
+                        accountCurrencyCode = account.currencyCode,
                         icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
                         containerColor = containerColor,
                         contentColor = contentColor,
@@ -216,6 +234,9 @@ fun AccountCard(
     title: String,
     balance: String,
     currencyBalances: Map<String, Double> = emptyMap(),
+    incomeInAccountCurrency: Double = 0.0,
+    expenseInAccountCurrency: Double = 0.0,
+    accountCurrencyCode: String = "",
     icon: ImageVector,
     containerColor: Color,
     contentColor: Color,
@@ -254,9 +275,55 @@ fun AccountCard(
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(title, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
+                    
+                    // Income/Expense Badges
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val incomeBg = Color(0xFF2E7D32)
+                        val expenseBg = Color(0xFFC62828)
+                        val badgeTextColor = Color.White
+
+                        Surface(
+                            color = incomeBg.copy(alpha = 0.8f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = badgeTextColor, modifier = Modifier.size(12.dp))
+                                Text(
+                                    com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = badgeTextColor
+                                )
+                            }
+                        }
+
+                        Surface(
+                            color = expenseBg.copy(alpha = 0.8f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = badgeTextColor, modifier = Modifier.size(12.dp))
+                                Text(
+                                    com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = badgeTextColor
+                                )
+                            }
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))

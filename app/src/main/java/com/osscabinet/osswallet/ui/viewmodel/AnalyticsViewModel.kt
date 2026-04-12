@@ -5,29 +5,38 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.usecase.GetExchangeRatesUseCase
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 
 class AnalyticsViewModel(
     private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val getExchangeRatesUseCase: GetExchangeRatesUseCase
+    private val getExchangeRatesUseCase: GetExchangeRatesUseCase,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
-    private val _exchangeRates = MutableStateFlow<Map<String, Double>>(emptyMap())
-    val exchangeRates: StateFlow<Map<String, Double>> = _exchangeRates.asStateFlow()
+    val exchangeRates: StateFlow<Map<String, Double>> = _uiState
+        .map { it.exchangeRates }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private var allTransactions: List<Transaction> = emptyList()
+    private var ratesJob: Job? = null
 
     init {
         viewModelScope.launch {
-            // Load initial exchange rates (default USD)
-            val rates = getExchangeRatesUseCase("USD")
-            _exchangeRates.value = rates
-            
+            // Observe currency from settings to load initial rates and react to changes
+            settingsDataStore.currency.collect { currencyCode ->
+                // This ensures we start with the correct currency and update if it changes in settings
+                onCurrencySelected(currencyCode)
+            }
+        }
+
+        viewModelScope.launch {
             getTransactionsUseCase().collect { transactions ->
                 allTransactions = transactions
                 calculateAnalytics()
@@ -36,18 +45,25 @@ class AnalyticsViewModel(
     }
 
     fun onCurrencySelected(currencyCode: String) {
-        viewModelScope.launch {
+        if (_uiState.value.selectedCurrency == currencyCode && _uiState.value.exchangeRates.isNotEmpty()) {
+            return
+        }
+        ratesJob?.cancel()
+        ratesJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val rates = getExchangeRatesUseCase(currencyCode)
-            _exchangeRates.value = rates
-            _uiState.update { it.copy(selectedCurrency = currencyCode, isLoading = false) }
+            _uiState.update { it.copy(
+                selectedCurrency = currencyCode,
+                exchangeRates = rates,
+                isLoading = false
+            ) }
             calculateAnalytics()
         }
     }
 
     private fun calculateAnalytics() {
         val selectedCurrency = _uiState.value.selectedCurrency
-        val currentRates = _exchangeRates.value
+        val currentRates = _uiState.value.exchangeRates
         
         // Convert all transactions to selected currency
         val convertedTransactions = allTransactions.map { tx ->
@@ -151,5 +167,6 @@ data class AnalyticsUiState(
     val dailyNetFlow: Map<Long, Double> = emptyMap(),
     val forecast: Map<Long, Double> = emptyMap(),
     val selectedCurrency: String = "USD",
+    val exchangeRates: Map<String, Double> = emptyMap(),
     val isLoading: Boolean = false
 )

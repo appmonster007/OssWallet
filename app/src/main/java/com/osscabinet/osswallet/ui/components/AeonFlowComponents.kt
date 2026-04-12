@@ -138,7 +138,7 @@ fun AeonFlowCard(
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .offset { IntOffset(x = (cardSize.width * 0.25f).toInt(), y = 0) }
+//                    .offset { IntOffset(x = (cardSize.width * 0.25f).toInt(), y = 0) }
                     .size(iconHeight)
                     .alpha(0.2f),
                 tint = flowColor

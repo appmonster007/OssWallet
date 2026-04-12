@@ -84,8 +84,9 @@ fun DashboardScreen(
     }
 
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
-    val baseCurrency by settingsViewModel.currency.collectAsState()
-    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
+    val baseCurrency = analyticsUiState.selectedCurrency
+    val exchangeRates = analyticsUiState.exchangeRates
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
 
@@ -124,8 +125,12 @@ fun DashboardScreen(
         }
     }
 
-    LaunchedEffect(baseCurrency) {
-        analyticsViewModel.onCurrencySelected(baseCurrency)
+    // We no longer need this LaunchedEffect because AnalyticsViewModel 
+    // now observes settingsDataStore.currency directly in its init block.
+    // However, we might still want to ensure it's synced if it was overridden by other screens.
+    val settingsCurrency by settingsViewModel.currency.collectAsState()
+    LaunchedEffect(settingsCurrency) {
+        analyticsViewModel.onCurrencySelected(settingsCurrency)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -760,6 +765,13 @@ fun AccountGridItem(
                 Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
 
                 Text(
+                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
                     formatCurrencyRight(balanceInBase, baseCurrency),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
                     color = contentColor.copy(alpha = 0.7f),
@@ -767,12 +779,6 @@ fun AccountGridItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Text(
-                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
 
                 /*
                 Spacer(modifier = Modifier.height(8.dp))

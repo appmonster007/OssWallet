@@ -1,0 +1,20 @@
+package com.osscabinet.ossWallet.data.local.dao
+
+import androidx.room.*
+import com.osscabinet.ossWallet.data.local.entity.LoanEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface LoanDao {
+    @Query("SELECT * FROM loans ORDER BY title COLLATE NOCASE ASC")
+    fun getAllLoans(): Flow<List<LoanEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLoan(loan: LoanEntity)
+
+    @Update
+    suspend fun updateLoan(loan: LoanEntity)
+
+    @Delete
+    suspend fun deleteLoan(loan: LoanEntity)
+}

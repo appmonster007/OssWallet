@@ -13,11 +13,11 @@ val localProps = Properties().also { props ->
 }
 
 android {
-    namespace = "com.osscabinet.gleemanager"
+    namespace = "com.osscabinet.ossWallet"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.osscabinet.gleemanager"
+        applicationId = "com.osscabinet.ossWallet"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

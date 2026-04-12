@@ -1,4 +1,4 @@
 <resources>
 
-    <style name="Theme.GleeManager" parent="Theme.MaterialComponents.Light" />
+    <style name="Theme.OssWallet" parent="Theme.MaterialComponents.Light" />
 </resources>

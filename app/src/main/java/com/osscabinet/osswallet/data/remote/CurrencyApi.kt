@@ -1,0 +1,20 @@
+package com.osscabinet.ossWallet.data.remote
+
+import com.squareup.moshi.Json
+import retrofit2.http.GET
+import retrofit2.http.Path
+
+interface CurrencyApi {
+    @GET("v6/latest/{base}")
+    suspend fun getLatestRates(
+        @Path("base") base: String
+    ): CurrencyResponse
+}
+
+data class CurrencyResponse(
+    @Json(name = "result") val result: String,
+    @Json(name = "base_code") val baseCode: String,
+    @Json(name = "time_last_update_unix") val timeLastUpdateUnix: Long,
+    @Json(name = "time_next_update_unix") val timeNextUpdateUnix: Long,
+    @Json(name = "rates") val rates: Map<String, Double>
+)

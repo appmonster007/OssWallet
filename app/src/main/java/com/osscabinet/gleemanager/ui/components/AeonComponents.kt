@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.gleemanager.domain.model.Account
 import com.osscabinet.gleemanager.domain.model.Transaction
+import com.osscabinet.gleemanager.domain.model.TransactionWithBalance
+import com.osscabinet.gleemanager.data.local.entity.CategoryEntity
 import com.osscabinet.gleemanager.ui.util.formatCurrencyRight
 import com.osscabinet.gleemanager.ui.util.formatAmount
 import com.osscabinet.gleemanager.ui.util.isDark
@@ -1110,13 +1112,160 @@ fun AeonCashFlowSection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AeonTransactionList(
+    transactions: List<TransactionWithBalance>,
+    accountMap: Map<String, String>,
+    categoryMap: Map<String, CategoryEntity>,
+    onTransactionClick: (Transaction) -> Unit,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    showDailyHeader: Boolean = true
+) {
+    val sortedGroupedTransactions = remember(transactions) {
+        transactions.sortedByDescending { it.transaction.timestamp }
+            .groupBy {
+                val cal = Calendar.getInstance().apply { timeInMillis = it.transaction.timestamp }
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                cal.timeInMillis
+            }
+    }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        sortedGroupedTransactions.forEach { (dateMillis, dayTransactions) ->
+            if (showDailyHeader) {
+                stickyHeader {
+                    val dayTotal = dayTransactions.sumOf {
+                        if (it.transaction.isIncome) it.transaction.amount else -it.transaction.amount
+                    }
+                    val latestBalance = dayTransactions.first().balanceAfter
+                    val currency = dayTransactions.first().transaction.currency
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+                    ) {
+                        Column {
+                            // Date Row
+                            Text(
+                                text = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.getDefault()).format(Date(dateMillis)).uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                            )
+
+                            // Balance & Total Row (Matches screenshot)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Balance ",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Text(
+                                        text = formatCurrencyRight(latestBalance, currency),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Σ ",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Text(
+                                        text = formatCurrencyRight(dayTotal, currency),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (dayTotal >= 0) Color(0xFF2E7D32) else Color(0xFFEF5350)
+                                    )
+                                }
+                            }
+                            HorizontalDivider(
+                                modifier = Modifier.padding(top = 8.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            items(dayTransactions, key = { it.transaction.id }) { item ->
+                val tx = item.transaction
+                val categoryEntity = categoryMap[tx.category.lowercase()]
+
+                val displayTimestamp = remember(tx.timestamp) {
+                    val now = Calendar.getInstance()
+                    val today = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+
+                    val txDay = Calendar.getInstance().apply {
+                        timeInMillis = tx.timestamp
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+
+                    when (txDay) {
+                        today -> "Today"
+                        today - 86400000 -> "Yesterday"
+                        else -> SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
+                    }
+                }
+
+                AeonTransactionItem(
+                    category = tx.category,
+                    account = accountMap[tx.accountId] ?: "Unknown",
+                    amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
+                    balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency),
+                    isIncome = tx.isIncome,
+                    timestamp = displayTimestamp,
+                    note = tx.note,
+                    tags = tx.tags,
+                    icon = if (categoryEntity != null) categoryIcons[categoryEntity.name] else null,
+                    iconBg = categoryEntity?.let { Color(it.colorHex) },
+                    onClick = { onTransactionClick(tx) },
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun AeonTransactionItem(
-    title: String,
-    sub: String,
+    category: String,
+    account: String,
     amount: String,
+    balanceAfter: String,
     isIncome: Boolean,
-    account: String? = null,
+    timestamp: String,
+    note: String? = null,
+    tags: List<String> = emptyList(),
     icon: ImageVector? = null,
     iconBg: Color? = null,
     onClick: () -> Unit,
@@ -1126,40 +1275,146 @@ fun AeonTransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        color = Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalAlignment = Alignment.Top
         ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = iconBg ?: (if (isIncome) Color(0xFF2E7D32).copy(alpha = 0.1f) else Color(0xFFC62828).copy(alpha = 0.1f))
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+            // Category Icon with Badge
+            Box(modifier = Modifier.size(56.dp)) {
+                Surface(
+                    modifier = Modifier.size(48.dp),
+                    shape = CircleShape,
+                    color = iconBg ?: (if (isIncome) Color(0xFF2E7D32).copy(alpha = 0.1f) else Color(0xFFC62828).copy(alpha = 0.1f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            icon ?: Icons.Rounded.Category,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (iconBg != null) Color.White else (if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828))
+                        )
+                    }
+                }
+                // Small checkmark badge seen in screenshot
+                Surface(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = (-4).dp, y = (-4).dp),
+                    shape = CircleShape,
+                    color = Color(0xFF2E7D32),
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
+                ) {
                     Icon(
-                        icon ?: (if (isIncome) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward),
+                        Icons.Rounded.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = if (isIncome) Color(0xFF2E7D32) else Color(0xFFC62828)
+                        modifier = Modifier.padding(2.dp),
+                        tint = Color.White
                     )
                 }
             }
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
-                Text(sub, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    amount,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
-                    color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
-                )
-                if (account != null) {
-                    Text(account, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.outline)
+                // Top Row: Category & Amount
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        category,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        amount,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = if (isIncome) Color(0xFF2E7D32) else Color(0xFFEF5350)
+                    )
+                }
+
+                // Middle Row: Account & Balance
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        account,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        "($balanceAfter)",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = Color(0xFF66BB6A) // Green for running balance
+                    )
+                }
+
+                // Bottom Row: Note & Timestamp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    if (!note.isNullOrBlank()) {
+                        Text(
+                            "\"$note\"",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            ),
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.weight(1f).padding(top = 2.dp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    
+                    Text(
+                        timestamp,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                // Tags Row
+                if (tags.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tags.forEach { tag ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF3B4D7B), // Matching screenshot tag background
+                            ) {
+                                Text(
+                                    tag,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

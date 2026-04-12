@@ -25,7 +25,9 @@ fun GleeNavGraph(
             appContainer.insertTransactionUseCase,
             appContainer.deleteTransactionUseCase,
             appContainer.updateTransactionUseCase,
-            appContainer.settingsDataStore
+            appContainer.settingsDataStore,
+            appContainer.db.categoryDao(),
+            appContainer.accountRepository
         )
     )
     

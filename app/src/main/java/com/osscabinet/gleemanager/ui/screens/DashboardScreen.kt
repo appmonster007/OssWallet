@@ -73,10 +73,13 @@ fun DashboardScreen(
 
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val transactions by transactionViewModel.transactions.collectAsState()
+    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
     val nonArchivedAccountIds = remember(nonArchivedAccounts) { nonArchivedAccounts.map { it.id }.toSet() }
-    val activeTransactions = remember(transactions, nonArchivedAccountIds) {
-        transactions.filter { it.accountId in nonArchivedAccountIds }
+    val activeTransactionsWithBalance = remember(transactionsWithBalance, nonArchivedAccountIds) {
+        transactionsWithBalance.filter { it.transaction.accountId in nonArchivedAccountIds }
+    }
+    val activeTransactions = remember(activeTransactionsWithBalance) {
+        activeTransactionsWithBalance.map { it.transaction }
     }
 
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
@@ -233,9 +236,11 @@ fun DashboardScreen(
                         }
                         1 -> {
                             val accountMap = remember(nonArchivedAccounts) { nonArchivedAccounts.associate { it.id to it.name } }
-                            val recentTransactions = remember(activeTransactions) { activeTransactions.sortedByDescending { it.timestamp }.take(20) }
-                            val dateFormat = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
-                            val today = remember { SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date()) }
+                            val categories by transactionViewModel.categories.collectAsState()
+                            val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+                            val recentTransactions = remember(activeTransactionsWithBalance) { 
+                                activeTransactionsWithBalance.sortedByDescending { it.transaction.timestamp }.take(20) 
+                            }
 
                             LazyColumn(
                                 modifier = Modifier
@@ -256,20 +261,23 @@ fun DashboardScreen(
                                     )
                                 }
 
-                                items(recentTransactions) { transaction ->
-                                    val dateStr = dateFormat.format(Date(transaction.timestamp))
-                                    val displayDate = if (dateStr == today) "Today" else dateStr
-
-                                    val icon = categoryIcons[transaction.category] ?: Icons.Default.Receipt
+                                items(recentTransactions) { item ->
+                                    val transaction = item.transaction
+                                    val categoryEntity = categoryMap[transaction.category.lowercase()]
 
                                     AeonTransactionItem(
-                                        title = transaction.title,
-                                        sub = "${transaction.category} • $displayDate",
+                                        category = transaction.category,
+                                        account = accountMap[transaction.accountId] ?: "Unknown",
                                         amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                                        balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
                                         isIncome = transaction.isIncome,
-                                        account = (accountMap[transaction.accountId] ?: "Unknown").uppercase(),
-                                        icon = icon,
-                                        onClick = { /* Navigate to edit? */ }
+                                        timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                                        note = transaction.note,
+                                        tags = transaction.tags,
+                                        icon = categoryEntity?.let { categoryIcons[it.name] },
+                                        iconBg = categoryEntity?.let { Color(it.colorHex) },
+                                        onClick = { /* Navigate to edit? */ },
+                                        modifier = Modifier.padding(horizontal = 24.dp)
                                     )
                                 }
                             }

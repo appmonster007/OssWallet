@@ -1,5 +1,6 @@
 package com.osscabinet.gleemanager.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -27,7 +28,7 @@ import com.osscabinet.gleemanager.ui.viewmodel.TransactionViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun TransactionListScreen(
     viewModel: TransactionViewModel,
@@ -37,22 +38,32 @@ fun TransactionListScreen(
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit
 ) {
-    val transactions by viewModel.transactions.collectAsState()
+    val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val accountMap = accounts.associate { it.id to it.name }
+    val categories by viewModel.categories.collectAsState()
+    val categoryMap = categories.associate { it.name to it }
 
     var showFilterSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Records", style = MaterialTheme.typography.headlineSmall) },
+                title = { 
+                    Column {
+                        Text("Records", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Showing all transactions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
+                    IconButton(onClick = { /* Search */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
                     IconButton(onClick = { showFilterSheet = true }) { 
                         Icon(
                             Icons.Default.FilterList, 
@@ -63,17 +74,59 @@ fun TransactionListScreen(
                                       MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         ) 
                     }
+                    IconButton(onClick = { /* More options */ }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddTransactionClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = Color(0xFF2E7D32),
+                contentColor = Color.White,
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add")
+            }
+        },
+        bottomBar = {
+            // Period selector seen in screenshot
+            Surface(
+                tonalElevation = 3.dp,
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp, top = 8.dp)
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { /* Previous period */ }) {
+                        Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
+                    }
+                    
+                    val dateRange by viewModel.dateRange.collectAsState()
+                    val periodText = if (dateRange.first != null && dateRange.second != null) {
+                        val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                        "${dateFormat.format(Date(dateRange.first!!))} - ${dateFormat.format(Date(dateRange.second!!))}"
+                    } else {
+                        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date()).uppercase()
+                    }
+                    
+                    Text(
+                        periodText,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    IconButton(onClick = { /* Next period */ }) {
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Next")
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -91,42 +144,7 @@ fun TransactionListScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Period / Filter Status
-            val dateRange by viewModel.dateRange.collectAsState()
-            val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-            val periodText = if (dateRange.first != null && dateRange.second != null) {
-                "${dateFormat.format(Date(dateRange.first!!))} - ${dateFormat.format(Date(dateRange.second!!))}"
-            } else {
-                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date()).uppercase()
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AeonSectionHeader(
-                    title = periodText,
-                    trailing = {
-                        if (dateRange.first != null) {
-                            TextButton(onClick = { viewModel.clearFilters() }) {
-                                Text("Clear", style = MaterialTheme.typography.labelSmall)
-                            }
-                        } else {
-                            Icon(
-                                Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    }
-                )
-            }
-
-            if (transactions.isEmpty()) {
+            if (transactionsWithBalance.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -134,39 +152,13 @@ fun TransactionListScreen(
                     Text("No records found", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                 }
             } else {
-                val groupedTransactions = remember(transactions) {
-                    transactions.sortedByDescending { it.timestamp }.groupBy { 
-                        SimpleDateFormat("EEEE, dd MMMM", Locale.getDefault()).format(Date(it.timestamp)) 
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    groupedTransactions.forEach { (date, items) ->
-                        item(key = date) {
-                            AeonSectionHeader(
-                                title = date,
-                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                            )
-                        }
-                        items(items, key = { it.id }) { transaction ->
-                            AeonTransactionItem(
-                                title = transaction.title,
-                                sub = transaction.category,
-                                amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                                isIncome = transaction.isIncome,
-                                account = accountMap[transaction.accountId]?.uppercase(),
-                                icon = categoryIcons[transaction.category],
-                                onClick = { onEditTransactionClick(transaction.id) }
-                            )
-                        }
-                    }
-                }
+                AeonTransactionList(
+                    transactions = transactionsWithBalance,
+                    accountMap = accountMap,
+                    categoryMap = categoryMap,
+                    onTransactionClick = { onEditTransactionClick(it.id) },
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                )
             }
         }
     }

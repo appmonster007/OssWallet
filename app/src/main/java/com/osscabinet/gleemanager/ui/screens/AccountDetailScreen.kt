@@ -45,8 +45,13 @@ fun AccountDetailScreen(
     val accounts by accountViewModel.accounts.collectAsState()
     val account = accounts.find { it.id == accountId }
     
-    val transactions by transactionViewModel.transactions.collectAsState()
-    val accountTransactions = transactions.filter { it.accountId == accountId }
+    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
+    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId) {
+        transactionsWithBalance.filter { it.transaction.accountId == accountId }
+    }
+    val accountTransactions = remember(accountTransactionsWithBalance) {
+        accountTransactionsWithBalance.map { it.transaction }
+    }
     
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
@@ -236,63 +241,38 @@ fun AccountDetailScreen(
                         }
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp) // Extra padding for FAB
-                    ) {
-                        item {
-                            AeonSectionHeader(
-                                title = "TRANSACTION HISTORY",
-                                trailing = {
-                                    Text(
-                                        "${accountTransactions.size} total",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                            )
-                        }
+                    val categories by transactionViewModel.categories.collectAsState()
+                    val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
 
-                        if (accountTransactions.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 48.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(
-                                            Icons.Rounded.History,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(64.dp),
-                                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Text(
-                                            "No transactions yet",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.outline
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            items(accountTransactions.sortedByDescending { it.timestamp }, key = { it.id }) { transaction ->
-                                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                AeonTransactionItem(
-                                    title = transaction.title,
-                                    sub = "${transaction.category} • ${dateFormat.format(Date(transaction.timestamp))}",
-                                    amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                                    isIncome = transaction.isIncome,
-                                    icon = categoryIcons[transaction.category],
-                                    onClick = { onEditTransactionClick(transaction.id) }
+                    if (accountTransactions.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Rounded.History,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    "No transactions yet",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.outline
                                 )
                             }
                         }
+                    } else {
+                        AeonTransactionList(
+                            transactions = accountTransactionsWithBalance,
+                            accountMap = mapOf(account.id to account.name),
+                            categoryMap = categoryMap,
+                            onTransactionClick = { onEditTransactionClick(it.id) },
+                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp)
+                        )
                     }
                 }
             }

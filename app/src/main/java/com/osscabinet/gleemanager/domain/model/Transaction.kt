@@ -17,3 +17,8 @@ data class Transaction(
     val recurring: String? = null,
     val linkedTransactionId: Long? = null
 )
+
+data class TransactionWithBalance(
+    val transaction: Transaction,
+    val balanceAfter: Double
+)

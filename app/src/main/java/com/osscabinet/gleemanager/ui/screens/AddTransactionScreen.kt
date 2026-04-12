@@ -35,6 +35,8 @@ import java.util.*
 @Composable
 fun AddTransactionScreen(
     accountId: String? = null,
+    initialType: Int = 0,
+    initialTemplate: String? = null,
     viewModel: TransactionViewModel,
     accountViewModel: AccountViewModel,
     analyticsViewModel: AnalyticsViewModel,
@@ -44,7 +46,7 @@ fun AddTransactionScreen(
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Shopping") }
     var tagsInput by remember { mutableStateOf("") }
-    var transactionType by remember { mutableStateOf(0) } // 0: Expense, 1: Income, 2: Transfer
+    var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
     val isIncome = transactionType == 1
     val isTransfer = transactionType == 2
     var selectedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -74,7 +76,16 @@ fun AddTransactionScreen(
         "Rent Payment" to (Icons.Rounded.Home to "Housing"),
         "Coffee" to (Icons.Rounded.CoffeeMaker to "Food")
     )
-    var selectedTemplate by remember { mutableStateOf<String?>(null) }
+    var selectedTemplate by remember { mutableStateOf(initialTemplate) }
+
+    LaunchedEffect(initialTemplate) {
+        initialTemplate?.let { name ->
+            templates.find { it.first == name }?.let { (_, info) ->
+                category = info.second
+                title = name
+            }
+        }
+    }
     
     var showOCR by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }

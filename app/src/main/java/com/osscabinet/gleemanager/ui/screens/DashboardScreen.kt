@@ -264,11 +264,13 @@ fun DashboardScreen(
                                 items(recentTransactions) { item ->
                                     val transaction = item.transaction
                                     val categoryEntity = categoryMap[transaction.category.lowercase()]
+                                    val balanceBeforeValue = item.balanceAfter - (if (transaction.isIncome) transaction.amount else -transaction.amount)
 
                                     AeonTransactionItem(
                                         category = transaction.category,
                                         account = accountMap[transaction.accountId] ?: "Unknown",
                                         amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                                        balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency),
                                         balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
                                         isIncome = transaction.isIncome,
                                         timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),

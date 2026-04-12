@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GleeManager"
+rootProject.name = "OssWallet"
 include(":app")
  

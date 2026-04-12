@@ -59,34 +59,40 @@ fun AeonFlowBadge(
     amount: Double,
     type: CashFlowType,
     modifier: Modifier = Modifier,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    incomeColor: Color = Color(0xFF4CAF50),
-    expenseColor: Color = Color(0xFFF44336)
+    incomeColor: Color = Color(0xFF2E7D32),
+    expenseColor: Color = Color(0xFFC62828)
 ) {
     val isIncome = type == CashFlowType.INCOME
     val flowColor = if (isIncome) incomeColor else expenseColor
     val icon = if (isIncome) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward
 
+    // Following Material 3 tonal container principles
+    val containerColor = flowColor.copy(alpha = 0.12f)
+    val contentColor = flowColor // High contrast against the pale background
+
     Surface(
         modifier = modifier,
-        color = flowColor.copy(alpha = 0.4f),
+        color = containerColor,
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, flowColor.copy(alpha = 0.2f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = flowColor,
-                modifier = Modifier.size(12.dp)
+                tint = contentColor,
+                modifier = Modifier.size(14.dp)
             )
             Text(
                 text = formatAmount(amount),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.5.sp
+                ),
                 color = contentColor
             )
         }
@@ -105,17 +111,15 @@ fun AeonFlowCard(
     expenseColor: Color = Color(0xFFC62828),
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
     val isAmoled = currentTheme == "Amoled"
     
     val isIncome = type == CashFlowType.INCOME
     val flowColor = if (isIncome) incomeColor else expenseColor
-    val containerColor = if (isAmoled) Color.Black else flowColor.toContainerColor(isDarkTheme, false).copy(alpha = 0.1f)
-    val borderColor = if (isAmoled) BorderStroke(1.dp, flowColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, flowColor.copy(alpha = 0.1f))
+    
+    // M3 Tonal Palette approach: 
+    // Container is very light/desaturated, content is the bold brand/semantic color
+    val containerColor = if (isAmoled) Color.Black else flowColor.copy(alpha = 0.08f)
+    val borderColor = if (isAmoled) BorderStroke(1.dp, flowColor.copy(alpha = 0.3f)) else BorderStroke(1.dp, flowColor.copy(alpha = 0.15f))
     val icon = if (isIncome) Icons.Rounded.ArrowDownward else Icons.Rounded.ArrowUpward
 
     var cardSize by remember { mutableStateOf(IntSize.Zero) }

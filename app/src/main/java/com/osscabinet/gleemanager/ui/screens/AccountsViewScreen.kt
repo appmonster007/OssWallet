@@ -286,13 +286,11 @@ fun AccountCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AeonFlowBadge(
                             amount = incomeInAccountCurrency,
-                            type = CashFlowType.INCOME,
-                            contentColor = contentColor
+                            type = CashFlowType.INCOME
                         )
                         AeonFlowBadge(
                             amount = expenseInAccountCurrency,
-                            type = CashFlowType.EXPENSE,
-                            contentColor = contentColor
+                            type = CashFlowType.EXPENSE
                         )
                     }
                 }

@@ -778,59 +778,50 @@ fun AccountGridItem(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val badges = @Composable {
-                    val incomeBg = Color(0xFF2E7D32)
-                    val expenseBg = Color(0xFFC62828)
-                    val badgeTextColor = Color.White
+                    val incomeColor = Color(0xFF2E7D32)
+                    val expenseColor = Color(0xFFC62828)
 
                     Surface(
-                        color = incomeBg.copy(alpha = 0.8f),
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                        color = incomeColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, incomeColor.copy(alpha = 0.2f)),
                         modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
                                 "+${com.osscabinet.gleemanager.ui.util.formatAmount(incomeInAccountCurrency)}",
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
-                                color = badgeTextColor,
+                                color = incomeColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.width(1.dp))
-                            Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = badgeTextColor, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = incomeColor, modifier = Modifier.size(14.dp))
                         }
                     }
 
                     Surface(
-                        color = expenseBg.copy(alpha = 0.8f),
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, badgeTextColor.copy(alpha = 0.3f)),
+                        color = expenseColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, expenseColor.copy(alpha = 0.2f)),
                         modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                "-${
-                                    com.osscabinet.gleemanager.ui.util.formatAmount(
-                                        expenseInAccountCurrency
-                                    )
-                                }",
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = badgeFontSize,
-                                    fontWeight = FontWeight.ExtraBold
-                                ),
-                                color = badgeTextColor,
+                                "-${com.osscabinet.gleemanager.ui.util.formatAmount(expenseInAccountCurrency)}",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
+                                color = expenseColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.width(1.dp))
-                            Icon(
-                                Icons.Rounded.ArrowUpward,
-                                contentDescription = null,
-                                tint = badgeTextColor,
-                                modifier = Modifier.size(14.dp)
-                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = expenseColor, modifier = Modifier.size(14.dp))
                         }
                     }
                 }

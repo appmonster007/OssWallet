@@ -74,10 +74,16 @@ fun AccountsViewScreen(
         transactions.filter { it.accountId in nonArchivedAccountIds }
     }
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
-    val baseCurrency by settingsViewModel.currency.collectAsState()
-    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
+    val baseCurrency = analyticsUiState.selectedCurrency
+    val exchangeRates = analyticsUiState.exchangeRates
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val starredTemplates by templateViewModel.starredTemplates.collectAsState()
+
+    val settingsCurrency by settingsViewModel.currency.collectAsState()
+    LaunchedEffect(settingsCurrency) {
+        analyticsViewModel.onCurrencySelected(settingsCurrency)
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,

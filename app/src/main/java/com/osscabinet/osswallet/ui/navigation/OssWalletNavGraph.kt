@@ -48,7 +48,11 @@ fun OssWalletNavGraph(
 
     val analyticsViewModel: AnalyticsViewModel = viewModel(
         factory = GenericViewModelFactory {
-            AnalyticsViewModel(appContainer.getTransactionsUseCase, appContainer.getExchangeRatesUseCase)
+            AnalyticsViewModel(
+                appContainer.getTransactionsUseCase,
+                appContainer.getExchangeRatesUseCase,
+                appContainer.settingsDataStore
+            )
         }
     )
 

@@ -173,20 +173,6 @@ fun EditTransactionScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            selectedAccount?.let { account ->
-                                val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
-                                    transaction.amount
-                                } else {
-                                    val txRate = exchangeRates[transaction.currency] ?: BigDecimal.ONE
-                                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                                    if (txRate.signum() != 0) (transaction.amount.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else transaction.amount
-                                }
-                                
-                                accountViewModel.updateBalance(
-                                    account.id,
-                                    if (transaction.isIncome) oldAmountInAccountCurrency.negate() else oldAmountInAccountCurrency
-                                )
-                            }
                             viewModel.deleteTransaction(transactionId)
                             onBackClick()
                         }) {
@@ -200,33 +186,7 @@ fun EditTransactionScreen(
                             onClick = {
                                 val amountBD = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 selectedAccount?.let { account ->
-                                    // 1. Revert old balance impact
-                                    val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
-                                        transaction.amount
-                                    } else {
-                                        val txRate = exchangeRates[transaction.currency] ?: BigDecimal.ONE
-                                        val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                                        if (txRate.signum() != 0) (transaction.amount.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else transaction.amount
-                                    }
-                                    accountViewModel.updateBalance(
-                                        transaction.accountId, 
-                                        if (transaction.isIncome) oldAmountInAccountCurrency.negate() else oldAmountInAccountCurrency
-                                    )
-
-                                    // 2. Apply new balance impact
-                                    val newAmountInAccountCurrency = if (selectedCurrency == account.currencyCode) {
-                                        amountBD
-                                    } else {
-                                        val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
-                                        val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                                        if (txRate.signum() != 0) (amountBD.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else amountBD
-                                    }
-                                    accountViewModel.updateBalance(
-                                        account.id, 
-                                        if (isIncome) newAmountInAccountCurrency else newAmountInAccountCurrency.negate()
-                                    )
-
-                                    // 3. Update transaction record
+                                    // Update transaction record - DAO will handle balance updates
                                     viewModel.updateTransaction(
                                         oldTransaction = transaction,
                                         title = title.ifBlank { if (isTransfer) "Transfer" else category },

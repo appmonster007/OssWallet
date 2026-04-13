@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -14,7 +17,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.*
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
-    appContainer: AppContainer
+    appContainer: AppContainer,
+    splashScreen: androidx.core.splashscreen.SplashScreen? = null
 ) {
     // Shared ViewModels or persistent ones can be initialized here or at activity level
     // For SOLID, we use Factories that use the container
@@ -101,6 +105,11 @@ fun OssWalletNavGraph(
             TagViewModel(appContainer.tagRepository)
         }
     )
+
+    // Keep splash screen on until Dashboard is loaded
+    splashScreen?.setKeepOnScreenCondition {
+        dashboardViewModel.uiState.value is DashboardUiState.Loading
+    }
 
     NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
         composable(Screen.Dashboard.route) {

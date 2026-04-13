@@ -53,6 +53,8 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.isDark
@@ -509,7 +511,7 @@ fun DetailDrawer(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft, 
+                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                         contentDescription = "Open Details",
                         modifier = Modifier.padding(end = 12.dp)
                     )
@@ -546,8 +548,8 @@ fun DetailDrawer(
                             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Back")
                         }
                         Text(
-                            "Additional Details", 
-                            style = MaterialTheme.typography.titleMedium, 
+                            "Additional Details",
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -830,8 +832,7 @@ fun AeonAccountHeroCard(
                         style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                     )
                     if (account.currencyCode != baseCurrency) {
-                        val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
-                        val convertedBalance = balance.multiply(rate)
+                        val convertedBalance = convertAmount(balance, account.currencyCode, baseCurrency, exchangeRates, precision)
                         Text(
                             "≈ ${formatCurrencyRight(convertedBalance, baseCurrency, precision)}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -915,8 +916,7 @@ fun AeonCurrencyBreakdown(
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                             )
                             if (accountCurrency != baseCurrency) {
-                                val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
-                                val convertedBal = bal.multiply(rate)
+                                val convertedBal = convertAmount(bal, curr, baseCurrency, exchangeRates, precision)
                                 Text(
                                     "≈ ${formatCurrencyRight(convertedBal, baseCurrency, precision)}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -1239,7 +1239,7 @@ fun AeonDashedButton(
     } else {
         if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
     }
-    
+
     val borderColor = if (isError) {
         if (enabled) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
     } else {

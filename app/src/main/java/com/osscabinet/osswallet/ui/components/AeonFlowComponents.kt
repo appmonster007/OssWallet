@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
@@ -327,15 +329,9 @@ fun NetWorthSection(
     precision: Int = 2
 ) {
     val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
-        accounts.fold(BigDecimal.ZERO) { acc, account ->
-            val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-            val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                account.balance.divide(rate, precision, RoundingMode.HALF_UP)
-            } else {
-                account.balance
-            }
-            acc.add(inBase)
-        }
+        val currencyTotals = accounts.groupBy { it.currencyCode }
+            .mapValues { (_, accs) -> accs.fold(BigDecimal.ZERO) { acc, a -> acc.add(a.balance) } }
+        calculateTotalInCurrency(currencyTotals, baseCurrency, exchangeRates, precision)
     }
 
     Column {
@@ -356,12 +352,7 @@ fun AeonCurrencyBalanceItem(
     exchangeRates: Map<String, BigDecimal>,
     precision: Int = 2
 ) {
-    val rate = exchangeRates[currency] ?: BigDecimal.ONE
-    val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-        amount.divide(rate, precision, RoundingMode.HALF_UP)
-    } else {
-        amount
-    }
+    val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
 
     Surface(
         shape = RoundedCornerShape(20.dp),

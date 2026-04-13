@@ -43,6 +43,7 @@ fun TransactionListScreen(
     val accountMap = accounts.associate { it.id to it.name }
     val categories by viewModel.categories.collectAsState()
     val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+    val decimalPrecision by viewModel.decimalPrecision.collectAsState()
 
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -157,7 +158,8 @@ fun TransactionListScreen(
                     accountMap = accountMap,
                     categoryMap = categoryMap,
                     onTransactionClick = { onEditTransactionClick(it.id) },
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    precision = decimalPrecision
                 )
             }
         }

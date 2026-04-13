@@ -28,6 +28,9 @@ class AnalyticsViewModel(
 
     private var allTransactions: List<Transaction> = emptyList()
     private var ratesJob: Job? = null
+    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+    private var _currentPrecision: Int = 2
 
     init {
         viewModelScope.launch {
@@ -35,6 +38,13 @@ class AnalyticsViewModel(
             settingsDataStore.currency.collect { currencyCode ->
                 // This ensures we start with the correct currency and update if it changes in settings
                 onCurrencySelected(currencyCode)
+            }
+        }
+
+        viewModelScope.launch {
+            decimalPrecision.collect { precision ->
+                _currentPrecision = precision
+                calculateAnalytics()
             }
         }
 
@@ -74,7 +84,7 @@ class AnalyticsViewModel(
             } else {
                 val rate = currentRates[tx.currency] ?: BigDecimal.ONE
                 if (rate.signum() != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                    tx.amount.divide(rate, _currentPrecision, RoundingMode.HALF_UP)
                 } else {
                     tx.amount
                 }
@@ -123,7 +133,7 @@ class AnalyticsViewModel(
             val diff = System.currentTimeMillis() - firstTx.timestamp
             (diff / (24 * 60 * 60 * 1000L)).coerceAtLeast(1)
         } else 1
-        val dailyExpenseAvg = totalExpense.divide(BigDecimal.valueOf(daysActive), 2, RoundingMode.HALF_UP)
+        val dailyExpenseAvg = totalExpense.divide(BigDecimal.valueOf(daysActive), _currentPrecision, RoundingMode.HALF_UP)
         val monthlyBurnRate = dailyExpenseAvg.multiply(BigDecimal.valueOf(30))
 
         // Group by day for cash flow (last 7 days)
@@ -144,7 +154,7 @@ class AnalyticsViewModel(
 
         val avgDailyNetFlow = if (dailyNetFlow.isNotEmpty()) {
             dailyNetFlow.values.fold(BigDecimal.ZERO) { acc, bd -> acc.add(bd) }
-                .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), 2, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), _currentPrecision, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
 
         // Forecast for next 30 days
@@ -164,6 +174,7 @@ class AnalyticsViewModel(
                 lastMonthSpending = lastMonthExpense,
                 dailyNetFlow = dailyNetFlow,
                 forecast = forecast.toMap(),
+                decimalPrecision = _currentPrecision,
                 isLoading = false
             )
         }
@@ -181,5 +192,6 @@ data class AnalyticsUiState(
     val forecast: Map<Long, BigDecimal> = emptyMap(),
     val selectedCurrency: String = "USD",
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    val decimalPrecision: Int = 2,
     val isLoading: Boolean = false
 )

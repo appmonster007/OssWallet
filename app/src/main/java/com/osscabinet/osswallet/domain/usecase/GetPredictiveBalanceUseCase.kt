@@ -17,14 +17,14 @@ class GetPredictiveBalanceUseCase(
      * The result is a list of pairs where the first element is the timestamp (start of day)
      * and the second element is the projected balance.
      */
-    operator fun invoke(days: Int = 30, profileId: Int = 1): Flow<List<Pair<Long, BigDecimal>>> {
+    operator fun invoke(days: Int = 30, profileId: Int = 1, precision: Int = 2): Flow<List<Pair<Long, BigDecimal>>> {
         return repository.getAllTransactions(profileId).map { transactions ->
             if (transactions.isEmpty()) return@map emptyList()
 
             val currentBalance = transactions.fold(BigDecimal.ZERO) { acc, t ->
                 if (t.isIncome) acc.add(t.amount) else acc.subtract(t.amount)
             }
-            val avgDailyNetFlow = calculateAvgDailyNetFlow(transactions)
+            val avgDailyNetFlow = calculateAvgDailyNetFlow(transactions, precision)
 
             val predictions = mutableListOf<Pair<Long, BigDecimal>>()
             val calendar = Calendar.getInstance()
@@ -43,7 +43,7 @@ class GetPredictiveBalanceUseCase(
         }
     }
 
-    private fun calculateAvgDailyNetFlow(transactions: List<Transaction>): BigDecimal {
+    private fun calculateAvgDailyNetFlow(transactions: List<Transaction>, precision: Int = 2): BigDecimal {
         if (transactions.isEmpty()) return BigDecimal.ZERO
 
         val sortedTransactions = transactions.sortedBy { it.timestamp }
@@ -55,6 +55,6 @@ class GetPredictiveBalanceUseCase(
             if (t.isIncome) acc.add(t.amount) else acc.subtract(t.amount)
         }
 
-        return totalNetFlow.divide(BigDecimal(totalDays), 2, RoundingMode.HALF_UP)
+        return totalNetFlow.divide(BigDecimal(totalDays), precision, RoundingMode.HALF_UP)
     }
 }

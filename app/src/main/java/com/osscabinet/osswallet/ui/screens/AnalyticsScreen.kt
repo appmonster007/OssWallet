@@ -27,6 +27,7 @@ fun AnalyticsScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val decimalPrecision by viewModel.decimalPrecision.collectAsState()
 
     Scaffold(
         topBar = {
@@ -49,7 +50,7 @@ fun AnalyticsScreen(
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             item {
-                AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency)
+                AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency, decimalPrecision)
             }
 
             // Cash Flow Chart
@@ -73,7 +74,7 @@ fun AnalyticsScreen(
             }
 
             item {
-                InsightSection(uiState.selectedCurrency)
+                InsightSection(uiState.selectedCurrency, decimalPrecision)
             }
         }
     }
@@ -134,11 +135,11 @@ fun SimpleLineChart(data: Map<Long, BigDecimal>, lineColor: Color) {
 }
 
 @Composable
-fun AnalyticsHeroSection(balance: BigDecimal, currency: String) {
+fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int = 2) {
     Column {
         Text("PROJECTED BALANCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         Text(
-            formatCurrencyRight(balance, currency),
+            formatCurrencyRight(balance, currency, precision),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -170,7 +171,7 @@ fun EditorialChartCard(containerColor: Color, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun InsightSection(currency: String) {
+fun InsightSection(currency: String, precision: Int = 2) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
@@ -187,7 +188,7 @@ fun InsightSection(currency: String) {
                 Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrencyRight(BigDecimal("400.0"), currency)} for your upcoming trip.",
+                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrencyRight(BigDecimal("400.0"), currency, precision)} for your upcoming trip.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

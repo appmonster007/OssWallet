@@ -36,6 +36,7 @@ fun LoansScreen(
 ) {
     val loans by viewModel.loans.collectAsState()
     val baseCurrency by settingsViewModel.currency.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -71,7 +72,7 @@ fun LoansScreen(
             val totalCredit = loans.filter { it.type == LoanType.LOAN }
                 .fold(BigDecimal.ZERO) { acc, loan -> acc.add(loan.principal.subtract(loan.repayments)) }
 
-            LoanSummaryHeader(totalDebt, totalCredit, baseCurrency)
+            LoanSummaryHeader(totalDebt, totalCredit, baseCurrency, decimalPrecision)
 
             if (loans.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -86,6 +87,7 @@ fun LoansScreen(
                     items(loans) { loan ->
                         LoanItem(
                             loan = loan,
+                            precision = decimalPrecision,
                             onRepayClick = { viewModel.updateRepayment(loan, BigDecimal("100.0")) }, // Mock repay $100
                             onDeleteClick = { viewModel.deleteLoan(loan) }
                         )
@@ -108,7 +110,7 @@ fun LoansScreen(
 }
 
 @Composable
-fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String) {
+fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String, precision: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,6 +122,7 @@ fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String) {
             label = "TOTAL DEBT",
             amount = debt,
             currency = currency,
+            precision = precision,
             color = Color(0xFFC62828)
         )
         SummaryCard(
@@ -127,13 +130,14 @@ fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String) {
             label = "TOTAL CREDIT",
             amount = credit,
             currency = currency,
+            precision = precision,
             color = Color(0xFF2E7D32)
         )
     }
 }
 
 @Composable
-fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency: String, color: Color) {
+fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency: String, precision: Int, color: Color) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -142,7 +146,7 @@ fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency:
         Column(modifier = Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = color)
             Text(
-                formatCurrencyRight(amount, currency),
+                formatCurrencyRight(amount, currency, precision = precision),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
             )
         }
@@ -150,7 +154,7 @@ fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency:
 }
 
 @Composable
-fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
+fun LoanItem(loan: Loan, precision: Int, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
     val progress = if (loan.principal.signum() > 0) {
         loan.repayments.divide(loan.principal, 4, RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1f)
     } else 0f
@@ -185,11 +189,11 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${formatCurrencyRight(loan.repayments, loan.currency)} / ${formatCurrencyRight(loan.principal, loan.currency)}",
+                    "${formatCurrencyRight(loan.repayments, loan.currency, precision = precision)} / ${formatCurrencyRight(loan.principal, loan.currency, precision = precision)}",
                     style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                 )
                 TextButton(onClick = onRepayClick) {
-                    Text("REPAY ${formatCurrencyRight(BigDecimal("100.0"), loan.currency)}", color = color)
+                    Text("REPAY ${formatCurrencyRight(BigDecimal("100.0"), loan.currency, precision = precision)}", color = color)
                 }
             }
         }

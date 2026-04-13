@@ -50,6 +50,7 @@ fun EditTransactionScreen(
 ) {
     val transactions by viewModel.transactions.collectAsState()
     val transaction = transactions.find { it.id == transactionId }
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
     if (transaction == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -75,7 +76,7 @@ fun EditTransactionScreen(
                     "+" -> firstOperand!!.add(secondOperand)
                     "−" -> firstOperand!!.subtract(secondOperand)
                     "×" -> firstOperand!!.multiply(secondOperand)
-                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, 8, RoundingMode.HALF_UP) else BigDecimal.ZERO
+                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, decimalPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
                     else -> secondOperand
                 }
             } catch (e: Exception) { BigDecimal.ZERO }
@@ -295,7 +296,7 @@ fun EditTransactionScreen(
                                     }
 
                                     Text(
-                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
+                                        text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
                                         style = TextStyle(
                                             fontSize = if (isTransfer) 48.sp else 64.sp,
                                             fontWeight = FontWeight.Black,
@@ -320,7 +321,7 @@ fun EditTransactionScreen(
                                 
                                 if (isTransfer) {
                                     val amountBD = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                    val convertedAmount = amountBD.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP)
+                                    val convertedAmount = amountBD.multiply(exchangeRate).setScale(decimalPrecision, RoundingMode.HALF_UP)
                                     
                                     Icon(
                                         Icons.Rounded.KeyboardArrowDown,
@@ -334,7 +335,7 @@ fun EditTransactionScreen(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            " (1:${exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()})",
+                                            " (1:${exchangeRate.setScale(decimalPrecision + 1, RoundingMode.HALF_UP).toPlainString()})",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.padding(start = 8.dp)
@@ -759,7 +760,7 @@ fun EditTransactionScreen(
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency),
+                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency, decimalPrecision),
                             balanceBefore = "",
                             balanceAfter = "",
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
@@ -767,6 +768,7 @@ fun EditTransactionScreen(
                             note = tx.note,
                             tags = tx.tags,
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
+                            precision = decimalPrecision,
                             onClick = {
                                 linkedTransactionId = tx.id
                                 showLinkedTransactionSheet = false

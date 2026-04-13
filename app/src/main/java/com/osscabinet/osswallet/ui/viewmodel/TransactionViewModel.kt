@@ -38,6 +38,9 @@ class TransactionViewModel(
     val categories = categoryDao.getAllCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(

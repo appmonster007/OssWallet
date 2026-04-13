@@ -40,11 +40,13 @@ fun SettingsScreen(
     val currencyCode by viewModel.currency.collectAsState()
     val theme by viewModel.theme.collectAsState()
     val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsState()
+    val decimalPrecision by viewModel.decimalPrecision.collectAsState()
     
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showGridDialog by remember { mutableStateOf(false) }
+    var showPrecisionDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -263,6 +265,43 @@ fun SettingsScreen(
         )
     }
 
+    if (showPrecisionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrecisionDialog = false },
+            title = { Text("Decimal Precision") },
+            text = {
+                Column {
+                    listOf(2, 3).forEach { precision ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setDecimalPrecision(precision)
+                                    showPrecisionDialog = false
+                                }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (precision == 2) Icons.Rounded.Money else Icons.Rounded.PrecisionManufacturing,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("$precision Decimal Places", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            if (precision == decimalPrecision) {
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPrecisionDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -302,6 +341,12 @@ fun SettingsScreen(
                     subtitle = "$dashboardGridColumns Columns",
                     icon = Icons.Rounded.DashboardCustomize,
                     onClick = { showGridDialog = true }
+                )
+                SettingsItem(
+                    title = "Decimal Precision",
+                    subtitle = "$decimalPrecision Decimal Places",
+                    icon = Icons.Rounded.PrecisionManufacturing,
+                    onClick = { showPrecisionDialog = true }
                 )
                 SettingsItem(
                     title = "Manage Accounts",

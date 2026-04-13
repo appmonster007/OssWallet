@@ -151,12 +151,12 @@ fun AeonFlowCard(
         border = borderColor
     ) {
         Box {
-            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
+            val iconHeight = with(density) { (cardSize.width * 0.5f).toDp() }
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
+                    .align(Alignment.TopEnd)
 //                    .offset { IntOffset(x = (cardSize.width * 0.25f).toInt(), y = 0) }
                     .size(iconHeight)
                     .alpha(0.2f),

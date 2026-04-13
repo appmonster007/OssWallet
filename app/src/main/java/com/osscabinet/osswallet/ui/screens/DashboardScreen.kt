@@ -670,8 +670,12 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Column (horizontalAlignment = Alignment.End){
+                                Text(
+                                    formatCurrencyRight(amount, currency, precision),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
+                                )
                                 if (currency != baseCurrency) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
@@ -681,10 +685,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                                     )
                                 }
                             }
-                            Text(
-                                formatCurrencyRight(amount, currency, precision),
-                                style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
-                            )
+
                         }
                     }
                 }
@@ -854,7 +855,7 @@ fun AccountGridItem(
                 )
 
                 Text(
-                    formatCurrencyRight(balanceInBase, baseCurrency, precision),
+                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,

@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.usecase.GetExchangeRatesUseCase
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -79,22 +80,19 @@ class AnalyticsViewModel(
         
         // Convert all transactions to selected currency
         val convertedTransactions = allTransactions.map { tx ->
-            val amountInBase = if (tx.currency == selectedCurrency) {
-                tx.amount 
-            } else {
-                val rate = currentRates[tx.currency] ?: BigDecimal.ONE
-                if (rate.signum() != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                    tx.amount.divide(rate, _currentPrecision, RoundingMode.HALF_UP)
-                } else {
-                    tx.amount
-                }
-            }
-            tx.copy(amount = amountInBase)
+            val convertedAmount = convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 2 // Use slightly higher precision during aggregation
+            )
+            tx.copy(amount = convertedAmount)
         }
 
-        val totalIncome = convertedTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val totalExpense = convertedTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val currentBalance = totalIncome.subtract(totalExpense)
+        val totalIncome = convertedTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val totalExpense = convertedTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val currentBalance = totalIncome.subtract(totalExpense).setScale(_currentPrecision, RoundingMode.HALF_UP)
         
         // Month-over-month analysis
         val calendar = Calendar.getInstance()

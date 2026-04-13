@@ -215,18 +215,8 @@ fun AeonCashFlowSummary(
 
                 if (income.signum() == 0 && expense.signum() == 0) null
                 else {
-                    val rate = if (curr == baseCurrency) BigDecimal.ONE else (exchangeRates[curr]
-                        ?: BigDecimal.ONE)
-                    val incomeInBase = if (rate.compareTo(BigDecimal.ZERO) != 0) income.divide(
-                        rate,
-                        precision,
-                        RoundingMode.HALF_UP
-                    ) else income
-                    val expenseInBase = if (rate.compareTo(BigDecimal.ZERO) != 0) expense.divide(
-                        rate,
-                        precision,
-                        RoundingMode.HALF_UP
-                    ) else expense
+                    val incomeInBase = convertAmount(income, curr, baseCurrency, exchangeRates, precision + 2).setScale(precision, RoundingMode.HALF_UP)
+                    val expenseInBase = convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 2).setScale(precision, RoundingMode.HALF_UP)
                     Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
                 }
             }

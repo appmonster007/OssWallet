@@ -73,8 +73,8 @@ fun AccountDetailScreen(
                     }
                 }
             
-            val transactionsSumInAccountCurrency = calculateTotalInCurrency(currencyTotals, currentAccount.currencyCode, exchangeRates, decimalPrecision)
-            initialBalance.add(transactionsSumInAccountCurrency)
+            val transactionsSumInAccountCurrency = calculateTotalInCurrency(currencyTotals, currentAccount.currencyCode, exchangeRates, decimalPrecision + 2)
+            initialBalance.add(transactionsSumInAccountCurrency).setScale(decimalPrecision, RoundingMode.HALF_UP)
         }
     }
 

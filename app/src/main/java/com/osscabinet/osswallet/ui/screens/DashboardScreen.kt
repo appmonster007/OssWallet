@@ -49,6 +49,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
@@ -609,12 +610,8 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 maxItemsInEachRow = gridColumns
             ) {
                 accounts.forEach { account ->
-                    val balanceInBase = account.balance.let { amount ->
-                        val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                        if (rate.compareTo(BigDecimal.ZERO) != 0) amount.divide(rate, precision, RoundingMode.HALF_UP) else amount
-                    }
+                    val balanceInBase = convertAmount(account.balance, account.currencyCode, baseCurrency, exchangeRates, precision)
 
-                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
                     val totalBalanceInAccountCurrency = account.balance
 
                     AccountGridItem(

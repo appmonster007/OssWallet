@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.usecase.SyncBudgetSpentUseCase
 import com.osscabinet.ossWallet.domain.usecase.UpsertBudgetUseCase
@@ -27,10 +28,10 @@ class BudgetViewModel(
         }
     }
 
-    fun upsertBudget(category: String, limit: Double) {
+    fun upsertBudget(category: String, limit: BigDecimal) {
         viewModelScope.launch {
             val existing = _budgets.value.find { it.category == category }
-            val newBudget = Budget(category, existing?.spent ?: 0.0, limit)
+            val newBudget = Budget(category, existing?.spent ?: BigDecimal.ZERO, limit)
             upsertBudgetUseCase(newBudget)
         }
     }

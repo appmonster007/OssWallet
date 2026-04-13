@@ -3,33 +3,66 @@ package com.osscabinet.ossWallet.data.local.dao
 import androidx.room.*
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 
 @Dao
-interface TransactionDao {
+abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
-    fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
+    abstract fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTransaction(transaction: TransactionEntity)
+    abstract suspend fun _insertTransaction(transaction: TransactionEntity)
+
+    @Transaction
+    open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
+        _insertTransaction(transaction)
+        val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+        accountDao.updateBalance(transaction.accountId, updateAmount)
+    }
 
     @Query("SELECT * FROM transactions WHERE id = :id")
-    suspend fun getTransactionById(id: Long): TransactionEntity?
+    abstract suspend fun getTransactionById(id: Long): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE accountId = :accountId ORDER BY timestamp DESC")
-    fun getTransactionsByAccount(accountId: String): Flow<List<TransactionEntity>>
+    abstract fun getTransactionsByAccount(accountId: String): Flow<List<TransactionEntity>>
 
     @Delete
-    suspend fun deleteTransaction(transaction: TransactionEntity)
+    abstract suspend fun _deleteTransaction(transaction: TransactionEntity)
+
+    @Transaction
+    open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
+        _deleteTransaction(transaction)
+        val updateAmount = if (transaction.isIncome) transaction.amount.negate() else transaction.amount
+        accountDao.updateBalance(transaction.accountId, updateAmount)
+    }
+
+    @Transaction
+    open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
+        // Reverse old transaction impact
+        val reverseAmount = if (oldTransaction.isIncome) oldTransaction.amount.negate() else oldTransaction.amount
+        accountDao.updateBalance(oldTransaction.accountId, reverseAmount)
+
+        // Apply new transaction impact
+        insertTransaction(newTransaction)
+        val applyAmount = if (newTransaction.isIncome) newTransaction.amount else newTransaction.amount.negate()
+        accountDao.updateBalance(newTransaction.accountId, applyAmount)
+    }
 
     @Query("SELECT * FROM transactions")
-    suspend fun getAllTransactionsSync(): List<TransactionEntity>
+    abstract suspend fun getAllTransactionsSync(): List<TransactionEntity>
 
     @Query("DELETE FROM transactions")
-    suspend fun clearAll()
+    abstract suspend fun clearAll()
 
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
-    suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
+    abstract suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
 
     @Update
-    suspend fun updateTransactions(transactions: List<TransactionEntity>)
+    abstract suspend fun updateTransactions(transactions: List<TransactionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun insertTransaction(transaction: TransactionEntity)
+
+    @Delete
+    abstract suspend fun deleteTransaction(transaction: TransactionEntity)
 }

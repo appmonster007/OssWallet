@@ -25,16 +25,19 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.model.Transaction
 import kotlinx.coroutines.flow.first
 
+import java.math.BigDecimal
+
 class TransactionHistoryWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
-        val repository = TransactionRepositoryImpl(db.transactionDao())
+        val repository = TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
         val profileId = com.osscabinet.ossWallet.data.local.SettingsDataStore(context).currentProfileId.first()
-        val transactions = repository.getAllTransactions(profileId).first()
+        val allTransactions = repository.getAllTransactions(profileId).first()
+        val transactions = allTransactions
             .sortedByDescending { it.timestamp }
             .take(4)
-        val totalBalance = repository.getAllTransactions(profileId).first()
-            .sumOf { if (it.isIncome) it.amount else -it.amount }
+        val totalBalance = allTransactions
+            .fold(BigDecimal.ZERO) { acc, tx -> if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount) }
 
         provideContent {
             WidgetContent(totalBalance, transactions)
@@ -42,7 +45,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun WidgetContent(balance: Double, transactions: List<Transaction>) {
+    private fun WidgetContent(balance: BigDecimal, transactions: List<Transaction>) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()

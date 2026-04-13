@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -98,7 +99,7 @@ fun AddTemplateScreen(
                                         id = templateId ?: 0,
                                         name = name,
                                         category = category,
-                                        amount = amount.toDoubleOrNull() ?: 0.0,
+                                        amount = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                                         transactionType = transactionType,
                                         accountId = accountId,
                                         note = note.ifBlank { null },

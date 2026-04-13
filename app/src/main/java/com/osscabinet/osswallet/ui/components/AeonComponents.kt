@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -407,11 +408,11 @@ fun CurrencySelector(
 
 @Composable
 fun ExchangeRateDialog(
-    initialRate: Double,
+    initialRate: BigDecimal,
     onDismiss: () -> Unit,
-    onConfirm: (Double) -> Unit
+    onConfirm: (BigDecimal) -> Unit
 ) {
-    var rate by remember { mutableStateOf(initialRate.toString()) }
+    var rate by remember { mutableStateOf(initialRate.toPlainString()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Exchange Rate", fontWeight = FontWeight.Bold) },
@@ -427,7 +428,7 @@ fun ExchangeRateDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(rate.toDoubleOrNull() ?: 1.0) },
+                onClick = { onConfirm(rate.toBigDecimalOrNull() ?: BigDecimal.ONE) },
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Confirm")
@@ -788,10 +789,10 @@ fun AeonSectionHeader(
 @Composable
 fun AeonAccountHeroCard(
     account: Account,
-    balance: Double,
-    netBalance: Double,
+    balance: BigDecimal,
+    netBalance: BigDecimal,
     baseCurrency: String,
-    exchangeRates: Map<String, Double>,
+    exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier
 ) {
     val accountColor = try {
@@ -828,8 +829,8 @@ fun AeonAccountHeroCard(
                         style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                     )
                     if (account.currencyCode != baseCurrency) {
-                        val rate = exchangeRates[baseCurrency] ?: 1.0
-                        val convertedBalance = balance * rate
+                        val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
+                        val convertedBalance = balance.multiply(rate)
                         Text(
                             "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
@@ -873,10 +874,10 @@ fun AeonAccountHeroCard(
 
 @Composable
 fun AeonCurrencyBreakdown(
-    balances: Map<String, Double>,
+    balances: Map<String, BigDecimal>,
     baseCurrency: String,
     accountCurrency: String,
-    exchangeRates: Map<String, Double>,
+    exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true
 ) {
@@ -912,8 +913,8 @@ fun AeonCurrencyBreakdown(
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                             )
                             if (accountCurrency != baseCurrency) {
-                                val rate = exchangeRates[baseCurrency] ?: 1.0
-                                val convertedBal = bal * rate
+                                val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
+                                val convertedBal = bal.multiply(rate)
                                 Text(
                                     "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -977,8 +978,8 @@ fun AeonTransactionList(
         sortedGroupedTransactions.forEach { (dateMillis, dayTransactions) ->
             if (showDailyHeader) {
                 stickyHeader {
-                    val dayTotal = dayTransactions.sumOf {
-                        if (it.transaction.isIncome) it.transaction.amount else -it.transaction.amount
+                    val dayTotal = dayTransactions.fold(BigDecimal.ZERO) { acc, item ->
+                        if (item.transaction.isIncome) acc.add(item.transaction.amount) else acc.subtract(item.transaction.amount)
                     }
                     val currency = dayTransactions.first().transaction.currency
 
@@ -1009,7 +1010,7 @@ fun AeonTransactionList(
                                             fontWeight = FontWeight.Bold,
                                             fontFeatureSettings = "tnum"
                                         ),
-                                        color = if (dayTotal >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                                        color = if (dayTotal.signum() >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
@@ -1289,14 +1290,14 @@ fun AeonDashedButton(
 }
 
 @Composable
-fun AeonBudgetProgress(label: String, current: Float, total: Float, color: Color, baseCurrency: String) {
+fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${formatCurrencyRight(current.toDouble(), baseCurrency)} / ${formatCurrencyRight(total.toDouble(), baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text("${formatCurrencyRight(current, baseCurrency)} / ${formatCurrencyRight(total, baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
         LinearProgressIndicator(
-            progress = { current / total },
+            progress = { if (total.signum() > 0) (current.toDouble() / total.toDouble()).toFloat() else 0f },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp)

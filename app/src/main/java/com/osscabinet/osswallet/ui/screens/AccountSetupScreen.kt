@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.util.isDark
@@ -59,7 +60,7 @@ fun AccountSetupScreen(
                 },
                 actions = {
                     val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    val isBalanceValid = initialBalance.isEmpty() || initialBalance.toDoubleOrNull() != null
+                    val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
                     val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
                     
                     Surface(
@@ -70,7 +71,7 @@ fun AccountSetupScreen(
                             if (canCreate) {
                                 viewModel.addAccount(
                                     name = accountName,
-                                    balance = initialBalance.toDoubleOrNull() ?: 0.0,
+                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                                     currency = primaryCurrency,
                                     structureType = structureType,
                                     colorHex = accentColorHex,

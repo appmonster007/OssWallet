@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -115,7 +116,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
             )
             
             Text(
-                text = if (!budget.isOverBudget) "You have ${formatCurrencyRight(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrencyRight(budget.spent - budget.limit, currency)}",
+                text = if (!budget.isOverBudget) "You have ${formatCurrencyRight(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrencyRight(budget.spent.subtract(budget.limit), currency)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
             )
@@ -141,7 +142,7 @@ fun BudgetInsightSection(currency: String) {
                 Text("OPTIMIZATION TIP", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrencyRight(100.0, currency)} to your Savings goal.",
+                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrencyRight(BigDecimal("100.0"), currency)} to your Savings goal.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

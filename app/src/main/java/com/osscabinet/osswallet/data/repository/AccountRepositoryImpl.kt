@@ -16,7 +16,7 @@ class AccountRepositoryImpl(private val accountDao: AccountDao) : AccountReposit
         accountDao.upsertAccount(account.toEntity(profileId))
     }
 
-    override suspend fun updateBalance(accountId: String, amount: Double) {
+    override suspend fun updateBalance(accountId: String, amount: java.math.BigDecimal) {
         accountDao.updateBalance(accountId, amount)
     }
 

@@ -5,12 +5,15 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.ui.viewmodel.DashboardViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -45,11 +54,13 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
@@ -67,26 +78,20 @@ fun DashboardScreen(
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
-    templateViewModel: TemplateViewModel
+    templateViewModel: TemplateViewModel,
+    dashboardViewModel: DashboardViewModel,
+    budgetViewModel: BudgetViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val dashboardUiState by dashboardViewModel.uiState.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
-    val nonArchivedAccountIds = remember(nonArchivedAccounts) { nonArchivedAccounts.map { it.id }.toSet() }
-    val activeTransactionsWithBalance = remember(transactionsWithBalance, nonArchivedAccountIds) {
-        transactionsWithBalance.filter { it.transaction.accountId in nonArchivedAccountIds }
-    }
-    val activeTransactions = remember(activeTransactionsWithBalance) {
-        activeTransactionsWithBalance.map { it.transaction }
-    }
-
+    
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
     val analyticsUiState by analyticsViewModel.uiState.collectAsState()
-    val baseCurrency = analyticsUiState.selectedCurrency
-    val exchangeRates = analyticsUiState.exchangeRates
+    val budgets by budgetViewModel.budgets.collectAsState()
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
 
@@ -206,89 +211,28 @@ fun DashboardScreen(
                     }
                 }
             ) { innerPadding ->
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    verticalAlignment = Alignment.Top
-                ) { page ->
-                    when (page) {
-                        0 -> {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(24.dp),
-                                contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
-                            ) {
-                                item {
-                                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                                }
-                                item {
-                                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
-                                }
-                                item {
-                                    AeonCashFlowSummary(activeTransactions, baseCurrency, exchangeRates, currentTheme)
-                                }
-                                item {
-                                    AccountsSection(onManageAccountsClick, onAccountClick, nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, currentTheme, gridColumns)
-                                }
-                                item {
-                                    BudgetTrackingSection(baseCurrency)
-                                }
-                            }
-                        }
-                        1 -> {
-                            val accountMap = remember(nonArchivedAccounts) { nonArchivedAccounts.associate { it.id to it.name } }
-                            val categories by transactionViewModel.categories.collectAsState()
-                            val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
-                            val recentTransactions = remember(activeTransactionsWithBalance) { 
-                                activeTransactionsWithBalance.sortedByDescending { it.transaction.timestamp }.take(20) 
-                            }
-
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
-                            ) {
-                                item {
-                                    AeonSectionHeader(
-                                        title = "Recent Activities",
-                                        trailing = {
-                                            TextButton(onClick = onRecordsClick) {
-                                                Text("View all", color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    )
-                                }
-
-                                items(recentTransactions) { item ->
-                                    val transaction = item.transaction
-                                    val categoryEntity = categoryMap[transaction.category.lowercase()]
-                                    val balanceBeforeValue = item.balanceAfter - (if (transaction.isIncome) transaction.amount else -transaction.amount)
-
-                                    AeonTransactionItem(
-                                        category = transaction.category,
-                                        account = accountMap[transaction.accountId] ?: "Unknown",
-                                        amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                                        balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency),
-                                        balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
-                                        type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                        timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
-                                        note = transaction.note,
-                                        tags = transaction.tags,
-                                        icon = categoryEntity?.let { categoryIcons[it.name] },
-                                        iconBg = categoryEntity?.let { Color(it.colorHex) },
-                                        onClick = { /* Navigate to edit? */ },
-                                        modifier = Modifier.padding(horizontal = 24.dp)
-                                    )
-                                }
-                            }
+                when (val state = dashboardUiState) {
+                    is DashboardUiState.Loading -> {
+                        DashboardShimmer(innerPadding)
+                    }
+                    is DashboardUiState.Success -> {
+                        DashboardContent(
+                            innerPadding = innerPadding,
+                            pagerState = pagerState,
+                            tabs = tabs,
+                            state = state,
+                            currentTheme = currentTheme,
+                            gridColumns = gridColumns,
+                            onManageAccountsClick = onManageAccountsClick,
+                            onAccountClick = onAccountClick,
+                            onRecordsClick = onRecordsClick,
+                            transactionViewModel = transactionViewModel,
+                            budgets = budgets
+                        )
+                    }
+                    is DashboardUiState.Error -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(state.message)
                         }
                     }
                 }
@@ -472,18 +416,175 @@ fun DashboardScreen(
 
 
 @Composable
-fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double> = emptyMap()) {
-    val totalBalanceInBase = remember(accounts, transactions, exchangeRates, baseCurrency) {
-        val accountInitialBalances = accounts.sumOf { account ->
-            val rate = exchangeRates[account.currencyCode] ?: 1.0
-            if (rate != 0.0) account.initialBalance / rate else account.initialBalance
+fun DashboardShimmer(innerPadding: PaddingValues) {
+    val transition = rememberInfiniteTransition()
+    val alpha by transition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+    ) {
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.size(150.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                Box(modifier = Modifier.size(250.dp, 48.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(8.dp)))
+                Box(modifier = Modifier.size(100.dp, 24.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(16.dp)))
+            }
         }
-        val transactionSumInBase = transactions.sumOf { tx ->
-            val amount = if (tx.isIncome) tx.amount else -tx.amount
-            val rate = exchangeRates[tx.currency] ?: 1.0
-            if (rate != 0.0) amount / rate else amount
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(3) {
+                    Box(modifier = Modifier.size(120.dp, 60.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(20.dp)))
+                }
+            }
         }
-        accountInitialBalances + transactionSumInBase
+        item {
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(32.dp)))
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Box(modifier = Modifier.size(100.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                    Box(modifier = Modifier.size(60.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(modifier = Modifier.weight(1f).height(120.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(24.dp)))
+                    Box(modifier = Modifier.weight(1f).height(120.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(24.dp)))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DashboardContent(
+    innerPadding: PaddingValues,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    tabs: List<String>,
+    state: DashboardUiState.Success,
+    currentTheme: String,
+    gridColumns: Int,
+    onManageAccountsClick: () -> Unit,
+    onAccountClick: (String) -> Unit,
+    onRecordsClick: () -> Unit,
+    transactionViewModel: TransactionViewModel,
+    budgets: List<Budget>
+) {
+    val activeTransactions = remember(state.recentTransactions) {
+        state.recentTransactions.map { it.transaction }
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+        verticalAlignment = Alignment.Top
+    ) { page ->
+        when (page) {
+            0 -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                ) {
+                    item {
+                        NetWorthSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates)
+                    }
+                    item {
+                        CurrencyAggregationSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates)
+                    }
+                    item {
+                        AeonCashFlowSummary(activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme)
+                    }
+                    item {
+                        AccountsSection(onManageAccountsClick, onAccountClick, state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, gridColumns)
+                    }
+                    if (budgets.isNotEmpty()) {
+                        item {
+                            BudgetTrackingSection(budgets, state.baseCurrency)
+                        }
+                    }
+                }
+            }
+            1 -> {
+                val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
+                val categories by transactionViewModel.categories.collectAsState()
+                val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                ) {
+                    item {
+                        AeonSectionHeader(
+                            title = "Recent Activities",
+                            trailing = {
+                                TextButton(onClick = onRecordsClick) {
+                                    Text("View all", color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        )
+                    }
+
+                    items(state.recentTransactions) { item ->
+                        val transaction = item.transaction
+                        val categoryEntity = categoryMap[transaction.category.lowercase()]
+                        val balanceBeforeValue = item.balanceAfter - (if (transaction.isIncome) transaction.amount else -transaction.amount)
+
+                        AeonTransactionItem(
+                            category = transaction.category,
+                            account = accountMap[transaction.accountId] ?: "Unknown",
+                            amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                            balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency),
+                            balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
+                            type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                            timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                            note = transaction.note,
+                            tags = transaction.tags,
+                            icon = categoryEntity?.let { categoryIcons[it.name] },
+                            iconBg = categoryEntity?.let { Color(it.colorHex) },
+                            onClick = { /* Navigate to edit? */ },
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal> = emptyMap()) {
+    val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency) {
+        accounts.fold(BigDecimal.ZERO) { acc, account ->
+            val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+            val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                account.balance.divide(rate, 2, RoundingMode.HALF_UP)
+            } else {
+                account.balance
+            }
+            acc.add(inBase)
+        }
     }
 
     Column {
@@ -527,22 +628,20 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
 }
 
 @Composable
-fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>) {
-    val allSupportedCurrencies = remember(accounts, transactions) {
+fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>) {
+    val allSupportedCurrencies = remember(accounts) {
         val list = mutableSetOf<String>()
         accounts.forEach { account ->
             list.add(account.currencyCode)
-            list.addAll(account.allowedCurrencies)
         }
-        transactions.forEach { list.add(it.currency) }
         list.toList().sorted()
     }
 
-    val currencyTotals = remember(accounts, transactions, allSupportedCurrencies) {
+    val currencyTotals = remember(accounts, allSupportedCurrencies) {
         allSupportedCurrencies.associateWith { curr ->
-            val initialBalanceSum = accounts.filter { it.currencyCode == curr }.sumOf { it.initialBalance }
-            val txSum = transactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
-            initialBalanceSum + txSum
+            accounts.filter { it.currencyCode == curr }.fold(BigDecimal.ZERO) { acc, account ->
+                acc.add(account.balance)
+            }
         }
     }
 
@@ -555,8 +654,12 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
                 items(currencyTotals.toList().sortedBy { it.first }) { (currency, amount) ->
-                    val rate = exchangeRates[currency] ?: 1.0
-                    val inBase = if (rate != 0.0) amount / rate else amount
+                    val rate = exchangeRates[currency] ?: BigDecimal.ONE
+                    val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                        amount.divide(rate, 2, RoundingMode.HALF_UP)
+                    } else {
+                        amount
+                    }
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -589,7 +692,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, Double>, currentTheme: String, gridColumns: Int = 2) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, currentTheme: String, gridColumns: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AeonSectionHeader(
             title = "Accounts",
@@ -602,9 +705,9 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
 
         if (accounts.isEmpty()) {
             AccountGridItem(
-                account = Account("empty", "GET STARTED", 0.0, 0.0, baseCurrency, "Default", "#808080", "Add"),
-                balanceInBase = 0.0,
-                totalBalanceInAccountCurrency = 0.0,
+                account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
+                balanceInBase = BigDecimal.ZERO,
+                totalBalanceInAccountCurrency = BigDecimal.ZERO,
                 baseCurrency = baseCurrency,
                 currentTheme = currentTheme,
                 onClick = onManageClick,
@@ -619,40 +722,13 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 maxItemsInEachRow = gridColumns
             ) {
                 accounts.forEach { account ->
-                    val accountTransactions = transactions.filter { it.accountId == account.id }
-
-                    val supportedCurrencies = remember(account, accountTransactions) {
-                        val list = mutableSetOf<String>()
-                        list.add(account.currencyCode)
-                        list.addAll(account.allowedCurrencies)
-                        accountTransactions.forEach { list.add(it.currency) }
-                        list.toList().sorted()
+                    val balanceInBase = account.balance.let { amount ->
+                        val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                        if (rate.compareTo(BigDecimal.ZERO) != 0) amount.divide(rate, 2, RoundingMode.HALF_UP) else amount
                     }
 
-                    val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
-                        val txSum = accountTransactions.filter { it.currency == curr }.sumOf { if (it.isIncome) it.amount else -it.amount }
-                        if (curr == account.currencyCode) account.initialBalance + txSum else txSum
-                    }
-
-                    val balanceInBase = accountCurrencyBalances.entries.sumOf { (curr, amount) ->
-                        val rate = exchangeRates[curr] ?: 1.0
-                        if (rate != 0.0) amount / rate else amount
-                    }
-
-                    val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                    val totalBalanceInAccountCurrency = if (accountRate != 0.0) balanceInBase * accountRate else balanceInBase
-
-                    accountTransactions.filter { it.isIncome }.sumOf { tx ->
-                        val rate = exchangeRates[tx.currency] ?: 1.0
-                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
-                        if (accountRate != 0.0) inBase * accountRate else inBase
-                    }
-
-                    accountTransactions.filter { !it.isIncome }.sumOf { tx ->
-                        val rate = exchangeRates[tx.currency] ?: 1.0
-                        val inBase = if (rate != 0.0) tx.amount / rate else tx.amount
-                        if (accountRate != 0.0) inBase * accountRate else inBase
-                    }
+                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                    val totalBalanceInAccountCurrency = account.balance
 
                     AccountGridItem(
                         account = account,
@@ -678,8 +754,8 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
 @Composable
 fun AccountGridItem(
     account: Account,
-    balanceInBase: Double,
-    totalBalanceInAccountCurrency: Double,
+    balanceInBase: BigDecimal,
+    totalBalanceInAccountCurrency: BigDecimal,
     baseCurrency: String,
     currentTheme: String,
     onClick: () -> Unit,
@@ -854,7 +930,7 @@ fun AccountGridItem(
 }
 
 @Composable
-fun BudgetTrackingSection(baseCurrency: String) {
+fun BudgetTrackingSection(budgets: List<Budget>, baseCurrency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AeonSectionHeader(title = "Budget Tracking")
 
@@ -864,8 +940,15 @@ fun BudgetTrackingSection(baseCurrency: String) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                AeonBudgetProgress("Lifestyle & Leisure", 1420f, 2000f, MaterialTheme.colorScheme.primary, baseCurrency)
-                AeonBudgetProgress("Housing & Utilities", 3800f, 4000f, Color(0xFFE57373), baseCurrency)
+                budgets.forEach { budget ->
+                    AeonBudgetProgress(
+                        label = budget.category,
+                        current = budget.spent,
+                        total = budget.limit,
+                        color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        baseCurrency = baseCurrency
+                    )
+                }
             }
         }
     }

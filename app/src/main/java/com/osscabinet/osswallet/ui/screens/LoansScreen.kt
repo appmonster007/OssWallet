@@ -14,7 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.clip as composeClip
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Loan
@@ -22,6 +22,8 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -64,8 +66,10 @@ fun LoansScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.surface)
         ) {
-            val totalDebt = loans.filter { it.type == LoanType.DEBT }.sumOf { it.principal - it.repayments }
-            val totalCredit = loans.filter { it.type == LoanType.LOAN }.sumOf { it.principal - it.repayments }
+            val totalDebt = loans.filter { it.type == LoanType.DEBT }
+                .fold(BigDecimal.ZERO) { acc, loan -> acc.add(loan.principal.subtract(loan.repayments)) }
+            val totalCredit = loans.filter { it.type == LoanType.LOAN }
+                .fold(BigDecimal.ZERO) { acc, loan -> acc.add(loan.principal.subtract(loan.repayments)) }
 
             LoanSummaryHeader(totalDebt, totalCredit, baseCurrency)
 
@@ -82,7 +86,7 @@ fun LoansScreen(
                     items(loans) { loan ->
                         LoanItem(
                             loan = loan,
-                            onRepayClick = { viewModel.updateRepayment(loan, 100.0) }, // Mock repay $100
+                            onRepayClick = { viewModel.updateRepayment(loan, BigDecimal("100.0")) }, // Mock repay $100
                             onDeleteClick = { viewModel.deleteLoan(loan) }
                         )
                     }
@@ -104,7 +108,7 @@ fun LoansScreen(
 }
 
 @Composable
-fun LoanSummaryHeader(debt: Double, credit: Double, currency: String) {
+fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -129,7 +133,7 @@ fun LoanSummaryHeader(debt: Double, credit: Double, currency: String) {
 }
 
 @Composable
-fun SummaryCard(modifier: Modifier, label: String, amount: Double, currency: String, color: Color) {
+fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency: String, color: Color) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -147,7 +151,9 @@ fun SummaryCard(modifier: Modifier, label: String, amount: Double, currency: Str
 
 @Composable
 fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
-    val progress = (loan.repayments / loan.principal).toFloat().coerceIn(0f, 1f)
+    val progress = if (loan.principal.signum() > 0) {
+        loan.repayments.divide(loan.principal, 4, RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1f)
+    } else 0f
     val color = if (loan.type == LoanType.DEBT) Color(0xFFC62828) else Color(0xFF2E7D32)
 
     Surface(
@@ -172,7 +178,7 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(8.dp).myClip(RoundedCornerShape(4.dp)),
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                 color = color,
                 trackColor = color.copy(alpha = 0.1f)
             )
@@ -183,7 +189,7 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
                     style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
                 )
                 TextButton(onClick = onRepayClick) {
-                    Text("REPAY ${formatCurrencyRight(100.0, loan.currency)}", color = color)
+                    Text("REPAY ${formatCurrencyRight(BigDecimal("100.0"), loan.currency)}", color = color)
                 }
             }
         }
@@ -191,7 +197,7 @@ fun LoanItem(loan: Loan, onRepayClick: () -> Unit, onDeleteClick: () -> Unit) {
 }
 
 @Composable
-fun AddLoanDialog(defaultCurrency: String, onDismiss: () -> Unit, onConfirm: (String, Double, Double, LoanType) -> Unit) {
+fun AddLoanDialog(defaultCurrency: String, onDismiss: () -> Unit, onConfirm: (String, BigDecimal, BigDecimal, LoanType) -> Unit) {
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var rate by remember { mutableStateOf("") }
@@ -200,7 +206,14 @@ fun AddLoanDialog(defaultCurrency: String, onDismiss: () -> Unit, onConfirm: (St
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            Button(onClick = { onConfirm(title, amount.toDoubleOrNull() ?: 0.0, rate.toDoubleOrNull() ?: 0.0, type) }) {
+            Button(onClick = { 
+                onConfirm(
+                    title, 
+                    amount.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
+                    rate.toBigDecimalOrNull() ?: BigDecimal.ZERO, 
+                    type
+                ) 
+            }) {
                 Text("ADD")
             }
         },
@@ -224,5 +237,3 @@ fun AddLoanDialog(defaultCurrency: String, onDismiss: () -> Unit, onConfirm: (St
         }
     )
 }
-
-fun Modifier.myClip(shape: androidx.compose.ui.graphics.Shape): Modifier = this.composeClip(shape)

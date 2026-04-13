@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.usecase.UpdateTransactionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
@@ -48,16 +49,21 @@ class TransactionViewModel(
             ) { allTransactions, accounts, category, accountId, range ->
                 val accountMap = accounts.associateBy { it.id }
 
-                // Calculate running balances per account
-                val transactionsByAccount = allTransactions.sortedBy { it.timestamp }.groupBy { it.accountId }
-                val allWithBalance = transactionsByAccount.flatMap { (accId, accountTransactions) ->
-                    val initialBalance = accountMap[accId]?.initialBalance ?: 0.0
-                    var currentBalance = initialBalance
-                    accountTransactions.map { transaction ->
-                        currentBalance += if (transaction.isIncome) transaction.amount else -transaction.amount
-                        TransactionWithBalance(transaction, currentBalance)
+                // Running balance calculation is now a "backup" or for historical view
+                // since accounts now have pre-calculated balances.
+                // However, for individual transaction items in a list, we still want to show
+                // what the balance was AFTER that transaction.
+                
+                val allWithBalance = allTransactions.sortedBy { it.timestamp }
+                    .groupBy { it.accountId }
+                    .flatMap { (accId, accountTransactions) ->
+                        val initialBalance = accountMap[accId]?.initialBalance ?: BigDecimal.ZERO
+                        var currentBalance = initialBalance
+                        accountTransactions.map { transaction ->
+                            currentBalance += if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+                            TransactionWithBalance(transaction, currentBalance)
+                        }
                     }
-                }
 
                 // Apply filters
                 allWithBalance.filter { item ->
@@ -99,7 +105,7 @@ class TransactionViewModel(
 
     fun addTransaction(
         title: String,
-        amount: Double,
+        amount: BigDecimal,
         category: String,
         isIncome: Boolean,
         accountId: String,
@@ -136,7 +142,7 @@ class TransactionViewModel(
     fun updateTransaction(
         oldTransaction: Transaction,
         title: String,
-        amount: Double,
+        amount: BigDecimal,
         category: String,
         isIncome: Boolean,
         accountId: String,

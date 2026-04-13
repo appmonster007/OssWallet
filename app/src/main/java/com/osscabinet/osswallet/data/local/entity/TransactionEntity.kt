@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 
 @Entity(
     tableName = "transactions",
@@ -23,14 +24,16 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index(value = ["accountId"]),
-        Index(value = ["categoryId"])
+        Index(value = ["categoryId"]),
+        Index(value = ["profileId"]),
+        Index(value = ["timestamp"])
     ]
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val title: String,
-    val amount: Double,
+    val amount: BigDecimal,
     val category: String,
     val timestamp: Long,
     val currency: String,

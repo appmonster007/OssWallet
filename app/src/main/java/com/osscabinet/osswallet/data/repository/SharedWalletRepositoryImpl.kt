@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.math.BigDecimal
 import java.util.*
 
 /**
@@ -67,8 +68,8 @@ class SharedWalletRepositoryImpl(
 
     private fun generateMockSharedTransactions(walletId: String): List<Transaction> {
         return listOf(
-            Transaction(id = 100, title = "Groceries (Synced)", amount = 45.0, category = "Food", timestamp = System.currentTimeMillis() - 100000, currency = "USD", isIncome = false, accountId = "mock_acc"),
-            Transaction(id = 101, title = "Rent Shared", amount = 1200.0, category = "Housing", timestamp = System.currentTimeMillis() - 500000, currency = "USD", isIncome = false, accountId = "mock_acc")
+            Transaction(id = 100, title = "Groceries (Synced)", amount = BigDecimal("45.0"), category = "Food", timestamp = System.currentTimeMillis() - 100000, currency = "USD", isIncome = false, accountId = "mock_acc"),
+            Transaction(id = 101, title = "Rent Shared", amount = BigDecimal("1200.0"), category = "Housing", timestamp = System.currentTimeMillis() - 500000, currency = "USD", isIncome = false, accountId = "mock_acc")
         )
     }
 }

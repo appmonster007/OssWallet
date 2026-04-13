@@ -10,10 +10,12 @@ import com.osscabinet.ossWallet.domain.usecase.DeleteTransactionUseCase
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.domain.usecase.InsertTransactionUseCase
 import com.osscabinet.ossWallet.domain.usecase.UpdateTransactionUseCase
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
@@ -23,7 +25,8 @@ class TransactionViewModel(
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
-    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository
+    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
+    private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow<String?>(null)
@@ -41,30 +44,55 @@ class TransactionViewModel(
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    private val filters = combine(_selectedCategory, _selectedAccountId, _dateRange) { category, accountId, range ->
+        FilterState(category, accountId, range)
+    }
+
+    data class FilterState(
+        val category: String?,
+        val accountId: String?,
+        val range: Pair<Long?, Long?>
+    )
+
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 getTransactionsUseCase(profileId),
                 accountRepository.getAllAccounts(profileId),
-                _selectedCategory,
-                _selectedAccountId,
-                _dateRange
-            ) { allTransactions, accounts, category, accountId, range ->
+                analyticsViewModel.uiState,
+                filters
+            ) { allTransactions, accounts, analyticsState, filterState ->
                 val accountMap = accounts.associateBy { it.id }
+                val rates = analyticsState.exchangeRates
+                val precision = analyticsState.decimalPrecision
+                val category = filterState.category
+                val accountId = filterState.accountId
+                val range = filterState.range
 
-                // Running balance calculation is now a "backup" or for historical view
-                // since accounts now have pre-calculated balances.
-                // However, for individual transaction items in a list, we still want to show
-                // what the balance was AFTER that transaction.
-                
+                // Running balance calculation with multi-currency support
                 val allWithBalance = allTransactions.sortedBy { it.timestamp }
                     .groupBy { it.accountId }
                     .flatMap { (accId, accountTransactions) ->
-                        val initialBalance = accountMap[accId]?.initialBalance ?: BigDecimal.ZERO
+                        val account = accountMap[accId]
+                        val accountCurrency = account?.currencyCode ?: "USD"
+                        val initialBalance = account?.initialBalance ?: BigDecimal.ZERO
+                        
                         var currentBalance = initialBalance
                         accountTransactions.map { transaction ->
-                            currentBalance += if (transaction.isIncome) transaction.amount else transaction.amount.negate()
-                            TransactionWithBalance(transaction, currentBalance)
+                            val txAmountInAccountCurrency = convertAmount(
+                                amount = transaction.amount,
+                                fromCurrency = transaction.currency,
+                                toCurrency = accountCurrency,
+                                exchangeRates = rates,
+                                precision = precision + 4 // High intermediate precision
+                            )
+                            
+                            currentBalance = if (transaction.isIncome) {
+                                currentBalance.add(txAmountInAccountCurrency)
+                            } else {
+                                currentBalance.subtract(txAmountInAccountCurrency)
+                            }
+                            TransactionWithBalance(transaction, currentBalance.setScale(precision, RoundingMode.HALF_UP))
                         }
                     }
 
@@ -191,10 +219,11 @@ class TransactionViewModelFactory(
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
-    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository
+    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
+    private val analyticsViewModel: AnalyticsViewModel
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore, categoryDao, accountRepository) as T
+        return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore, categoryDao, accountRepository, analyticsViewModel) as T
     }
 }

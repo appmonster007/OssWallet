@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -51,9 +52,12 @@ class DashboardViewModel(
                 val updatedAccounts = accounts.map { account ->
                     val breakdown = accountBreakdowns[account.id] ?: emptyMap()
                     
-                    val totalInAccountCurrency = breakdown.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-                        acc.add(convertAmount(amount, curr, account.currencyCode, rates, precision + 2))
-                    }.setScale(precision, RoundingMode.HALF_UP)
+                    val totalInAccountCurrency = calculateTotalInCurrency(
+                        currencyTotals = breakdown,
+                        targetCurrency = account.currencyCode,
+                        exchangeRates = rates,
+                        precision = precision
+                    )
                     account.copy(balance = totalInAccountCurrency)
                 }
 
@@ -84,7 +88,7 @@ class DashboardViewModel(
                                 fromCurrency = transaction.currency,
                                 toCurrency = accountCurrency,
                                 exchangeRates = rates,
-                                precision = precision + 2
+                                precision = precision + 4
                             )
                             
                             runningBalance = if (transaction.isIncome) {

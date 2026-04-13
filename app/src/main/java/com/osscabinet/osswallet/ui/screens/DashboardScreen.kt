@@ -594,36 +594,36 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                color = Color(0xFF2E7D32).copy(alpha = 0.2f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.ArrowUpward,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF4CAF50)
-                    )
-                    Text(
-                        "+12.4%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF4CAF50),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                "vs last month",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
+//        Row(verticalAlignment = Alignment.CenterVertically) {
+//            Surface(
+//                color = Color(0xFF2E7D32).copy(alpha = 0.2f),
+//                shape = RoundedCornerShape(16.dp)
+//            ) {
+//                Row(
+//                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Icon(
+//                        Icons.Default.ArrowUpward,
+//                        contentDescription = null,
+//                        modifier = Modifier.size(14.dp),
+//                        tint = Color(0xFF4CAF50)
+//                    )
+//                    Text(
+//                        "+12.4%",
+//                        style = MaterialTheme.typography.labelSmall,
+//                        color = Color(0xFF4CAF50),
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//            }
+//            Spacer(modifier = Modifier.width(8.dp))
+//            Text(
+//                "vs last month",
+//                style = MaterialTheme.typography.bodySmall,
+//                color = MaterialTheme.colorScheme.outline
+//            )
+//        }
     }
 }
 

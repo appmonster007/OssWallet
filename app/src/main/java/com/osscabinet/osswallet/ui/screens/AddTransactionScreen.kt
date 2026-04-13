@@ -229,18 +229,6 @@ fun AddTransactionScreen(
                                             payee = payee,
                                             note = note
                                         )
-                                        
-                                        val sourceAmountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
-                                            amountValue
-                                        } else {
-                                            val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
-                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: BigDecimal.ONE
-                                            if (txRate.signum() != 0) {
-                                                amountValue.divide(txRate, 8, RoundingMode.HALF_UP)
-                                                    .multiply(accountRate)
-                                            } else amountValue
-                                        }
-                                        accountViewModel.updateBalance(accountId, sourceAmountInAccountCurrency.negate())
 
                                         // 2. Deposit to target
                                         targetAccount?.id?.let { targetId ->
@@ -258,18 +246,6 @@ fun AddTransactionScreen(
                                                 payee = payee,
                                                 note = note
                                             )
-                                            
-                                            val destAmountInAccountCurrency = if (targetCurrency == targetAccount?.currencyCode) {
-                                                targetAmount
-                                            } else {
-                                                val txRate = exchangeRates[targetCurrency] ?: BigDecimal.ONE
-                                                val accountRate = exchangeRates[targetAccount?.currencyCode] ?: BigDecimal.ONE
-                                                if (txRate.signum() != 0) {
-                                                    targetAmount.divide(txRate, 8, RoundingMode.HALF_UP)
-                                                        .multiply(accountRate)
-                                                } else targetAmount
-                                            }
-                                            accountViewModel.updateBalance(targetId, destAmountInAccountCurrency)
                                         }
                                     } else {
                                         viewModel.addTransaction(
@@ -285,22 +261,6 @@ fun AddTransactionScreen(
                                             payee = payee,
                                             note = note,
                                             linkedTransactionId = linkedTransactionId
-                                        )
-                                        
-                                        val amountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
-                                            amountValue
-                                        } else {
-                                            val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
-                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: BigDecimal.ONE
-                                            if (txRate.signum() != 0) {
-                                                amountValue.divide(txRate, 8, RoundingMode.HALF_UP)
-                                                    .multiply(accountRate)
-                                            } else amountValue
-                                        }
-
-                                        accountViewModel.updateBalance(
-                                            accountId,
-                                            if (isIncome) amountInAccountCurrency else amountInAccountCurrency.negate()
                                         )
                                     }
                                     onBackClick()

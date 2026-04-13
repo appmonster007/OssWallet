@@ -57,8 +57,9 @@ fun AccountDetailScreen(
     
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
-    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
+    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
         derivedStateOf {
             val currentAccount = account ?: return@derivedStateOf BigDecimal.ZERO
             val initialBalance = currentAccount.initialBalance
@@ -67,7 +68,7 @@ fun AccountDetailScreen(
                 val amount = if (tx.isIncome) tx.amount else tx.amount.negate()
                 val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                 val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                    amount.divide(rate, 2, RoundingMode.HALF_UP)
+                    amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                 } else {
                     amount
                 }
@@ -77,12 +78,12 @@ fun AccountDetailScreen(
         }
     }
 
-    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
+    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
         derivedStateOf {
             accountTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
                 val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                 val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                    tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                 } else {
                     tx.amount
                 }
@@ -91,12 +92,12 @@ fun AccountDetailScreen(
         }
     }
 
-    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
+    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
         derivedStateOf {
             accountTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
                 val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                 val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                    tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                 } else {
                     tx.amount
                 }
@@ -217,7 +218,8 @@ fun AccountDetailScreen(
                                 balance = totalBalanceInAccountCurrency,
                                 netBalance = netInAccountCurrency,
                                 baseCurrency = baseCurrency,
-                                exchangeRates = exchangeRates
+                                exchangeRates = exchangeRates,
+                                precision = decimalPrecision
                             )
                         }
 
@@ -229,7 +231,8 @@ fun AccountDetailScreen(
                                 baseCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,
                                 currentTheme = currentTheme,
-                                showTitle = false
+                                showTitle = false,
+                                precision = decimalPrecision
                             )
                         }
 
@@ -255,7 +258,8 @@ fun AccountDetailScreen(
                                 baseCurrency = baseCurrency,
                                 accountCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,
-                                showTitle = false
+                                showTitle = false,
+                                precision = decimalPrecision
                             )
                         }
                     }
@@ -290,7 +294,8 @@ fun AccountDetailScreen(
                             accountMap = mapOf(account.id to account.name),
                             categoryMap = categoryMap,
                             onTransactionClick = { onEditTransactionClick(it.id) },
-                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp)
+                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
+                            precision = decimalPrecision
                         )
                     }
                 }

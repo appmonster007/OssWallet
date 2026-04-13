@@ -33,6 +33,7 @@ fun BudgetsScreen(
 ) {
     val budgets by viewModel.budgets.collectAsState()
     val baseCurrency by settingsViewModel.currency.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
     Scaffold(
         topBar = {
@@ -73,20 +74,20 @@ fun BudgetsScreen(
                 }
             } else {
                 items(budgets) { budget ->
-                    BudgetGoalCard(budget, baseCurrency, onClick = { onEditBudgetClick(budget.category) })
+                    BudgetGoalCard(budget, baseCurrency, decimalPrecision, onClick = { onEditBudgetClick(budget.category) })
                 }
             }
 
             item {
                 // We'll use a local version of InsightSection to ensure theme consistency
-                BudgetInsightSection(baseCurrency)
+                BudgetInsightSection(baseCurrency, decimalPrecision)
             }
         }
     }
 }
 
 @Composable
-fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
+fun BudgetGoalCard(budget: Budget, currency: String, precision: Int = 2, onClick: () -> Unit) {
     val progressColor = if (budget.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
     Surface(
@@ -99,7 +100,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(budget.category, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "${formatCurrencyRight(budget.spent, currency)} / ${formatCurrencyRight(budget.limit, currency)}",
+                    "${formatCurrencyRight(budget.spent, currency, precision)} / ${formatCurrencyRight(budget.limit, currency, precision)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -116,7 +117,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
             )
             
             Text(
-                text = if (!budget.isOverBudget) "You have ${formatCurrencyRight(budget.remaining, currency)} remaining" else "Over budget by ${formatCurrencyRight(budget.spent.subtract(budget.limit), currency)}",
+                text = if (!budget.isOverBudget) "You have ${formatCurrencyRight(budget.remaining, currency, precision)} remaining" else "Over budget by ${formatCurrencyRight(budget.spent.subtract(budget.limit), currency, precision)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (!budget.isOverBudget) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
             )
@@ -125,7 +126,7 @@ fun BudgetGoalCard(budget: Budget, currency: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun BudgetInsightSection(currency: String) {
+fun BudgetInsightSection(currency: String, precision: Int = 2) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
@@ -142,7 +143,7 @@ fun BudgetInsightSection(currency: String) {
                 Text("OPTIMIZATION TIP", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrencyRight(BigDecimal("100.0"), currency)} to your Savings goal.",
+                "You usually spend 20% less on Entertainment during the first week. Consider shifting ${formatCurrencyRight(BigDecimal("100.0"), currency, precision)} to your Savings goal.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

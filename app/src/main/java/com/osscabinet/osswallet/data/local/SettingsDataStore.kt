@@ -16,6 +16,7 @@ class SettingsDataStore(private val context: Context) {
         val THEME_KEY = stringPreferencesKey("theme")
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
         val DASHBOARD_GRID_COLUMNS_KEY = intPreferencesKey("dashboard_grid_columns")
+        val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -32,6 +33,10 @@ class SettingsDataStore(private val context: Context) {
 
     val dashboardGridColumns: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[DASHBOARD_GRID_COLUMNS_KEY] ?: 2
+    }
+
+    val decimalPrecision: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[DECIMAL_PRECISION_KEY] ?: 2
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -55,6 +60,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveDashboardGridColumns(columns: Int) {
         context.dataStore.edit { preferences ->
             preferences[DASHBOARD_GRID_COLUMNS_KEY] = columns
+        }
+    }
+
+    suspend fun saveDecimalPrecision(precision: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[DECIMAL_PRECISION_KEY] = precision
         }
     }
 }

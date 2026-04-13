@@ -94,6 +94,7 @@ fun DashboardScreen(
     val budgets by budgetViewModel.budgets.collectAsState()
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
@@ -223,6 +224,7 @@ fun DashboardScreen(
                             state = state,
                             currentTheme = currentTheme,
                             gridColumns = gridColumns,
+                            decimalPrecision = decimalPrecision,
                             onManageAccountsClick = onManageAccountsClick,
                             onAccountClick = onAccountClick,
                             onRecordsClick = onRecordsClick,
@@ -476,6 +478,7 @@ fun DashboardContent(
     state: DashboardUiState.Success,
     currentTheme: String,
     gridColumns: Int,
+    decimalPrecision: Int,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: () -> Unit,
@@ -504,20 +507,20 @@ fun DashboardContent(
                     contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
                 ) {
                     item {
-                        NetWorthSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates)
+                        NetWorthSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, decimalPrecision)
                     }
                     item {
-                        CurrencyAggregationSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates)
+                        CurrencyAggregationSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, decimalPrecision)
                     }
                     item {
                         AeonCashFlowSummary(activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme)
                     }
                     item {
-                        AccountsSection(onManageAccountsClick, onAccountClick, state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, gridColumns)
+                        AccountsSection(onManageAccountsClick, onAccountClick, state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, gridColumns, decimalPrecision)
                     }
                     if (budgets.isNotEmpty()) {
                         item {
-                            BudgetTrackingSection(budgets, state.baseCurrency)
+                            BudgetTrackingSection(budgets, state.baseCurrency, decimalPrecision)
                         }
                     }
                 }
@@ -554,9 +557,9 @@ fun DashboardContent(
                         AeonTransactionItem(
                             category = transaction.category,
                             account = accountMap[transaction.accountId] ?: "Unknown",
-                            amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
-                            balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency),
-                            balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency),
+                            amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency, decimalPrecision),
+                            balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
+                            balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
                             type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                             timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                             note = transaction.note,
@@ -574,12 +577,12 @@ fun DashboardContent(
 }
 
 @Composable
-fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal> = emptyMap()) {
-    val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency) {
+fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal> = emptyMap(), precision: Int = 2) {
+    val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
         accounts.fold(BigDecimal.ZERO) { acc, account ->
             val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
             val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                account.balance.divide(rate, 2, RoundingMode.HALF_UP)
+                account.balance.divide(rate, precision, RoundingMode.HALF_UP)
             } else {
                 account.balance
             }
@@ -590,7 +593,7 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
     Column {
         AeonSectionHeader(title = "TOTAL NET WORTH")
         Text(
-            formatCurrencyRight(totalBalanceInBase, baseCurrency),
+            formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -628,7 +631,7 @@ fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, ba
 }
 
 @Composable
-fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>) {
+fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int = 2) {
     val allSupportedCurrencies = remember(accounts) {
         val list = mutableSetOf<String>()
         accounts.forEach { account ->
@@ -656,7 +659,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                 items(currencyTotals.toList().sortedBy { it.first }) { (currency, amount) ->
                     val rate = exchangeRates[currency] ?: BigDecimal.ONE
                     val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                        amount.divide(rate, 2, RoundingMode.HALF_UP)
+                        amount.divide(rate, precision, RoundingMode.HALF_UP)
                     } else {
                         amount
                     }
@@ -672,14 +675,14 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
                                 if (currency != baseCurrency) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "≈ ${formatCurrencyRight(inBase, baseCurrency)}",
+                                        "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                 }
                             }
                             Text(
-                                formatCurrencyRight(amount, currency),
+                                formatCurrencyRight(amount, currency, precision),
                                 style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
                             )
                         }
@@ -692,7 +695,7 @@ fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Trans
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, currentTheme: String, gridColumns: Int = 2) {
+fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, currentTheme: String, gridColumns: Int = 2, precision: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AeonSectionHeader(
             title = "Accounts",
@@ -712,7 +715,8 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 currentTheme = currentTheme,
                 onClick = onManageClick,
                 modifier = Modifier.fillMaxWidth(),
-                gridColumns = gridColumns
+                gridColumns = gridColumns,
+                precision = precision
             )
         } else {
             FlowRow(
@@ -724,7 +728,7 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                 accounts.forEach { account ->
                     val balanceInBase = account.balance.let { amount ->
                         val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                        if (rate.compareTo(BigDecimal.ZERO) != 0) amount.divide(rate, 2, RoundingMode.HALF_UP) else amount
+                        if (rate.compareTo(BigDecimal.ZERO) != 0) amount.divide(rate, precision, RoundingMode.HALF_UP) else amount
                     }
 
                     val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
@@ -738,7 +742,8 @@ fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit,
                         currentTheme = currentTheme,
                         onClick = { onAccountClick(account.id) },
                         modifier = Modifier.weight(1f),
-                        gridColumns = gridColumns
+                        gridColumns = gridColumns,
+                        precision = precision
                     )
                 }
                 if (accounts.size % gridColumns != 0) {
@@ -760,7 +765,8 @@ fun AccountGridItem(
     currentTheme: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    gridColumns: Int = 2
+    gridColumns: Int = 2,
+    precision: Int = 2
 ) {
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
@@ -841,14 +847,14 @@ fun AccountGridItem(
                 Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
 
                 Text(
-                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode),
+                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode, precision),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
-                    formatCurrencyRight(balanceInBase, baseCurrency),
+                    formatCurrencyRight(balanceInBase, baseCurrency, precision),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -930,7 +936,7 @@ fun AccountGridItem(
 }
 
 @Composable
-fun BudgetTrackingSection(budgets: List<Budget>, baseCurrency: String) {
+fun BudgetTrackingSection(budgets: List<Budget>, baseCurrency: String, precision: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AeonSectionHeader(title = "Budget Tracking")
 
@@ -946,7 +952,8 @@ fun BudgetTrackingSection(budgets: List<Budget>, baseCurrency: String) {
                         current = budget.spent,
                         total = budget.limit,
                         color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        baseCurrency = baseCurrency
+                        baseCurrency = baseCurrency,
+                        precision = precision
                     )
                 }
             }

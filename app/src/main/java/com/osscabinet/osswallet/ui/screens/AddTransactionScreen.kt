@@ -48,6 +48,7 @@ fun AddTransactionScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     tagViewModel: TagViewModel,
+    settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     onBackClick: () -> Unit
 ) {
     var title by remember { mutableStateOf("") }
@@ -67,6 +68,7 @@ fun AddTransactionScreen(
     val accounts by accountViewModel.accounts.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
     
@@ -146,7 +148,7 @@ fun AddTransactionScreen(
                 "+" -> firstOperand!!.add(secondOperand)
                 "−" -> firstOperand!!.subtract(secondOperand)
                 "×" -> firstOperand!!.multiply(secondOperand)
-                "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, 2, RoundingMode.HALF_UP) else BigDecimal.ZERO
+                "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, decimalPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
                 else -> secondOperand
             }
             val result = rawResult.abs()
@@ -404,7 +406,7 @@ fun AddTransactionScreen(
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            text = convertedAmount.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                                            text = convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString(),
                                             style = TextStyle(
                                                 fontSize = 32.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -853,7 +855,7 @@ fun AddTransactionScreen(
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency),
+                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency, precision = decimalPrecision),
                             balanceBefore = "", // Not needed in picker
                             balanceAfter = "",  // Not needed in picker
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
@@ -861,6 +863,7 @@ fun AddTransactionScreen(
                             note = tx.note,
                             tags = tx.tags,
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
+                            precision = decimalPrecision,
                             onClick = {
                                 linkedTransactionId = tx.id
                                 showLinkedTransactionSheet = false

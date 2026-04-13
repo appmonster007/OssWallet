@@ -793,7 +793,8 @@ fun AeonAccountHeroCard(
     netBalance: BigDecimal,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    precision: Int = 2
 ) {
     val accountColor = try {
         Color(android.graphics.Color.parseColor(account.colorHex))
@@ -825,14 +826,14 @@ fun AeonAccountHeroCard(
                         color = LocalContentColor.current.copy(alpha = 0.7f)
                     )
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode),
+                        formatCurrencyRight(balance, account.currencyCode, precision),
                         style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black)
                     )
                     if (account.currencyCode != baseCurrency) {
                         val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
                         val convertedBalance = balance.multiply(rate)
                         Text(
-                            "≈ ${formatCurrencyRight(convertedBalance, baseCurrency)}",
+                            "≈ ${formatCurrencyRight(convertedBalance, baseCurrency, precision)}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = LocalContentColor.current.copy(alpha = 0.7f)
                         )
@@ -858,7 +859,7 @@ fun AeonAccountHeroCard(
                         color = LocalContentColor.current.copy(alpha = 0.7f)
                     )
                     Text(
-                        formatCurrencyRight(netBalance, account.currencyCode),
+                        formatCurrencyRight(netBalance, account.currencyCode, precision),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                     )
                 }
@@ -879,7 +880,8 @@ fun AeonCurrencyBreakdown(
     accountCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
-    showTitle: Boolean = true
+    showTitle: Boolean = true,
+    precision: Int = 2
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -909,14 +911,14 @@ fun AeonCurrencyBreakdown(
                         )
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                formatCurrencyRight(bal, curr),
+                                formatCurrencyRight(bal, curr, precision),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
                             )
                             if (accountCurrency != baseCurrency) {
                                 val rate = exchangeRates[baseCurrency] ?: BigDecimal.ONE
                                 val convertedBal = bal.multiply(rate)
                                 Text(
-                                    "≈ ${formatCurrencyRight(convertedBal, baseCurrency)}",
+                                    "≈ ${formatCurrencyRight(convertedBal, baseCurrency, precision)}",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.outline
                                 )
@@ -956,7 +958,8 @@ fun AeonTransactionList(
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    showDailyHeader: Boolean = true
+    showDailyHeader: Boolean = true,
+    precision: Int = 2
 ) {
     val sortedGroupedTransactions = remember(transactions) {
         transactions.sortedByDescending { it.transaction.timestamp }
@@ -1005,7 +1008,7 @@ fun AeonTransactionList(
                                         color = MaterialTheme.colorScheme.outline
                                     )
                                     Text(
-                                        text = formatCurrencyRight(dayTotal, currency),
+                                        text = formatCurrencyRight(dayTotal, currency, precision),
                                         style = MaterialTheme.typography.labelLarge.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontFeatureSettings = "tnum"
@@ -1057,9 +1060,9 @@ fun AeonTransactionList(
                 AeonTransactionItem(
                     category = tx.category,
                     account = accountMap[tx.accountId] ?: "Unknown",
-                    amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
-                    balanceBefore = formatCurrencyRight(balanceBeforeValue, tx.currency),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency),
+                    amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency, precision),
+                    balanceBefore = formatCurrencyRight(balanceBeforeValue, tx.currency, precision),
+                    balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency, precision),
                     type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = displayTimestamp,
                     note = tx.note,
@@ -1087,6 +1090,7 @@ fun AeonTransactionItem(
     tags: List<String> = emptyList(),
     icon: ImageVector? = null,
     iconBg: Color? = null,
+    precision: Int = 2,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1290,11 +1294,11 @@ fun AeonDashedButton(
 }
 
 @Composable
-fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String) {
+fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String, precision: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${formatCurrencyRight(current, baseCurrency)} / ${formatCurrencyRight(total, baseCurrency)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text("${formatCurrencyRight(current, baseCurrency, precision)} / ${formatCurrencyRight(total, baseCurrency, precision)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         }
         LinearProgressIndicator(
             progress = { if (total.signum() > 0) (current.toDouble() / total.toDouble()).toFloat() else 0f },

@@ -83,6 +83,7 @@ fun AccountsViewScreen(
     val starredTemplates by templateViewModel.starredTemplates.collectAsState()
 
     val settingsCurrency by settingsViewModel.currency.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     LaunchedEffect(settingsCurrency) {
         analyticsViewModel.onCurrencySelected(settingsCurrency)
     }
@@ -149,11 +150,11 @@ fun AccountsViewScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item {
-                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, decimalPrecision)
                 }
                 
                 item {
-                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates)
+                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, decimalPrecision)
                 }
                 
                 item {
@@ -190,7 +191,7 @@ fun AccountsViewScreen(
                     val balanceInBase = accountCurrencyBalances.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
                         val rate = exchangeRates[curr] ?: BigDecimal.ONE
                         val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            amount.divide(rate, 2, RoundingMode.HALF_UP)
+                            amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                         } else {
                             amount
                         }
@@ -201,7 +202,7 @@ fun AccountsViewScreen(
                     val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
                         val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                         val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                            tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                         } else {
                             tx.amount
                         }
@@ -217,7 +218,7 @@ fun AccountsViewScreen(
                     val expenseInAccountCurrency = accountTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
                         val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                         val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                            tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
                         } else {
                             tx.amount
                         }
@@ -244,7 +245,7 @@ fun AccountsViewScreen(
 
                     AccountCard(
                         title = account.name.uppercase(),
-                        balance = formatCurrencyRight(balanceInBase, baseCurrency),
+                        balance = formatCurrencyRight(balanceInBase, baseCurrency, precision = decimalPrecision),
                         currencyBalances = accountCurrencyBalances,
                         incomeInAccountCurrency = incomeInAccountCurrency,
                         expenseInAccountCurrency = expenseInAccountCurrency,
@@ -254,6 +255,7 @@ fun AccountsViewScreen(
                         contentColor = contentColor,
                         subAccounts = listOf(account.structureType),
                         border = isAmoled,
+                        precision = decimalPrecision,
                         onClick = { onAccountClick(account.id) }
                     )
                 }
@@ -281,6 +283,7 @@ fun AccountCard(
     cardNumber: String? = null,
     extraLabel: String? = null,
     border: Boolean = false,
+    precision: Int = 2,
     onClick: () -> Unit = {}
 ) {
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
@@ -386,7 +389,7 @@ fun AccountCard(
                                         color = contentColor.copy(alpha = 0.6f)
                                     )
                                     Text(
-                                        com.osscabinet.ossWallet.ui.util.formatAmount(bal),
+                                        com.osscabinet.ossWallet.ui.util.formatAmount(bal, precision = precision),
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                         color = contentColor
                                     )

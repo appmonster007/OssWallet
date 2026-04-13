@@ -215,8 +215,8 @@ fun AeonCashFlowSummary(
 
                 if (income.signum() == 0 && expense.signum() == 0) null
                 else {
-                    val incomeInBase = convertAmount(income, curr, baseCurrency, exchangeRates, precision + 2).setScale(precision, RoundingMode.HALF_UP)
-                    val expenseInBase = convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 2).setScale(precision, RoundingMode.HALF_UP)
+                    val incomeInBase = convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
+                    val expenseInBase = convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
                     Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
                 }
             }
@@ -224,9 +224,9 @@ fun AeonCashFlowSummary(
     }
 
     val totalIncomeInBase =
-        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.second.second) }
+        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.second.second) }.setScale(precision, RoundingMode.HALF_UP)
     val totalExpenseInBase =
-        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.third.second) }
+        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.third.second) }.setScale(precision, RoundingMode.HALF_UP)
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (showTitle) {

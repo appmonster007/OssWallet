@@ -23,25 +23,6 @@ fun OssWalletNavGraph(
     // Shared ViewModels or persistent ones can be initialized here or at activity level
     // For SOLID, we use Factories that use the container
     
-    val transactionViewModel: TransactionViewModel = viewModel(
-        factory = TransactionViewModelFactory(
-            appContainer.getTransactionsUseCase,
-            appContainer.insertTransactionUseCase,
-            appContainer.deleteTransactionUseCase,
-            appContainer.updateTransactionUseCase,
-            appContainer.settingsDataStore,
-            appContainer.db.categoryDao(),
-            appContainer.accountRepository
-        )
-    )
-    
-    val accountViewModel: AccountViewModel = viewModel(
-        factory = AccountViewModelFactory(
-            appContainer.accountRepository,
-            appContainer.settingsDataStore
-        )
-    )
-
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(
             appContainer.settingsDataStore,
@@ -58,6 +39,26 @@ fun OssWalletNavGraph(
                 appContainer.settingsDataStore
             )
         }
+    )
+    
+    val transactionViewModel: TransactionViewModel = viewModel(
+        factory = TransactionViewModelFactory(
+            appContainer.getTransactionsUseCase,
+            appContainer.insertTransactionUseCase,
+            appContainer.deleteTransactionUseCase,
+            appContainer.updateTransactionUseCase,
+            appContainer.settingsDataStore,
+            appContainer.db.categoryDao(),
+            appContainer.accountRepository,
+            analyticsViewModel
+        )
+    )
+    
+    val accountViewModel: AccountViewModel = viewModel(
+        factory = AccountViewModelFactory(
+            appContainer.accountRepository,
+            appContainer.settingsDataStore
+        )
     )
 
     val budgetViewModel: BudgetViewModel = viewModel(

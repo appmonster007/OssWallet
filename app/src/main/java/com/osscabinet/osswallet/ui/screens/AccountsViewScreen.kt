@@ -178,8 +178,8 @@ fun AccountsViewScreen(
                                 currencyTotals = breakdown,
                                 targetCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,
-                                precision = decimalPrecision + 2
-                            ).setScale(decimalPrecision, RoundingMode.HALF_UP)
+                                precision = decimalPrecision
+                            )
                             account.copy(balance = totalInAccountCurrency)
                         }
                     }
@@ -224,8 +224,8 @@ fun AccountsViewScreen(
                         currencyTotals = accountCurrencyBalances,
                         targetCurrency = account.currencyCode,
                         exchangeRates = exchangeRates,
-                        precision = decimalPrecision + 2
-                    ).setScale(decimalPrecision, RoundingMode.HALF_UP)
+                        precision = decimalPrecision
+                    )
 
                     val balanceInBase = convertAmount(
                         amount = totalInAccountCurrency,

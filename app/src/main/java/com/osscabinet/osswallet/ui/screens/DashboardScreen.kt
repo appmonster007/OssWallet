@@ -225,7 +225,7 @@ fun DashboardScreen(
                             state = state,
                             currentTheme = currentTheme,
                             gridColumns = gridColumns,
-                            decimalPrecision = decimalPrecision,
+                            decimalPrecision = state.decimalPrecision,
                             onManageAccountsClick = onManageAccountsClick,
                             onAccountClick = onAccountClick,
                             onRecordsClick = onRecordsClick,

@@ -35,6 +35,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
@@ -172,16 +174,12 @@ fun AccountsViewScreen(
                                 breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
                             }
                             
-                            val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                            val totalInAccountCurrency = breakdown.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-                                val txRate = exchangeRates[curr] ?: BigDecimal.ONE
-                                val inBase = if (txRate.signum() != 0) {
-                                    amount.divide(txRate, 8, RoundingMode.HALF_UP)
-                                } else {
-                                    amount
-                                }
-                                acc.add(inBase.multiply(accountRate))
-                            }
+                            val totalInAccountCurrency = calculateTotalInCurrency(
+                                currencyTotals = breakdown,
+                                targetCurrency = account.currencyCode,
+                                exchangeRates = exchangeRates,
+                                precision = decimalPrecision + 2
+                            ).setScale(decimalPrecision, RoundingMode.HALF_UP)
                             account.copy(balance = totalInAccountCurrency)
                         }
                     }
@@ -222,53 +220,36 @@ fun AccountsViewScreen(
                         if (curr == account.currencyCode) account.initialBalance.add(txSum) else txSum
                     }
 
-                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-                    
-                    val totalInAccountCurrency = accountCurrencyBalances.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-                        val txRate = exchangeRates[curr] ?: BigDecimal.ONE
-                        val inBase = if (txRate.signum() != 0) {
-                            amount.divide(txRate, 8, RoundingMode.HALF_UP)
-                        } else {
-                            amount
-                        }
-                        acc.add(inBase.multiply(accountRate))
-                    }
+                    val totalInAccountCurrency = calculateTotalInCurrency(
+                        currencyTotals = accountCurrencyBalances,
+                        targetCurrency = account.currencyCode,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision + 2
+                    ).setScale(decimalPrecision, RoundingMode.HALF_UP)
 
-                    val balanceInBase = totalInAccountCurrency.let { amount ->
-                        if (accountRate.signum() != 0) amount.divide(accountRate, decimalPrecision, RoundingMode.HALF_UP) else amount
-                    }
+                    val balanceInBase = convertAmount(
+                        amount = totalInAccountCurrency,
+                        fromCurrency = account.currencyCode,
+                        toCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision
+                    )
 
-                    val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
-                        val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
-                        val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
-                        } else {
-                            tx.amount
-                        }
-                        
-                        val inAccount = if (accountRate.compareTo(BigDecimal.ZERO) != 0 && accountRate.compareTo(BigDecimal.ONE) != 0) {
-                            inBase.multiply(accountRate)
-                        } else {
-                            inBase
-                        }
-                        acc.add(inAccount)
-                    }
+                    val incomeInAccountCurrency = calculateTotalInCurrency(
+                        currencyTotals = accountTransactions.filter { it.isIncome }.groupBy { it.currency }
+                            .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } },
+                        targetCurrency = account.currencyCode,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision
+                    )
 
-                    val expenseInAccountCurrency = accountTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
-                        val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
-                        val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            tx.amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
-                        } else {
-                            tx.amount
-                        }
-                        
-                        val inAccount = if (accountRate.compareTo(BigDecimal.ZERO) != 0 && accountRate.compareTo(BigDecimal.ONE) != 0) {
-                            inBase.multiply(accountRate)
-                        } else {
-                            inBase
-                        }
-                        acc.add(inAccount)
-                    }
+                    val expenseInAccountCurrency = calculateTotalInCurrency(
+                        currencyTotals = accountTransactions.filter { !it.isIncome }.groupBy { it.currency }
+                            .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } },
+                        targetCurrency = account.currencyCode,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision
+                    )
 
                     val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
 

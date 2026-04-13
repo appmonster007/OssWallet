@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import java.math.BigDecimal
@@ -26,8 +27,9 @@ class DashboardViewModel(
             combine(
                 accountRepository.getAllAccounts(profileId),
                 getTransactionsUseCase(profileId),
-                analyticsViewModel.uiState
-            ) { accounts, allTransactions, analyticsState ->
+                analyticsViewModel.uiState,
+                settingsDataStore.decimalPrecision
+            ) { accounts, allTransactions, analyticsState, precision ->
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
                 
@@ -48,19 +50,10 @@ class DashboardViewModel(
                 // Update accounts with correct total balances in their primary currency
                 val updatedAccounts = accounts.map { account ->
                     val breakdown = accountBreakdowns[account.id] ?: emptyMap()
-                    val accountRate = rates[account.currencyCode] ?: BigDecimal.ONE
                     
                     val totalInAccountCurrency = breakdown.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-                        val txRate = rates[curr] ?: BigDecimal.ONE
-                        // amount / txRate = amount in base currency
-                        // (amount / txRate) * accountRate = amount in account currency
-                        val inBase = if (txRate.signum() != 0) {
-                            amount.divide(txRate, 8, RoundingMode.HALF_UP)
-                        } else {
-                            amount
-                        }
-                        acc.add(inBase.multiply(accountRate))
-                    }
+                        acc.add(convertAmount(amount, curr, account.currencyCode, rates, precision + 2))
+                    }.setScale(precision, RoundingMode.HALF_UP)
                     account.copy(balance = totalInAccountCurrency)
                 }
 
@@ -82,23 +75,24 @@ class DashboardViewModel(
                     .groupBy { it.accountId }
                     .flatMap { (accId, accountTransactions) ->
                         val account = accountMapForTransactions[accId]
-                        val accountRate = rates[account?.currencyCode] ?: BigDecimal.ONE
+                        val accountCurrency = account?.currencyCode ?: "USD"
                         
                         var runningBalance = account?.initialBalance ?: BigDecimal.ZERO
                         accountTransactions.map { transaction ->
-                            val txRate = rates[transaction.currency] ?: BigDecimal.ONE
-                            val txAmountInAccountCurrency = if (txRate.signum() != 0) {
-                                transaction.amount.divide(txRate, 8, RoundingMode.HALF_UP).multiply(accountRate)
-                            } else {
-                                transaction.amount
-                            }
+                            val txAmountInAccountCurrency = convertAmount(
+                                amount = transaction.amount,
+                                fromCurrency = transaction.currency,
+                                toCurrency = accountCurrency,
+                                exchangeRates = rates,
+                                precision = precision + 2
+                            )
                             
                             runningBalance = if (transaction.isIncome) {
                                 runningBalance.add(txAmountInAccountCurrency)
                             } else {
                                 runningBalance.subtract(txAmountInAccountCurrency)
                             }
-                            TransactionWithBalance(transaction, runningBalance)
+                            TransactionWithBalance(transaction, runningBalance.setScale(precision, RoundingMode.HALF_UP))
                         }
                     }
                     .filter { it.transaction.accountId in nonArchivedAccountIds }
@@ -110,7 +104,8 @@ class DashboardViewModel(
                     recentTransactions = transactionsWithBalance,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    currencyTotals = globalCurrencyTotals
+                    currencyTotals = globalCurrencyTotals,
+                    decimalPrecision = precision
                 )
             }
         }
@@ -128,7 +123,8 @@ sealed class DashboardUiState {
         val recentTransactions: List<TransactionWithBalance>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val currencyTotals: Map<String, BigDecimal> = emptyMap()
+        val currencyTotals: Map<String, BigDecimal> = emptyMap(),
+        val decimalPrecision: Int = 2
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }

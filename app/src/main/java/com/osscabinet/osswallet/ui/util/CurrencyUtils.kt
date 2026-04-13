@@ -22,7 +22,13 @@ fun formatCurrencyLeft(amount: BigDecimal, currencyCode: String, precision: Int 
 
 fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
     val symbols = DecimalFormatSymbols(Locale.getDefault())
-    val pattern = if (precision == 3) "#,##0.000" else "#,##0.00"
+    val pattern = buildString {
+        append("#,##0")
+        if (precision > 0) {
+            append(".")
+            repeat(precision) { append("0") }
+        }
+    }
     val format = DecimalFormat(pattern, symbols)
     return format.format(amount)
 }
@@ -54,14 +60,17 @@ fun convertAmount(
     exchangeRates: Map<String, BigDecimal>,
     precision: Int = 2
 ): BigDecimal {
-    if (fromCurrency == toCurrency) return amount
+    if (fromCurrency == toCurrency) return amount.setScale(precision, RoundingMode.HALF_UP)
 
     val fromRate = exchangeRates[fromCurrency] ?: BigDecimal.ONE
     val toRate = exchangeRates[toCurrency] ?: BigDecimal.ONE
 
-    // (amount / fromRate) * toRate
+    // We use a high intermediate precision to avoid loss during calculation
+    // but the final result is always rounded to the requested precision.
+    val intermediatePrecision = maxOf(precision + 4, 10)
+
     val inBase = if (fromRate.signum() != 0) {
-        amount.divide(fromRate, 10, RoundingMode.HALF_UP)
+        amount.divide(fromRate, intermediatePrecision, RoundingMode.HALF_UP)
     } else {
         amount
     }
@@ -76,6 +85,7 @@ fun calculateTotalInCurrency(
     precision: Int = 2
 ): BigDecimal {
     return currencyTotals.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-        acc.add(convertAmount(amount, curr, targetCurrency, exchangeRates, 10))
+        // Use high precision for intermediate conversion to avoid accumulation errors
+        acc.add(convertAmount(amount, curr, targetCurrency, exchangeRates, precision + 4))
     }.setScale(precision, RoundingMode.HALF_UP)
 }

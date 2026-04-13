@@ -24,6 +24,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -58,37 +60,52 @@ fun AccountDetailScreen(
 
     val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf 0.0
+            val currentAccount = account ?: return@derivedStateOf BigDecimal.ZERO
             val initialBalance = currentAccount.initialBalance
             
-            val convertedTxSum = accountTransactions.sumOf { tx ->
-                val amount = if (tx.isIncome) tx.amount else -tx.amount
-                val rate = exchangeRates[tx.currency] ?: 1.0
-                if (rate != 0.0) amount / rate else amount
+            val convertedTxSum = accountTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+                val amount = if (tx.isIncome) tx.amount else tx.amount.negate()
+                val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
+                val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                    amount.divide(rate, 2, RoundingMode.HALF_UP)
+                } else {
+                    amount
+                }
+                acc.add(converted)
             }
-            initialBalance + convertedTxSum
+            initialBalance.add(convertedTxSum)
         }
     }
 
     val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
-            accountTransactions.filter { it.isIncome }.sumOf { tx ->
-                val rate = exchangeRates[tx.currency] ?: 1.0
-                if (rate != 0.0) tx.amount / rate else tx.amount
+            accountTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
+                val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
+                val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                } else {
+                    tx.amount
+                }
+                acc.add(converted)
             }
         }
     }
 
     val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates) {
         derivedStateOf {
-            accountTransactions.filter { !it.isIncome }.sumOf { tx ->
-                val rate = exchangeRates[tx.currency] ?: 1.0
-                if (rate != 0.0) tx.amount / rate else tx.amount
+            accountTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
+                val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
+                val converted = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                } else {
+                    tx.amount
+                }
+                acc.add(converted)
             }
         }
     }
 
-    val netInAccountCurrency = incomeInAccountCurrency - expenseInAccountCurrency
+    val netInAccountCurrency = incomeInAccountCurrency.subtract(expenseInAccountCurrency)
 
     val supportedCurrencies = remember(account, accountTransactions) {
         val list = mutableSetOf<String>()
@@ -222,12 +239,14 @@ fun AccountDetailScreen(
                             // Group by currency to show separate balances
                             val finalBalances = remember(account, accountTransactions, supportedCurrencies) {
                                 val currentAccount = account
-                                val initialBalance = currentAccount.initialBalance
+                                val initialBalance = currentAccount?.initialBalance ?: BigDecimal.ZERO
 
                                 val txsByCurrency = accountTransactions.groupBy { it.currency }
                                 supportedCurrencies.associateWith { curr ->
-                                    val txSum = txsByCurrency[curr]?.sumOf { if (it.isIncome) it.amount else -it.amount } ?: 0.0
-                                    if (curr == currentAccount.currencyCode) initialBalance + txSum else txSum
+                                    val txSum = txsByCurrency[curr]?.fold(BigDecimal.ZERO) { acc, tx ->
+                                        if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
+                                    } ?: BigDecimal.ZERO
+                                    if (curr == currentAccount?.currencyCode) initialBalance.add(txSum) else txSum
                                 }
                             }
 

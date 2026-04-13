@@ -24,7 +24,7 @@ class AppContainer(private val context: Context) {
 
     // Repositories
     val transactionRepository: TransactionRepositoryImpl by lazy {
-        TransactionRepositoryImpl(db.transactionDao())
+        TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
     }
 
     val accountRepository: AccountRepositoryImpl by lazy {
@@ -63,7 +63,7 @@ class AppContainer(private val context: Context) {
     val getTransactionsUseCase get() = GetTransactionsUseCase(transactionRepository)
     val insertTransactionUseCase get() = InsertTransactionUseCase(transactionRepository)
     val deleteTransactionUseCase get() = DeleteTransactionUseCase(transactionRepository)
-    val updateTransactionUseCase get() = UpdateTransactionUseCase(transactionRepository, accountRepository)
+    val updateTransactionUseCase get() = UpdateTransactionUseCase(transactionRepository)
     
     val syncBudgetSpentUseCase get() = SyncBudgetSpentUseCase(budgetRepository, transactionRepository)
     val upsertBudgetUseCase get() = UpsertBudgetUseCase(budgetRepository)

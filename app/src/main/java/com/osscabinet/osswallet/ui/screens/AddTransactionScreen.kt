@@ -33,6 +33,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,10 +72,10 @@ fun AddTransactionScreen(
     
     var targetAccount by remember { mutableStateOf<Account?>(null) }
     var targetCurrency by remember { mutableStateOf("") }
-    var exchangeRate by remember { mutableStateOf(1.0) }
+    var exchangeRate by remember { mutableStateOf(BigDecimal.ONE) }
 
     // Calculator State
-    var firstOperand by remember { mutableStateOf<Double?>(null) }
+    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
     var operator by remember { mutableStateOf<String?>(null) }
     var isEnteringSecondOperand by remember { mutableStateOf(false) }
 
@@ -99,7 +101,7 @@ fun AddTransactionScreen(
                 title = template.name
                 category = template.category
                 transactionType = template.transactionType
-                if (template.amount > 0) amount = template.amount.toString()
+                if (template.amount.compareTo(BigDecimal.ZERO) > 0) amount = template.amount.toPlainString()
                 selectedTemplateName = template.name
                 template.note?.let { note = it }
                 if (template.tags.isNotEmpty()) {
@@ -139,16 +141,16 @@ fun AddTransactionScreen(
 
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
-            val secondOperand = amount.toDoubleOrNull() ?: 0.0
+            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
             val rawResult = when (operator) {
-                "+" -> firstOperand!! + secondOperand
-                "−" -> firstOperand!! - secondOperand
-                "×" -> firstOperand!! * secondOperand
-                "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
+                "+" -> firstOperand!!.add(secondOperand)
+                "−" -> firstOperand!!.subtract(secondOperand)
+                "×" -> firstOperand!!.multiply(secondOperand)
+                "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, 2, RoundingMode.HALF_UP) else BigDecimal.ZERO
                 else -> secondOperand
             }
-            val result = kotlin.math.abs(rawResult)
-            amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
+            val result = rawResult.abs()
+            amount = result.stripTrailingZeros().toPlainString()
             firstOperand = null
             operator = null
             isEnteringSecondOperand = false
@@ -175,10 +177,10 @@ fun AddTransactionScreen(
         if (isTransfer) {
             val baseRates = exchangeRates
             if (baseRates.isNotEmpty()) {
-                val sourceRateInUSD = baseRates[selectedCurrency] ?: 1.0
-                val destRateInUSD = baseRates[targetCurrency] ?: 1.0
-                if (sourceRateInUSD != 0.0) {
-                    exchangeRate = destRateInUSD / sourceRateInUSD
+                val sourceRateInUSD = baseRates[selectedCurrency] ?: BigDecimal.ONE
+                val destRateInUSD = baseRates[targetCurrency] ?: BigDecimal.ONE
+                if (sourceRateInUSD.signum() != 0) {
+                    exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
                 }
             }
         }
@@ -210,13 +212,13 @@ fun AddTransactionScreen(
                             shape = RoundedCornerShape(24.dp),
                             color = MaterialTheme.colorScheme.primary,
                             onClick = {
-                                val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 selectedAccount?.id?.let { accountId ->
                                     if (isTransfer) {
                                         // 1. Withdrawal from source
                                         viewModel.addTransaction(
                                             title = title.ifBlank { "Transfer to ${targetAccount?.name}" },
-                                            amount = amountDouble,
+                                            amount = amountValue,
                                             category = "Transfer",
                                             isIncome = false,
                                             accountId = accountId,
@@ -229,17 +231,20 @@ fun AddTransactionScreen(
                                         )
                                         
                                         val sourceAmountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
-                                            amountDouble
+                                            amountValue
                                         } else {
-                                            val txRate = exchangeRates[selectedCurrency] ?: 1.0
-                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: 1.0
-                                            if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                                            val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
+                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: BigDecimal.ONE
+                                            if (txRate.signum() != 0) {
+                                                amountValue.divide(txRate, 8, RoundingMode.HALF_UP)
+                                                    .multiply(accountRate)
+                                            } else amountValue
                                         }
-                                        accountViewModel.updateBalance(accountId, -sourceAmountInAccountCurrency)
+                                        accountViewModel.updateBalance(accountId, sourceAmountInAccountCurrency.negate())
 
                                         // 2. Deposit to target
                                         targetAccount?.id?.let { targetId ->
-                                            val targetAmount = amountDouble * exchangeRate
+                                            val targetAmount = amountValue.multiply(exchangeRate)
                                             viewModel.addTransaction(
                                                 title = title.ifBlank { "Transfer from ${selectedAccount?.name}" },
                                                 amount = targetAmount,
@@ -257,16 +262,19 @@ fun AddTransactionScreen(
                                             val destAmountInAccountCurrency = if (targetCurrency == targetAccount?.currencyCode) {
                                                 targetAmount
                                             } else {
-                                                val txRate = exchangeRates[targetCurrency] ?: 1.0
-                                                val accountRate = exchangeRates[targetAccount?.currencyCode] ?: 1.0
-                                                if (txRate != 0.0) (targetAmount / txRate) * accountRate else targetAmount
+                                                val txRate = exchangeRates[targetCurrency] ?: BigDecimal.ONE
+                                                val accountRate = exchangeRates[targetAccount?.currencyCode] ?: BigDecimal.ONE
+                                                if (txRate.signum() != 0) {
+                                                    targetAmount.divide(txRate, 8, RoundingMode.HALF_UP)
+                                                        .multiply(accountRate)
+                                                } else targetAmount
                                             }
                                             accountViewModel.updateBalance(targetId, destAmountInAccountCurrency)
                                         }
                                     } else {
                                         viewModel.addTransaction(
                                             title = title.ifBlank { category },
-                                            amount = amountDouble,
+                                            amount = amountValue,
                                             category = category,
                                             isIncome = isIncome,
                                             accountId = accountId,
@@ -280,16 +288,19 @@ fun AddTransactionScreen(
                                         )
                                         
                                         val amountInAccountCurrency = if (selectedCurrency == selectedAccount?.currencyCode) {
-                                            amountDouble
+                                            amountValue
                                         } else {
-                                            val txRate = exchangeRates[selectedCurrency] ?: 1.0
-                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: 1.0
-                                            if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                                            val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
+                                            val accountRate = exchangeRates[selectedAccount?.currencyCode] ?: BigDecimal.ONE
+                                            if (txRate.signum() != 0) {
+                                                amountValue.divide(txRate, 8, RoundingMode.HALF_UP)
+                                                    .multiply(accountRate)
+                                            } else amountValue
                                         }
 
                                         accountViewModel.updateBalance(
                                             accountId,
-                                            if (isIncome) amountInAccountCurrency else -amountInAccountCurrency
+                                            if (isIncome) amountInAccountCurrency else amountInAccountCurrency.negate()
                                         )
                                     }
                                     onBackClick()
@@ -411,8 +422,8 @@ fun AddTransactionScreen(
                                 }
 
                                 if (isTransfer) {
-                                    val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                                    val convertedAmount = amountDouble * exchangeRate
+                                    val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                                    val convertedAmount = amountValue.multiply(exchangeRate)
 
                                     Icon(
                                         Icons.Rounded.KeyboardArrowDown,
@@ -426,14 +437,14 @@ fun AddTransactionScreen(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
+                                            " (1:${exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()})",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.padding(start = 8.dp)
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                            text = convertedAmount.setScale(2, RoundingMode.HALF_UP).toPlainString(),
                                             style = TextStyle(
                                                 fontSize = 32.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -524,7 +535,7 @@ fun AddTransactionScreen(
                     onOperatorClick = { op ->
                         if (amount.isNotEmpty()) {
                             if (operator != null) calculateResult()
-                            firstOperand = amount.toDoubleOrNull()
+                            firstOperand = amount.toBigDecimalOrNull()
                             operator = op
                             isEnteringSecondOperand = true
                         }
@@ -850,7 +861,7 @@ fun AddTransactionScreen(
                                 title = template.name
                                 category = template.category
                                 transactionType = template.transactionType
-                                if (template.amount > 0) amount = template.amount.toString()
+                                if (template.amount.compareTo(BigDecimal.ZERO) > 0) amount = template.amount.toPlainString()
                                 template.note?.let { note = it }
                                 template.accountId?.let { id ->
                                     val acc = accounts.find { it.id == id }
@@ -882,7 +893,7 @@ fun AddTransactionScreen(
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
+                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency),
                             balanceBefore = "", // Not needed in picker
                             balanceAfter = "",  // Not needed in picker
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,

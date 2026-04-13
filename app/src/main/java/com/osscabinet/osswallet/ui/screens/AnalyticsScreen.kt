@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 
@@ -79,15 +80,15 @@ fun AnalyticsScreen(
 }
 
 @Composable
-fun SimpleBarChart(data: Map<Long, Double>, barColor: Color) {
-    val maxValue = data.values.maxOfOrNull { Math.abs(it) }?.coerceAtLeast(1.0) ?: 1.0
+fun SimpleBarChart(data: Map<Long, BigDecimal>, barColor: Color) {
+    val maxValue = data.values.maxOfOrNull { it.abs() }?.toDouble()?.coerceAtLeast(1.0) ?: 1.0
     Row(
         modifier = Modifier.height(180.dp).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Bottom
     ) {
         data.values.forEach { value ->
-            val heightPercent = (Math.abs(value) / maxValue).toFloat().coerceIn(0.1f, 1f)
+            val heightPercent = (Math.abs(value.toDouble()) / maxValue).toFloat().coerceIn(0.1f, 1f)
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -100,12 +101,12 @@ fun SimpleBarChart(data: Map<Long, Double>, barColor: Color) {
 }
 
 @Composable
-fun SimpleLineChart(data: Map<Long, Double>, lineColor: Color) {
+fun SimpleLineChart(data: Map<Long, BigDecimal>, lineColor: Color) {
     val values = data.values.toList()
     if (values.isEmpty()) return
     
-    val maxValue = values.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
-    val minValue = values.minOrNull()?.coerceAtMost(0.0) ?: 0.0
+    val maxValue = values.maxOrNull()?.toDouble()?.coerceAtLeast(1.0) ?: 1.0
+    val minValue = values.minOrNull()?.toDouble()?.coerceAtMost(0.0) ?: 0.0
     val range = (maxValue - minValue).coerceAtLeast(1.0)
 
     Row(
@@ -114,7 +115,7 @@ fun SimpleLineChart(data: Map<Long, Double>, lineColor: Color) {
         verticalAlignment = Alignment.Bottom
     ) {
         values.forEach { value ->
-            val heightPercent = ((value - minValue) / range).toFloat().coerceIn(0.05f, 1f)
+            val heightPercent = ((value.toDouble() - minValue) / range).toFloat().coerceIn(0.05f, 1f)
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -133,7 +134,7 @@ fun SimpleLineChart(data: Map<Long, Double>, lineColor: Color) {
 }
 
 @Composable
-fun AnalyticsHeroSection(balance: Double, currency: String) {
+fun AnalyticsHeroSection(balance: BigDecimal, currency: String) {
     Column {
         Text("PROJECTED BALANCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
         Text(
@@ -186,7 +187,7 @@ fun InsightSection(currency: String) {
                 Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
             }
             Text(
-                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrencyRight(400.0, currency)} for your upcoming trip.",
+                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrencyRight(BigDecimal("400.0"), currency)} for your upcoming trip.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

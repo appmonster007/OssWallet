@@ -5,14 +5,16 @@ import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanType
 
+import java.math.BigDecimal
+
 @Entity(tableName = "loans")
 data class LoanEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
-    val principal: Double,
-    val interestRate: Double,
+    val principal: BigDecimal,
+    val interestRate: BigDecimal,
     val dueDate: Long,
-    val repayments: Double,
+    val repayments: BigDecimal,
     val type: String,
     val currency: String
 ) {

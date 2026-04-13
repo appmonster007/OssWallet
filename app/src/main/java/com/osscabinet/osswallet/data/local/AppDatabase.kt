@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
@@ -20,9 +21,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ProfileEntity::class,
         TemplateEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun currencyDao(): CurrencyDao
@@ -60,7 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
                             }
                         }
                     })
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(false)
                     .build()
                 INSTANCE = instance
                 instance

@@ -1,26 +1,27 @@
 package com.osscabinet.ossWallet.ui.util
 
+import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.*
 
-fun formatCurrencyRight(amount: Double, currencyCode: String): String {
+fun formatCurrencyRight(amount: BigDecimal, currencyCode: String): String {
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = Math.abs(amount)
+    val absAmount = amount.abs()
     val absFormatted = formatAmount(absAmount)
-    return if (amount < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
+    return if (amount.compareTo(BigDecimal.ZERO) < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
 }
 
-fun formatCurrencyLeft(amount: Double, currencyCode: String): String {
+fun formatCurrencyLeft(amount: BigDecimal, currencyCode: String): String {
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = Math.abs(amount)
+    val absAmount = amount.abs()
     val absFormatted = formatAmount(absAmount)
-    return if (amount < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
+    return if (amount.compareTo(BigDecimal.ZERO) < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
 }
 
-fun formatAmount(amount: Double): String {
+fun formatAmount(amount: BigDecimal): String {
     val symbols = DecimalFormatSymbols(Locale.getDefault())
-    val format = DecimalFormat("#,##0.000", symbols)
+    val format = DecimalFormat("#,##0.00", symbols)
     return format.format(amount)
 }
 

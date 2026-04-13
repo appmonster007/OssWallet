@@ -24,10 +24,11 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.toContainerColor
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
-fun AeonFlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurrency: String) {
+fun AeonFlowBreakdownItem(curr: String, amount: BigDecimal, inBase: BigDecimal, baseCurrency: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -56,7 +57,7 @@ fun AeonFlowBreakdownItem(curr: String, amount: Double, inBase: Double, baseCurr
 
 @Composable
 fun AeonFlowBadge(
-    amount: Double,
+    amount: BigDecimal,
     type: CashFlowType,
     modifier: Modifier = Modifier,
     incomeColor: Color = Color(0xFF2E7D32),
@@ -102,7 +103,7 @@ fun AeonFlowBadge(
 @Composable
 fun AeonFlowCard(
     label: String,
-    totalInBase: Double,
+    totalInBase: BigDecimal,
     baseCurrency: String,
     type: CashFlowType,
     modifier: Modifier = Modifier,
@@ -166,7 +167,7 @@ fun AeonFlowCard(
 fun AeonCashFlowSummary(
     transactions: List<Transaction>,
     baseCurrency: String,
-    exchangeRates: Map<String, Double>,
+    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true
@@ -179,22 +180,22 @@ fun AeonCashFlowSummary(
         derivedStateOf {
             allSupportedCurrencies.sorted().mapNotNull { curr ->
                 val txsForCurr = transactions.filter { it.currency == curr }
-                val income = txsForCurr.filter { it.isIncome }.sumOf { it.amount }
-                val expense = txsForCurr.filter { !it.isIncome }.sumOf { it.amount }
+                val income = txsForCurr.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
+                val expense = txsForCurr.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
 
-                if (income == 0.0 && expense == 0.0) null
+                if (income.signum() == 0 && expense.signum() == 0) null
                 else {
-                    val rate = if (curr == baseCurrency) 1.0 else (exchangeRates[curr] ?: 1.0)
-                    val incomeInBase = if (rate != 0.0) income / rate else income
-                    val expenseInBase = if (rate != 0.0) expense / rate else expense
+                    val rate = if (curr == baseCurrency) BigDecimal.ONE else (exchangeRates[curr] ?: BigDecimal.ONE)
+                    val incomeInBase = if (rate.compareTo(BigDecimal.ZERO) != 0) income.divide(rate, 2, RoundingMode.HALF_UP) else income
+                    val expenseInBase = if (rate.compareTo(BigDecimal.ZERO) != 0) expense.divide(rate, 2, RoundingMode.HALF_UP) else expense
                     Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
                 }
             }
         }
     }
 
-    val totalIncomeInBase = flowData.sumOf { it.second.second }
-    val totalExpenseInBase = flowData.sumOf { it.third.second }
+    val totalIncomeInBase = flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.second.second) }
+    val totalExpenseInBase = flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.third.second) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (showTitle) {

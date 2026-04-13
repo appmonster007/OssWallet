@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.dao.TemplateDao
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import java.math.BigDecimal
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -35,10 +36,10 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
             val list = templateDao.getAllTemplates().first()
             if (list.isEmpty()) {
                 val initialTemplates = listOf(
-                    TemplateEntity(name = "Grocery Run", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 0),
-                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = 0.0, transactionType = 1, isStarred = true, accountId = "default-cash-id", displayOrder = 1),
-                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 2),
-                    TemplateEntity(name = "Coffee", category = "Food", amount = 0.0, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 3)
+                    TemplateEntity(name = "Grocery Run", category = "Food", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 0),
+                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = BigDecimal.ZERO, transactionType = 1, isStarred = true, accountId = "default-cash-id", displayOrder = 1),
+                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 2),
+                    TemplateEntity(name = "Coffee", category = "Food", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 3)
                 )
                 initialTemplates.forEach { templateDao.insertTemplate(it) }
             }
@@ -54,7 +55,7 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
     fun addTemplate(
         name: String,
         category: String,
-        amount: Double,
+        amount: BigDecimal,
         type: Int,
         note: String? = null,
         accountId: String? = null,

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.local.dao
 import androidx.room.*
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 
 @Dao
 interface AccountDao {
@@ -22,7 +23,7 @@ interface AccountDao {
     suspend fun deleteAccount(account: AccountEntity)
 
     @Query("UPDATE accounts SET balance = balance + :amount WHERE id = :accountId")
-    suspend fun updateBalance(accountId: String, amount: Double)
+    suspend fun updateBalance(accountId: String, amount: BigDecimal)
 
     @Query("SELECT * FROM accounts")
     suspend fun getAllAccountsSync(): List<AccountEntity>

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
 
@@ -26,8 +27,8 @@ class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
 
     fun addLoan(
         title: String,
-        principal: Double,
-        interestRate: Double,
+        principal: BigDecimal,
+        interestRate: BigDecimal,
         dueDate: Long,
         type: LoanType
     ) {
@@ -43,9 +44,9 @@ class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
         }
     }
 
-    fun updateRepayment(loan: Loan, amount: Double) {
+    fun updateRepayment(loan: Loan, amount: BigDecimal) {
         viewModelScope.launch {
-            val updated = loan.copy(repayments = loan.repayments + amount)
+            val updated = loan.copy(repayments = loan.repayments.add(amount))
             repository.updateLoan(updated)
         }
     }

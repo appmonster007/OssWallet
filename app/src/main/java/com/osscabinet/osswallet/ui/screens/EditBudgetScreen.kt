@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.Numpad
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -211,7 +212,7 @@ fun EditBudgetScreen(
 
             Button(
                 onClick = { 
-                    viewModel.upsertBudget(category, amount.toDoubleOrNull() ?: 0.0)
+                    viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
                     onBackClick()
                 },
                 modifier = Modifier

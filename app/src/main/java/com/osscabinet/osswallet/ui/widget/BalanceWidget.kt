@@ -22,16 +22,20 @@ import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.coroutines.flow.first
 
+import java.math.BigDecimal
+
 class BalanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // SQLCipher requires passphrase. Since widgets run in a different process,
         // they must have access to the same key. In a production app, this would be 
         // retrieved from a secure KeyStore.
         val db = AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
-        val repository = TransactionRepositoryImpl(db.transactionDao())
+        val repository = TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
         val profileId = com.osscabinet.ossWallet.data.local.SettingsDataStore(context).currentProfileId.first()
         val transactions = repository.getAllTransactions(profileId).first()
-        val totalBalance = transactions.sumOf { if (it.isIncome) it.amount else -it.amount }
+        val totalBalance = transactions.fold(BigDecimal.ZERO) { acc, tx ->
+            if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
+        }
 
         provideContent {
             BalanceWidgetContent(totalBalance)
@@ -39,7 +43,7 @@ class BalanceWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun BalanceWidgetContent(balance: Double) {
+    private fun BalanceWidgetContent(balance: BigDecimal) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()

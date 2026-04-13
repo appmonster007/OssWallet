@@ -9,6 +9,8 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.*
 
 class AnalyticsViewModel(
@@ -20,7 +22,7 @@ class AnalyticsViewModel(
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
 
-    val exchangeRates: StateFlow<Map<String, Double>> = _uiState
+    val exchangeRates: StateFlow<Map<String, BigDecimal>> = _uiState
         .map { it.exchangeRates }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -51,7 +53,7 @@ class AnalyticsViewModel(
         ratesJob?.cancel()
         ratesJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val rates = getExchangeRatesUseCase(currencyCode)
+            val rates = getExchangeRatesUseCase(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
             _uiState.update { it.copy(
                 selectedCurrency = currencyCode,
                 exchangeRates = rates,
@@ -70,15 +72,19 @@ class AnalyticsViewModel(
             val amountInBase = if (tx.currency == selectedCurrency) {
                 tx.amount 
             } else {
-                val rate = currentRates[tx.currency] ?: 1.0
-                if (rate != 0.0) tx.amount / rate else tx.amount
+                val rate = currentRates[tx.currency] ?: BigDecimal.ONE
+                if (rate.signum() != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                    tx.amount.divide(rate, 2, RoundingMode.HALF_UP)
+                } else {
+                    tx.amount
+                }
             }
             tx.copy(amount = amountInBase)
         }
 
-        val totalIncome = convertedTransactions.filter { it.isIncome }.sumOf { it.amount }
-        val totalExpense = convertedTransactions.filter { !it.isIncome }.sumOf { it.amount }
-        val currentBalance = totalIncome - totalExpense
+        val totalIncome = convertedTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val totalExpense = convertedTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val currentBalance = totalIncome.subtract(totalExpense)
         
         // Month-over-month analysis
         val calendar = Calendar.getInstance()
@@ -99,13 +105,17 @@ class AnalyticsViewModel(
             cal.get(Calendar.MONTH) == lastMonth && cal.get(Calendar.YEAR) == lastYear
         }
 
-        val thisMonthIncome = thisMonthTransactions.filter { it.isIncome }.sumOf { it.amount }
-        val thisMonthExpense = thisMonthTransactions.filter { !it.isIncome }.sumOf { it.amount }
-        val thisMonthSavingsRate = if (thisMonthIncome > 0) (thisMonthIncome - thisMonthExpense) / thisMonthIncome else 0.0
+        val thisMonthIncome = thisMonthTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val thisMonthExpense = thisMonthTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val thisMonthSavingsRate = if (thisMonthIncome.signum() > 0) {
+            thisMonthIncome.subtract(thisMonthExpense).divide(thisMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
+        } else 0.0
 
-        val lastMonthIncome = lastMonthTransactions.filter { it.isIncome }.sumOf { it.amount }
-        val lastMonthExpense = lastMonthTransactions.filter { !it.isIncome }.sumOf { it.amount }
-        val lastMonthSavingsRate = if (lastMonthIncome > 0) (lastMonthIncome - lastMonthExpense) / lastMonthIncome else 0.0
+        val lastMonthIncome = lastMonthTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val lastMonthExpense = lastMonthTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val lastMonthSavingsRate = if (lastMonthIncome.signum() > 0) {
+            lastMonthIncome.subtract(lastMonthExpense).divide(lastMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
+        } else 0.0
         
         // Burn Rate = Monthly Expense Average
         val firstTx = convertedTransactions.minByOrNull { it.timestamp }
@@ -113,8 +123,8 @@ class AnalyticsViewModel(
             val diff = System.currentTimeMillis() - firstTx.timestamp
             (diff / (24 * 60 * 60 * 1000L)).coerceAtLeast(1)
         } else 1
-        val dailyExpenseAvg = totalExpense / daysActive
-        val monthlyBurnRate = dailyExpenseAvg * 30
+        val dailyExpenseAvg = totalExpense.divide(BigDecimal.valueOf(daysActive), 2, RoundingMode.HALF_UP)
+        val monthlyBurnRate = dailyExpenseAvg.multiply(BigDecimal.valueOf(30))
 
         // Group by day for cash flow (last 7 days)
         val dailyNetFlow = convertedTransactions
@@ -127,17 +137,20 @@ class AnalyticsViewModel(
                 cal.set(Calendar.MILLISECOND, 0)
                 cal.timeInMillis
             }.mapValues { entry ->
-                entry.value.sumOf { if (it.isIncome) it.amount else -it.amount }
+                entry.value.fold(BigDecimal.ZERO) { acc, tx ->
+                    if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
+                }
             }
 
         val avgDailyNetFlow = if (dailyNetFlow.isNotEmpty()) {
-            dailyNetFlow.values.average()
-        } else 0.0
+            dailyNetFlow.values.fold(BigDecimal.ZERO) { acc, bd -> acc.add(bd) }
+                .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), 2, RoundingMode.HALF_UP)
+        } else BigDecimal.ZERO
 
         // Forecast for next 30 days
         val forecast = (1..30).map { day ->
             val timestamp = System.currentTimeMillis() + day * 24 * 60 * 60 * 1000L
-            val projectedBalance = currentBalance + (avgDailyNetFlow * day)
+            val projectedBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(day.toLong())))
             timestamp to projectedBalance
         }
 
@@ -158,15 +171,15 @@ class AnalyticsViewModel(
 }
 
 data class AnalyticsUiState(
-    val currentBalance: Double = 0.0,
+    val currentBalance: BigDecimal = BigDecimal.ZERO,
     val savingsRate: Double = 0.0,
     val lastMonthSavingsRate: Double = 0.0,
-    val burnRate: Double = 0.0,
-    val thisMonthSpending: Double = 0.0,
-    val lastMonthSpending: Double = 0.0,
-    val dailyNetFlow: Map<Long, Double> = emptyMap(),
-    val forecast: Map<Long, Double> = emptyMap(),
+    val burnRate: BigDecimal = BigDecimal.ZERO,
+    val thisMonthSpending: BigDecimal = BigDecimal.ZERO,
+    val lastMonthSpending: BigDecimal = BigDecimal.ZERO,
+    val dailyNetFlow: Map<Long, BigDecimal> = emptyMap(),
+    val forecast: Map<Long, BigDecimal> = emptyMap(),
     val selectedCurrency: String = "USD",
-    val exchangeRates: Map<String, Double> = emptyMap(),
+    val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val isLoading: Boolean = false
 )

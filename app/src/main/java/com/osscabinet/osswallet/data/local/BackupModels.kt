@@ -2,6 +2,19 @@ package com.osscabinet.ossWallet.data.local
 
 import com.osscabinet.ossWallet.data.local.entity.*
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+object BigDecimalSerializer : KSerializer<BigDecimal> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: BigDecimal) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): BigDecimal = BigDecimal(decoder.decodeString())
+}
 
 @Serializable
 data class OssWalletBackup(
@@ -20,7 +33,8 @@ data class ProfileBackup(val id: Int, val name: String, val type: String)
 data class AccountBackup(
     val id: String,
     val name: String,
-    val balance: Double,
+    @Serializable(with = BigDecimalSerializer::class)
+    val balance: BigDecimal,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,
@@ -33,7 +47,8 @@ data class AccountBackup(
 data class TransactionBackup(
     val id: Long,
     val title: String,
-    val amount: Double,
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
     val category: String,
     val timestamp: Long,
     val currency: String,
@@ -50,7 +65,8 @@ data class TemplateBackup(
     val id: Long,
     val name: String,
     val category: String,
-    val amount: Double,
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
     val transactionType: Int,
     val accountId: String?,
     val note: String?,

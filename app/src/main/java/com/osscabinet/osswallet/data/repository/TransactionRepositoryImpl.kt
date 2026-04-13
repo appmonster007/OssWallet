@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.repository
 
+import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -8,7 +9,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TransactionRepositoryImpl(
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val accountDao: AccountDao
 ) : TransactionRepository {
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions(profileId).map { entities ->
@@ -17,13 +19,21 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun insertTransaction(transaction: Transaction, profileId: Int) {
-        transactionDao.insertTransaction(transaction.toEntity(profileId))
+        transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
     }
 
     override suspend fun deleteTransaction(id: Long) {
         transactionDao.getTransactionById(id)?.let {
-            transactionDao.deleteTransaction(it)
+            transactionDao.deleteTransactionWithBalanceUpdate(it, accountDao)
         }
+    }
+
+    override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
+        transactionDao.updateTransactionWithBalanceUpdate(
+            oldTransaction.toEntity(profileId),
+            newTransaction.toEntity(profileId),
+            accountDao
+        )
     }
 
     override suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
@@ -47,7 +57,8 @@ class TransactionRepositoryImpl(
             isIncome = isIncome,
             accountId = accountId,
             categoryId = categoryId,
-            tags = tags.split(",").filter { it.isNotBlank() }
+            tags = tags.split(",").filter { it.isNotBlank() },
+            paymentMethod = paymentMethod
         )
     }
 
@@ -63,7 +74,8 @@ class TransactionRepositoryImpl(
             accountId = accountId,
             categoryId = categoryId,
             tags = tags.joinToString(","),
-            profileId = profileId
+            profileId = profileId,
+            paymentMethod = paymentMethod
         )
     }
 }

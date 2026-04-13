@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.util.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -41,8 +42,8 @@ class AccountViewModel(
                     val cashAccount = Account(
                         id = "default-cash-id",
                         name = "Cash",
-                        balance = 0.0,
-                        initialBalance = 0.0,
+                        balance = BigDecimal.ZERO,
+                        initialBalance = BigDecimal.ZERO,
                         currencyCode = defaultCurrency,
                         structureType = "Cash",
                         colorHex = "#4CAF50",
@@ -59,7 +60,7 @@ class AccountViewModel(
 
     fun addAccount(
         name: String, 
-        balance: Double, 
+        balance: BigDecimal, 
         currency: String, 
         structureType: String, 
         colorHex: String,
@@ -92,7 +93,7 @@ class AccountViewModel(
         }
     }
 
-    fun updateBalance(accountId: String, amount: Double) {
+    fun updateBalance(accountId: String, amount: BigDecimal) {
         viewModelScope.launch {
             repository.updateBalance(accountId, amount)
         }

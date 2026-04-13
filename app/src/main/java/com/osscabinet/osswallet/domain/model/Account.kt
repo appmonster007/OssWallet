@@ -1,10 +1,12 @@
 package com.osscabinet.ossWallet.domain.model
 
+import java.math.BigDecimal
+
 data class Account(
     val id: String,
     val name: String,
-    val balance: Double,
-    val initialBalance: Double = 0.0,
+    val balance: BigDecimal,
+    val initialBalance: BigDecimal = BigDecimal.ZERO,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,

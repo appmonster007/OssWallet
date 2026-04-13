@@ -2,13 +2,14 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 
 @Entity(tableName = "templates")
 data class TemplateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val category: String,
-    val amount: Double,
+    val amount: BigDecimal,
     val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
     val icon: String? = null,
     val colorHex: String? = null,

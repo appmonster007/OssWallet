@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.math.BigDecimal
+import java.math.RoundingMode
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.components.*
@@ -57,26 +59,29 @@ fun EditTransactionScreen(
     }
 
     var title by remember { mutableStateOf(transaction.title) }
-    var amount by remember { mutableStateOf(if (transaction.amount % 1 == 0.0) transaction.amount.toLong().toString() else String.format(Locale.getDefault(), "%.2f", transaction.amount)) }
+    var amount by remember { mutableStateOf(transaction.amount.toPlainString()) }
     var linkedTransactionId by remember { mutableStateOf(transaction.linkedTransactionId) }
     
     // Calculator State
-    var firstOperand by remember { mutableStateOf<Double?>(null) }
+    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
     var operator by remember { mutableStateOf<String?>(null) }
     var isEnteringSecondOperand by remember { mutableStateOf(false) }
 
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
-            val secondOperand = amount.toDoubleOrNull() ?: 0.0
-            val rawResult = when (operator) {
-                "+" -> firstOperand!! + secondOperand
-                "−" -> firstOperand!! - secondOperand
-                "×" -> firstOperand!! * secondOperand
-                "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
-                else -> secondOperand
-            }
-            val result = kotlin.math.abs(rawResult)
-            amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
+            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val rawResult = try {
+                when (operator) {
+                    "+" -> firstOperand!!.add(secondOperand)
+                    "−" -> firstOperand!!.subtract(secondOperand)
+                    "×" -> firstOperand!!.multiply(secondOperand)
+                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, 8, RoundingMode.HALF_UP) else BigDecimal.ZERO
+                    else -> secondOperand
+                }
+            } catch (e: Exception) { BigDecimal.ZERO }
+            
+            val result = rawResult.abs().stripTrailingZeros()
+            amount = result.toPlainString()
             firstOperand = null
             operator = null
             isEnteringSecondOperand = false
@@ -112,7 +117,7 @@ fun EditTransactionScreen(
     
     var targetAccount by remember { mutableStateOf<Account?>(null) }
     var targetCurrency by remember { mutableStateOf("") }
-    var exchangeRate by remember { mutableStateOf(1.0) }
+    var exchangeRate by remember { mutableStateOf(BigDecimal.ONE) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
@@ -139,10 +144,10 @@ fun EditTransactionScreen(
         if (isTransfer && targetAccount != null) {
             val baseRates = exchangeRates
             if (baseRates.isNotEmpty()) {
-                val sourceRateInUSD = baseRates[selectedCurrency] ?: 1.0
-                val destRateInUSD = baseRates[targetCurrency] ?: 1.0
-                if (sourceRateInUSD != 0.0) {
-                    exchangeRate = destRateInUSD / sourceRateInUSD
+                val sourceRateInUSD = baseRates[selectedCurrency] ?: BigDecimal.ONE
+                val destRateInUSD = baseRates[targetCurrency] ?: BigDecimal.ONE
+                if (sourceRateInUSD.signum() != 0) {
+                    exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
                 }
             }
         }
@@ -172,14 +177,14 @@ fun EditTransactionScreen(
                                 val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
                                     transaction.amount
                                 } else {
-                                    val txRate = exchangeRates[transaction.currency] ?: 1.0
-                                    val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                                    if (txRate != 0.0) (transaction.amount / txRate) * accountRate else transaction.amount
+                                    val txRate = exchangeRates[transaction.currency] ?: BigDecimal.ONE
+                                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                                    if (txRate.signum() != 0) (transaction.amount.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else transaction.amount
                                 }
                                 
                                 accountViewModel.updateBalance(
                                     account.id,
-                                    if (transaction.isIncome) -oldAmountInAccountCurrency else oldAmountInAccountCurrency
+                                    if (transaction.isIncome) oldAmountInAccountCurrency.negate() else oldAmountInAccountCurrency
                                 )
                             }
                             viewModel.deleteTransaction(transactionId)
@@ -193,39 +198,39 @@ fun EditTransactionScreen(
                             shape = RoundedCornerShape(24.dp),
                             color = MaterialTheme.colorScheme.primary,
                             onClick = {
-                                val amountDouble = amount.toDoubleOrNull() ?: 0.0
+                                val amountBD = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 selectedAccount?.let { account ->
                                     // 1. Revert old balance impact
                                     val oldAmountInAccountCurrency = if (transaction.currency == account.currencyCode) {
                                         transaction.amount
                                     } else {
-                                        val txRate = exchangeRates[transaction.currency] ?: 1.0
-                                        val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                                        if (txRate != 0.0) (transaction.amount / txRate) * accountRate else transaction.amount
+                                        val txRate = exchangeRates[transaction.currency] ?: BigDecimal.ONE
+                                        val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                                        if (txRate.signum() != 0) (transaction.amount.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else transaction.amount
                                     }
                                     accountViewModel.updateBalance(
                                         transaction.accountId, 
-                                        if (transaction.isIncome) -oldAmountInAccountCurrency else oldAmountInAccountCurrency
+                                        if (transaction.isIncome) oldAmountInAccountCurrency.negate() else oldAmountInAccountCurrency
                                     )
 
                                     // 2. Apply new balance impact
                                     val newAmountInAccountCurrency = if (selectedCurrency == account.currencyCode) {
-                                        amountDouble
+                                        amountBD
                                     } else {
-                                        val txRate = exchangeRates[selectedCurrency] ?: 1.0
-                                        val accountRate = exchangeRates[account.currencyCode] ?: 1.0
-                                        if (txRate != 0.0) (amountDouble / txRate) * accountRate else amountDouble
+                                        val txRate = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
+                                        val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                                        if (txRate.signum() != 0) (amountBD.divide(txRate, 8, RoundingMode.HALF_UP)).multiply(accountRate) else amountBD
                                     }
                                     accountViewModel.updateBalance(
                                         account.id, 
-                                        if (isIncome) newAmountInAccountCurrency else -newAmountInAccountCurrency
+                                        if (isIncome) newAmountInAccountCurrency else newAmountInAccountCurrency.negate()
                                     )
 
                                     // 3. Update transaction record
                                     viewModel.updateTransaction(
                                         oldTransaction = transaction,
                                         title = title.ifBlank { if (isTransfer) "Transfer" else category },
-                                        amount = amountDouble,
+                                        amount = amountBD,
                                         category = if (isTransfer) "Transfer" else category,
                                         isIncome = isIncome,
                                         accountId = account.id,
@@ -354,8 +359,8 @@ fun EditTransactionScreen(
                                 }
                                 
                                 if (isTransfer) {
-                                    val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                                    val convertedAmount = amountDouble * exchangeRate
+                                    val amountBD = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                                    val convertedAmount = amountBD.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP)
                                     
                                     Icon(
                                         Icons.Rounded.KeyboardArrowDown,
@@ -369,14 +374,14 @@ fun EditTransactionScreen(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            " (1:${String.format(Locale.getDefault(), "%.3f", exchangeRate)})",
+                                            " (1:${exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()})",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.padding(start = 8.dp)
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            text = String.format(Locale.getDefault(), "%.2f", convertedAmount),
+                                            text = convertedAmount.toPlainString(),
                                             style = TextStyle(
                                                 fontSize = 32.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -464,7 +469,7 @@ fun EditTransactionScreen(
                     onOperatorClick = { op ->
                         if (amount.isNotEmpty()) {
                             if (operator != null) calculateResult()
-                            firstOperand = amount.toDoubleOrNull()
+                            firstOperand = amount.toBigDecimalOrNull()
                             operator = op
                             isEnteringSecondOperand = true
                         }
@@ -794,7 +799,7 @@ fun EditTransactionScreen(
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency),
+                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency),
                             balanceBefore = "",
                             balanceAfter = "",
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,

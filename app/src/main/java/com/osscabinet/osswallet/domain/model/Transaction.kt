@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.domain.model
 
+import java.math.BigDecimal
+
 data class Transaction(
     val id: Long = 0,
     val title: String,
-    val amount: Double,
+    val amount: BigDecimal,
     val category: String,
     val timestamp: Long,
     val currency: String,
@@ -20,5 +22,5 @@ data class Transaction(
 
 data class TransactionWithBalance(
     val transaction: Transaction,
-    val balanceAfter: Double
+    val balanceAfter: BigDecimal
 )

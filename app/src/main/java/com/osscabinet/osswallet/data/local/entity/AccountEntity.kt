@@ -1,14 +1,19 @@
 package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.math.BigDecimal
 
-@Entity(tableName = "accounts")
+@Entity(
+    tableName = "accounts",
+    indices = [Index(value = ["profileId"])]
+)
 data class AccountEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val balance: Double,
-    val initialBalance: Double = 0.0,
+    val balance: BigDecimal,
+    val initialBalance: BigDecimal = BigDecimal.ZERO,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,

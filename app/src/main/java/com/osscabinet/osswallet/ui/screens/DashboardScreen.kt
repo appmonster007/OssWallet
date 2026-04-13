@@ -507,13 +507,13 @@ fun DashboardContent(
                     contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
                 ) {
                     item {
-                        NetWorthSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, decimalPrecision)
+                        NetWorthSection(state.accounts, state.baseCurrency, state.exchangeRates, decimalPrecision)
                     }
                     item {
-                        CurrencyAggregationSection(state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, decimalPrecision)
+                        CurrencyAggregationSection(state.currencyTotals, state.baseCurrency, state.exchangeRates, decimalPrecision)
                     }
                     item {
-                        AeonCashFlowSummary(activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme)
+                        AeonCashFlowSummary(activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, precision = decimalPrecision)
                     }
                     item {
                         AccountsSection(onManageAccountsClick, onAccountClick, state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, gridColumns, decimalPrecision)
@@ -569,124 +569,6 @@ fun DashboardContent(
                             onClick = { /* Navigate to edit? */ },
                             modifier = Modifier.padding(horizontal = 24.dp)
                         )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NetWorthSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal> = emptyMap(), precision: Int = 2) {
-    val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
-        accounts.fold(BigDecimal.ZERO) { acc, account ->
-            val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
-            val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                account.balance.divide(rate, precision, RoundingMode.HALF_UP)
-            } else {
-                account.balance
-            }
-            acc.add(inBase)
-        }
-    }
-
-    Column {
-        AeonSectionHeader(title = "TOTAL NET WORTH")
-        Text(
-            formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-//        Row(verticalAlignment = Alignment.CenterVertically) {
-//            Surface(
-//                color = Color(0xFF2E7D32).copy(alpha = 0.2f),
-//                shape = RoundedCornerShape(16.dp)
-//            ) {
-//                Row(
-//                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Icon(
-//                        Icons.Default.ArrowUpward,
-//                        contentDescription = null,
-//                        modifier = Modifier.size(14.dp),
-//                        tint = Color(0xFF4CAF50)
-//                    )
-//                    Text(
-//                        "+12.4%",
-//                        style = MaterialTheme.typography.labelSmall,
-//                        color = Color(0xFF4CAF50),
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Text(
-//                "vs last month",
-//                style = MaterialTheme.typography.bodySmall,
-//                color = MaterialTheme.colorScheme.outline
-//            )
-//        }
-    }
-}
-
-@Composable
-fun CurrencyAggregationSection(accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int = 2) {
-    val allSupportedCurrencies = remember(accounts) {
-        val list = mutableSetOf<String>()
-        accounts.forEach { account ->
-            list.add(account.currencyCode)
-        }
-        list.toList().sorted()
-    }
-
-    val currencyTotals = remember(accounts, allSupportedCurrencies) {
-        allSupportedCurrencies.associateWith { curr ->
-            accounts.filter { it.currencyCode == curr }.fold(BigDecimal.ZERO) { acc, account ->
-                acc.add(account.balance)
-            }
-        }
-    }
-
-    if (allSupportedCurrencies.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AeonSectionHeader(title = "AGGREGATED CURRENCY BALANCES")
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
-                items(currencyTotals.toList().sortedBy { it.first }) { (currency, amount) ->
-                    val rate = exchangeRates[currency] ?: BigDecimal.ONE
-                    val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                        amount.divide(rate, precision, RoundingMode.HALF_UP)
-                    } else {
-                        amount
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            Text(currency, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                            Column (horizontalAlignment = Alignment.End){
-                                Text(
-                                    formatCurrencyRight(amount, currency, precision),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum", fontWeight = FontWeight.Bold)
-                                )
-                                if (currency != baseCurrency) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                            }
-
-                        }
                     }
                 }
             }

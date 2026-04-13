@@ -150,11 +150,45 @@ fun AccountsViewScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item {
-                    NetWorthSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, decimalPrecision)
-                }
-                
-                item {
-                    CurrencyAggregationSection(nonArchivedAccounts, activeTransactions, baseCurrency, exchangeRates, decimalPrecision)
+                    val currencyTotals = remember(nonArchivedAccounts, activeTransactions) {
+                        val totals = mutableMapOf<String, BigDecimal>()
+                        nonArchivedAccounts.forEach { account ->
+                            totals[account.currencyCode] = (totals[account.currencyCode] ?: BigDecimal.ZERO).add(account.initialBalance)
+                        }
+                        activeTransactions.forEach { tx ->
+                            totals[tx.currency] = if (tx.isIncome) (totals[tx.currency] ?: BigDecimal.ZERO).add(tx.amount) else (totals[tx.currency] ?: BigDecimal.ZERO).subtract(tx.amount)
+                        }
+                        totals
+                    }
+                    
+                    val updatedAccounts = remember(nonArchivedAccounts, activeTransactions, exchangeRates) {
+                        val transactionsByAccount = activeTransactions.groupBy { it.accountId }
+                        nonArchivedAccounts.map { account ->
+                            val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+                            val breakdown = mutableMapOf<String, BigDecimal>()
+                            breakdown[account.currencyCode] = account.initialBalance
+                            accountTransactions.forEach { tx ->
+                                val current = breakdown[tx.currency] ?: BigDecimal.ZERO
+                                breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                            }
+                            
+                            val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                            val totalInAccountCurrency = breakdown.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
+                                val txRate = exchangeRates[curr] ?: BigDecimal.ONE
+                                val inBase = if (txRate.signum() != 0) {
+                                    amount.divide(txRate, 8, RoundingMode.HALF_UP)
+                                } else {
+                                    amount
+                                }
+                                acc.add(inBase.multiply(accountRate))
+                            }
+                            account.copy(balance = totalInAccountCurrency)
+                        }
+                    }
+
+                    NetWorthSection(updatedAccounts, baseCurrency, exchangeRates, decimalPrecision)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    CurrencyAggregationSection(currencyTotals, baseCurrency, exchangeRates, decimalPrecision)
                 }
                 
                 item {
@@ -188,17 +222,22 @@ fun AccountsViewScreen(
                         if (curr == account.currencyCode) account.initialBalance.add(txSum) else txSum
                     }
 
-                    val balanceInBase = accountCurrencyBalances.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
-                        val rate = exchangeRates[curr] ?: BigDecimal.ONE
-                        val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
-                            amount.divide(rate, decimalPrecision, RoundingMode.HALF_UP)
+                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                    
+                    val totalInAccountCurrency = accountCurrencyBalances.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
+                        val txRate = exchangeRates[curr] ?: BigDecimal.ONE
+                        val inBase = if (txRate.signum() != 0) {
+                            amount.divide(txRate, 8, RoundingMode.HALF_UP)
                         } else {
                             amount
                         }
-                        acc.add(inBase)
+                        acc.add(inBase.multiply(accountRate))
                     }
 
-                    val accountRate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+                    val balanceInBase = totalInAccountCurrency.let { amount ->
+                        if (accountRate.signum() != 0) amount.divide(accountRate, decimalPrecision, RoundingMode.HALF_UP) else amount
+                    }
+
                     val incomeInAccountCurrency = accountTransactions.filter { it.isIncome }.fold(BigDecimal.ZERO) { acc, tx ->
                         val rate = exchangeRates[tx.currency] ?: BigDecimal.ONE
                         val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {

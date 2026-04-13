@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.items
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.util.formatAmount
@@ -288,6 +289,118 @@ fun AeonCashFlowSummary(
                             baseCurrency,
                             precision
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonFlowSectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    trailing: @Composable () -> Unit = {}
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            ),
+            color = MaterialTheme.colorScheme.outline
+        )
+        trailing()
+    }
+}
+
+@Composable
+fun NetWorthSection(
+    accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    precision: Int = 2
+) {
+    val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
+        accounts.fold(BigDecimal.ZERO) { acc, account ->
+            val rate = exchangeRates[account.currencyCode] ?: BigDecimal.ONE
+            val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                account.balance.divide(rate, precision, RoundingMode.HALF_UP)
+            } else {
+                account.balance
+            }
+            acc.add(inBase)
+        }
+    }
+
+    Column {
+        AeonFlowSectionHeader(title = "TOTAL NET WORTH")
+        Text(
+            formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
+            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+fun CurrencyAggregationSection(
+    currencyTotals: Map<String, BigDecimal>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    precision: Int = 2
+) {
+    if (currencyTotals.isNotEmpty()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AeonFlowSectionHeader(title = "AGGREGATED CURRENCY BALANCES")
+
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(end = 16.dp)
+            ) {
+                val sortedTotals = currencyTotals.toList().sortedBy { it.first }
+                items(sortedTotals) { (currency, amount) ->
+                    val rate = exchangeRates[currency] ?: BigDecimal.ONE
+                    val inBase = if (rate.compareTo(BigDecimal.ZERO) != 0 && rate.compareTo(BigDecimal.ONE) != 0) {
+                        amount.divide(rate, precision, RoundingMode.HALF_UP)
+                    } else {
+                        amount
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            Text(
+                                currency,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    formatCurrencyRight(amount, currency, precision),
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontFeatureSettings = "tnum",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                                if (currency != baseCurrency) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                            }
+
+                        }
                     }
                 }
             }

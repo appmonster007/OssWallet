@@ -903,22 +903,21 @@ fun AeonAccountCardSmall(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-//            Icon(
-//                icon,
-//                contentDescription = null,
-//                modifier = Modifier.size(16.dp),
-//                tint = contentColor.copy(alpha = 0.7f)
-//            )
             Text(
-                account.name,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                account.name.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp
+                ),
+                color = contentColor.copy(alpha = 0.6f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Column {
                 Text(
                     formatCurrencyRight(account.balance, account.currencyCode, precision),
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -973,19 +972,25 @@ fun AeonAccountCardMedium(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    Text(
+                        account.name.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = contentColor.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Icon(
                         icon,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = contentColor.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        account.name,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1012,6 +1017,10 @@ fun AeonAccountCardLarge(
     account: Account,
     balanceInBase: BigDecimal,
     baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    currencyBalances: Map<String, BigDecimal> = emptyMap(),
+    incomeInAccountCurrency: BigDecimal = BigDecimal.ZERO,
+    expenseInAccountCurrency: BigDecimal = BigDecimal.ZERO,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     onClick: () -> Unit,
@@ -1022,89 +1031,174 @@ fun AeonAccountCardLarge(
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
     val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(28.dp),
+            .clickable { onClick() }
+            .onSizeChanged { cardSize = it },
+        shape = RoundedCornerShape(32.dp),
         color = containerColor,
         contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
+            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .offset(x = 20.dp)
-                    .size(120.dp)
-                    .alpha(0.1f),
+                    .size(iconHeight)
+                    .alpha(0.15f),
                 tint = contentColor
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = contentColor.copy(alpha = 0.1f),
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = contentColor
-                                )
-                            }
-                        }
-                        Text(
-                            account.name,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
+
+            Column(modifier = Modifier.padding(24.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        account.structureType.uppercase(),
+                        account.name.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
                         ),
-                        color = contentColor.copy(alpha = 0.5f)
+                        color = contentColor.copy(alpha = 0.7f)
                     )
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AeonFlowBadge(
+                            amount = incomeInAccountCurrency,
+                            type = CashFlowType.INCOME,
+                            precision = precision
+                        )
+                        AeonFlowBadge(
+                            amount = expenseInAccountCurrency,
+                            type = CashFlowType.EXPENSE,
+                            precision = precision
+                        )
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End) {
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Column {
                     Text(
                         formatCurrencyRight(account.balance, account.currencyCode, precision),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, fontSize = 22.sp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black),
+                        color = contentColor
                     )
                     Text(
                         "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = contentColor.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = contentColor.copy(alpha = 0.7f)
                     )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Detailed Breakdown Section
+                if (currencyBalances.size > 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        thickness = 0.5.dp,
+                        color = contentColor.copy(alpha = 0.1f)
+                    )
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        currencyBalances.toList().sortedByDescending { it.first == account.currencyCode }.forEach { (curr, bal) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Surface(
+                                        color = if (curr == account.currencyCode) contentColor.copy(alpha = 0.2f) else contentColor.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            curr,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 9.sp),
+                                            color = contentColor
+                                        )
+                                    }
+                                    if (curr != account.currencyCode) {
+                                        val conv = convertAmount(bal, curr, account.currencyCode, exchangeRates, precision)
+                                        Text(
+                                            "≈ ${formatCurrencyRight(conv, account.currencyCode, precision)}",
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            color = contentColor.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    formatAmount(bal, precision = precision),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = contentColor
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = contentColor.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            account.structureType.uppercase(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            color = contentColor
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    if (currencyBalances.size <= 1) {
+                         // Fallback to chip if only one currency or minimal view
+                        Surface(
+                            color = contentColor.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    account.currencyCode,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
+                                    color = contentColor.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    formatAmount(account.balance, precision = precision),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                    color = contentColor
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun AeonCurrencyBreakdown(

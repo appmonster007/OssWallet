@@ -77,23 +77,42 @@ class DashboardViewModel(
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
                 
                 // Calculate breakdown and totals per account
-                val accountBreakdowns = accounts.associate { account ->
+                val accountStats = accounts.associate { account ->
                     val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
                     val breakdown = mutableMapOf<String, BigDecimal>()
+                    
+                    // Initialize with primary currency and all allowed currencies
                     breakdown[account.currencyCode] = account.initialBalance
+                    account.allowedCurrencies.forEach { curr ->
+                        breakdown.getOrPut(curr) { BigDecimal.ZERO }
+                    }
+                    
+                    val incomeBreakdown = mutableMapOf<String, BigDecimal>()
+                    val expenseBreakdown = mutableMapOf<String, BigDecimal>()
+                    
                     accountTransactions.forEach { tx ->
                         val current = breakdown[tx.currency] ?: BigDecimal.ZERO
                         breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                        
+                        if (tx.isIncome) {
+                            incomeBreakdown[tx.currency] = (incomeBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
+                        } else {
+                            expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
+                        }
                     }
-                    account.id to breakdown
+                    
+                    val incomeInAccountCurrency = calculateTotalInCurrency(incomeBreakdown, account.currencyCode, rates, precision)
+                    val expenseInAccountCurrency = calculateTotalInCurrency(expenseBreakdown, account.currencyCode, rates, precision)
+                    
+                    account.id to AccountStats(breakdown.toMap(), incomeInAccountCurrency, expenseInAccountCurrency)
                 }
 
                 // Update accounts with correct total balances in their primary currency
                 val updatedAccounts = accounts.map { account ->
-                    val breakdown = accountBreakdowns[account.id] ?: emptyMap()
+                    val stats = accountStats[account.id]
                     
                     val totalInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = breakdown,
+                        currencyTotals = stats?.currencyBalances ?: emptyMap(),
                         targetCurrency = account.currencyCode,
                         exchangeRates = rates,
                         precision = precision
@@ -103,8 +122,8 @@ class DashboardViewModel(
 
                 // Global currency totals across all accounts
                 val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
-                accountBreakdowns.values.forEach { breakdown ->
-                    breakdown.forEach { (curr, amount) ->
+                accountStats.values.forEach { stats ->
+                    stats.currencyBalances.forEach { (curr, amount) ->
                         globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
                     }
                 }
@@ -149,7 +168,8 @@ class DashboardViewModel(
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     currencyTotals = globalCurrencyTotals,
-                    decimalPrecision = precision
+                    decimalPrecision = precision,
+                    accountStats = accountStats
                 )
             }
         }
@@ -168,7 +188,14 @@ sealed class DashboardUiState {
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyTotals: Map<String, BigDecimal> = emptyMap(),
-        val decimalPrecision: Int = 2
+        val decimalPrecision: Int = 2,
+        val accountStats: Map<String, AccountStats> = emptyMap()
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }
+
+data class AccountStats(
+    val currencyBalances: Map<String, BigDecimal>,
+    val incomeInAccountCurrency: BigDecimal,
+    val expenseInAccountCurrency: BigDecimal
+)

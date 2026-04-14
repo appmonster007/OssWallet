@@ -43,6 +43,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
+import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -545,6 +546,7 @@ fun DashboardContent(
                                 onAccountClick = onAccountClick,
                                 onGridColumnsChange = { dashboardViewModel.updateGridColumns(it) },
                                 accounts = state.accounts,
+                                accountStats = state.accountStats,
                                 baseCurrency = state.baseCurrency,
                                 exchangeRates = state.exchangeRates,
                                 currentTheme = currentTheme,
@@ -631,6 +633,7 @@ fun AccountsSection(
     onAccountClick: (String) -> Unit,
     onGridColumnsChange: (Int) -> Unit,
     accounts: List<Account>,
+    accountStats: Map<String, AccountStats>,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
@@ -706,6 +709,7 @@ fun AccountsSection(
                     account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
                     balanceInBase = BigDecimal.ZERO,
                     baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
                     isDarkTheme = when (currentTheme) {
                         "Light" -> false
                         "Dark", "Amoled" -> true
@@ -731,12 +735,17 @@ fun AccountsSection(
                             else -> isSystemInDarkTheme()
                         }
                         val isAmoled = currentTheme == "Amoled"
+                        val stats = accountStats[account.id]
 
                         when (gridColumns) {
                             1 -> AeonAccountCardLarge(
                                 account = account,
                                 balanceInBase = balanceInBase,
                                 baseCurrency = baseCurrency,
+                                exchangeRates = exchangeRates,
+                                currencyBalances = stats?.currencyBalances ?: emptyMap(),
+                                incomeInAccountCurrency = stats?.incomeInAccountCurrency ?: BigDecimal.ZERO,
+                                expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
                                 isDarkTheme = isDarkTheme,
                                 isAmoled = isAmoled,
                                 onClick = { onAccountClick(account.id) },

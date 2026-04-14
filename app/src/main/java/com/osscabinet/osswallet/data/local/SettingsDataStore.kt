@@ -19,6 +19,7 @@ class SettingsDataStore(private val context: Context) {
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
+        val DASHBOARD_SECTION_ORDER_KEY = stringPreferencesKey("dashboard_section_order")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -47,6 +48,10 @@ class SettingsDataStore(private val context: Context) {
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[IS_ONBOARDING_COMPLETED_KEY] ?: false
+    }
+
+    val dashboardSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[DASHBOARD_SECTION_ORDER_KEY]
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -88,6 +93,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_ONBOARDING_COMPLETED_KEY] = completed
+        }
+    }
+
+    suspend fun saveDashboardSectionOrder(order: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DASHBOARD_SECTION_ORDER_KEY] = order
         }
     }
 }

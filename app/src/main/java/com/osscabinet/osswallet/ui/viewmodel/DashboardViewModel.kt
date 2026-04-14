@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -34,8 +35,26 @@ class DashboardViewModel(
     private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            settingsDataStore.dashboardSectionOrder.collect { savedOrder ->
+                if (savedOrder != null) {
+                    try {
+                        val sections = savedOrder.split(",").map { DashboardSection.valueOf(it) }
+                        _sectionOrder.value = sections
+                    } catch (e: Exception) {
+                        // Keep default order on error
+                    }
+                }
+            }
+        }
+    }
+
     fun updateSectionOrder(newOrder: List<DashboardSection>) {
         _sectionOrder.value = newOrder
+        viewModelScope.launch {
+            settingsDataStore.saveDashboardSectionOrder(newOrder.joinToString(",") { it.name })
+        }
     }
 
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId

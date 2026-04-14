@@ -17,6 +17,7 @@ class SettingsDataStore(private val context: Context) {
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
         val DASHBOARD_GRID_COLUMNS_KEY = intPreferencesKey("dashboard_grid_columns")
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
+        val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -37,6 +38,10 @@ class SettingsDataStore(private val context: Context) {
 
     val decimalPrecision: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[DECIMAL_PRECISION_KEY] ?: 2
+    }
+
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[IS_ONBOARDING_COMPLETED_KEY] ?: false
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -66,6 +71,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveDecimalPrecision(precision: Int) {
         context.dataStore.edit { preferences ->
             preferences[DECIMAL_PRECISION_KEY] = precision
+        }
+    }
+
+    suspend fun saveOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_ONBOARDING_COMPLETED_KEY] = completed
         }
     }
 }

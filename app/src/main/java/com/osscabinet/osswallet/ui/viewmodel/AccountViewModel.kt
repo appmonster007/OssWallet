@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,8 +17,12 @@ import java.util.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountViewModel(
     private val repository: AccountRepository,
+    private val transactionRepository: TransactionRepository,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
+
+    val defaultCurrency: StateFlow<String> = settingsDataStore.currency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
     val accounts: StateFlow<List<Account>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
@@ -69,11 +75,12 @@ class AccountViewModel(
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
+            val accountId = UUID.randomUUID().toString()
             val account = Account(
-                id = UUID.randomUUID().toString(),
+                id = accountId,
                 name = name,
-                balance = balance,
-                initialBalance = balance,
+                balance = BigDecimal.ZERO, // Will be updated by transactions
+                initialBalance = BigDecimal.ZERO, // We use transactions for initial balance now
                 currencyCode = currency,
                 structureType = structureType,
                 colorHex = colorHex,
@@ -83,6 +90,22 @@ class AccountViewModel(
                 displayOrder = accounts.value.size
             )
             repository.insertAccount(account, profileId)
+
+            if (balance > BigDecimal.ZERO) {
+                val initialTransaction = Transaction(
+                    title = "Initial Balance",
+                    amount = balance,
+                    category = "Adjustment",
+                    timestamp = System.currentTimeMillis(),
+                    currency = currency,
+                    isIncome = true,
+                    accountId = accountId,
+                    note = "Initial balance for $name",
+                    paymentMethod = structureType,
+                    payee = "System"
+                )
+                transactionRepository.insertTransaction(initialTransaction, profileId)
+            }
         }
     }
 
@@ -125,12 +148,13 @@ class AccountViewModel(
 
 class AccountViewModelFactory(
     private val repository: AccountRepository,
+    private val transactionRepository: TransactionRepository,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AccountViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AccountViewModel(repository, settingsDataStore) as T
+            return AccountViewModel(repository, transactionRepository, settingsDataStore) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

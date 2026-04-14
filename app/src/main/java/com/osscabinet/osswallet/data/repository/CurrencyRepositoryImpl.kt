@@ -15,13 +15,21 @@ class CurrencyRepositoryImpl(
     override suspend fun getExchangeRates(baseCurrency: String, forceRefresh: Boolean): Map<String, Double> {
         return withContext(Dispatchers.IO) {
             val localRates = dao.getAllRates()
-            val firstRate = localRates.firstOrNull()
             
-            if (!forceRefresh && firstRate != null && isCacheValid(firstRate) && firstRate.baseCurrency == baseCurrency) {
-                localRates.associate { it.currencyCode to it.rate }
-            } else {
-                updateRates(baseCurrency)
+            // If cache is valid and matches our base currency, use it
+            if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first()) && localRates.first().baseCurrency == baseCurrency) {
+                return@withContext localRates.associate { it.currencyCode to it.rate }
             }
+            
+            // Otherwise try to fetch fresh rates
+            val freshRates = updateRates(baseCurrency)
+            if (freshRates.isNotEmpty()) {
+                return@withContext freshRates
+            }
+            
+            // If fetch fails but we have old rates, we can try to "re-base" them if needed
+            // But for now, returning what we have or empty
+            localRates.associate { it.currencyCode to it.rate }
         }
     }
 
@@ -38,7 +46,7 @@ class CurrencyRepositoryImpl(
         return try {
             val response = api.getLatestRates(baseCurrency)
             if (response.result == "success") {
-                val nextUpdateMillis = response.timeNextUpdateUnix * 1000L
+                val nextUpdateMillis = (response.timeNextUpdateUnix ?: 0L) * 1000L
                 val entities = response.rates.map {
                     CurrencyRateEntity(
                         currencyCode = it.key,
@@ -55,6 +63,7 @@ class CurrencyRepositoryImpl(
                 dao.getAllRates().associate { it.currencyCode to it.rate }
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             dao.getAllRates().associate { it.currencyCode to it.rate }
         }
     }

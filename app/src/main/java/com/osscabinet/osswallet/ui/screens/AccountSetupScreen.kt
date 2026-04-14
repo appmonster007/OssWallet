@@ -38,9 +38,11 @@ fun AccountSetupScreen(
     var structureType by remember { mutableStateOf("Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
 
+    val defaultCurrency by viewModel.defaultCurrency.collectAsState()
+
     // Currency logic
-    var primaryCurrency by remember { mutableStateOf("") }
-    var allowedCurrencies by remember { mutableStateOf(emptySet<String>()) }
+    var primaryCurrency by remember(defaultCurrency) { mutableStateOf(defaultCurrency) }
+    var allowedCurrencies by remember(defaultCurrency) { mutableStateOf(setOf(defaultCurrency)) }
 
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
 
@@ -61,7 +63,7 @@ fun AccountSetupScreen(
                 actions = {
                     val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                     val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
-                    val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank()
+                    val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank() && allowedCurrencies.isNotEmpty()
                     
                     Surface(
                         modifier = Modifier.padding(end = 16.dp),

@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.components.AccountPickerSheet
+import com.osscabinet.ossWallet.ui.components.ReorderableList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,15 +37,30 @@ fun TemplatesScreen(
     val templates by viewModel.templates.collectAsState()
     val starredTemplates by viewModel.starredTemplates.collectAsState()
 
+    var editList by remember { mutableStateOf(emptyList<TemplateEntity>()) }
+
+    LaunchedEffect(starredTemplates) {
+        if (editList.isEmpty() || editList.size != starredTemplates.size || editList.map { it.id }.toSet() != starredTemplates.map { it.id }.toSet()) {
+            editList = starredTemplates
+        } else {
+            // Update properties but keep order
+            val orderMap = editList.withIndex().associate { it.value.id to it.index }
+            editList = starredTemplates.sortedBy { orderMap[it.id] ?: Int.MAX_VALUE }
+        }
+    }
+
     var isReorderMode by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Templates") },
+                title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else onBackClick) {
+                        Icon(
+                            if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = if (isReorderMode) "Cancel" else "Back"
+                        )
                     }
                 },
                 actions = {
@@ -60,49 +76,42 @@ fun TemplatesScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onAddTemplateClick(null) }) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Template")
+            if (!isReorderMode) {
+                FloatingActionButton(onClick = { onAddTemplateClick(null) }) {
+                    Icon(Icons.Rounded.Add, contentDescription = "Add Template")
+                }
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (isReorderMode) {
-                item {
-                    Text(
-                        "Reorder Starred Templates",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                itemsIndexed(starredTemplates) { index, template ->
+        if (isReorderMode) {
+            Box(modifier = Modifier.padding(padding)) {
+                ReorderableList(
+                    items = editList,
+                    key = { it.id },
+                    onReorder = { newList -> editList = newList },
+                    onDragEnd = { newList -> viewModel.updateTemplatesOrder(newList) },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) { template, isDragging ->
                     ReorderTemplateItem(
                         template = template,
-                        isFirst = index == 0,
-                        isLast = index == starredTemplates.size - 1,
-                        onMoveUp = {
-                            val newList = starredTemplates.toMutableList()
-                            val item = newList.removeAt(index)
-                            newList.add(index - 1, item)
-                            viewModel.updateTemplatesOrder(newList)
-                        },
-                        onMoveDown = {
-                            val newList = starredTemplates.toMutableList()
-                            val item = newList.removeAt(index)
-                            newList.add(index + 1, item)
-                            viewModel.updateTemplatesOrder(newList)
-                        }
+                        isDragging = isDragging
                     )
                 }
-            } else {
-                items(templates) { template ->
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(templates, key = { it.id }) { template ->
                     TemplateItem(
                         template = template,
                         onEdit = { onAddTemplateClick(template.id) },
@@ -118,14 +127,14 @@ fun TemplatesScreen(
 @Composable
 fun ReorderTemplateItem(
     template: TemplateEntity,
-    isFirst: Boolean,
-    isLast: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
+    isDragging: Boolean = false
 ) {
-    Card(
+    Surface(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        color = if (isDragging) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = if (isDragging) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        shadowElevation = if (isDragging) 8.dp else 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -133,16 +142,16 @@ fun ReorderTemplateItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                Icons.Rounded.DragHandle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
             Icon(Icons.Rounded.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(16.dp))
             Text(template.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            
-            IconButton(onClick = onMoveUp, enabled = !isFirst) {
-                Icon(Icons.Rounded.ArrowUpward, contentDescription = "Move Up")
-            }
-            IconButton(onClick = onMoveDown, enabled = !isLast) {
-                Icon(Icons.Rounded.ArrowDownward, contentDescription = "Move Down")
-            }
         }
     }
 }

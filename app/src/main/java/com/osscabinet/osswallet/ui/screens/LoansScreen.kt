@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
@@ -51,14 +52,10 @@ fun LoansScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            AeonFloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = Color(0xFF004D40),
-                contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Loan")
-            }
+                contentDescription = "Add Loan"
+            )
         }
     ) { innerPadding ->
         Column(

@@ -82,14 +82,12 @@ fun TransactionListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            AeonFloatingActionButton(
                 onClick = onAddTransactionClick,
                 containerColor = Color(0xFF2E7D32),
                 contentColor = Color.White,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
-            }
+                contentDescription = "Add"
+            )
         },
         bottomBar = {
             // Period selector seen in screenshot

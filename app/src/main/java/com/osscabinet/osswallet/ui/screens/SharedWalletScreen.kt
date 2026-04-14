@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.SharedWallet
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.viewmodel.SharedWalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,9 +49,10 @@ fun SharedWalletScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "New Shared Wallet")
-            }
+            AeonFloatingActionButton(
+                onClick = { showAddDialog = true },
+                contentDescription = "New Shared Wallet"
+            )
         }
     ) { innerPadding ->
         if (uiState.isLoading) {

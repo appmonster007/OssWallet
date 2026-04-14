@@ -1294,6 +1294,56 @@ fun AeonDashedButton(
 }
 
 @Composable
+fun AeonFloatingActionButton(
+    onClick: () -> Unit,
+    icon: ImageVector = Icons.Rounded.Add,
+    contentDescription: String? = null,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(20.dp),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+    ) {
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(24.dp))
+    }
+}
+
+@Composable
+fun AeonExtendedFloatingActionButton(
+    onClick: () -> Unit,
+    text: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary
+) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(20.dp),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+        text = { 
+            Text(
+                text, 
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+            ) 
+        }
+    )
+}
+
+@Composable
 fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String, precision: Int = 2) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

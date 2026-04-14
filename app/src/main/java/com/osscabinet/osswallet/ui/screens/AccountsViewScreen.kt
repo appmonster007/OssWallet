@@ -184,9 +184,21 @@ fun AccountsViewScreen(
                         }
                     }
 
-                    NetWorthSection(updatedAccounts, baseCurrency, exchangeRates, decimalPrecision)
-                    Spacer(modifier = Modifier.height(24.dp))
-                    CurrencyAggregationSection(currencyTotals, baseCurrency, exchangeRates, decimalPrecision)
+                    NetWorthSection(
+                        accounts = updatedAccounts,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CurrencyAggregationSection(
+                        currencyTotals = currencyTotals,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
+                        precision = decimalPrecision,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 
                 item {

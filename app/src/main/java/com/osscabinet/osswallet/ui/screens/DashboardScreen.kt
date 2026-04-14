@@ -218,20 +218,21 @@ fun DashboardScreen(
                         DashboardShimmer(innerPadding)
                     }
                     is DashboardUiState.Success -> {
-                        DashboardContent(
-                            innerPadding = innerPadding,
-                            pagerState = pagerState,
-                            tabs = tabs,
-                            state = state,
-                            currentTheme = currentTheme,
-                            gridColumns = gridColumns,
-                            decimalPrecision = state.decimalPrecision,
-                            onManageAccountsClick = onManageAccountsClick,
-                            onAccountClick = onAccountClick,
-                            onRecordsClick = onRecordsClick,
-                            transactionViewModel = transactionViewModel,
-                            budgets = budgets
-                        )
+                            DashboardContent(
+                                innerPadding = innerPadding,
+                                pagerState = pagerState,
+                                tabs = tabs,
+                                state = state,
+                                currentTheme = currentTheme,
+                                gridColumns = gridColumns,
+                                decimalPrecision = state.decimalPrecision,
+                                onManageAccountsClick = onManageAccountsClick,
+                                onAccountClick = onAccountClick,
+                                onRecordsClick = onRecordsClick,
+                                transactionViewModel = transactionViewModel,
+                                budgets = budgets,
+                                dashboardViewModel = dashboardViewModel
+                            )
                     }
                     is DashboardUiState.Error -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -484,11 +485,14 @@ fun DashboardContent(
     onAccountClick: (String) -> Unit,
     onRecordsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
-    budgets: List<Budget>
+    budgets: List<Budget>,
+    dashboardViewModel: DashboardViewModel
 ) {
     val activeTransactions = remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
     }
+
+    val sectionOrder by dashboardViewModel.sectionOrder.collectAsState()
 
     HorizontalPager(
         state = pagerState,
@@ -499,34 +503,81 @@ fun DashboardContent(
     ) { page ->
         when (page) {
             0 -> {
-                LazyColumn(
+                CardReorderableList(
+                    items = sectionOrder,
+                    key = { it.ordinal },
+                    onReorder = { dashboardViewModel.updateSectionOrder(it) },
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
-                ) {
-                    item {
-                        NetWorthSection(state.accounts, state.baseCurrency, state.exchangeRates, decimalPrecision)
-                    }
-                    item {
-                        CurrencyAggregationSection(state.currencyTotals, state.baseCurrency, state.exchangeRates, decimalPrecision)
-                    }
-                    item {
-                        AeonCashFlowSummary(activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, precision = decimalPrecision)
-                    }
-                    item {
-                        AccountsSection(onManageAccountsClick, onAccountClick, state.accounts, activeTransactions, state.baseCurrency, state.exchangeRates, currentTheme, gridColumns, decimalPrecision)
-                    }
-                    if (budgets.isNotEmpty()) {
-                        item {
-                            BudgetTrackingSection(budgets, state.baseCurrency, decimalPrecision)
+                        .background(MaterialTheme.colorScheme.background),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) { section, isDragging, dragModifier ->
+                    when (section) {
+                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
+                            NetWorthSection(
+                                accounts = state.accounts,
+                                baseCurrency = state.baseCurrency,
+                                modifier = Modifier.fillMaxWidth(),
+                                headerModifier = dragModifier,
+                                exchangeRates = state.exchangeRates,
+                                precision = decimalPrecision
+                            )
+                        }
+                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CURRENCY_BALANCES -> {
+                            CurrencyAggregationSection(
+                                currencyTotals = state.currencyTotals,
+                                baseCurrency = state.baseCurrency,
+                                exchangeRates = state.exchangeRates,
+                                modifier = Modifier.fillMaxWidth(),
+                                headerModifier = dragModifier,
+                                precision = decimalPrecision
+                            )
+                        }
+                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {
+                            AeonCashFlowSummary(
+                                transactions = activeTransactions,
+                                baseCurrency = state.baseCurrency,
+                                exchangeRates = state.exchangeRates,
+                                currentTheme = currentTheme,
+                                modifier = Modifier.fillMaxWidth(),
+                                headerModifier = dragModifier,
+                                showTitle = true,
+                                precision = decimalPrecision
+                            )
+                        }
+                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {
+                            AccountsSection(
+                                onManageClick = onManageAccountsClick,
+                                onAccountClick = onAccountClick,
+                                accounts = state.accounts,
+                                baseCurrency = state.baseCurrency,
+                                exchangeRates = state.exchangeRates,
+                                currentTheme = currentTheme,
+                                modifier = Modifier.fillMaxWidth(),
+                                gridColumns = gridColumns,
+                                precision = decimalPrecision,
+                                headerModifier = dragModifier.fillMaxWidth()
+                            )
+                        }
+                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.BUDGETS -> {
+                            if (budgets.isNotEmpty()) {
+                                BudgetTrackingSection(
+                                    budgets = budgets,
+                                    baseCurrency = state.baseCurrency,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    precision = decimalPrecision,
+                                    headerModifier = dragModifier.fillMaxWidth()
+                                )
+                            } else {
+                                Box(modifier = Modifier.size(0.dp))
+                            }
                         }
                     }
                 }
             }
             1 -> {
+
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
                 val categories by transactionViewModel.categories.collectAsState()
                 val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
@@ -579,56 +630,74 @@ fun DashboardContent(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AccountsSection(onManageClick: () -> Unit, onAccountClick: (String) -> Unit, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, currentTheme: String, gridColumns: Int = 2, precision: Int = 2) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        AeonSectionHeader(
-            title = "Accounts",
-            trailing = {
-                TextButton(onClick = onManageClick) {
-                    Text("Manage", style = MaterialTheme.typography.labelLarge)
+fun AccountsSection(
+    onManageClick: () -> Unit,
+    onAccountClick: (String) -> Unit,
+    accounts: List<Account>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    currentTheme: String,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
+    gridColumns: Int = 2,
+    precision: Int = 2
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AeonFlowSectionHeader(
+                title = "Accounts",
+                modifier = headerModifier,
+                trailing = {
+                    TextButton(onClick = onManageClick) {
+                        Text("Manage", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
-            }
-        )
-
-        if (accounts.isEmpty()) {
-            AccountGridItem(
-                account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
-                balanceInBase = BigDecimal.ZERO,
-                totalBalanceInAccountCurrency = BigDecimal.ZERO,
-                baseCurrency = baseCurrency,
-                currentTheme = currentTheme,
-                onClick = onManageClick,
-                modifier = Modifier.fillMaxWidth(),
-                gridColumns = gridColumns,
-                precision = precision
             )
-        } else {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = gridColumns
-            ) {
-                accounts.forEach { account ->
-                    val balanceInBase = convertAmount(account.balance, account.currencyCode, baseCurrency, exchangeRates, precision)
 
-                    val totalBalanceInAccountCurrency = account.balance
+            if (accounts.isEmpty()) {
+                AccountGridItem(
+                    account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
+                    balanceInBase = BigDecimal.ZERO,
+                    totalBalanceInAccountCurrency = BigDecimal.ZERO,
+                    baseCurrency = baseCurrency,
+                    currentTheme = currentTheme,
+                    onClick = onManageClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    gridColumns = gridColumns,
+                    precision = precision
+                )
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    maxItemsInEachRow = gridColumns
+                ) {
+                    accounts.forEach { account ->
+                        val balanceInBase = convertAmount(account.balance, account.currencyCode, baseCurrency, exchangeRates, precision)
 
-                    AccountGridItem(
-                        account = account,
-                        balanceInBase = balanceInBase,
-                        totalBalanceInAccountCurrency = totalBalanceInAccountCurrency,
-                        baseCurrency = baseCurrency,
-                        currentTheme = currentTheme,
-                        onClick = { onAccountClick(account.id) },
-                        modifier = Modifier.weight(1f),
-                        gridColumns = gridColumns,
-                        precision = precision
-                    )
-                }
-                if (accounts.size % gridColumns != 0) {
-                    repeat(gridColumns - (accounts.size % gridColumns)) {
-                        Spacer(modifier = Modifier.weight(1f))
+                        val totalBalanceInAccountCurrency = account.balance
+
+                        AccountGridItem(
+                            account = account,
+                            balanceInBase = balanceInBase,
+                            totalBalanceInAccountCurrency = totalBalanceInAccountCurrency,
+                            baseCurrency = baseCurrency,
+                            currentTheme = currentTheme,
+                            onClick = { onAccountClick(account.id) },
+                            modifier = Modifier.weight(1f),
+                            gridColumns = gridColumns,
+                            precision = precision
+                        )
+                    }
+                    if (accounts.size % gridColumns != 0) {
+                        repeat(gridColumns - (accounts.size % gridColumns)) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -816,16 +885,24 @@ fun AccountGridItem(
 }
 
 @Composable
-fun BudgetTrackingSection(budgets: List<Budget>, baseCurrency: String, precision: Int = 2) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        AeonSectionHeader(title = "Budget Tracking")
+fun BudgetTrackingSection(
+    budgets: List<Budget>,
+    baseCurrency: String,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
+    precision: Int = 2
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Box(modifier = headerModifier) {
+            AeonSectionHeader(title = "Budget Tracking")
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
         ) {
-            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 budgets.forEach { budget ->
                     AeonBudgetProgress(
                         label = budget.category,

@@ -191,6 +191,7 @@ fun AeonCashFlowSummary(
     exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     showTitle: Boolean = true,
     precision: Int = 2
 ) {
@@ -228,59 +229,64 @@ fun AeonCashFlowSummary(
     val totalExpenseInBase =
         flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.third.second) }.setScale(precision, RoundingMode.HALF_UP)
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (showTitle) {
-            Text(
-                "CASH FLOW SUMMARY",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AeonFlowCard(
-                label = "Income",
-                totalInBase = totalIncomeInBase,
-                baseCurrency = baseCurrency,
-                type = CashFlowType.INCOME,
-                currentTheme = currentTheme,
-                precision = precision,
-                modifier = Modifier.weight(1f)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    flowData.forEach { (curr, income, _) ->
-                        AeonFlowBreakdownItem(
-                            curr,
-                            income.first,
-                            income.second,
-                            baseCurrency,
-                            precision
-                        )
-                    }
-                }
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (showTitle) {
+                AeonFlowSectionHeader(
+                    title = "CASH FLOW SUMMARY",
+                    modifier = headerModifier
+                )
             }
 
-            AeonFlowCard(
-                label = "Expense",
-                totalInBase = totalExpenseInBase,
-                baseCurrency = baseCurrency,
-                type = CashFlowType.EXPENSE,
-                currentTheme = currentTheme,
-                precision = precision,
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    flowData.forEach { (curr, _, expense) ->
-                        AeonFlowBreakdownItem(
-                            curr,
-                            expense.first,
-                            expense.second,
-                            baseCurrency,
-                            precision
-                        )
+                AeonFlowCard(
+                    label = "Income",
+                    totalInBase = totalIncomeInBase,
+                    baseCurrency = baseCurrency,
+                    type = CashFlowType.INCOME,
+                    currentTheme = currentTheme,
+                    precision = precision,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        flowData.forEach { (curr, income, _) ->
+                            AeonFlowBreakdownItem(
+                                curr,
+                                income.first,
+                                income.second,
+                                baseCurrency,
+                                precision
+                            )
+                        }
+                    }
+                }
+
+                AeonFlowCard(
+                    label = "Expense",
+                    totalInBase = totalExpenseInBase,
+                    baseCurrency = baseCurrency,
+                    type = CashFlowType.EXPENSE,
+                    currentTheme = currentTheme,
+                    precision = precision,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        flowData.forEach { (curr, _, expense) ->
+                            AeonFlowBreakdownItem(
+                                curr,
+                                expense.first,
+                                expense.second,
+                                baseCurrency,
+                                precision
+                            )
+                        }
                     }
                 }
             }
@@ -315,6 +321,8 @@ fun AeonFlowSectionHeader(
 fun NetWorthSection(
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
     baseCurrency: String,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     precision: Int = 2
 ) {
@@ -324,13 +332,21 @@ fun NetWorthSection(
         calculateTotalInCurrency(currencyTotals, baseCurrency, exchangeRates, precision)
     }
 
-    Column {
-        AeonFlowSectionHeader(title = "TOTAL NET WORTH")
-        Text(
-            formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            AeonFlowSectionHeader(
+                title = "TOTAL NET WORTH",
+                modifier = headerModifier
+            )
+            Text(
+                formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        }
     }
 }
 
@@ -380,25 +396,36 @@ fun CurrencyAggregationSection(
     currencyTotals: Map<String, BigDecimal>,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
     if (currencyTotals.isNotEmpty()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AeonFlowSectionHeader(title = "AGGREGATED CURRENCY BALANCES")
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                AeonFlowSectionHeader(
+                    title = "AGGREGATED CURRENCY BALANCES",
+                    modifier = headerModifier
+                )
 
-            androidx.compose.foundation.lazy.LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(end = 16.dp)
-            ) {
-                val sortedTotals = currencyTotals.toList().sortedBy { it.first }
-                items(sortedTotals) { (currency, amount) ->
-                    AeonCurrencyBalanceItem(
-                        currency = currency,
-                        amount = amount,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = precision
-                    )
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 4.dp)
+                ) {
+                    val sortedTotals = currencyTotals.toList().sortedBy { it.first }
+                    items(sortedTotals) { (currency, amount) ->
+                        AeonCurrencyBalanceItem(
+                            currency = currency,
+                            amount = amount,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = exchangeRates,
+                            precision = precision
+                        )
+                    }
                 }
             }
         }

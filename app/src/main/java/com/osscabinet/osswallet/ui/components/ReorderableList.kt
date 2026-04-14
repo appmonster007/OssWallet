@@ -1,14 +1,10 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -59,6 +55,7 @@ fun <T> ReorderableList(
     // Screen-adaptive constants
     val scrollThreshold = with(density) { 56.dp.toPx() }
     val maxScrollSpeed = with(density) { 10.dp.toPx() }
+    val spacingPx = with(density) { verticalArrangement.spacing.toPx() }
 
     // Use rememberUpdatedState to ensure pointerInput logic always uses latest data
     // without triggering a restart of the gesture detection block.
@@ -95,14 +92,14 @@ fun <T> ReorderableList(
                         if (currentIndex != -1) {
                             val layoutInfo = state.layoutInfo
                             val visibleItems = layoutInfo.visibleItemsInfo
-                            val currentItemInfo = visibleItems.firstOrNull { it.index == currentIndex }
+                            val currentItemInfo = visibleItems.firstOrNull { it.key == dKey }
 
                             if (currentItemInfo != null) {
                                 val draggedItemCenter = currentItemInfo.offset + (currentItemInfo.size / 2) + dragOffset
 
                                 // Swap logic: triggered when item center passes 25% threshold of target item
                                 val targetItem = visibleItems.firstOrNull { item ->
-                                    if (item.index == currentIndex) return@firstOrNull false
+                                    if (item.key == dKey) return@firstOrNull false
 
                                     val itemStart = item.offset.toFloat()
                                     val itemEnd = (item.offset + item.size).toFloat()
@@ -124,7 +121,13 @@ fun <T> ReorderableList(
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
                                     // Visual compensation: adjust offset to keep the item pinned under touch
-                                    dragOffset -= (targetItem.offset - currentItemInfo.offset)
+                                    val offsetAdjustment = if (targetItem.index > currentIndex) {
+                                        targetItem.size + spacingPx
+                                    } else {
+                                        -(targetItem.size + spacingPx)
+                                    }
+                                    
+                                    dragOffset -= offsetAdjustment
                                     currentOnReorder(newList)
                                 }
                             }
@@ -180,6 +183,12 @@ fun <T> ReorderableList(
             ) { _, item ->
                 val isDragging = draggedKey == key(item)
                 val zIndex = if (isDragging) 10f else 0f
+                
+                val scale by animateFloatAsState(
+                    targetValue = if (isDragging) 1.05f else 1.0f,
+                    label = "reorder_scale"
+                )
+                
                 val elevation by animateDpAsState(
                     targetValue = if (isDragging) 8.dp else 0.dp,
                     label = "reorder_elevation"
@@ -190,11 +199,9 @@ fun <T> ReorderableList(
                         .fillMaxWidth()
                         .zIndex(zIndex)
                         .graphicsLayer {
-                            if (isDragging) {
-                                translationY = dragOffset
-                                scaleX = 1.02f
-                                scaleY = 1.02f
-                            }
+                            translationY = if (isDragging) dragOffset else 0f
+                            scaleX = scale
+                            scaleY = scale
                         }
                 ) {
                     // Surface provides elevation shadows and tonal coloring

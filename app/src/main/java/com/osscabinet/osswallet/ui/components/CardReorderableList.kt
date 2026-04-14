@@ -34,6 +34,7 @@ fun <T> CardReorderableList(
     itemContent: @Composable LazyItemScope.(item: T, isDragging: Boolean, dragModifier: Modifier) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     
     var draggedKey by remember { mutableStateOf<Any?>(null) }
@@ -42,6 +43,8 @@ fun <T> CardReorderableList(
     val currentItems by rememberUpdatedState(items)
     val currentOnReorder by rememberUpdatedState(onReorder)
     val currentKeySelector by rememberUpdatedState(key)
+
+    val spacingPx = with(density) { verticalArrangement.spacing.toPx() }
 
     LazyColumn(
         state = state,
@@ -80,9 +83,9 @@ fun <T> CardReorderableList(
                             val currentCenter = currentInfo.offset + (currentInfo.size / 2)
                             
                             if (draggedIndex < index && draggedCenter > currentCenter) {
-                                -draggedInfo.size.toFloat() - verticalArrangement.spacing.value // Glide up
+                                -draggedInfo.size.toFloat() - spacingPx // Glide up
                             } else if (draggedIndex > index && draggedCenter < currentCenter) {
-                                draggedInfo.size.toFloat() + verticalArrangement.spacing.value // Glide down
+                                draggedInfo.size.toFloat() + spacingPx // Glide down
                             } else 0f
                         } else 0f
                     } else 0f
@@ -107,13 +110,13 @@ fun <T> CardReorderableList(
                         if (currentIndex != -1) {
                             val layoutInfo = state.layoutInfo
                             val visibleItems = layoutInfo.visibleItemsInfo
-                            val currentItemInfo = visibleItems.firstOrNull { it.index == currentIndex }
+                            val currentItemInfo = visibleItems.firstOrNull { it.key == draggedKey }
                             
                             if (currentItemInfo != null) {
                                 val draggedItemCenter = currentItemInfo.offset + (currentItemInfo.size / 2) + dragOffset
                                 
                                 val targetItem = visibleItems.firstOrNull { other ->
-                                    if (other.index == currentIndex) return@firstOrNull false
+                                    if (other.key == draggedKey) return@firstOrNull false
                                     val otherCenter = other.offset + (other.size / 2)
                                     
                                     if (dragOffset > 0 && other.index > currentIndex) {
@@ -129,7 +132,16 @@ fun <T> CardReorderableList(
                                     newList.add(targetItem.index, element)
                                     
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    dragOffset -= (targetItem.offset - currentItemInfo.offset)
+                                    
+                                    // Root Cause Fix: Correctly calculate the offset jump when swapping items of different sizes.
+                                    // When swapping, the dragOffset must be adjusted by the relative distance between items.
+                                    val offsetAdjustment = if (targetItem.index > currentIndex) {
+                                        targetItem.size + spacingPx
+                                    } else {
+                                        -(targetItem.size + spacingPx)
+                                    }
+                                    
+                                    dragOffset -= offsetAdjustment
                                     currentOnReorder(newList)
                                 }
                             }

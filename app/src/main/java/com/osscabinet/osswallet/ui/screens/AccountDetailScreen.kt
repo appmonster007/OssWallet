@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -171,13 +172,10 @@ fun AccountDetailScreen(
             }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            AeonExtendedFloatingActionButton(
                 onClick = { onAddTransactionClick(accountId) },
-                icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                text = { Text("Transaction") },
-                shape = RoundedCornerShape(24.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                icon = Icons.Rounded.Add,
+                text = "Transaction"
             )
         }
     ) { innerPadding ->

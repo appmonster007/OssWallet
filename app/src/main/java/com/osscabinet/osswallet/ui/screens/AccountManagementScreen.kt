@@ -15,11 +15,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.ReorderableList
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
@@ -132,88 +135,83 @@ fun AccountManagementScreen(
                     }
                 }
             )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            // Reorderable List of Accounts
-            ReorderableList(
-                items = editList,
-                onReorder = { newList ->
-                    editList = newList
-                },
-                onDragEnd = { newList ->
-                    viewModel.updateAccountsOrder(newList)
-                },
-                key = { it.id },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) { account, isDragging ->
-                val index = editList.indexOf(account)
-                AccountManagementListItem(
-                    account = account,
-                    isSelectionMode = isSelectionMode,
-                    isSelected = account.id in selectedAccountIds,
-                    isDragging = isDragging,
-                    onSelect = {
-                        selectedAccountIds = if (account.id in selectedAccountIds) {
-                            selectedAccountIds - account.id
-                        } else {
-                            selectedAccountIds + account.id
-                        }
-                    },
-                    onMoveUp = {
-                        if (index > 0) {
-                            val newList = editList.toMutableList()
-                            val item = newList.removeAt(index)
-                            newList.add(index - 1, item)
-                            editList = newList
-                            viewModel.updateAccountsOrder(newList)
-                        }
-                    },
-                    onMoveDown = {
-                        if (index < editList.size - 1) {
-                            val newList = editList.toMutableList()
-                            val item = newList.removeAt(index)
-                            newList.add(index + 1, item)
-                            editList = newList
-                            viewModel.updateAccountsOrder(newList)
-                        }
-                    },
-                    onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                    onAccountClick = { onAccountClick(account.id) }
-                )
-            }
-
-            // Footer Action Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                if (isSelectionMode) {
-                    AeonDashedButton(
+        },
+        floatingActionButton = {
+            if (isSelectionMode) {
+                if (selectedAccountIds.isNotEmpty()) {
+                    AeonExtendedFloatingActionButton(
                         onClick = { showMultiDeleteDialog = true },
-                        text = "Delete Selected Accounts (${selectedAccountIds.size})",
                         icon = Icons.Rounded.Delete,
-                        isError = true,
-                        enabled = selectedAccountIds.isNotEmpty()
-                    )
-                } else {
-                    AeonDashedButton(
-                        onClick = onAddAccountClick,
-                        text = "Add New Account",
-                        icon = Icons.Rounded.Add
+                        text = "Delete Selected (${selectedAccountIds.size})",
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
                     )
                 }
+            } else {
+                AeonFloatingActionButton(
+                    onClick = onAddAccountClick,
+                    contentDescription = "Add New Account"
+                )
             }
+        }
+    ) { innerPadding ->
+        // Reorderable List of Accounts
+        ReorderableList(
+            items = editList,
+            onReorder = { newList ->
+                editList = newList
+            },
+            onDragEnd = { newList ->
+                viewModel.updateAccountsOrder(newList)
+            },
+            key = { it.id },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
+                .background(MaterialTheme.colorScheme.background)
+                .graphicsLayer(clip = false),
+            contentPadding = PaddingValues(
+                top = 16.dp,
+                bottom = 100.dp, // Space for the FAB
+                start = 16.dp,
+                end = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) { account, isDragging ->
+            val index = editList.indexOf(account)
+            AccountManagementListItem(
+                account = account,
+                isSelectionMode = isSelectionMode,
+                isSelected = account.id in selectedAccountIds,
+                isDragging = isDragging,
+                onSelect = {
+                    selectedAccountIds = if (account.id in selectedAccountIds) {
+                        selectedAccountIds - account.id
+                    } else {
+                        selectedAccountIds + account.id
+                    }
+                },
+                onMoveUp = {
+                    if (index > 0) {
+                        val newList = editList.toMutableList()
+                        val item = newList.removeAt(index)
+                        newList.add(index - 1, item)
+                        editList = newList
+                        viewModel.updateAccountsOrder(newList)
+                    }
+                },
+                onMoveDown = {
+                    if (index < editList.size - 1) {
+                        val newList = editList.toMutableList()
+                        val item = newList.removeAt(index)
+                        newList.add(index + 1, item)
+                        editList = newList
+                        viewModel.updateAccountsOrder(newList)
+                    }
+                },
+                onToggleArchive = { viewModel.toggleArchiveAccount(account) },
+                onAccountClick = { onAccountClick(account.id) }
+            )
         }
     }
 }

@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.components.AccountPickerSheet
+import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.ReorderableList
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,9 +78,10 @@ fun TemplatesScreen(
         },
         floatingActionButton = {
             if (!isReorderMode) {
-                FloatingActionButton(onClick = { onAddTemplateClick(null) }) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add Template")
-                }
+                AeonFloatingActionButton(
+                    onClick = { onAddTemplateClick(null) },
+                    contentDescription = "Add Template"
+                )
             }
         }
     ) { padding ->

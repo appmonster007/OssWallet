@@ -229,6 +229,7 @@ fun DashboardScreen(
                                 onManageAccountsClick = onManageAccountsClick,
                                 onAccountClick = onAccountClick,
                                 onRecordsClick = onRecordsClick,
+                                onBudgetsClick = onBudgetsClick,
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
                                 dashboardViewModel = dashboardViewModel
@@ -299,18 +300,15 @@ fun DashboardScreen(
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
-                            FloatingActionButton(
+                            AeonFloatingActionButton(
                                 onClick = { 
                                     isFabExpanded = false
                                     onAddClick(type, name)
                                 },
                                 modifier = Modifier.size(40.dp),
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                shape = CircleShape
-                            ) {
-                                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                            }
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
                         }
                     }
                 }
@@ -340,18 +338,16 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        FloatingActionButton(
+                        AeonFloatingActionButton(
                             onClick = { 
                                 isFabExpanded = false
                                 onAddClick(2, null)
                             },
                             modifier = Modifier.size(40.dp),
+                            icon = Icons.Default.SyncAlt,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            shape = CircleShape
-                        ) {
-                            Icon(Icons.Default.SyncAlt, contentDescription = null, modifier = Modifier.size(20.dp))
-                        }
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
                 }
 
@@ -380,18 +376,16 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        FloatingActionButton(
+                        AeonFloatingActionButton(
                             onClick = { 
                                 isFabExpanded = false
                                 onAddClick(0, null)
                             },
                             modifier = Modifier.size(40.dp),
+                            icon = Icons.Default.Add,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            shape = CircleShape
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
-                        }
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
                 }
             }
@@ -401,19 +395,14 @@ fun DashboardScreen(
                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
             )
 
-            FloatingActionButton(
+            AeonFloatingActionButton(
                 onClick = { isFabExpanded = !isFabExpanded },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape,
-                modifier = Modifier.zIndex(3f)
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = if (isFabExpanded) "Close" else "Add",
-                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
-                )
-            }
+                modifier = Modifier
+                    .zIndex(3f)
+                    .graphicsLayer { rotationZ = rotation },
+                icon = Icons.Default.Add,
+                contentDescription = if (isFabExpanded) "Close" else "Add"
+            )
         }
     }
 }
@@ -484,6 +473,7 @@ fun DashboardContent(
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: () -> Unit,
+    onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
     dashboardViewModel: DashboardViewModel
@@ -563,6 +553,7 @@ fun DashboardContent(
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.BUDGETS -> {
                             if (budgets.isNotEmpty()) {
                                 BudgetTrackingSection(
+                                    onManageClick = onBudgetsClick,
                                     budgets = budgets,
                                     baseCurrency = state.baseCurrency,
                                     modifier = Modifier.fillMaxWidth(),
@@ -891,23 +882,35 @@ fun AccountGridItem(
 
 @Composable
 fun BudgetTrackingSection(
+    onManageClick: () -> Unit,
     budgets: List<Budget>,
     baseCurrency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Box(modifier = headerModifier) {
-            AeonSectionHeader(title = "Budget Tracking")
-        }
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AeonFlowSectionHeader(
+                title = "Budget Tracking",
+                modifier = headerModifier,
+                trailing = {
+                    Text(
+                        text = "Manage",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.clickable(onClick = onManageClick)
+                    )
+                }
+            )
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 budgets.forEach { budget ->
                     AeonBudgetProgress(
                         label = budget.category,

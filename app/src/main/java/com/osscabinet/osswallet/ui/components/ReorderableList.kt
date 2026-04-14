@@ -64,12 +64,14 @@ fun <T> ReorderableList(
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     val currentKeySelector by rememberUpdatedState(key)
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.graphicsLayer(clip = false)) {
         LazyColumn(
             state = state,
             contentPadding = contentPadding,
             verticalArrangement = verticalArrangement,
-            modifier = Modifier.pointerInput(Unit) {
+            modifier = Modifier
+                .graphicsLayer(clip = false)
+                .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = { offset ->
                         state.layoutInfo.visibleItemsInfo
@@ -180,7 +182,7 @@ fun <T> ReorderableList(
             itemsIndexed(
                 items = items,
                 key = { _, item -> key(item) }
-            ) { _, item ->
+            ) { index, item ->
                 val isDragging = draggedKey == key(item)
                 val zIndex = if (isDragging) 10f else 0f
                 
@@ -194,12 +196,43 @@ fun <T> ReorderableList(
                     label = "reorder_elevation"
                 )
 
+                // Fluid swap offset for non-dragged items
+                val itemOffsetTarget by remember(state, draggedKey, dragOffset, index) {
+                    derivedStateOf {
+                        if (!isDragging && draggedKey != null) {
+                            val draggedIndex = currentItems.indexOfFirst { currentKeySelector(it) == draggedKey }
+                            if (draggedIndex != -1) {
+                                val layoutInfo = state.layoutInfo
+                                val draggedInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.key == draggedKey }
+                                val currentInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.key == key(item) }
+
+                                if (draggedInfo != null && currentInfo != null) {
+                                    val draggedCenter = draggedInfo.offset + (draggedInfo.size / 2) + dragOffset
+                                    val currentCenter = currentInfo.offset + (currentInfo.size / 2)
+
+                                    if (draggedIndex < index && draggedCenter > currentCenter) {
+                                        -draggedInfo.size.toFloat() - spacingPx // Glide up
+                                    } else if (draggedIndex > index && draggedCenter < currentCenter) {
+                                        draggedInfo.size.toFloat() + spacingPx // Glide down
+                                    } else 0f
+                                } else 0f
+                            } else 0f
+                        } else 0f
+                    }
+                }
+
+                val itemOffset by animateFloatAsState(
+                    targetValue = itemOffsetTarget,
+                    animationSpec = spring(stiffness = Spring.StiffnessLow),
+                    label = "fluid_swap_offset"
+                )
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .zIndex(zIndex)
                         .graphicsLayer {
-                            translationY = if (isDragging) dragOffset else 0f
+                            translationY = if (isDragging) dragOffset else itemOffset
                             scaleX = scale
                             scaleY = scale
                         }

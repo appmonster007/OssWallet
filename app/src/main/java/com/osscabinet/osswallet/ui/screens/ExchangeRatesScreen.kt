@@ -40,6 +40,75 @@ fun ExchangeRatesScreen(
     val scope = rememberCoroutineScope()
     val tabs = listOf("Rates", "Converter")
 
+    if (uiState.pendingResponse != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelSaveRates() },
+            title = { Text("Confirm Exchange Rates") },
+            text = {
+                val response = uiState.pendingResponse
+                val jsonPreview = remember(response) {
+                    """
+                    {
+                      "result": "${response?.result}",
+                      "base_code": "${response?.baseCode}",
+                      "rates": {
+                        ${response?.rates?.entries?.take(5)?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }}
+                        ... (+${(response?.rates?.size ?: 5) - 5} more)
+                      }
+                    }
+                    """.trimIndent()
+                }
+                Column {
+                    Text("New rates fetched. Do you want to save them?", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = jsonPreview,
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmSaveRates() }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelSaveRates() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (uiState.syncError != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Exchange Rate Error") },
+            text = { Text(uiState.syncError ?: "An unexpected error occurred while fetching exchange rates.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    viewModel.clearError()
+                    viewModel.refreshRates()
+                }) {
+                    Text("Retry")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             Column {
@@ -56,13 +125,75 @@ fun ExchangeRatesScreen(
                             val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "Never"
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = lastUpdatedStr,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = lastUpdatedStr,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    if (uiState.pendingResponse != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelSaveRates() },
+            title = { Text("Confirm Exchange Rates") },
+            text = {
+                val response = uiState.pendingResponse
+                val jsonPreview = remember(response) {
+                    """
+                    {
+                      "result": "${response?.result}",
+                      "base_code": "${response?.baseCode}",
+                      "rates": {
+                        ${response?.rates?.entries?.take(5)?.joinToString(",\n                        ") { "\"${it.key}\": ${it.value}" }}
+                        ... (+${(response?.rates?.size ?: 5) - 5} more)
+                      }
+                    }
+                    """.trimIndent()
+                }
+                Column {
+                    Text("New rates fetched. Do you want to save them?", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = jsonPreview,
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmSaveRates() }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelSaveRates() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (uiState.syncError != null) {
+                                        Text(
+                                            text = "Sync Failed",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                                 IconButton(onClick = { viewModel.refreshRates() }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                                    if (uiState.isLoading) {
+                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                                    }
                                 }
                             }
                         }

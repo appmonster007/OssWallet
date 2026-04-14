@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 
+import androidx.room.Transaction
+
 @Dao
 interface CurrencyDao {
     @Query("SELECT * FROM currency_rates")
@@ -16,4 +18,10 @@ interface CurrencyDao {
 
     @Query("DELETE FROM currency_rates")
     suspend fun deleteAllRates()
+
+    @Transaction
+    suspend fun replaceRates(rates: List<CurrencyRateEntity>) {
+        deleteAllRates()
+        insertRates(rates)
+    }
 }

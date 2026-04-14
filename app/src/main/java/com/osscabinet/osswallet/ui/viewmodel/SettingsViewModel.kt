@@ -12,11 +12,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+sealed interface SyncState {
+    data object Idle : SyncState
+    data object Loading : SyncState
+    data class Error(val message: String) : SyncState
+    data object Success : SyncState
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModel(
     private val settingsDataStore: SettingsDataStore,
     private val profileRepository: ProfileRepository,
-    private val backupRepository: BackupRepository
+    private val backupRepository: BackupRepository,
+    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 ) : ViewModel() {
 
     val currency: StateFlow<String> = settingsDataStore.currency
@@ -30,6 +38,9 @@ class SettingsViewModel(
 
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+
+    val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsDataStore.isOnboardingCompleted
         .map { it as Boolean? }
@@ -48,9 +59,26 @@ class SettingsViewModel(
         // Initialization logic if needed
     }
 
+    private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
+    val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState.asStateFlow()
+
     fun setCurrency(currency: String) {
         viewModelScope.launch {
             settingsDataStore.saveCurrency(currency)
+            fetchAndSaveRates(currency)
+        }
+    }
+
+    private fun fetchAndSaveRates(baseCurrency: String) {
+        viewModelScope.launch {
+            _onboardingSyncState.value = SyncState.Loading
+            try {
+                val response = currencyRepository.fetchFreshRates(baseCurrency)
+                currencyRepository.saveRates(baseCurrency, response)
+                _onboardingSyncState.value = SyncState.Success
+            } catch (e: Exception) {
+                _onboardingSyncState.value = SyncState.Error(e.localizedMessage ?: "Unknown Error")
+            }
         }
     }
 
@@ -69,6 +97,12 @@ class SettingsViewModel(
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
             settingsDataStore.saveDecimalPrecision(precision)
+        }
+    }
+
+    fun setAutoSaveExchangeRates(autoSave: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.saveAutoSaveExchangeRates(autoSave)
         }
     }
 
@@ -106,9 +140,10 @@ class SettingsViewModel(
 class SettingsViewModelFactory(
     private val settingsDataStore: SettingsDataStore,
     private val profileRepository: ProfileRepository,
-    private val backupRepository: BackupRepository
+    private val backupRepository: BackupRepository,
+    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return SettingsViewModel(settingsDataStore, profileRepository, backupRepository) as T
+        return SettingsViewModel(settingsDataStore, profileRepository, backupRepository, currencyRepository) as T
     }
 }

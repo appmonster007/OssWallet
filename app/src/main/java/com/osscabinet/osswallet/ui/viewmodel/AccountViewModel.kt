@@ -36,32 +36,11 @@ class AccountViewModel(
         )
 
     init {
-        seedDefaultAccount()
+        // We've moved default account creation to onboarding
     }
 
     private fun seedDefaultAccount() {
-        viewModelScope.launch {
-            settingsDataStore.currentProfileId.collectLatest { profileId ->
-                val existingAccounts = repository.getAllAccounts(profileId).first()
-                if (existingAccounts.isEmpty()) {
-                    val defaultCurrency = settingsDataStore.currency.first()
-                    val cashAccount = Account(
-                        id = "default-cash-id",
-                        name = "Cash",
-                        balance = BigDecimal.ZERO,
-                        initialBalance = BigDecimal.ZERO,
-                        currencyCode = defaultCurrency,
-                        structureType = "Cash",
-                        colorHex = "#4CAF50",
-                        icon = "Payments",
-                        allowedCurrencies = listOf(defaultCurrency),
-                        isArchived = false,
-                        displayOrder = 0
-                    )
-                    repository.insertAccount(cashAccount, profileId)
-                }
-            }
-        }
+        // Logic removed as it's now handled in OnboardingScreen explicitly with user input
     }
 
     fun addAccount(

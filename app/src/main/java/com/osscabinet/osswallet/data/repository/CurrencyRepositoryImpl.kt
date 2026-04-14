@@ -12,13 +12,47 @@ class CurrencyRepositoryImpl(
     private val dao: CurrencyDao
 ) : CurrencyRepository {
 
+    override suspend fun fetchFreshRates(baseCurrency: String): com.osscabinet.ossWallet.data.remote.CurrencyResponse {
+        return withContext(Dispatchers.IO) {
+            api.getLatestRates(baseCurrency)
+        }
+    }
+
+    override suspend fun saveRates(baseCurrency: String, response: com.osscabinet.ossWallet.data.remote.CurrencyResponse) {
+        withContext(Dispatchers.IO) {
+            val nextUpdateMillis = (response.timeNextUpdateUnix ?: 0L) * 1000L
+            val entities = response.rates.map {
+                CurrencyRateEntity(
+                    currencyCode = it.key,
+                    baseCurrency = baseCurrency,
+                    rate = it.value,
+                    timestamp = System.currentTimeMillis(),
+                    nextUpdate = nextUpdateMillis
+                )
+            }
+            dao.replaceRates(entities)
+        }
+    }
+
     override suspend fun getExchangeRates(baseCurrency: String, forceRefresh: Boolean): Map<String, Double> {
         return withContext(Dispatchers.IO) {
             val localRates = dao.getAllRates()
             
             // If cache is valid and matches our base currency, use it
-            if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first()) && localRates.first().baseCurrency == baseCurrency) {
-                return@withContext localRates.associate { it.currencyCode to it.rate }
+            if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first())) {
+                val rates = localRates.associate { it.currencyCode to it.rate }
+                
+                // If it's already in the correct base, return it
+                if (localRates.first().baseCurrency == baseCurrency) {
+                    return@withContext rates
+                }
+                
+                // If it's in a different base, we can derive the cross-rates
+                // Rate(X to B) = Rate(X to A) / Rate(B to A)
+                val newBaseRate = rates[baseCurrency]
+                if (newBaseRate != null && newBaseRate != 0.0) {
+                    return@withContext rates.mapValues { it.value / newBaseRate }
+                }
             }
             
             // Otherwise try to fetch fresh rates
@@ -27,8 +61,7 @@ class CurrencyRepositoryImpl(
                 return@withContext freshRates
             }
             
-            // If fetch fails but we have old rates, we can try to "re-base" them if needed
-            // But for now, returning what we have or empty
+            // If fetch fails but we have old rates, return what we have
             localRates.associate { it.currencyCode to it.rate }
         }
     }
@@ -56,13 +89,33 @@ class CurrencyRepositoryImpl(
                         nextUpdate = nextUpdateMillis
                     )
                 }
+                
+                // Transactional update: delete old and insert new
+                // This ensures we don't have partial data if one step fails
                 dao.deleteAllRates()
                 dao.insertRates(entities)
+                
                 response.rates
             } else {
+                // Log provider-specific error result
+                println("Currency API Error: ${response.result}")
                 dao.getAllRates().associate { it.currencyCode to it.rate }
             }
+        } catch (e: java.net.UnknownHostException) {
+            println("Currency Sync Failed: No Internet Connection")
+            dao.getAllRates().associate { it.currencyCode to it.rate }
+        } catch (e: retrofit2.HttpException) {
+            val code = e.code()
+            val message = when(code) {
+                429 -> "Rate limit exceeded (HTTP 429)"
+                403 -> "Invalid API Key or forbidden (HTTP 403)"
+                404 -> "Base currency not supported (HTTP 404)"
+                else -> "HTTP Error $code"
+            }
+            println("Currency Sync Failed: $message")
+            dao.getAllRates().associate { it.currencyCode to it.rate }
         } catch (e: Exception) {
+            println("Currency Sync Failed: ${e.localizedMessage}")
             e.printStackTrace()
             dao.getAllRates().associate { it.currencyCode to it.rate }
         }

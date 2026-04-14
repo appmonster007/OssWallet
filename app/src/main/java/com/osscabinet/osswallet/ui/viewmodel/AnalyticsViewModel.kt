@@ -85,7 +85,7 @@ class AnalyticsViewModel(
                 fromCurrency = tx.currency,
                 toCurrency = selectedCurrency,
                 exchangeRates = currentRates,
-                precision = _currentPrecision + 2 // Use slightly higher precision during aggregation
+                precision = _currentPrecision + 4 // Use higher internal precision
             )
             tx.copy(amount = convertedAmount)
         }

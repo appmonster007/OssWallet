@@ -51,7 +51,7 @@ fun AeonFlowBreakdownItem(
             ),
             color = MaterialTheme.colorScheme.outline
         )
-        Column {
+        Column(horizontalAlignment = Alignment.End) {
             Text(
                 formatCurrencyRight(amount, curr, precision),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)

@@ -41,6 +41,7 @@ fun SettingsScreen(
     val theme by viewModel.theme.collectAsState()
     val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsState()
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
+    val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsState()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -305,6 +306,47 @@ fun SettingsScreen(
                     icon = Icons.Rounded.DashboardCustomize,
                     onClick = { showGridDialog = true }
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Auto-save Exchange Rates", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                    Switch(
+                        checked = autoSaveExchangeRates,
+                        onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    )
+                }
                 
                 Row(
                     modifier = Modifier

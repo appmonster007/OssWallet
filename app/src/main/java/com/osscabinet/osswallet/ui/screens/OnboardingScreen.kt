@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SyncState
 import com.osscabinet.ossWallet.ui.util.*
 import java.math.BigDecimal
 
@@ -41,14 +43,19 @@ import java.math.BigDecimal
 @Composable
 fun OnboardingScreen(
     viewModel: SettingsViewModel,
+    accountViewModel: AccountViewModel,
     onFinished: () -> Unit
 ) {
     var step by remember { mutableStateOf(0) }
     val currency by viewModel.currency.collectAsState(initial = "USD")
     val theme by viewModel.theme.collectAsState(initial = "System")
     val precision by viewModel.decimalPrecision.collectAsState(initial = 2)
+    val syncState by viewModel.onboardingSyncState.collectAsState()
 
-    val steps = listOf("Currency", "Appearance", "Precision")
+    var accountName by remember { mutableStateOf("Cash") }
+    var initialBalance by remember { mutableStateOf("") }
+
+    val steps = listOf("Currency", "Appearance", "Precision", "Account")
 
     Scaffold(
         bottomBar = {
@@ -84,6 +91,16 @@ fun OnboardingScreen(
                             if (step < steps.size - 1) {
                                 step++
                             } else {
+                                // Finalize Onboarding
+                                accountViewModel.addAccount(
+                                    name = accountName,
+                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                    currency = currency,
+                                    structureType = "Cash",
+                                    colorHex = "#4CAF50",
+                                    icon = "Payments",
+                                    allowedCurrencies = listOf(currency)
+                                )
                                 viewModel.setOnboardingCompleted(true)
                                 onFinished()
                             }
@@ -108,9 +125,16 @@ fun OnboardingScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when (step) {
-                0 -> CurrencyStep(currency, onCurrencySelected = { viewModel.setCurrency(it) })
+                0 -> CurrencyStep(currency, syncState, onCurrencySelected = { viewModel.setCurrency(it) })
                 1 -> ThemeStep(theme, onThemeSelected = { viewModel.setTheme(it) })
                 2 -> PrecisionStep(precision, onPrecisionSelected = { viewModel.setDecimalPrecision(it) })
+                3 -> AccountStep(
+                    initialCurrency = currency,
+                    accountName = accountName,
+                    onAccountNameChange = { accountName = it },
+                    initialBalance = initialBalance,
+                    onInitialBalanceChange = { initialBalance = it }
+                )
             }
         }
     }
@@ -118,7 +142,7 @@ fun OnboardingScreen(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CurrencyStep(selectedCurrency: String, onCurrencySelected: (String) -> Unit) {
+fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelected: (String) -> Unit) {
     StepHeader(
         icon = Icons.Rounded.Payments,
         title = "Base Currency",
@@ -192,7 +216,11 @@ fun CurrencyStep(selectedCurrency: String, onCurrencySelected: (String) -> Unit)
                                 Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             }
                             if (selectedCurrency == code) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                when (syncState) {
+                                    is SyncState.Loading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    is SyncState.Error -> Icon(Icons.Rounded.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                    else -> Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
                         }
                     }
@@ -313,6 +341,82 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AccountStep(
+    initialCurrency: String,
+    accountName: String,
+    onAccountNameChange: (String) -> Unit,
+    initialBalance: String,
+    onInitialBalanceChange: (String) -> Unit
+) {
+    StepHeader(
+        icon = Icons.Rounded.AccountBalanceWallet,
+        title = "First Account",
+        description = "Let's set up your main account. You can add more later."
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        OutlinedTextField(
+            value = accountName,
+            onValueChange = onAccountNameChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Account Name") },
+            placeholder = { Text("e.g. Cash, Bank, Wallet") },
+            leadingIcon = { Icon(Icons.Rounded.Badge, contentDescription = null) },
+            shape = RoundedCornerShape(16.dp),
+            singleLine = true
+        )
+
+        OutlinedTextField(
+            value = initialBalance,
+            onValueChange = onInitialBalanceChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Initial Balance") },
+            placeholder = { Text("0.00") },
+            leadingIcon = {
+                Text(
+                    getCurrencySymbol(initialCurrency),
+                    modifier = Modifier.padding(start = 12.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+            ),
+            shape = RoundedCornerShape(16.dp),
+            singleLine = true
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    "This will create your primary account in $initialCurrency.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

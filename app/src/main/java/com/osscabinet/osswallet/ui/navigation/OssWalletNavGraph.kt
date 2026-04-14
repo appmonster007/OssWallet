@@ -27,7 +27,8 @@ fun OssWalletNavGraph(
         factory = SettingsViewModelFactory(
             appContainer.settingsDataStore,
             appContainer.profileRepository,
-            appContainer.backupRepository
+            appContainer.backupRepository,
+            appContainer.currencyRepository
         )
     )
 
@@ -131,6 +132,7 @@ fun OssWalletNavGraph(
         composable("onboarding") {
             OnboardingScreen(
                 viewModel = settingsViewModel,
+                accountViewModel = accountViewModel,
                 onFinished = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo("onboarding") { inclusive = true }

@@ -236,7 +236,9 @@ fun CurrencyManagementSection(
                                 val isSelected = allowedCurrencies.contains(code)
                                 val isPrimary = primaryCurrency == code
                                 val hasTransactions = currencyUsageMap[code] ?: false
-                                val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else true
+                                val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else {
+                                    !isSelected || (allowedCurrencies.size > 1)
+                                }
 
                                 CurrencyGridItem(
                                     code = code,
@@ -249,6 +251,7 @@ fun CurrencyManagementSection(
                                             if (isPrimary) onPrimaryCurrencyChange("")
                                             onAllowedCurrenciesChange(allowedCurrencies - code)
                                         } else {
+                                            if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
                                             onAllowedCurrenciesChange(allowedCurrencies + code)
                                         }
                                     },
@@ -268,7 +271,7 @@ fun CurrencyManagementSection(
                                 rowCurrencies.forEach { code ->
                                     val isPrimary = primaryCurrency == code
                                     val hasTransactions = currencyUsageMap[code] ?: false
-                                    val canToggle = if (isEditMode) !isPrimary && !hasTransactions else true
+                                    val canToggle = if (isEditMode) !isPrimary && !hasTransactions else (allowedCurrencies.size > 1)
 
                                     CurrencyGridItem(
                                         code = code,
@@ -301,7 +304,9 @@ fun CurrencyManagementSection(
                         val isSelected = allowedCurrencies.contains(code)
                         val isPrimary = primaryCurrency == code
                         val hasTransactions = currencyUsageMap[code] ?: false
-                        val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else true
+                        val canToggle = if (isEditMode) !isSelected || (!isPrimary && !hasTransactions) else {
+                            !isSelected || (allowedCurrencies.size > 1)
+                        }
                         
                         Surface(
                             modifier = Modifier
@@ -312,6 +317,7 @@ fun CurrencyManagementSection(
                                         if (isPrimary) onPrimaryCurrencyChange("")
                                         onAllowedCurrenciesChange(allowedCurrencies - code)
                                     } else {
+                                        if (allowedCurrencies.isEmpty()) onPrimaryCurrencyChange(code)
                                         onAllowedCurrenciesChange(allowedCurrencies + code)
                                     }
                                 },

@@ -57,6 +57,7 @@ fun OssWalletNavGraph(
     val accountViewModel: AccountViewModel = viewModel(
         factory = AccountViewModelFactory(
             appContainer.accountRepository,
+            appContainer.transactionRepository,
             appContainer.settingsDataStore
         )
     )
@@ -107,12 +108,37 @@ fun OssWalletNavGraph(
         }
     )
 
-    // Keep splash screen on until Dashboard is loaded
+    val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
+
+    // Keep splash screen on until we know if onboarding is needed
+    // AND if not onboarding, until Dashboard is loaded
     splashScreen?.setKeepOnScreenCondition {
-        dashboardViewModel.uiState.value is DashboardUiState.Loading
+        when (isOnboardingCompleted) {
+            null -> true
+            false -> false 
+            true -> dashboardViewModel.uiState.value is DashboardUiState.Loading
+        }
     }
 
-    NavHost(navController = navController, startDestination = Screen.Dashboard.route) {
+    if (isOnboardingCompleted == null) {
+        return
+    }
+
+    NavHost(
+        navController = navController, 
+        startDestination = if (isOnboardingCompleted == true) Screen.Dashboard.route else "onboarding"
+    ) {
+        composable("onboarding") {
+            OnboardingScreen(
+                viewModel = settingsViewModel,
+                onFinished = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },

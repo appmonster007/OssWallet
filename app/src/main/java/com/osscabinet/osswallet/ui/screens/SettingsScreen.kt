@@ -24,9 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.ui.util.getCurrencySymbol
-import com.osscabinet.ossWallet.ui.util.getCurrencyName
-import com.osscabinet.ossWallet.ui.util.getAllCurrencies
+import com.osscabinet.ossWallet.ui.util.*
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,11 +42,11 @@ fun SettingsScreen(
     val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsState()
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
     
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showGridDialog by remember { mutableStateOf(false) }
-    var showPrecisionDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -265,43 +265,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showPrecisionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPrecisionDialog = false },
-            title = { Text("Decimal Precision") },
-            text = {
-                Column {
-                    listOf(2, 3).forEach { precision ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setDecimalPrecision(precision)
-                                    showPrecisionDialog = false
-                                }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                if (precision == 2) Icons.Rounded.Money else Icons.Rounded.PrecisionManufacturing,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("$precision Decimal Places", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                            if (precision == decimalPrecision) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showPrecisionDialog = false }) { Text("Close") }
-            }
-        )
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -342,12 +305,65 @@ fun SettingsScreen(
                     icon = Icons.Rounded.DashboardCustomize,
                     onClick = { showGridDialog = true }
                 )
-                SettingsItem(
-                    title = "Decimal Precision",
-                    subtitle = "$decimalPrecision Decimal Places",
-                    icon = Icons.Rounded.PrecisionManufacturing,
-                    onClick = { showPrecisionDialog = true }
-                )
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.PrecisionManufacturing, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Decimal Precision", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                        Text("Toggle between 2 and 3 places", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                    
+                    Row(
+                        modifier = Modifier
+                            .height(32.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                CircleShape
+                            )
+                            .padding(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(2, 3).forEach { p ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .width(40.dp)
+                                    .clickable {
+                                        if (decimalPrecision != p) {
+                                            viewModel.setDecimalPrecision(p)
+                                            Toast.makeText(context, "Precision set to $p decimal places", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                shape = CircleShape,
+                                color = if (decimalPrecision == p) MaterialTheme.colorScheme.primary else Color.Transparent
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        p.toString(),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (decimalPrecision == p) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 SettingsItem(
                     title = "Manage Accounts",
                     subtitle = "Reorder, hide, or edit your accounts",

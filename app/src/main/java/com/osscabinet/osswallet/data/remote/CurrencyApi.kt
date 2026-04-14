@@ -14,7 +14,7 @@ interface CurrencyApi {
 data class CurrencyResponse(
     @Json(name = "result") val result: String,
     @Json(name = "base_code") val baseCode: String,
-    @Json(name = "time_last_update_unix") val timeLastUpdateUnix: Long,
-    @Json(name = "time_next_update_unix") val timeNextUpdateUnix: Long,
+    @Json(name = "time_last_update_unix") val timeLastUpdateUnix: Long? = null,
+    @Json(name = "time_next_update_unix") val timeNextUpdateUnix: Long? = null,
     @Json(name = "rates") val rates: Map<String, Double>
 )

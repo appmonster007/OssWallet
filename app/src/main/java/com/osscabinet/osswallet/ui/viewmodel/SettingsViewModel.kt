@@ -19,45 +19,33 @@ class SettingsViewModel(
     private val backupRepository: BackupRepository
 ) : ViewModel() {
 
-    private val _currency = MutableStateFlow("USD")
-    val currency: StateFlow<String> = _currency.asStateFlow()
+    val currency: StateFlow<String> = settingsDataStore.currency
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
-    private val _theme = MutableStateFlow("System")
-    val theme: StateFlow<String> = _theme.asStateFlow()
+    val theme: StateFlow<String> = settingsDataStore.theme
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
 
-    private val _dashboardGridColumns = MutableStateFlow(2)
-    val dashboardGridColumns: StateFlow<Int> = _dashboardGridColumns.asStateFlow()
+    val dashboardGridColumns: StateFlow<Int> = settingsDataStore.dashboardGridColumns
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    private val _decimalPrecision = MutableStateFlow(2)
-    val decimalPrecision: StateFlow<Int> = _decimalPrecision.asStateFlow()
+    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    private val _currentProfile = MutableStateFlow<ProfileEntity?>(null)
-    val currentProfile: StateFlow<ProfileEntity?> = _currentProfile.asStateFlow()
+    val isOnboardingCompleted: StateFlow<Boolean?> = settingsDataStore.isOnboardingCompleted
+        .map { it as Boolean? }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _profiles = MutableStateFlow<List<ProfileEntity>>(emptyList())
-    val profiles: StateFlow<List<ProfileEntity>> = _profiles.asStateFlow()
+    val profiles: StateFlow<List<ProfileEntity>> = profileRepository.getAllProfiles()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val currentProfile: StateFlow<ProfileEntity?> = settingsDataStore.currentProfileId
+        .flatMapLatest { id ->
+            flow { emit(profileRepository.getProfileById(id)) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
-        viewModelScope.launch {
-            settingsDataStore.currency.collect { _currency.value = it }
-        }
-        viewModelScope.launch {
-            settingsDataStore.theme.collect { _theme.value = it }
-        }
-        viewModelScope.launch {
-            settingsDataStore.dashboardGridColumns.collect { _dashboardGridColumns.value = it }
-        }
-        viewModelScope.launch {
-            settingsDataStore.decimalPrecision.collect { _decimalPrecision.value = it }
-        }
-        viewModelScope.launch {
-            profileRepository.getAllProfiles().collect { _profiles.value = it }
-        }
-        viewModelScope.launch {
-            settingsDataStore.currentProfileId.flatMapLatest { id ->
-                flow { emit(profileRepository.getProfileById(id)) }
-            }.collect { _currentProfile.value = it }
-        }
+        // Initialization logic if needed
     }
 
     fun setCurrency(currency: String) {
@@ -81,6 +69,12 @@ class SettingsViewModel(
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
             settingsDataStore.saveDecimalPrecision(precision)
+        }
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.saveOnboardingCompleted(completed)
         }
     }
 

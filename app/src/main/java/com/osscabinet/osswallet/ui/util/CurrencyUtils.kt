@@ -62,18 +62,20 @@ fun convertAmount(
 ): BigDecimal {
     if (fromCurrency == toCurrency) return amount.setScale(precision, RoundingMode.HALF_UP)
 
-    val fromRate = exchangeRates[fromCurrency] ?: BigDecimal.ONE
-    val toRate = exchangeRates[toCurrency] ?: BigDecimal.ONE
+    // Check if we have both rates in the map
+    // Note: The map usually contains rates relative to a base currency (e.g., USD or the user's base)
+    val fromRate = exchangeRates[fromCurrency]
+    val toRate = exchangeRates[toCurrency]
 
-    // We use a high intermediate precision to avoid loss during calculation
-    // but the final result is always rounded to the requested precision.
-    val intermediatePrecision = maxOf(precision + 4, 10)
-
-    val inBase = if (fromRate.signum() != 0) {
-        amount.divide(fromRate, intermediatePrecision, RoundingMode.HALF_UP)
-    } else {
-        amount
+    if (fromRate == null || toRate == null || fromRate.signum() == 0) {
+        // Fallback: If we can't find rates, return original amount or zero to avoid crashing
+        // This is where "not working" usually happens if the map is empty or missing keys
+        return amount.setScale(precision, RoundingMode.HALF_UP)
     }
+
+    // Standard cross-rate conversion: (Amount / RateFromBase) * RateToBase
+    val intermediatePrecision = maxOf(precision + 4, 10)
+    val inBase = amount.divide(fromRate, intermediatePrecision, RoundingMode.HALF_UP)
 
     return inBase.multiply(toRate).setScale(precision, RoundingMode.HALF_UP)
 }

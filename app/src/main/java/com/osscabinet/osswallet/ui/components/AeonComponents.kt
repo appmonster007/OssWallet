@@ -875,6 +875,238 @@ fun AeonAccountHeroCard(
 }
 
 @Composable
+fun AeonAccountCardSmall(
+    account: Account,
+    balanceInBase: BigDecimal,
+    baseCurrency: String,
+    isDarkTheme: Boolean,
+    isAmoled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    precision: Int = 2
+) {
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
+    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
+    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+//            Icon(
+//                icon,
+//                contentDescription = null,
+//                modifier = Modifier.size(16.dp),
+//                tint = contentColor.copy(alpha = 0.7f)
+//            )
+            Text(
+                account.name,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Column {
+                Text(
+                    formatCurrencyRight(account.balance, account.currencyCode, precision),
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = contentColor.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonAccountCardMedium(
+    account: Account,
+    balanceInBase: BigDecimal,
+    baseCurrency: String,
+    isDarkTheme: Boolean,
+    isAmoled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    precision: Int = 2
+) {
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
+    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
+    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+    ) {
+        Box {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 10.dp)
+                    .size(80.dp)
+                    .alpha(0.1f),
+                tint = contentColor
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = contentColor.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        account.name,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 14.sp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    formatCurrencyRight(account.balance, account.currencyCode, precision),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = contentColor.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonAccountCardLarge(
+    account: Account,
+    balanceInBase: BigDecimal,
+    baseCurrency: String,
+    isDarkTheme: Boolean,
+    isAmoled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    precision: Int = 2
+) {
+    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
+    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
+    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(28.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 20.dp)
+                    .size(120.dp)
+                    .alpha(0.1f),
+                tint = contentColor
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = contentColor.copy(alpha = 0.1f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = contentColor
+                                )
+                            }
+                        }
+                        Text(
+                            account.name,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        account.structureType.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp
+                        ),
+                        color = contentColor.copy(alpha = 0.5f)
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        formatCurrencyRight(account.balance, account.currencyCode, precision),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black, fontSize = 22.sp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun AeonCurrencyBreakdown(
     balances: Map<String, BigDecimal>,
     baseCurrency: String,

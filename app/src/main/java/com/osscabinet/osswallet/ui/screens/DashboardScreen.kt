@@ -652,9 +652,14 @@ fun AccountsSection(
                 title = "Accounts",
                 modifier = headerModifier,
                 trailing = {
-                    TextButton(onClick = onManageClick) {
-                        Text("Manage", style = MaterialTheme.typography.labelLarge)
-                    }
+                    Text(
+                        text = "Manage",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.clickable(onClick = onManageClick)
+                    )
                 }
             )
 

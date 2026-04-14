@@ -47,7 +47,6 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var showGridDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -224,47 +223,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showGridDialog) {
-        AlertDialog(
-            onDismissRequest = { showGridDialog = false },
-            title = { Text("Dashboard Grid") },
-            text = {
-                Column {
-                    (1..4).forEach { cols ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setDashboardGridColumns(cols)
-                                    showGridDialog = false
-                                }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                when(cols) {
-                                    1 -> Icons.Rounded.ViewStream
-                                    2 -> Icons.Rounded.GridView
-                                    3 -> Icons.Rounded.TableChart
-                                    else -> Icons.Rounded.CalendarViewMonth
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("$cols ${if (cols == 1) "Column" else "Columns"}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                            if (cols == dashboardGridColumns) {
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showGridDialog = false }) { Text("Close") }
-            }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -299,12 +257,6 @@ fun SettingsScreen(
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
-                )
-                SettingsItem(
-                    title = "Dashboard Layout",
-                    subtitle = "$dashboardGridColumns Columns",
-                    icon = Icons.Rounded.DashboardCustomize,
-                    onClick = { showGridDialog = true }
                 )
 
                 Row(

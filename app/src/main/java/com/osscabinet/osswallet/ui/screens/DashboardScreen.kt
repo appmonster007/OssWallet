@@ -227,6 +227,7 @@ fun DashboardScreen(
                                 gridColumns = gridColumns,
                                 decimalPrecision = state.decimalPrecision,
                                 onManageAccountsClick = onManageAccountsClick,
+                                onAccountsViewClick = onAccountsViewClick,
                                 onAccountClick = onAccountClick,
                                 onRecordsClick = onRecordsClick,
                                 onBudgetsClick = onBudgetsClick,
@@ -471,6 +472,7 @@ fun DashboardContent(
     gridColumns: Int,
     decimalPrecision: Int,
     onManageAccountsClick: () -> Unit,
+    onAccountsViewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: () -> Unit,
     onBudgetsClick: () -> Unit,
@@ -539,7 +541,9 @@ fun DashboardContent(
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {
                             AccountsSection(
                                 onManageClick = onManageAccountsClick,
+                                onAccountsViewClick = onAccountsViewClick,
                                 onAccountClick = onAccountClick,
+                                onGridColumnsChange = { dashboardViewModel.updateGridColumns(it) },
                                 accounts = state.accounts,
                                 baseCurrency = state.baseCurrency,
                                 exchangeRates = state.exchangeRates,
@@ -619,11 +623,13 @@ fun DashboardContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AccountsSection(
     onManageClick: () -> Unit,
+    onAccountsViewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onGridColumnsChange: (Int) -> Unit,
     accounts: List<Account>,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
@@ -633,6 +639,8 @@ fun AccountsSection(
     gridColumns: Int = 2,
     precision: Int = 2
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -641,16 +649,55 @@ fun AccountsSection(
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             AeonFlowSectionHeader(
                 title = "Accounts",
-                modifier = headerModifier,
+                modifier = headerModifier.clickable(onClick = onAccountsViewClick),
                 trailing = {
-                    Text(
-                        text = "Manage",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier.clickable(onClick = onManageClick)
-                    )
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Grid Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).width(200.dp)) {
+                                Text(
+                                    "Grid Columns: $gridColumns",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Slider(
+                                        value = gridColumns.toFloat(),
+                                        onValueChange = { onGridColumnsChange(it.toInt()) },
+                                        valueRange = 1f..3f,
+                                        steps = 1,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            onManageClick()
+                                            showMenu = false
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Settings,
+                                            contentDescription = "Manage Accounts",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             )
 
@@ -775,12 +822,14 @@ fun AccountGridItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(iconSize),
-                        tint = contentColor.copy(alpha = 0.7f)
-                    )
+                    if (gridColumns <= 2) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(iconSize),
+                            tint = contentColor.copy(alpha = 0.7f)
+                        )
+                    }
                     Text(
                         account.name,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = titleFontSize),

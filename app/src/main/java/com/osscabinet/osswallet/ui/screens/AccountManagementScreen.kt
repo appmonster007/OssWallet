@@ -116,7 +116,7 @@ fun AccountManagementScreen(
                     if (!isSelectionMode) {
                         Box {
                             IconButton(onClick = { showMoreMenu = true }) {
-                                Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                                Icon(Icons.Rounded.MoreHoriz, contentDescription = "More")
                             }
                             DropdownMenu(
                                 expanded = showMoreMenu,

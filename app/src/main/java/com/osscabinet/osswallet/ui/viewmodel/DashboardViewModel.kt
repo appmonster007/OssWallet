@@ -57,6 +57,12 @@ class DashboardViewModel(
         }
     }
 
+    fun updateGridColumns(columns: Int) {
+        viewModelScope.launch {
+            settingsDataStore.saveDashboardGridColumns(columns)
+        }
+    }
+
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(

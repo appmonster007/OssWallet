@@ -702,15 +702,18 @@ fun AccountsSection(
             )
 
             if (accounts.isEmpty()) {
-                AccountGridItem(
+                AeonAccountCardLarge(
                     account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
                     balanceInBase = BigDecimal.ZERO,
-                    totalBalanceInAccountCurrency = BigDecimal.ZERO,
                     baseCurrency = baseCurrency,
-                    currentTheme = currentTheme,
+                    isDarkTheme = when (currentTheme) {
+                        "Light" -> false
+                        "Dark", "Amoled" -> true
+                        else -> isSystemInDarkTheme()
+                    },
+                    isAmoled = currentTheme == "Amoled",
                     onClick = onManageClick,
                     modifier = Modifier.fillMaxWidth(),
-                    gridColumns = gridColumns,
                     precision = precision
                 )
             } else {
@@ -722,20 +725,55 @@ fun AccountsSection(
                 ) {
                     accounts.forEach { account ->
                         val balanceInBase = convertAmount(account.balance, account.currencyCode, baseCurrency, exchangeRates, precision)
+                        val isDarkTheme = when (currentTheme) {
+                            "Light" -> false
+                            "Dark", "Amoled" -> true
+                            else -> isSystemInDarkTheme()
+                        }
+                        val isAmoled = currentTheme == "Amoled"
 
-                        val totalBalanceInAccountCurrency = account.balance
-
-                        AccountGridItem(
-                            account = account,
-                            balanceInBase = balanceInBase,
-                            totalBalanceInAccountCurrency = totalBalanceInAccountCurrency,
-                            baseCurrency = baseCurrency,
-                            currentTheme = currentTheme,
-                            onClick = { onAccountClick(account.id) },
-                            modifier = Modifier.weight(1f),
-                            gridColumns = gridColumns,
-                            precision = precision
-                        )
+                        when (gridColumns) {
+                            1 -> AeonAccountCardLarge(
+                                account = account,
+                                balanceInBase = balanceInBase,
+                                baseCurrency = baseCurrency,
+                                isDarkTheme = isDarkTheme,
+                                isAmoled = isAmoled,
+                                onClick = { onAccountClick(account.id) },
+                                modifier = Modifier.fillMaxWidth(),
+                                precision = precision
+                            )
+                            2 -> AeonAccountCardMedium(
+                                account = account,
+                                balanceInBase = balanceInBase,
+                                baseCurrency = baseCurrency,
+                                isDarkTheme = isDarkTheme,
+                                isAmoled = isAmoled,
+                                onClick = { onAccountClick(account.id) },
+                                modifier = Modifier.weight(1f),
+                                precision = precision
+                            )
+                            3 -> AeonAccountCardSmall(
+                                account = account,
+                                balanceInBase = balanceInBase,
+                                baseCurrency = baseCurrency,
+                                isDarkTheme = isDarkTheme,
+                                isAmoled = isAmoled,
+                                onClick = { onAccountClick(account.id) },
+                                modifier = Modifier.weight(1f),
+                                precision = precision
+                            )
+                            else -> AeonAccountCardSmall(
+                                account = account,
+                                balanceInBase = balanceInBase,
+                                baseCurrency = baseCurrency,
+                                isDarkTheme = isDarkTheme,
+                                isAmoled = isAmoled,
+                                onClick = { onAccountClick(account.id) },
+                                modifier = Modifier.weight(1f),
+                                precision = precision
+                            )
+                        }
                     }
                     if (accounts.size % gridColumns != 0) {
                         repeat(gridColumns - (accounts.size % gridColumns)) {
@@ -748,186 +786,6 @@ fun AccountsSection(
     }
 }
 
-@Composable
-fun AccountGridItem(
-    account: Account,
-    balanceInBase: BigDecimal,
-    totalBalanceInAccountCurrency: BigDecimal,
-    baseCurrency: String,
-    currentTheme: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    gridColumns: Int = 2,
-    precision: Int = 2
-) {
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
-
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
-
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
-    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-
-    val titleFontSize = when(gridColumns) {
-        1 -> 18.sp
-        2 -> 14.sp
-        3 -> 12.sp
-        else -> 10.sp
-    }
-    val balanceFontSize = when(gridColumns) {
-        1 -> 24.sp
-        2 -> 16.sp
-        3 -> 14.sp
-        else -> 12.sp
-    }
-    val secondaryBalanceFontSize = when(gridColumns) {
-        1 -> 14.sp
-        2 -> 12.sp
-        else -> 10.sp
-    }
-    val iconSize = if (gridColumns > 2) 14.dp else 18.dp
-    val padding = if (gridColumns > 2) 12.dp else 16.dp
-
-    Surface(
-        modifier = modifier
-            .clickable { onClick() }
-            .onSizeChanged { cardSize = it },
-        shape = RoundedCornerShape(if (gridColumns > 2) 16.dp else 24.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance
-            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-//                    .offset { IntOffset(x = (cardSize.width * 0.1f).toInt(), y = 0) }
-                    .size(iconHeight)
-                    .alpha(0.15f),
-                tint = contentColor
-            )
-
-            Column(modifier = Modifier.padding(padding)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (gridColumns <= 2) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize),
-                            tint = contentColor.copy(alpha = 0.7f)
-                        )
-                    }
-                    Text(
-                        account.name,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = titleFontSize),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(if (gridColumns > 2) 8.dp else 12.dp))
-
-                Text(
-                    formatCurrencyRight(totalBalanceInAccountCurrency, account.currencyCode, precision),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = balanceFontSize),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = secondaryBalanceFontSize),
-                    color = contentColor.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-
-                /*
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val badges = @Composable {
-                    val incomeColor = Color(0xFF2E7D32)
-                    val expenseColor = Color(0xFFC62828)
-
-                    Surface(
-                        color = incomeColor.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, incomeColor.copy(alpha = 0.2f)),
-                        modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "+${com.osscabinet.ossWallet.ui.util.formatAmount(incomeInAccountCurrency)}",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
-                                color = incomeColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Icon(Icons.Rounded.ArrowDownward, contentDescription = null, tint = incomeColor, modifier = Modifier.size(14.dp))
-                        }
-                    }
-
-                    Surface(
-                        color = expenseColor.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, expenseColor.copy(alpha = 0.2f)),
-                        modifier = if (gridColumns <= 2) Modifier.weight(1f, fill = false) else Modifier.wrapContentSize()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "-${com.osscabinet.ossWallet.ui.util.formatAmount(expenseInAccountCurrency)}",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = badgeFontSize, fontWeight = FontWeight.ExtraBold),
-                                color = expenseColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = expenseColor, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-
-                if (gridColumns <= 2) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        badges()
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        badges()
-                    }
-                }
-                */
-            }
-        }
-    }
-}
 
 @Composable
 fun BudgetTrackingSection(

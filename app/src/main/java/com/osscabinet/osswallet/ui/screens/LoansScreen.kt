@@ -19,6 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanType
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
+import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.ui.components.AeonFlowCard
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
@@ -69,8 +74,10 @@ fun LoansScreen(
             val totalCredit = loans.filter { it.type == LoanType.LOAN }
                 .fold(BigDecimal.ZERO) { acc, loan -> acc.add(loan.principal.subtract(loan.repayments)) }
 
+            AeonFlowSectionHeader(title = "Summary")
             LoanSummaryHeader(totalDebt, totalCredit, baseCurrency, decimalPrecision)
 
+            AeonFlowSectionHeader(title = "Your Loans")
             if (loans.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No active loans or debts", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
@@ -111,42 +118,25 @@ fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String, pr
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        SummaryCard(
+        AeonFlowCard(
             modifier = Modifier.weight(1f),
             label = "TOTAL DEBT",
-            amount = debt,
-            currency = currency,
+            totalInBase = debt,
+            baseCurrency = currency,
             precision = precision,
-            color = Color(0xFFC62828)
+            type = CashFlowType.EXPENSE
         )
-        SummaryCard(
+        AeonFlowCard(
             modifier = Modifier.weight(1f),
             label = "TOTAL CREDIT",
-            amount = credit,
-            currency = currency,
+            totalInBase = credit,
+            baseCurrency = currency,
             precision = precision,
-            color = Color(0xFF2E7D32)
+            type = CashFlowType.INCOME
         )
-    }
-}
-
-@Composable
-fun SummaryCard(modifier: Modifier, label: String, amount: BigDecimal, currency: String, precision: Int, color: Color) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        color = color.copy(alpha = 0.1f)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = color)
-            Text(
-                formatCurrencyRight(amount, currency, precision = precision),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
-            )
-        }
     }
 }
 
@@ -159,38 +149,79 @@ fun LoanItem(loan: Loan, precision: Int, onRepayClick: () -> Unit, onDeleteClick
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    Text(loan.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "${if (loan.type == LoanType.DEBT) "Due" else "Receive"} by ${SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(loan.dueDate))}",
+                        loan.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "${if (loan.type == LoanType.DEBT) "Due" else "Receive"} by ${
+                            SimpleDateFormat(
+                                "dd MMM yyyy",
+                                Locale.getDefault()
+                            ).format(Date(loan.dueDate))
+                        }",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
                 IconButton(onClick = onDeleteClick) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.outline)
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(CircleShape),
                 color = color,
                 trackColor = color.copy(alpha = 0.1f)
             )
 
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    "${formatCurrencyRight(loan.repayments, loan.currency, precision = precision)} / ${formatCurrencyRight(loan.principal, loan.currency, precision = precision)}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum")
+                    "${formatCurrencyRight(loan.repayments, loan.currency, precision = precision)} / ${
+                        formatCurrencyRight(
+                            loan.principal,
+                            loan.currency,
+                            precision = precision
+                        )
+                    }",
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontFeatureSettings = "tnum",
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                TextButton(onClick = onRepayClick) {
-                    Text("REPAY ${formatCurrencyRight(BigDecimal("100.0"), loan.currency, precision = precision)}", color = color)
+                TextButton(
+                    onClick = onRepayClick,
+                    colors = ButtonDefaults.textButtonColors(contentColor = color),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        "REPAY",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

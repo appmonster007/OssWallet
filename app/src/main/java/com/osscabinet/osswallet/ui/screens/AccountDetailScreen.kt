@@ -138,7 +138,7 @@ fun AccountDetailScreen(
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                         }
                         IconButton(onClick = { /* More actions like Delete */ }) {
-                            Icon(Icons.Rounded.MoreVert, contentDescription = "More")
+                            Icon(Icons.Rounded.MoreHoriz, contentDescription = "More")
                         }
                     }
                 )

@@ -76,7 +76,7 @@ fun TransactionListScreen(
                         ) 
                     }
                     IconButton(onClick = { /* More options */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                        Icon(Icons.Default.MoreHoriz, contentDescription = "More")
                     }
                 }
             )

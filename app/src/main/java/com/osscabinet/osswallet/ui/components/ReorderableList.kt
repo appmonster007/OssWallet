@@ -15,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.Job
@@ -46,6 +48,7 @@ fun <T> ReorderableList(
     itemContent: @Composable LazyItemScope.(item: T, isDragging: Boolean) -> Unit
 ) {
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
     // Internal state for active drag tracking
@@ -77,6 +80,7 @@ fun <T> ReorderableList(
                                 offset.y.toInt() in item.offset..(item.offset + item.size)
                             }?.also { itemInfo ->
                                 if (itemInfo.index in currentItems.indices) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     draggedKey = currentKeySelector(currentItems[itemInfo.index])
                                     dragOffset = 0f
                                 }
@@ -116,6 +120,8 @@ fun <T> ReorderableList(
                                     val newList = currentItems.toMutableList()
                                     val element = newList.removeAt(currentIndex)
                                     newList.add(targetItem.index, element)
+
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
                                     // Visual compensation: adjust offset to keep the item pinned under touch
                                     dragOffset -= (targetItem.offset - currentItemInfo.offset)

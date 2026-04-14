@@ -15,6 +15,14 @@ import kotlinx.coroutines.flow.*
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+enum class DashboardSection {
+    NET_WORTH,
+    CURRENCY_BALANCES,
+    CASHFLOW,
+    ACCOUNTS,
+    BUDGETS
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel(
     private val accountRepository: AccountRepository,
@@ -22,6 +30,13 @@ class DashboardViewModel(
     private val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
+
+    private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
+    val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
+
+    fun updateSectionOrder(newOrder: List<DashboardSection>) {
+        _sectionOrder.value = newOrder
+    }
 
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
@@ -80,7 +95,7 @@ class DashboardViewModel(
                     .flatMap { (accId, accountTransactions) ->
                         val account = accountMapForTransactions[accId]
                         val accountCurrency = account?.currencyCode ?: "USD"
-                        
+
                         var runningBalance = account?.initialBalance ?: BigDecimal.ZERO
                         accountTransactions.map { transaction ->
                             val txAmountInAccountCurrency = convertAmount(

@@ -21,18 +21,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
-import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Serializable
 data class CashFlowSettings(
-    val showBaseConversion: Boolean = true
+    val showBaseConversion: Boolean = true,
+    val timelineRange: TimelineRange = TimelineRange.AllTime
 )
 
 @Composable
@@ -46,9 +49,23 @@ fun AeonCashFlowSummary(
     showTitle: Boolean = true,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
-    onShowBaseConversionChange: (Boolean) -> Unit = {}
+    timelineRange: TimelineRange = TimelineRange.AllTime,
+    onShowBaseConversionChange: (Boolean) -> Unit = {},
+    onTimelineRangeChange: (TimelineRange) -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
+
+    val timelineLabel = when (timelineRange) {
+        is TimelineRange.AllTime -> "All Time"
+        is TimelineRange.ThisPeriod -> timelineRange.period.label
+        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.CustomRange -> {
+            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
+            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            "$start - $end"
+        }
+    }
 
     val allSupportedCurrencies = remember(transactions) {
         transactions.map { it.currency }.distinct().sorted()
@@ -96,15 +113,29 @@ fun AeonCashFlowSummary(
                     title = "CASH FLOW SUMMARY",
                     modifier = headerModifier,
                     trailing = {
-                        IconButton(
-                            onClick = { showSettings = true },
-                            modifier = Modifier.size(24.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.MoreHoriz,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.colorScheme.primary
+                            Text(
+                                text = timelineLabel.uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp,
+                                    fontSize = 10.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                             )
+                            IconButton(
+                                onClick = { showSettings = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.MoreHoriz,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 )
@@ -179,6 +210,33 @@ fun AeonCashFlowSummary(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Timeline Range Selection
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "TIMELINE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            TimelineFilterBar(
+                                currentRange = timelineRange,
+                                onRangeSelected = onTimelineRangeChange,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
                     AeonBaseConversionToggle(
                         baseCurrency = baseCurrency,
                         showBaseConversion = showBaseConversion,

@@ -8,6 +8,8 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -76,6 +78,12 @@ class DashboardViewModel(
         }
     }
 
+    fun updateCurrencyBalancesTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+        }
+    }
+
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
@@ -91,6 +99,12 @@ class DashboardViewModel(
     fun updateCashFlowShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+        }
+    }
+
+    fun updateCashFlowTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
         }
     }
 
@@ -112,6 +126,12 @@ class DashboardViewModel(
         }
     }
 
+    fun updateAccountsTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
+        }
+    }
+
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -126,25 +146,79 @@ class DashboardViewModel(
                 val gridColumns = dashboardSettings.accountsSection.gridColumns
                 val accountsLayout = dashboardSettings.accountsSection.layout
                 val showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
+                val accountsTimelineRange = dashboardSettings.accountsSection.timelineRange
                 val currencyBalancesLayout = dashboardSettings.currencyBalancesSection.layout
                 val showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
+                val currencyBalancesTimelineRange = dashboardSettings.currencyBalancesSection.timelineRange
                 val cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
+                val cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange
                 val budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels
                 val netWorthFontSize = dashboardSettings.netWorthSection.fontSize
                 
-                val transactionsByAccount = allTransactions.groupBy { it.accountId }
+                val filteredTransactionsForBalances = when (val range = currencyBalancesTimelineRange) {
+                    is TimelineRange.AllTime -> allTransactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        allTransactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
+
+                val filteredTransactionsForAccounts = when (val range = accountsTimelineRange) {
+                    is TimelineRange.AllTime -> allTransactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        allTransactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
+
+                val transactionsByAccountForBalances = filteredTransactionsForBalances.groupBy { it.accountId }
+                val transactionsByAccountForAccounts = filteredTransactionsForAccounts.groupBy { it.accountId }
+
+                // Global currency totals across all accounts (using balances timeline)
+                val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
+                val includeInitialInBalances = currencyBalancesTimelineRange is TimelineRange.AllTime
                 
-                // Calculate breakdown and totals per account
-                val accountStats = accounts.associate { account ->
-                    val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+                accounts.forEach { account ->
+                    val accountTransactions = transactionsByAccountForBalances[account.id] ?: emptyList()
                     val breakdown = mutableMapOf<String, BigDecimal>()
                     
-                    // Initialize with primary currency and all allowed currencies
-                    breakdown[account.currencyCode] = account.initialBalance
-                    account.allowedCurrencies.forEach { curr ->
-                        breakdown.getOrPut(curr) { BigDecimal.ZERO }
+                    if (includeInitialInBalances) {
+                        breakdown[account.currencyCode] = account.initialBalance
                     }
                     
+                    accountTransactions.forEach { tx ->
+                        val current = breakdown[tx.currency] ?: BigDecimal.ZERO
+                        breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                    }
+                    breakdown.forEach { (curr, amount) ->
+                        globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
+                    }
+                }
+                
+                // Calculate breakdown and totals per account (using accounts timeline)
+                val includeInitialInAccounts = accountsTimelineRange is TimelineRange.AllTime
+                val accountStats = accounts.associate { account ->
+                    val accountTransactions = transactionsByAccountForAccounts[account.id] ?: emptyList()
+                    val breakdown = mutableMapOf<String, BigDecimal>()
+                    
+                    if (includeInitialInAccounts) {
+                        breakdown[account.currencyCode] = account.initialBalance
+                    }
+
                     val incomeBreakdown = mutableMapOf<String, BigDecimal>()
                     val expenseBreakdown = mutableMapOf<String, BigDecimal>()
                     
@@ -165,25 +239,24 @@ class DashboardViewModel(
                     account.id to AccountStats(breakdown.toMap(), incomeInAccountCurrency, expenseInAccountCurrency)
                 }
 
-                // Update accounts with correct total balances in their primary currency
+                // For account total balances shown in account cards, we still use ALL transactions to show actual current balance
+                val allTransactionsByAccount = allTransactions.groupBy { it.accountId }
                 val updatedAccounts = accounts.map { account ->
-                    val stats = accountStats[account.id]
+                    val accountTransactions = allTransactionsByAccount[account.id] ?: emptyList()
+                    val breakdown = mutableMapOf<String, BigDecimal>()
+                    breakdown[account.currencyCode] = account.initialBalance
+                    accountTransactions.forEach { tx ->
+                        val current = breakdown[tx.currency] ?: BigDecimal.ZERO
+                        breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                    }
                     
                     val totalInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = stats?.currencyBalances ?: emptyMap(),
+                        currencyTotals = breakdown,
                         targetCurrency = account.currencyCode,
                         exchangeRates = rates,
                         precision = precision
                     )
                     account.copy(balance = totalInAccountCurrency)
-                }
-
-                // Global currency totals across all accounts
-                val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
-                accountStats.values.forEach { stats ->
-                    stats.currencyBalances.forEach { (curr, amount) ->
-                        globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
-                    }
                 }
 
                 val nonArchivedAccounts = updatedAccounts.filter { !it.isArchived }
@@ -222,6 +295,7 @@ class DashboardViewModel(
 
                 DashboardUiState.Success(
                     accounts = nonArchivedAccounts,
+                    allTransactions = allTransactions,
                     recentTransactions = transactionsWithBalance,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -231,9 +305,12 @@ class DashboardViewModel(
                     gridColumns = gridColumns,
                     accountsLayout = accountsLayout,
                     showAddAccountCard = showAddAccountCard,
+                    accountsTimelineRange = accountsTimelineRange,
                     currencyBalancesLayout = currencyBalancesLayout,
                     showBaseConversion = showBaseConversion,
+                    currencyBalancesTimelineRange = currencyBalancesTimelineRange,
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
+                    cashFlowTimelineRange = cashFlowTimelineRange,
                     budgetShowProgressLabels = budgetShowProgressLabels,
                     netWorthFontSize = netWorthFontSize
                 )
@@ -250,6 +327,7 @@ sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
         val accounts: List<Account>,
+        val allTransactions: List<Transaction> = emptyList(),
         val recentTransactions: List<TransactionWithBalance>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
@@ -259,9 +337,12 @@ sealed class DashboardUiState {
         val gridColumns: Int = 2,
         val accountsLayout: String = "grid",
         val showAddAccountCard: Boolean = true,
+        val accountsTimelineRange: TimelineRange = TimelineRange.AllTime,
         val currencyBalancesLayout: String = "scroll",
         val showBaseConversion: Boolean = true,
+        val currencyBalancesTimelineRange: TimelineRange = TimelineRange.AllTime,
         val cashFlowShowBaseConversion: Boolean = true,
+        val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
         val budgetShowProgressLabels: Boolean = true,
         val netWorthFontSize: String = "Medium"
     ) : DashboardUiState()

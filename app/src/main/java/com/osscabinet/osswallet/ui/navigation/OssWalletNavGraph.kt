@@ -363,12 +363,25 @@ fun OssWalletNavGraph(
 
         composable(Screen.AccountDetail.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+            val accountDetailViewModel: AccountDetailViewModel = viewModel(
+                key = "AccountDetailViewModel_$accountId",
+                factory = GenericViewModelFactory {
+                    AccountDetailViewModel(
+                        accountId = accountId,
+                        accountRepository = appContainer.accountRepository,
+                        getTransactionsUseCase = appContainer.getTransactionsUseCase,
+                        settingsDataStore = appContainer.settingsDataStore,
+                        analyticsViewModel = analyticsViewModel
+                    )
+                }
+            )
             AccountDetailScreen(
                 accountId = accountId,
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel,
+                accountDetailViewModel = accountDetailViewModel,
                 onBackClick = { navController.popBackStack() },
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },

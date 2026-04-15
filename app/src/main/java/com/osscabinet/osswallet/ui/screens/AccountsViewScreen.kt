@@ -48,6 +48,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
 import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -213,10 +215,44 @@ fun AccountsViewScreen(
                                         precision = state.decimalPrecision,
                                         layout = state.currencyBalancesLayout,
                                         showBaseConversion = state.showBaseConversion,
+                                        timelineRange = state.currencyBalancesTimelineRange,
                                         onLayoutChange = { accountsViewViewModel.updateCurrencyBalancesLayout(it) },
                                         onShowBaseConversionChange = { accountsViewViewModel.updateShowBaseConversion(it) },
+                                        onTimelineRangeChange = { accountsViewViewModel.updateCurrencyBalancesTimelineRange(it) },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                AccountsViewSection.CASHFLOW -> {
+                                    val cashFlowTransactions = remember(state.allTransactions, state.cashFlowTimelineRange) {
+                                        when (val range = state.cashFlowTimelineRange) {
+                                            is TimelineRange.AllTime -> state.allTransactions
+                                            is TimelineRange.ThisPeriod -> {
+                                                val (start, end) = FilterUtils.getRangeForThis(range.period)
+                                                state.allTransactions.filter { it.timestamp in start..end }
+                                            }
+                                            is TimelineRange.LastPeriod -> {
+                                                val (start, end) = FilterUtils.getRangeForLast(range.period)
+                                                state.allTransactions.filter { it.timestamp in start..end }
+                                            }
+                                            is TimelineRange.CustomRange -> {
+                                                state.allTransactions.filter { it.timestamp in range.start..range.end }
+                                            }
+                                        }
+                                    }
+                                    AeonCashFlowSummary(
+                                        transactions = cashFlowTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        currentTheme = currentTheme,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        showTitle = true,
+                                        precision = state.decimalPrecision,
+                                        showBaseConversion = state.cashFlowShowBaseConversion,
+                                        timelineRange = state.cashFlowTimelineRange,
+                                        onShowBaseConversionChange = { accountsViewViewModel.updateCashFlowShowBaseConversion(it) },
+                                        onTimelineRangeChange = { accountsViewViewModel.updateCashFlowTimelineRange(it) }
                                     )
                                 }
                                 AccountsViewSection.ACCOUNTS_LIST -> {
@@ -233,6 +269,8 @@ fun AccountsViewScreen(
                                         precision = state.decimalPrecision,
                                         layout = state.accountsLayout,
                                         onLayoutChange = { accountsViewViewModel.updateAccountsLayout(it) },
+                                        timelineRange = state.accountsTimelineRange,
+                                        onTimelineRangeChange = { accountsViewViewModel.updateAccountsTimelineRange(it) },
                                         showAddAccountCard = state.showAddAccountCard,
                                         onShowAddAccountCardChange = { accountsViewViewModel.updateShowAddAccountCard(it) },
                                         headerModifier = dragModifier.fillMaxWidth(),

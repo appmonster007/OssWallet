@@ -7,6 +7,8 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +20,7 @@ import java.math.RoundingMode
 enum class AccountsViewSection {
     NET_WORTH,
     CURRENCY_BALANCES,
+    CASHFLOW,
     ACCOUNTS_LIST
 }
 
@@ -29,7 +32,7 @@ class AccountsViewViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.ACCOUNTS_LIST))
+    private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
     val sectionOrder: StateFlow<List<AccountsViewSection>> = _sectionOrder.asStateFlow()
 
     init {
@@ -73,6 +76,12 @@ class AccountsViewViewModel(
         }
     }
 
+    fun updateCurrencyBalancesTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+        }
+    }
+
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
@@ -91,6 +100,12 @@ class AccountsViewViewModel(
         }
     }
 
+    fun updateCashFlowTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
+        }
+    }
+
     fun updateAccountsLayout(layout: String) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
@@ -100,6 +115,12 @@ class AccountsViewViewModel(
     fun updateShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+        }
+    }
+
+    fun updateAccountsTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
         }
     }
 
@@ -117,18 +138,56 @@ class AccountsViewViewModel(
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
                 val accountsLayout = accountsViewSettings.accountsSection.layout
                 val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
+                val accountsTimelineRange = accountsViewSettings.accountsSection.timelineRange
                 val currencyBalancesLayout = accountsViewSettings.currencyBalancesSection.layout
                 val showBaseConversion = accountsViewSettings.currencyBalancesSection.showBaseConversion
+                val currencyBalancesTimelineRange = accountsViewSettings.currencyBalancesSection.timelineRange
                 val cashFlowShowBaseConversion = accountsViewSettings.cashFlowSection.showBaseConversion
+                val cashFlowTimelineRange = accountsViewSettings.cashFlowSection.timelineRange
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 
-                val transactionsByAccount = allTransactions.groupBy { it.accountId }
+                val filteredTransactionsForBalances = when (val range = currencyBalancesTimelineRange) {
+                    is TimelineRange.AllTime -> allTransactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        allTransactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
+
+                val filteredTransactionsForAccounts = when (val range = accountsTimelineRange) {
+                    is TimelineRange.AllTime -> allTransactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        allTransactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
+
+                val transactionsByAccountForBalances = filteredTransactionsForBalances.groupBy { it.accountId }
+                val transactionsByAccountForAccounts = filteredTransactionsForAccounts.groupBy { it.accountId }
                 
+                val includeInitialInAccounts = accountsTimelineRange is TimelineRange.AllTime
                 val accountStats = accounts.associate { account ->
-                    val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+                    val accountTransactions = transactionsByAccountForAccounts[account.id] ?: emptyList()
                     val breakdown = mutableMapOf<String, BigDecimal>()
                     
-                    breakdown[account.currencyCode] = account.initialBalance
+                    if (includeInitialInAccounts) {
+                        breakdown[account.currencyCode] = account.initialBalance
+                    }
+                    
                     account.allowedCurrencies.forEach { curr ->
                         breakdown.getOrPut(curr) { BigDecimal.ZERO }
                     }
@@ -153,11 +212,18 @@ class AccountsViewViewModel(
                     account.id to AccountStats(breakdown.toMap(), incomeInAccountCurrency, expenseInAccountCurrency)
                 }
 
+                val allTransactionsByAccount = allTransactions.groupBy { it.accountId }
                 val updatedAccounts = accounts.map { account ->
-                    val stats = accountStats[account.id]
+                    val accountTransactions = allTransactionsByAccount[account.id] ?: emptyList()
+                    val breakdown = mutableMapOf<String, BigDecimal>()
+                    breakdown[account.currencyCode] = account.initialBalance
+                    accountTransactions.forEach { tx ->
+                        val current = breakdown[tx.currency] ?: BigDecimal.ZERO
+                        breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                    }
                     
                     val totalInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = stats?.currencyBalances ?: emptyMap(),
+                        currencyTotals = breakdown,
                         targetCurrency = account.currencyCode,
                         exchangeRates = rates,
                         precision = precision
@@ -166,8 +232,21 @@ class AccountsViewViewModel(
                 }
 
                 val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
-                accountStats.values.forEach { stats ->
-                    stats.currencyBalances.forEach { (curr, amount) ->
+                val includeInitialInBalances = currencyBalancesTimelineRange is TimelineRange.AllTime
+                
+                accounts.forEach { account ->
+                    val accountTransactions = transactionsByAccountForBalances[account.id] ?: emptyList()
+                    val breakdown = mutableMapOf<String, BigDecimal>()
+                    
+                    if (includeInitialInBalances) {
+                        breakdown[account.currencyCode] = account.initialBalance
+                    }
+
+                    accountTransactions.forEach { tx ->
+                        val current = breakdown[tx.currency] ?: BigDecimal.ZERO
+                        breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+                    }
+                    breakdown.forEach { (curr, amount) ->
                         globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
                     }
                 }
@@ -185,9 +264,12 @@ class AccountsViewViewModel(
                     gridColumns = gridColumns,
                     accountsLayout = accountsLayout,
                     showAddAccountCard = showAddAccountCard,
+                    accountsTimelineRange = accountsTimelineRange,
                     currencyBalancesLayout = currencyBalancesLayout,
                     showBaseConversion = showBaseConversion,
+                    currencyBalancesTimelineRange = currencyBalancesTimelineRange,
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
+                    cashFlowTimelineRange = cashFlowTimelineRange,
                     netWorthFontSize = netWorthFontSize
                 )
             }
@@ -212,9 +294,12 @@ sealed class AccountsViewUiState {
         val gridColumns: Int = 1,
         val accountsLayout: String = "grid",
         val showAddAccountCard: Boolean = true,
+        val accountsTimelineRange: TimelineRange = TimelineRange.AllTime,
         val currencyBalancesLayout: String = "scroll",
         val showBaseConversion: Boolean = true,
+        val currencyBalancesTimelineRange: TimelineRange = TimelineRange.AllTime,
         val cashFlowShowBaseConversion: Boolean = true,
+        val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
         val netWorthFontSize: String = "Medium"
     ) : AccountsViewUiState()
     data class Error(val message: String) : AccountsViewUiState()

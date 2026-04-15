@@ -54,7 +54,8 @@ class NetWorthViewModel(
                     allTransactions = filteredTransactions,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    precision = precision
+                    precision = precision,
+                    includeInitialBalance = sectionSettings.timelineRange is TimelineRange.AllTime
                 )
 
                 NetWorthUiState.Success(

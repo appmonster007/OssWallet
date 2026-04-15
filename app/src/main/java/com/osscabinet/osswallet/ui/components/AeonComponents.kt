@@ -766,8 +766,10 @@ fun AeonCurrencyBreakdown(
     precision: Int = 2,
     layout: String = "scroll",
     showBaseConversion: Boolean = true,
+    timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
     onLayoutChange: (String) -> Unit = {},
-    onShowBaseConversionChange: (Boolean) -> Unit = {}
+    onShowBaseConversionChange: (Boolean) -> Unit = {},
+    onTimelineRangeChange: (com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) -> Unit = {}
 ) {
     CurrencyAggregationSection(
         currencyTotals = balances,
@@ -777,8 +779,10 @@ fun AeonCurrencyBreakdown(
         precision = precision,
         layout = layout,
         showBaseConversion = showBaseConversion,
+        timelineRange = timelineRange,
         onLayoutChange = onLayoutChange,
-        onShowBaseConversionChange = onShowBaseConversionChange
+        onShowBaseConversionChange = onShowBaseConversionChange,
+        onTimelineRangeChange = onTimelineRangeChange
     )
 }
 

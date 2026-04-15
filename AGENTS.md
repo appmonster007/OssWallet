@@ -84,9 +84,10 @@ You are an expert Android Engineer specializing in high-performance personal fin
 2. **Main Thread Safety:** No database or heavy calculation logic is permitted on the UI Thread. Use `Dispatchers.IO` or `Dispatchers.Default` appropriately.
 3. **DRY (Don't Repeat Yourself):** Centralize currency formatting logic into a single utility or decorator.
 4. **Performance Metrics:** Generate profiles to reduce app startup time and maintain a minimal APK size via R8/ProGuard.
-5. **List Optimization:** Use `LazyColumn` with unique `key` parameters for smooth scrolling of transaction lists.
+5. **List Optimization:** Use `LazyColumn` with unique `key` parameters for smooth scrolling. For reorderable lists, use a strict hysteresis threshold (95% adjacent item height - 50% current item height) and adjacent-only swaps to eliminate oscillation jitter.
 6. **Edge Case First:** Every feature must explicitly handle "No Internet" and "Empty State" scenarios—never leave the user on a blank screen.
 7. **Modern API:** Avoid deprecated libraries (e.g., use `rememberLauncherForActivityResult` instead of legacy result APIs).
+8. **UI Fluidity:** Implement Material 3 expressive motion (shadows, scale, ghosting) for all interactive drag-and-drop elements.
 ---
 
 ## Workflow Instructions

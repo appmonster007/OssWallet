@@ -476,7 +476,9 @@ fun DashboardContent(
                                 exchangeRates = state.exchangeRates,
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,
-                                precision = decimalPrecision
+                                precision = decimalPrecision,
+                                layout = state.currencyBalancesLayout,
+                                onLayoutChange = { dashboardViewModel.updateCurrencyBalancesLayout(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {

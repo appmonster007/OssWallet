@@ -6,10 +6,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -666,14 +665,16 @@ fun AeonCurrencyBalanceItem(
     amount: BigDecimal,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
-    precision: Int = 2
+    precision: Int = 2,
+    modifier: Modifier = Modifier
 ) {
     val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
 
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+        modifier = modifier
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Text(
@@ -708,8 +709,12 @@ fun CurrencyAggregationSection(
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    precision: Int = 2
+    precision: Int = 2,
+    layout: String = "scroll",
+    onLayoutChange: (String) -> Unit = {}
 ) {
+    var showSettings by remember { mutableStateOf(false) }
+
     if (currencyTotals.isNotEmpty()) {
         Card(
             modifier = modifier,
@@ -719,25 +724,140 @@ fun CurrencyAggregationSection(
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AeonFlowSectionHeader(
                     title = "AGGREGATED CURRENCY BALANCES",
-                    modifier = headerModifier
+                    modifier = headerModifier,
+                    trailing = {
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 )
 
-                androidx.compose.foundation.lazy.LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp)
-                ) {
-                    val sortedTotals = currencyTotals.toList().sortedBy { it.first }
-                    items(sortedTotals) { (currency, amount) ->
-                        AeonCurrencyBalanceItem(
-                            currency = currency,
-                            amount = amount,
-                            baseCurrency = baseCurrency,
-                            exchangeRates = exchangeRates,
-                            precision = precision
-                        )
+                val sortedTotals = currencyTotals.toList().sortedBy { it.first }
+
+                if (layout == "grid") {
+                    val chunks = sortedTotals.chunked(3)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        chunks.forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowItems.forEach { (currency, amount) ->
+                                    AeonCurrencyBalanceItem(
+                                        currency = currency,
+                                        amount = amount,
+                                        baseCurrency = baseCurrency,
+                                        exchangeRates = exchangeRates,
+                                        precision = precision,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                if (rowItems.size < 3) {
+                                    repeat(3 - rowItems.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 4.dp)
+                    ) {
+                        items(sortedTotals) { (currency, amount) ->
+                            AeonCurrencyBalanceItem(
+                                currency = currency,
+                                amount = amount,
+                                baseCurrency = baseCurrency,
+                                exchangeRates = exchangeRates,
+                                precision = precision
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Text(
+                    "Currency Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "LAYOUT",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = layout == "grid",
+                                onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
+                                thumbContent = {
+                                    if (layout == "grid") {
+                                        Icon(
+                                            imageVector = Icons.Default.GridView,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(SwitchDefaults.IconSize)
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.ViewCarousel,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(SwitchDefaults.IconSize)
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 }

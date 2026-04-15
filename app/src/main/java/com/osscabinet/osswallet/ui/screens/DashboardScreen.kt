@@ -466,7 +466,9 @@ fun DashboardContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,
                                 exchangeRates = state.exchangeRates,
-                                precision = decimalPrecision
+                                precision = decimalPrecision,
+                                fontSize = state.netWorthFontSize,
+                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CURRENCY_BALANCES -> {

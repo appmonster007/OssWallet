@@ -626,6 +626,7 @@ fun AeonFlowSectionHeader(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NetWorthSection(
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
@@ -633,12 +634,23 @@ fun NetWorthSection(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    precision: Int = 2
+    precision: Int = 2,
+    fontSize: String = "Medium",
+    onFontSizeChange: (String) -> Unit = {}
 ) {
+    var showSettings by remember { mutableStateOf(false) }
+
     val totalBalanceInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
         val currencyTotals = accounts.groupBy { it.currencyCode }
             .mapValues { (_, accs) -> accs.fold(BigDecimal.ZERO) { acc, a -> acc.add(a.balance) } }
         calculateTotalInCurrency(currencyTotals, baseCurrency, exchangeRates, precision)
+    }
+
+    val headlineStyle = when (fontSize) {
+        "Small" -> MaterialTheme.typography.displaySmall
+        "Medium" -> MaterialTheme.typography.displayMedium
+        "Large" -> MaterialTheme.typography.displayLarge
+        else -> MaterialTheme.typography.displayMedium
     }
 
     Card(
@@ -649,13 +661,90 @@ fun NetWorthSection(
         Column(modifier = Modifier.padding(12.dp)) {
             AeonFlowSectionHeader(
                 title = "TOTAL NET WORTH",
-                modifier = headerModifier
+                modifier = headerModifier,
+                trailing = {
+                    IconButton(
+                        onClick = { showSettings = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreHoriz,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
             Text(
                 formatCurrencyRight(totalBalanceInBase, baseCurrency, precision),
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                style = headlineStyle.copy(fontWeight = FontWeight.Bold)
             )
         }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Text(
+                    "Net Worth Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "FONT SIZE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            val sizes = listOf("Small", "Medium", "Large")
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                sizes.forEachIndexed { index, size ->
+                                    SegmentedButton(
+                                        selected = fontSize == size,
+                                        onClick = { onFontSizeChange(size) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = sizes.size
+                                        ),
+                                        label = {
+                                            val iconSize = when(size) {
+                                                "Small" -> 16.sp
+                                                "Medium" -> 20.sp
+                                                "Large" -> 24.sp
+                                                else -> 20.sp
+                                            }
+                                            Text("A", fontSize = iconSize, fontWeight = FontWeight.Black)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 }
 

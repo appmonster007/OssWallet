@@ -29,9 +29,15 @@ data class CurrencyBalancesSettings(
 )
 
 @Serializable
+data class NetWorthSettings(
+    val fontSize: String = "Medium" // "Small", "Medium", "Large"
+)
+
+@Serializable
 data class DashboardSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
+    val netWorthSection: NetWorthSettings = NetWorthSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 
@@ -39,6 +45,7 @@ data class DashboardSettings(
 data class AccountsViewSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 1),
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
+    val netWorthSection: NetWorthSettings = NetWorthSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 

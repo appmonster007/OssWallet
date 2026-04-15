@@ -70,9 +70,21 @@ class DashboardViewModel(
         }
     }
 
+    fun updateShowBaseConversion(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+        }
+    }
+
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
+        }
+    }
+
+    fun updateCashFlowShowBaseConversion(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
     }
 
@@ -90,6 +102,8 @@ class DashboardViewModel(
                 val gridColumns = dashboardSettings.accountsSection.gridColumns
                 val showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
                 val currencyBalancesLayout = dashboardSettings.currencyBalancesSection.layout
+                val showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
+                val cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
                 val netWorthFontSize = dashboardSettings.netWorthSection.fontSize
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
@@ -191,6 +205,8 @@ class DashboardViewModel(
                     gridColumns = gridColumns,
                     showAddAccountCard = showAddAccountCard,
                     currencyBalancesLayout = currencyBalancesLayout,
+                    showBaseConversion = showBaseConversion,
+                    cashFlowShowBaseConversion = cashFlowShowBaseConversion,
                     netWorthFontSize = netWorthFontSize
                 )
             }
@@ -215,6 +231,8 @@ sealed class DashboardUiState {
         val gridColumns: Int = 2,
         val showAddAccountCard: Boolean = true,
         val currencyBalancesLayout: String = "scroll",
+        val showBaseConversion: Boolean = true,
+        val cashFlowShowBaseConversion: Boolean = true,
         val netWorthFontSize: String = "Medium"
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()

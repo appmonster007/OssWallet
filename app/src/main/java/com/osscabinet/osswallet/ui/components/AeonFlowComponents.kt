@@ -39,7 +39,8 @@ fun AeonFlowBreakdownItem(
     amount: BigDecimal,
     inBase: BigDecimal,
     baseCurrency: String,
-    precision: Int = 2
+    precision: Int = 2,
+    showBaseConversion: Boolean = true
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -59,7 +60,7 @@ fun AeonFlowBreakdownItem(
                 formatCurrencyRight(amount, curr, precision),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
             )
-            if (curr != baseCurrency) {
+            if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                     style = MaterialTheme.typography.labelSmall.copy(
@@ -196,8 +197,12 @@ fun AeonCashFlowSummary(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = true,
-    precision: Int = 2
+    precision: Int = 2,
+    showBaseConversion: Boolean = true,
+    onShowBaseConversionChange: (Boolean) -> Unit = {}
 ) {
+    var showSettings by remember { mutableStateOf(false) }
+
     val allSupportedCurrencies = remember(transactions) {
         transactions.map { it.currency }.distinct().sorted()
     }
@@ -242,7 +247,19 @@ fun AeonCashFlowSummary(
             if (showTitle) {
                 AeonFlowSectionHeader(
                     title = "CASH FLOW SUMMARY",
-                    modifier = headerModifier
+                    modifier = headerModifier,
+                    trailing = {
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 )
             }
 
@@ -262,11 +279,12 @@ fun AeonCashFlowSummary(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         flowData.forEach { (curr, income, _) ->
                             AeonFlowBreakdownItem(
-                                curr,
-                                income.first,
-                                income.second,
-                                baseCurrency,
-                                precision
+                                curr = curr,
+                                amount = income.first,
+                                inBase = income.second,
+                                baseCurrency = baseCurrency,
+                                precision = precision,
+                                showBaseConversion = showBaseConversion
                             )
                         }
                     }
@@ -284,17 +302,74 @@ fun AeonCashFlowSummary(
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         flowData.forEach { (curr, _, expense) ->
                             AeonFlowBreakdownItem(
-                                curr,
-                                expense.first,
-                                expense.second,
-                                baseCurrency,
-                                precision
+                                curr = curr,
+                                amount = expense.first,
+                                inBase = expense.second,
+                                baseCurrency = baseCurrency,
+                                precision = precision,
+                                showBaseConversion = showBaseConversion
                             )
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Text(
+                    "Cash Flow Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "BASE CONVERSION",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    "Show estimated value in $baseCurrency",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = showBaseConversion,
+                                onCheckedChange = onShowBaseConversionChange
+                            )
+                        }
+                    }
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 }
 
@@ -758,6 +833,7 @@ fun AeonCurrencyBalanceItem(
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     precision: Int = 2,
+    showBaseConversion: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
@@ -796,20 +872,20 @@ fun AeonCurrencyBalanceItem(
                     maxLines = 1
                 )
                 
-                // Always reserve space for the base currency conversion to maintain uniform height
-                if (currency != baseCurrency) {
+                // Always reserve space for the base currency conversion to maintain uniform height if enabled
+                if (showBaseConversion && currency != baseCurrency) {
                     Text(
                         "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         maxLines = 1
                     )
-                } else {
-                    // Transparent placeholder for height consistency
+                } else if (showBaseConversion) {
+                    // Transparent placeholder for height consistency when enabled but same as base
                     Text(
                         "",
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.height(14.dp) // Approximate height of labelSmall
+                        modifier = Modifier.height(14.dp)
                     )
                 }
             }
@@ -826,7 +902,9 @@ fun CurrencyAggregationSection(
     headerModifier: Modifier = Modifier,
     precision: Int = 2,
     layout: String = "scroll",
-    onLayoutChange: (String) -> Unit = {}
+    showBaseConversion: Boolean = true,
+    onLayoutChange: (String) -> Unit = {},
+    onShowBaseConversionChange: (Boolean) -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -875,6 +953,7 @@ fun CurrencyAggregationSection(
                                         baseCurrency = baseCurrency,
                                         exchangeRates = exchangeRates,
                                         precision = precision,
+                                        showBaseConversion = showBaseConversion,
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -897,7 +976,8 @@ fun CurrencyAggregationSection(
                                 amount = amount,
                                 baseCurrency = baseCurrency,
                                 exchangeRates = exchangeRates,
-                                precision = precision
+                                precision = precision,
+                                showBaseConversion = showBaseConversion
                             )
                         }
                     }
@@ -967,6 +1047,40 @@ fun CurrencyAggregationSection(
                                         )
                                     }
                                 }
+                            )
+                        }
+                    }
+
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "BASE CONVERSION",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    "Show estimated value in $baseCurrency",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = showBaseConversion,
+                                onCheckedChange = onShowBaseConversionChange
                             )
                         }
                     }

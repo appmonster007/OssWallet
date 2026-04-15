@@ -480,7 +480,9 @@ fun DashboardContent(
                                 headerModifier = dragModifier,
                                 precision = decimalPrecision,
                                 layout = state.currencyBalancesLayout,
-                                onLayoutChange = { dashboardViewModel.updateCurrencyBalancesLayout(it) }
+                                showBaseConversion = state.showBaseConversion,
+                                onLayoutChange = { dashboardViewModel.updateCurrencyBalancesLayout(it) },
+                                onShowBaseConversionChange = { dashboardViewModel.updateShowBaseConversion(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {
@@ -492,7 +494,9 @@ fun DashboardContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,
                                 showTitle = true,
-                                precision = decimalPrecision
+                                precision = decimalPrecision,
+                                showBaseConversion = state.cashFlowShowBaseConversion,
+                                onShowBaseConversionChange = { dashboardViewModel.updateCashFlowShowBaseConversion(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
-import com.osscabinet.ossWallet.ui.components.TimelineRange
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import kotlinx.coroutines.ExperimentalCoroutinesApi

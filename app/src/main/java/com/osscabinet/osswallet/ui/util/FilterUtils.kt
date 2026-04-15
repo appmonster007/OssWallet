@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.util
 
-import com.osscabinet.ossWallet.ui.components.LastPeriodType
-import com.osscabinet.ossWallet.ui.components.ThisPeriodType
+import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import java.time.*
 import java.time.temporal.TemporalAdjusters
 

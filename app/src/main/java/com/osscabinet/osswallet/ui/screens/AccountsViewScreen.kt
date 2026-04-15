@@ -40,14 +40,18 @@ import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
-import com.osscabinet.ossWallet.ui.util.toOnContainerColor
+import androidx.compose.material.icons.filled.MoreHoriz
+import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
+import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
+import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import com.osscabinet.ossWallet.ui.components.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Color as AndroidColor
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun AccountsViewScreen(
     onDashboardClick: () -> Unit,
@@ -66,27 +70,23 @@ fun AccountsViewScreen(
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
-    templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+    templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
+    accountsViewViewModel: AccountsViewViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
+    val accountsUiState by accountsViewViewModel.uiState.collectAsState()
+    val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
+
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val transactions by transactionViewModel.transactions.collectAsState()
-    val nonArchivedAccountIds = remember(nonArchivedAccounts) { nonArchivedAccounts.map { it.id }.toSet() }
-    val activeTransactions = remember(transactions, nonArchivedAccountIds) {
-        transactions.filter { it.accountId in nonArchivedAccountIds }
-    }
+    
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
-    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
-    val baseCurrency = analyticsUiState.selectedCurrency
-    val exchangeRates = analyticsUiState.exchangeRates
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val starredTemplates by templateViewModel.starredTemplates.collectAsState()
 
     val settingsCurrency by settingsViewModel.currency.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     LaunchedEffect(settingsCurrency) {
         analyticsViewModel.onCurrencySelected(settingsCurrency)
     }
@@ -136,159 +136,78 @@ fun AccountsViewScreen(
             floatingActionButton = {
                 AeonFloatingActionButton(
                     onClick = onAddAccountClick,
+                    icon = Icons.Default.Add,
                     contentDescription = "Add Account"
                 )
             }
         ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                item {
-                    val currencyTotals = remember(nonArchivedAccounts, activeTransactions) {
-                        val totals = mutableMapOf<String, BigDecimal>()
-                        nonArchivedAccounts.forEach { account ->
-                            totals[account.currencyCode] = (totals[account.currencyCode] ?: BigDecimal.ZERO).add(account.initialBalance)
-                        }
-                        activeTransactions.forEach { tx ->
-                            totals[tx.currency] = if (tx.isIncome) (totals[tx.currency] ?: BigDecimal.ZERO).add(tx.amount) else (totals[tx.currency] ?: BigDecimal.ZERO).subtract(tx.amount)
-                        }
-                        totals
-                    }
-                    
-                    val updatedAccounts = remember(nonArchivedAccounts, activeTransactions, exchangeRates) {
-                        val transactionsByAccount = activeTransactions.groupBy { it.accountId }
-                        nonArchivedAccounts.map { account ->
-                            val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
-                            val breakdown = mutableMapOf<String, BigDecimal>()
-                            breakdown[account.currencyCode] = account.initialBalance
-                            accountTransactions.forEach { tx ->
-                                val current = breakdown[tx.currency] ?: BigDecimal.ZERO
-                                breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+            when (val state = accountsUiState) {
+                is AccountsViewUiState.Loading -> {
+                    // Reuse DashboardShimmer or create a specific one
+                    DashboardShimmer(innerPadding)
+                }
+                is AccountsViewUiState.Success -> {
+                    CardReorderableList(
+                        items = sectionOrder,
+                        key = { it.ordinal },
+                        onReorder = { accountsViewViewModel.updateSectionOrder(it) },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .background(MaterialTheme.colorScheme.background),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) { section, isDragging, dragModifier ->
+                        when (section) {
+                            AccountsViewSection.NET_WORTH -> {
+                                NetWorthSection(
+                                    accounts = state.accounts,
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    precision = state.decimalPrecision,
+                                    headerModifier = dragModifier,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
-                            
-                            val totalInAccountCurrency = calculateTotalInCurrency(
-                                currencyTotals = breakdown,
-                                targetCurrency = account.currencyCode,
-                                exchangeRates = exchangeRates,
-                                precision = decimalPrecision
-                            )
-                            account.copy(balance = totalInAccountCurrency)
-                        }
-                    }
-
-                    NetWorthSection(
-                        accounts = updatedAccounts,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    CurrencyAggregationSection(
-                        currencyTotals = currencyTotals,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Accounts", style = MaterialTheme.typography.titleMedium)
-                        TextButton(onClick = onManageAccountsClick) {
-                            Text("Manage", style = MaterialTheme.typography.labelLarge)
+                            AccountsViewSection.CURRENCY_BALANCES -> {
+                                CurrencyAggregationSection(
+                                    currencyTotals = state.currencyTotals,
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    precision = state.decimalPrecision,
+                                    headerModifier = dragModifier,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            AccountsViewSection.ACCOUNTS_LIST -> {
+                                AeonAccountsSection(
+                                    onManageClick = onManageAccountsClick,
+                                    onAccountClick = onAccountClick,
+                                    onGridColumnsChange = { accountsViewViewModel.updateGridColumns(it) },
+                                    accounts = state.accounts,
+                                    accountStats = state.accountStats,
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    currentTheme = currentTheme,
+                                    gridColumns = state.gridColumns,
+                                    precision = state.decimalPrecision,
+                                    headerModifier = dragModifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
-
-                items(nonArchivedAccounts, key = { it.id }) { account ->
-                    val accountTransactions = transactions.filter { it.accountId == account.id }
-                    
-                    val supportedCurrencies = remember(account, accountTransactions) {
-                        val list = mutableSetOf<String>()
-                        list.add(account.currencyCode)
-                        list.addAll(account.allowedCurrencies)
-                        accountTransactions.forEach { list.add(it.currency) }
-                        list.toList().sorted()
+                is AccountsViewUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(state.message)
                     }
-
-                    val accountCurrencyBalances = supportedCurrencies.associateWith { curr ->
-                        val txSum = accountTransactions.filter { it.currency == curr }.fold(BigDecimal.ZERO) { acc, tx ->
-                            if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
-                        }
-                        if (curr == account.currencyCode) account.initialBalance.add(txSum) else txSum
-                    }
-
-                    val totalInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = accountCurrencyBalances,
-                        targetCurrency = account.currencyCode,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision
-                    )
-
-                    val balanceInBase = convertAmount(
-                        amount = totalInAccountCurrency,
-                        fromCurrency = account.currencyCode,
-                        toCurrency = baseCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision
-                    )
-
-                    val incomeInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = accountTransactions.filter { it.isIncome }.groupBy { it.currency }
-                            .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } },
-                        targetCurrency = account.currencyCode,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision
-                    )
-
-                    val expenseInAccountCurrency = calculateTotalInCurrency(
-                        currencyTotals = accountTransactions.filter { !it.isIncome }.groupBy { it.currency }
-                            .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } },
-                        targetCurrency = account.currencyCode,
-                        exchangeRates = exchangeRates,
-                        precision = decimalPrecision
-                    )
-
-                    val accountColor = try { Color(AndroidColor.parseColor(account.colorHex)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
-
-                    val isDarkTheme = when (currentTheme) {
-                        "Light" -> false
-                        "Dark", "Amoled" -> true
-                        else -> isSystemInDarkTheme()
-                    }
-                    val isAmoled = currentTheme == "Amoled"
-
-                    AeonAccountCardLarge(
-                        account = account,
-                        balanceInBase = balanceInBase,
-                        baseCurrency = baseCurrency,
-                        currencyBalances = accountCurrencyBalances,
-                        incomeInAccountCurrency = incomeInAccountCurrency,
-                        expenseInAccountCurrency = expenseInAccountCurrency,
-                        isDarkTheme = isDarkTheme,
-                        isAmoled = isAmoled,
-                        precision = decimalPrecision,
-                        onClick = { onAccountClick(account.id) }
-                    )
-                }
-                
-                item {
-                    Spacer(modifier = Modifier.height(64.dp)) // Space for FAB
                 }
             }
         }
     }
 }
+
+
 
 

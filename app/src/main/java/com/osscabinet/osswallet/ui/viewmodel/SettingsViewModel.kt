@@ -36,6 +36,9 @@ class SettingsViewModel(
     val dashboardGridColumns: StateFlow<Int> = settingsDataStore.dashboardGridColumns
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    val accountsViewGridColumns: StateFlow<Int> = settingsDataStore.accountsViewGridColumns
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
@@ -91,6 +94,12 @@ class SettingsViewModel(
     fun setDashboardGridColumns(columns: Int) {
         viewModelScope.launch {
             settingsDataStore.saveDashboardGridColumns(columns)
+        }
+    }
+
+    fun setAccountsViewGridColumns(columns: Int) {
+        viewModelScope.launch {
+            settingsDataStore.saveAccountsViewGridColumns(columns)
         }
     }
 

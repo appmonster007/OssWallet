@@ -540,9 +540,9 @@ fun DashboardContent(
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {
-                            AccountsSection(
+                            AeonAccountsSection(
                                 onManageClick = onManageAccountsClick,
-                                onAccountsViewClick = onAccountsViewClick,
+                                onHeaderClick = onAccountsViewClick,
                                 onAccountClick = onAccountClick,
                                 onGridColumnsChange = { dashboardViewModel.updateGridColumns(it) },
                                 accounts = state.accounts,
@@ -553,7 +553,8 @@ fun DashboardContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 gridColumns = gridColumns,
                                 precision = decimalPrecision,
-                                headerModifier = dragModifier.fillMaxWidth()
+                                headerModifier = dragModifier.fillMaxWidth(),
+                                settingsTitle = "Dashboard Settings"
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.BUDGETS -> {
@@ -625,215 +626,7 @@ fun DashboardContent(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-fun AccountsSection(
-    onManageClick: () -> Unit,
-    onAccountsViewClick: () -> Unit,
-    onAccountClick: (String) -> Unit,
-    onGridColumnsChange: (Int) -> Unit,
-    accounts: List<Account>,
-    accountStats: Map<String, AccountStats>,
-    baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    currentTheme: String,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    gridColumns: Int = 2,
-    precision: Int = 2
-) {
-    var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AeonFlowSectionHeader(
-                title = "Accounts",
-                modifier = headerModifier.clickable(onClick = onAccountsViewClick),
-                trailing = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(
-                                Icons.Default.MoreHoriz,
-                                contentDescription = "Grid Settings",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        if (showMenu) {
-                            AlertDialog(
-                                onDismissRequest = { showMenu = false },
-                                confirmButton = {
-                                    TextButton(onClick = { showMenu = false }) {
-                                        Text("Done")
-                                    }
-                                },
-                                title = {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "Dashboard Settings",
-                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                                        )
-                                        IconButton(
-                                            onClick = {
-                                                onManageClick()
-                                                showMenu = false
-                                            },
-                                            colors = IconButtonDefaults.iconButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                                contentColor = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Settings,
-                                                contentDescription = "Manage Accounts"
-                                            )
-                                        }
-                                    }
-                                },
-                                text = {
-                                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                        // Connected Group for Column Configuration
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                            shape = RoundedCornerShape(20.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(16.dp),
-                                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                Text(
-                                                    "ACCOUNT GRID COLUMNS",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontWeight = FontWeight.Bold,
-                                                        letterSpacing = 1.sp
-                                                    ),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-
-                                                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                                    listOf(1, 2, 3).forEachIndexed { index, count ->
-                                                        SegmentedButton(
-                                                            selected = gridColumns == count,
-                                                            onClick = { onGridColumnsChange(count) },
-                                                            shape = SegmentedButtonDefaults.itemShape(
-                                                                index = index,
-                                                                count = 3
-                                                            ),
-                                                            label = { Text(count.toString()) }
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(32.dp),
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        }
-                    }
-                }
-            )
-
-            if (accounts.isEmpty()) {
-                AeonAccountCardLarge(
-                    account = Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
-                    balanceInBase = BigDecimal.ZERO,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    isDarkTheme = when (currentTheme) {
-                        "Light" -> false
-                        "Dark", "Amoled" -> true
-                        else -> isSystemInDarkTheme()
-                    },
-                    isAmoled = currentTheme == "Amoled",
-                    onClick = onManageClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    precision = precision
-                )
-            } else {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    maxItemsInEachRow = gridColumns
-                ) {
-                    accounts.forEach { account ->
-                        val balanceInBase = convertAmount(account.balance, account.currencyCode, baseCurrency, exchangeRates, precision)
-                        val isDarkTheme = when (currentTheme) {
-                            "Light" -> false
-                            "Dark", "Amoled" -> true
-                            else -> isSystemInDarkTheme()
-                        }
-                        val isAmoled = currentTheme == "Amoled"
-                        val stats = accountStats[account.id]
-
-                        when (gridColumns) {
-                            1 -> AeonAccountCardLarge(
-                                account = account,
-                                balanceInBase = balanceInBase,
-                                baseCurrency = baseCurrency,
-                                exchangeRates = exchangeRates,
-                                currencyBalances = stats?.currencyBalances ?: emptyMap(),
-                                incomeInAccountCurrency = stats?.incomeInAccountCurrency ?: BigDecimal.ZERO,
-                                expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.fillMaxWidth(),
-                                precision = precision
-                            )
-                            2 -> AeonAccountCardMedium(
-                                account = account,
-                                balanceInBase = balanceInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.weight(1f),
-                                precision = precision
-                            )
-                            3 -> AeonAccountCardSmall(
-                                account = account,
-                                balanceInBase = balanceInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.weight(1f),
-                                precision = precision
-                            )
-                            else -> AeonAccountCardSmall(
-                                account = account,
-                                balanceInBase = balanceInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.weight(1f),
-                                precision = precision
-                            )
-                        }
-                    }
-                    if (accounts.size % gridColumns != 0) {
-                        repeat(gridColumns - (accounts.size % gridColumns)) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 @Composable

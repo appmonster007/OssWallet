@@ -16,7 +16,13 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+
+@Serializable
+data class NetWorthSettings(
+    val fontSize: String = "Medium" // "Small", "Medium", "Large"
+)
 
 @Composable
 fun NetWorthSection(

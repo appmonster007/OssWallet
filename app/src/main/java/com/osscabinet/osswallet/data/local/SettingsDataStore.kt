@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.osscabinet.ossWallet.ui.components.dashboard.AccountsSectionSettings
+import com.osscabinet.ossWallet.ui.components.dashboard.BudgetSettings
+import com.osscabinet.ossWallet.ui.components.dashboard.CashFlowSettings
+import com.osscabinet.ossWallet.ui.components.dashboard.CurrencyBalancesSettings
+import com.osscabinet.ossWallet.ui.components.dashboard.NetWorthSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
@@ -13,36 +18,8 @@ import kotlinx.serialization.json.Json
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Serializable
-data class AccountsSectionSettings(
-    val layout: String = "grid", // "scroll" or "grid"
-    val gridColumns: Int = 2,
-    val showAddAccountCard: Boolean = true
-)
-
-@Serializable
 data class LayoutSettings(
     val sectionOrder: String? = null
-)
-
-@Serializable
-data class CurrencyBalancesSettings(
-    val layout: String = "scroll", // "scroll" or "grid"
-    val showBaseConversion: Boolean = true
-)
-
-@Serializable
-data class NetWorthSettings(
-    val fontSize: String = "Medium" // "Small", "Medium", "Large"
-)
-
-@Serializable
-data class CashFlowSettings(
-    val showBaseConversion: Boolean = true
-)
-
-@Serializable
-data class BudgetSettings(
-    val showProgressLabels: Boolean = true
 )
 
 @Serializable

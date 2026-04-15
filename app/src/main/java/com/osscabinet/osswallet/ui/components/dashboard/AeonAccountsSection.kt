@@ -20,7 +20,15 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+
+@Serializable
+data class AccountsSectionSettings(
+    val layout: String = "grid", // "scroll" or "grid"
+    val gridColumns: Int = 2,
+    val showAddAccountCard: Boolean = true
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

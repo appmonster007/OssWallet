@@ -24,14 +24,21 @@ data class LayoutSettings(
 )
 
 @Serializable
+data class CurrencyBalancesSettings(
+    val layout: String = "scroll" // "scroll" or "grid"
+)
+
+@Serializable
 data class DashboardSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
+    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 
 @Serializable
 data class AccountsViewSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 1),
+    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 

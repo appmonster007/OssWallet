@@ -61,6 +61,12 @@ class AccountsViewViewModel(
         }
     }
 
+    fun updateCurrencyBalancesLayout(layout: String) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+        }
+    }
+
     val uiState: StateFlow<AccountsViewUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -74,6 +80,7 @@ class AccountsViewViewModel(
                 val baseCurrency = analyticsState.selectedCurrency
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
                 val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
+                val currencyBalancesLayout = accountsViewSettings.currencyBalancesSection.layout
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
                 
@@ -135,7 +142,8 @@ class AccountsViewViewModel(
                     decimalPrecision = precision,
                     accountStats = accountStats,
                     gridColumns = gridColumns,
-                    showAddAccountCard = showAddAccountCard
+                    showAddAccountCard = showAddAccountCard,
+                    currencyBalancesLayout = currencyBalancesLayout
                 )
             }
         }
@@ -156,7 +164,8 @@ sealed class AccountsViewUiState {
         val decimalPrecision: Int = 2,
         val accountStats: Map<String, AccountStats> = emptyMap(),
         val gridColumns: Int = 1,
-        val showAddAccountCard: Boolean = true
+        val showAddAccountCard: Boolean = true,
+        val currencyBalancesLayout: String = "scroll"
     ) : AccountsViewUiState()
     data class Error(val message: String) : AccountsViewUiState()
 }

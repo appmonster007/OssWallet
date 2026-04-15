@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -999,9 +1000,15 @@ fun AeonAccountCardMedium(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = contentColor.copy(alpha = 0.7f)
+                    )
                     Text(
                         account.name.uppercase(),
                         style = MaterialTheme.typography.labelSmall.copy(
@@ -1012,12 +1019,6 @@ fun AeonAccountCardMedium(
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
-                    )
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = contentColor.copy(alpha = 0.7f)
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1092,11 +1093,23 @@ fun AeonAccountCardLarge(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        account.name.uppercase(), 
-                        style = MaterialTheme.typography.labelSmall, 
-                        color = contentColor.copy(alpha = 0.7f)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = contentColor.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            account.name.uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = 0.7f)
+                        )
+                    }
+
                     
                     // Income/Expense Badges
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

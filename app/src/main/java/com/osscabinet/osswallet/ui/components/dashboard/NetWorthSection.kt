@@ -16,6 +16,9 @@ import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import kotlinx.serialization.Serializable
@@ -74,10 +77,22 @@ private fun NetWorthContent(
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
-    val (textStyle, labelStyle) = when (fontSize) {
-        "Small" -> MaterialTheme.typography.displaySmall to MaterialTheme.typography.labelSmall
-        "Large" -> MaterialTheme.typography.displayLarge to MaterialTheme.typography.labelSmall
-        else -> MaterialTheme.typography.displayMedium to MaterialTheme.typography.labelSmall
+    val textStyle = when (fontSize) {
+        "Small" -> MaterialTheme.typography.displaySmall
+        "Large" -> MaterialTheme.typography.displayLarge
+        else -> MaterialTheme.typography.displayMedium
+    }
+
+    val timelineLabel = when (timelineRange) {
+        is TimelineRange.AllTime -> "All Time"
+        is TimelineRange.ThisPeriod -> timelineRange.period.label
+        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.CustomRange -> {
+            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
+            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            "$start - $end"
+        }
     }
 
     Card(
@@ -94,15 +109,29 @@ private fun NetWorthContent(
                 title = "NET WORTH",
                 modifier = headerModifier,
                 trailing = {
-                    IconButton(
-                        onClick = { showSettings = true },
-                        modifier = Modifier.size(24.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.Default.MoreHoriz,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.primary
+                        Text(
+                            text = timelineLabel.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                fontSize = 10.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             )
@@ -118,15 +147,6 @@ private fun NetWorthContent(
                         letterSpacing = (-1).sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "TOTAL BALANCE ACROSS ALL ACCOUNTS",
-                    style = labelStyle.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        fontSize = 9.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                 )
             }
         }

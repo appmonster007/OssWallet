@@ -52,6 +52,8 @@ class SettingsViewModel(
         .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val accountsViewSettings: Flow<com.osscabinet.ossWallet.data.local.AccountsViewSettings> = settingsDataStore.accountsViewSettings
+
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -128,6 +130,12 @@ class SettingsViewModel(
     fun setAccountsViewShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+        }
+    }
+
+    fun updateAccountsViewCashFlowShowBaseConversion(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
     }
 

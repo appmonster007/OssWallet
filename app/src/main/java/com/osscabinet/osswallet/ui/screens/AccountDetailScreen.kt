@@ -216,15 +216,18 @@ fun AccountDetailScreen(
                         }
 
                         item {
-                            AeonSectionHeader(title = "Monthly Cash Flow")
-                            Spacer(modifier = Modifier.height(4.dp))
+                            val accountsViewSettings by settingsViewModel.accountsViewSettings.collectAsState(initial = com.osscabinet.ossWallet.data.local.AccountsViewSettings())
+                            
                             AeonCashFlowSummary(
                                 transactions = accountTransactions,
                                 baseCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,
                                 currentTheme = currentTheme,
-                                showTitle = false,
-                                precision = decimalPrecision
+                                modifier = Modifier.fillMaxWidth(),
+                                showTitle = true,
+                                precision = decimalPrecision,
+                                showBaseConversion = accountsViewSettings.cashFlowSection.showBaseConversion,
+                                onShowBaseConversionChange = { settingsViewModel.updateAccountsViewCashFlowShowBaseConversion(it) }
                             )
                         }
 

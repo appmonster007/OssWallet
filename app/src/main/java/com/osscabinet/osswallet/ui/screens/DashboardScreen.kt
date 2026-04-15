@@ -662,43 +662,83 @@ fun AccountsSection(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).width(200.dp)) {
-                                Text(
-                                    "Grid Columns: $gridColumns",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Slider(
-                                        value = gridColumns.toFloat(),
-                                        onValueChange = { onGridColumnsChange(it.toInt()) },
-                                        valueRange = 1f..3f,
-                                        steps = 1,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    IconButton(
-                                        onClick = {
-                                            onManageClick()
-                                            showMenu = false
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Settings,
-                                            contentDescription = "Manage Accounts",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
+
+                        if (showMenu) {
+                            AlertDialog(
+                                onDismissRequest = { showMenu = false },
+                                confirmButton = {
+                                    TextButton(onClick = { showMenu = false }) {
+                                        Text("Done")
                                     }
-                                }
-                            }
+                                },
+                                title = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Dashboard Settings",
+                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                onManageClick()
+                                                showMenu = false
+                                            },
+                                            colors = IconButtonDefaults.iconButtonColors(
+                                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                                contentColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Settings,
+                                                contentDescription = "Manage Accounts"
+                                            )
+                                        }
+                                    }
+                                },
+                                text = {
+                                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                        // Connected Group for Column Configuration
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                            shape = RoundedCornerShape(20.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Text(
+                                                    "ACCOUNT GRID COLUMNS",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.sp
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+
+                                                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                                    listOf(1, 2, 3).forEachIndexed { index, count ->
+                                                        SegmentedButton(
+                                                            selected = gridColumns == count,
+                                                            onClick = { onGridColumnsChange(count) },
+                                                            shape = SegmentedButtonDefaults.itemShape(
+                                                                index = index,
+                                                                count = 3
+                                                            ),
+                                                            label = { Text(count.toString()) }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(32.dp),
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
                         }
                     }
                 }

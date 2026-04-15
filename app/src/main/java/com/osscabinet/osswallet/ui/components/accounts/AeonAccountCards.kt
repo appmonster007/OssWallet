@@ -36,6 +36,7 @@ fun AeonAccountCardSmall(
     account: Account,
     balanceInBase: BigDecimal,
     baseCurrency: String,
+    currencyBalances: Map<String, BigDecimal> = emptyMap(),
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     onClick: () -> Unit,
@@ -107,6 +108,7 @@ fun AeonAccountCardMedium(
     account: Account,
     balanceInBase: BigDecimal,
     baseCurrency: String,
+    currencyBalances: Map<String, BigDecimal> = emptyMap(),
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     onClick: () -> Unit,
@@ -304,7 +306,11 @@ fun AeonAccountCardLarge(
                             )
                         }
                         
-                        currencyBalances.forEach { (curr, bal) ->
+                        val sortedCurrencyBalances = remember(currencyBalances) {
+                            currencyBalances.toList().sortedBy { it.first }
+                        }
+                        
+                        sortedCurrencyBalances.forEach { (curr, bal) ->
                             Surface(
                                 color = contentColor.copy(alpha = 0.15f),
                                 shape = RoundedCornerShape(16.dp)

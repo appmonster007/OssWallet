@@ -42,7 +42,7 @@ fun TransactionListScreen(
     val accounts by accountViewModel.accounts.collectAsState()
     val accountMap = accounts.associate { it.id to it.name }
     val categories by viewModel.categories.collectAsState()
-    val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+    val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
 
     var showFilterSheet by remember { mutableStateOf(false) }

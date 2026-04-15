@@ -56,6 +56,7 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.dashboard.*
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlinx.coroutines.launch
@@ -540,7 +541,7 @@ fun DashboardContent(
 
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
                 val categories by transactionViewModel.categories.collectAsState()
-                val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+                val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
                 LazyColumn(
                     modifier = Modifier
@@ -563,20 +564,20 @@ fun DashboardContent(
 
                     items(state.recentTransactions) { item ->
                         val transaction = item.transaction
-                        val categoryEntity = categoryMap[transaction.category.lowercase()]
-                        val balanceBeforeValue = item.balanceAfter - (if (transaction.isIncome) transaction.amount else -transaction.amount)
+                        val categoryEntity = categoryMap[transaction.categoryId]
+                        val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
 
                         AeonTransactionItem(
                             category = transaction.category,
                             account = accountMap[transaction.accountId] ?: "Unknown",
-                            amount = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency, decimalPrecision),
+                            amount = formatCurrencyRight(transaction.amount.abs(), "", decimalPrecision),
                             balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
                             balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
                             type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                             timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                             note = transaction.note,
                             tags = transaction.tags,
-                            icon = categoryEntity?.let { categoryIcons[it.name] },
+                            icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
                             iconBg = categoryEntity?.let { Color(it.colorHex) },
                             onClick = { /* Navigate to edit? */ },
                             modifier = Modifier.padding(horizontal = 24.dp)
@@ -591,49 +592,3 @@ fun DashboardContent(
 
 
 
-@Composable
-fun BudgetTrackingSection(
-    onManageClick: () -> Unit,
-    budgets: List<Budget>,
-    baseCurrency: String,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    precision: Int = 2
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AeonFlowSectionHeader(
-                title = "Budget Tracking",
-                modifier = headerModifier,
-                trailing = {
-                    Text(
-                        text = "Manage",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier.clickable(onClick = onManageClick)
-                    )
-                }
-            )
-
-            Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                budgets.forEach { budget ->
-                    AeonBudgetProgress(
-                        label = budget.category,
-                        current = budget.spent,
-                        total = budget.limit,
-                        color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        baseCurrency = baseCurrency,
-                        precision = precision
-                    )
-                }
-            }
-        }
-    }
-}

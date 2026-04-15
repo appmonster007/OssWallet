@@ -1,0 +1,161 @@
+package com.osscabinet.ossWallet.ui.components.dashboard
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import java.math.BigDecimal
+
+@Composable
+fun NetWorthSection(
+    accounts: List<Account>,
+    baseCurrency: String,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
+    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    precision: Int = 2,
+    fontSize: String = "Medium",
+    onFontSizeChange: (String) -> Unit = {}
+) {
+    var showSettings by remember { mutableStateOf(false) }
+
+    val totalInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
+        val totals = accounts.groupBy { it.currencyCode }
+            .mapValues { (_, accs) -> accs.sumOf { it.balance } }
+        calculateTotalInCurrency(totals, baseCurrency, exchangeRates, precision)
+    }
+
+    val (textStyle, labelStyle) = when (fontSize) {
+        "Small" -> MaterialTheme.typography.displaySmall to MaterialTheme.typography.labelSmall
+        "Large" -> MaterialTheme.typography.displayLarge to MaterialTheme.typography.labelSmall
+        else -> MaterialTheme.typography.displayMedium to MaterialTheme.typography.labelSmall
+    }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AeonFlowSectionHeader(
+                title = "NET WORTH",
+                modifier = headerModifier,
+                trailing = {
+                    IconButton(
+                        onClick = { showSettings = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreHoriz,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = formatCurrencyRight(totalInBase, baseCurrency, precision),
+                    style = textStyle.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "TOTAL BALANCE ACROSS ALL ACCOUNTS",
+                    style = labelStyle.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 9.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Text(
+                    "Net Worth Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "FONT SIZE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
+                                    SegmentedButton(
+                                        selected = fontSize == size,
+                                        onClick = { onFontSizeChange(size) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = 3
+                                        ),
+                                        label = { 
+                                            Text(
+                                                when(size) {
+                                                    "Small" -> "S"
+                                                    "Medium" -> "M"
+                                                    else -> "L"
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    }
+}

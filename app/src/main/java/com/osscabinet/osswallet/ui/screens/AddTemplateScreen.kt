@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,11 +36,13 @@ fun AddTemplateScreen(
     templateId: Long? = null,
     templateViewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
+    transactionViewModel: TransactionViewModel,
     tagViewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
+    val categoriesList by transactionViewModel.categories.collectAsState()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
 
     var name by remember { mutableStateOf(template?.name ?: "") }
@@ -373,9 +376,10 @@ fun AddTemplateScreen(
 
     if (showCategorySheet) {
         CategoryPickerSheet(
-            selectedCategory = category,
+            categories = categoriesList,
+            selectedCategoryId = categoriesList.find { it.name == category }?.id,
             onCategorySelected = {
-                category = it
+                category = it.name
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }

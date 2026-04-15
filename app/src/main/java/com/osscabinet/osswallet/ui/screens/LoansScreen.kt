@@ -22,7 +22,7 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.ui.components.AeonFlowCard
+import com.osscabinet.ossWallet.ui.components.dashboard.AeonFlowCard
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -127,7 +127,8 @@ fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String, pr
             totalInBase = debt,
             baseCurrency = currency,
             precision = precision,
-            type = CashFlowType.EXPENSE
+            type = CashFlowType.EXPENSE,
+            content = {}
         )
         AeonFlowCard(
             modifier = Modifier.weight(1f),
@@ -135,7 +136,8 @@ fun LoanSummaryHeader(debt: BigDecimal, credit: BigDecimal, currency: String, pr
             totalInBase = credit,
             baseCurrency = currency,
             precision = precision,
-            type = CashFlowType.INCOME
+            type = CashFlowType.INCOME,
+            content = {}
         )
     }
 }

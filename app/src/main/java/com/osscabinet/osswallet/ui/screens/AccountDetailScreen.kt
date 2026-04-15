@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
@@ -58,6 +59,9 @@ fun AccountDetailScreen(
         accountTransactionsWithBalance.map { it.transaction }
     }
     
+    val categories by transactionViewModel.categories.collectAsState()
+    val categoryMap = remember(categories) { categories.associateBy { it.id } }
+
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
@@ -253,7 +257,7 @@ fun AccountDetailScreen(
                     }
                 } else {
                     val categories by transactionViewModel.categories.collectAsState()
-                    val categoryMap = remember(categories) { categories.associateBy { it.name.lowercase() } }
+                    val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
                     if (accountTransactions.isEmpty()) {
                         Box(

@@ -54,6 +54,7 @@ fun AddTransactionScreen(
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Shopping") }
+    var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var paymentMethod by remember { mutableStateOf("Cash") }
     var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
@@ -67,6 +68,7 @@ fun AddTransactionScreen(
     
     val accounts by accountViewModel.accounts.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
@@ -254,6 +256,7 @@ fun AddTransactionScreen(
                                             title = title.ifBlank { category },
                                             amount = amountValue,
                                             category = category,
+                                            categoryId = selectedCategoryId,
                                             isIncome = isIncome,
                                             accountId = accountId,
                                             currency = selectedCurrency,
@@ -764,9 +767,11 @@ fun AddTransactionScreen(
 
     if (showCategorySheet) {
         CategoryPickerSheet(
-            selectedCategory = category,
+            categories = categories,
+            selectedCategoryId = selectedCategoryId,
             onCategorySelected = {
-                category = it
+                category = it.name
+                selectedCategoryId = it.id
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }

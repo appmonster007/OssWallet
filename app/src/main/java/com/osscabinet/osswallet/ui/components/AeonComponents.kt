@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -1682,6 +1682,84 @@ fun AeonExtendedFloatingActionButton(
             ) 
         }
     )
+}
+
+@Composable
+fun AeonShimmer(
+    innerPadding: PaddingValues,
+    showNetWorth: Boolean = true,
+    showCurrency: Boolean = true,
+    showCashflow: Boolean = true,
+    showAccounts: Boolean = true,
+    showBudgets: Boolean = false
+) {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val alpha by transition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+    ) {
+        if (showNetWorth) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(modifier = Modifier.size(150.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                    Box(modifier = Modifier.size(250.dp, 48.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(8.dp)))
+                    Box(modifier = Modifier.size(100.dp, 24.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(16.dp)))
+                }
+            }
+        }
+        if (showCurrency) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    repeat(3) {
+                        Box(modifier = Modifier.size(120.dp, 60.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(20.dp)))
+                    }
+                }
+            }
+        }
+        if (showCashflow) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(32.dp)))
+            }
+        }
+        if (showAccounts) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Box(modifier = Modifier.size(100.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                        Box(modifier = Modifier.size(60.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(24.dp)))
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(24.dp)))
+                    }
+                }
+            }
+        }
+        if (showBudgets) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(modifier = Modifier.size(120.dp, 20.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(4.dp)))
+                    repeat(2) {
+                        Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(Color.Gray.copy(alpha = alpha), RoundedCornerShape(16.dp)))
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

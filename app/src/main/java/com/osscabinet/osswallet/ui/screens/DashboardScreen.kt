@@ -57,6 +57,7 @@ import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlinx.coroutines.launch
@@ -83,7 +84,8 @@ fun DashboardScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
-    budgetViewModel: BudgetViewModel
+    budgetViewModel: BudgetViewModel,
+    netWorthViewModel: NetWorthViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -235,7 +237,8 @@ fun DashboardScreen(
                                 onBudgetsClick = onBudgetsClick,
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
-                                dashboardViewModel = dashboardViewModel
+                                dashboardViewModel = dashboardViewModel,
+                                netWorthViewModel = netWorthViewModel
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -428,7 +431,8 @@ fun DashboardContent(
     onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
-    dashboardViewModel: DashboardViewModel
+    dashboardViewModel: DashboardViewModel,
+    netWorthViewModel: NetWorthViewModel
 ) {
     val activeTransactions = remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
@@ -458,15 +462,9 @@ fun DashboardContent(
                     when (section) {
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
                             NetWorthSection(
-                                accounts = state.accounts,
-                                transactions = activeTransactions,
-                                baseCurrency = state.baseCurrency,
+                                viewModel = netWorthViewModel,
                                 modifier = Modifier.fillMaxWidth(),
-                                headerModifier = dragModifier,
-                                exchangeRates = state.exchangeRates,
-                                precision = decimalPrecision,
-                                fontSize = state.netWorthFontSize,
-                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) }
+                                headerModifier = dragModifier
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CURRENCY_BALANCES -> {

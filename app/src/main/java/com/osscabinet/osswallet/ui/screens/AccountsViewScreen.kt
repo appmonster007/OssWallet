@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -73,7 +74,8 @@ fun AccountsViewScreen(
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
-    accountsViewViewModel: AccountsViewViewModel
+    accountsViewViewModel: AccountsViewViewModel,
+    netWorthViewModel: NetWorthViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -191,15 +193,9 @@ fun AccountsViewScreen(
                             when (section) {
                                 AccountsViewSection.NET_WORTH -> {
                                     NetWorthSection(
-                                        accounts = state.accounts,
-                                        transactions = state.allTransactions,
-                                        baseCurrency = state.baseCurrency,
-                                        exchangeRates = state.exchangeRates,
-                                        precision = state.decimalPrecision,
-                                        fontSize = state.netWorthFontSize,
-                                        onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
-                                        headerModifier = dragModifier,
-                                        modifier = Modifier.fillMaxWidth()
+                                        viewModel = netWorthViewModel,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier
                                     )
                                 }
                                 AccountsViewSection.CURRENCY_BALANCES -> {

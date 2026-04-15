@@ -676,25 +676,48 @@ fun AeonCurrencyBalanceItem(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
         modifier = modifier
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Text(
                 currency,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
-            Column(horizontalAlignment = Alignment.End) {
+            
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.End
+            ) {
                 Text(
                     formatCurrencyRight(amount, currency, precision),
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontFeatureSettings = "tnum",
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    maxLines = 1
                 )
+                
+                // Always reserve space for the base currency conversion to maintain uniform height
                 if (currency != baseCurrency) {
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        maxLines = 1
+                    )
+                } else {
+                    // Transparent placeholder for height consistency
+                    Text(
+                        "",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.height(14.dp) // Approximate height of labelSmall
                     )
                 }
             }

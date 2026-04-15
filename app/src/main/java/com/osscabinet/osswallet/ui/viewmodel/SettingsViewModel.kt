@@ -139,6 +139,18 @@ class SettingsViewModel(
         }
     }
 
+    fun updateAccountsViewCurrencyBalancesLayout(layout: String) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+        }
+    }
+
+    fun updateAccountsViewCurrencyBalancesShowBaseConversion(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+        }
+    }
+
     fun setAutoSaveExchangeRates(autoSave: Boolean) {
         viewModelScope.launch {
             settingsDataStore.saveAutoSaveExchangeRates(autoSave)

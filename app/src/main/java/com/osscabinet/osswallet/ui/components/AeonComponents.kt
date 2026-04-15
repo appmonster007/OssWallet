@@ -54,13 +54,8 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
-import com.osscabinet.ossWallet.ui.util.convertAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.formatAmount
-import com.osscabinet.ossWallet.ui.util.isDark
-import com.osscabinet.ossWallet.ui.util.toContainerColor
-import com.osscabinet.ossWallet.ui.util.toOnContainerColor
+import com.osscabinet.ossWallet.ui.components.dashboard.CurrencyAggregationSection
+import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.math.BigDecimal
@@ -766,57 +761,25 @@ fun AeonSectionHeader(
 fun AeonCurrencyBreakdown(
     balances: Map<String, BigDecimal>,
     baseCurrency: String,
-    accountCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
-    showTitle: Boolean = true,
-    precision: Int = 2
+    precision: Int = 2,
+    layout: String = "scroll",
+    showBaseConversion: Boolean = true,
+    onLayoutChange: (String) -> Unit = {},
+    onShowBaseConversionChange: (Boolean) -> Unit = {}
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            if (showTitle) {
-                Text(
-                    "CURRENCY BREAKDOWN",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    letterSpacing = 0.5.sp
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            balances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            curr,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                formatCurrencyRight(bal, curr, precision),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                            )
-                            if (accountCurrency != baseCurrency) {
-                                val convertedBal = convertAmount(bal, curr, baseCurrency, exchangeRates, precision)
-                                Text(
-                                    "≈ ${formatCurrencyRight(convertedBal, baseCurrency, precision)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    CurrencyAggregationSection(
+        currencyTotals = balances,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        modifier = modifier,
+        precision = precision,
+        layout = layout,
+        showBaseConversion = showBaseConversion,
+        onLayoutChange = onLayoutChange,
+        onShowBaseConversionChange = onShowBaseConversionChange
+    )
 }
 
 val categoryIcons = mapOf(

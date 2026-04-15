@@ -37,6 +37,7 @@ data class AccountsViewSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 1),
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val netWorthSection: NetWorthSettings = NetWorthSettings(),
+    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 

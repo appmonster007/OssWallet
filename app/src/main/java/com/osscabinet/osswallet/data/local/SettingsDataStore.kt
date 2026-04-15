@@ -41,6 +41,13 @@ data class AccountsViewSettings(
     val layout: LayoutSettings = LayoutSettings()
 )
 
+@Serializable
+data class AccountDetailSettings(
+    val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
+    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
+    val transactionsSection: AccountsSectionSettings = AccountsSectionSettings() // For consistency
+)
+
 class SettingsDataStore(private val context: Context) {
 
     companion object {
@@ -53,6 +60,7 @@ class SettingsDataStore(private val context: Context) {
         
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
+        val ACCOUNT_DETAIL_SETTINGS_KEY = stringPreferencesKey("account_detail_settings")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -97,6 +105,16 @@ class SettingsDataStore(private val context: Context) {
                 AccountsViewSettings()
             }
         } ?: AccountsViewSettings()
+    }
+
+    val accountDetailSettings: Flow<AccountDetailSettings> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
+            try {
+                Json.decodeFromString<AccountDetailSettings>(it)
+            } catch (e: Exception) {
+                AccountDetailSettings()
+            }
+        } ?: AccountDetailSettings()
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -158,6 +176,19 @@ class SettingsDataStore(private val context: Context) {
                 }
             } ?: AccountsViewSettings()
             preferences[ACCOUNTS_VIEW_SETTINGS_KEY] = Json.encodeToString(update(current))
+        }
+    }
+
+    suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[ACCOUNT_DETAIL_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<AccountDetailSettings>(it)
+                } catch (e: Exception) {
+                    AccountDetailSettings()
+                }
+            } ?: AccountDetailSettings()
+            preferences[ACCOUNT_DETAIL_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 }

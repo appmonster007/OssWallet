@@ -151,6 +151,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateAccountsViewCurrencyBalancesTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+        }
+    }
+
     fun setAutoSaveExchangeRates(autoSave: Boolean) {
         viewModelScope.launch {
             settingsDataStore.saveAutoSaveExchangeRates(autoSave)

@@ -16,18 +16,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Serializable
 data class AccountsSectionSettings(
     val layout: String = "grid", // "scroll" or "grid"
     val gridColumns: Int = 2,
-    val showAddAccountCard: Boolean = true
+    val showAddAccountCard: Boolean = true,
+    val timelineRange: TimelineRange = TimelineRange.AllTime
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -46,13 +52,27 @@ fun AeonAccountsSection(
     gridColumns: Int = 2,
     layout: String = "grid",
     precision: Int = 2,
+    timelineRange: TimelineRange = TimelineRange.AllTime,
     onLayoutChange: (String) -> Unit = {},
+    onTimelineRangeChange: (TimelineRange) -> Unit = {},
     onHeaderClick: (() -> Unit)? = null,
     settingsTitle: String = "Account Settings",
     showAddAccountCard: Boolean = true,
     onShowAddAccountCardChange: (Boolean) -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
+
+    val timelineLabel = when (timelineRange) {
+        is TimelineRange.AllTime -> "All Time"
+        is TimelineRange.ThisPeriod -> timelineRange.period.label
+        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.CustomRange -> {
+            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
+            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            "$start - $end"
+        }
+    }
 
     Card(
         modifier = modifier,
@@ -65,15 +85,29 @@ fun AeonAccountsSection(
                 title = "ACCOUNTS",
                 modifier = if (onHeaderClick != null) headerModifier.clickable(onClick = onHeaderClick) else headerModifier,
                 trailing = {
-                    IconButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.size(24.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.Default.MoreHoriz,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.primary
+                        Text(
+                            text = timelineLabel.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                fontSize = 10.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             )
@@ -115,6 +149,33 @@ fun AeonAccountsSection(
                     },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            // Timeline Range Selection
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        "TIMELINE",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    TimelineFilterBar(
+                                        currentRange = timelineRange,
+                                        onRangeSelected = onTimelineRangeChange,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+
                             AeonLayoutToggle(
                                 layout = layout,
                                 onLayoutChange = onLayoutChange

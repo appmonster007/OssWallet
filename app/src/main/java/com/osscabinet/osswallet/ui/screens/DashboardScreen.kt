@@ -57,6 +57,8 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import java.math.BigDecimal
@@ -484,13 +486,31 @@ fun DashboardContent(
                                 precision = decimalPrecision,
                                 layout = state.currencyBalancesLayout,
                                 showBaseConversion = state.showBaseConversion,
+                                timelineRange = state.currencyBalancesTimelineRange,
                                 onLayoutChange = { dashboardViewModel.updateCurrencyBalancesLayout(it) },
-                                onShowBaseConversionChange = { dashboardViewModel.updateShowBaseConversion(it) }
+                                onShowBaseConversionChange = { dashboardViewModel.updateShowBaseConversion(it) },
+                                onTimelineRangeChange = { dashboardViewModel.updateCurrencyBalancesTimelineRange(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {
+                            val cashFlowTransactions = remember(state.allTransactions, state.cashFlowTimelineRange) {
+                                when (val range = state.cashFlowTimelineRange) {
+                                    is TimelineRange.AllTime -> state.allTransactions
+                                    is TimelineRange.ThisPeriod -> {
+                                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                                        state.allTransactions.filter { it.timestamp in start..end }
+                                    }
+                                    is TimelineRange.LastPeriod -> {
+                                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                                        state.allTransactions.filter { it.timestamp in start..end }
+                                    }
+                                    is TimelineRange.CustomRange -> {
+                                        state.allTransactions.filter { it.timestamp in range.start..range.end }
+                                    }
+                                }
+                            }
                             AeonCashFlowSummary(
-                                transactions = activeTransactions,
+                                transactions = cashFlowTransactions,
                                 baseCurrency = state.baseCurrency,
                                 exchangeRates = state.exchangeRates,
                                 currentTheme = currentTheme,
@@ -499,7 +519,9 @@ fun DashboardContent(
                                 showTitle = true,
                                 precision = decimalPrecision,
                                 showBaseConversion = state.cashFlowShowBaseConversion,
-                                onShowBaseConversionChange = { dashboardViewModel.updateCashFlowShowBaseConversion(it) }
+                                timelineRange = state.cashFlowTimelineRange,
+                                onShowBaseConversionChange = { dashboardViewModel.updateCashFlowShowBaseConversion(it) },
+                                onTimelineRangeChange = { dashboardViewModel.updateCashFlowTimelineRange(it) }
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {
@@ -518,6 +540,8 @@ fun DashboardContent(
                                 precision = decimalPrecision,
                                 layout = state.accountsLayout,
                                 onLayoutChange = { dashboardViewModel.updateAccountsLayout(it) },
+                                timelineRange = state.accountsTimelineRange,
+                                onTimelineRangeChange = { dashboardViewModel.updateAccountsTimelineRange(it) },
                                 showAddAccountCard = state.showAddAccountCard,
                                 onShowAddAccountCardChange = { dashboardViewModel.updateShowAddAccountCard(it) },
                                 headerModifier = dragModifier.fillMaxWidth(),

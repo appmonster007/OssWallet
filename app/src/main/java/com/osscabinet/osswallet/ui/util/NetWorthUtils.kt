@@ -11,7 +11,8 @@ fun calculateNetWorth(
     allTransactions: List<Transaction>,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
-    precision: Int
+    precision: Int,
+    includeInitialBalance: Boolean = true
 ): BigDecimal {
     val transactionsByAccount = allTransactions.groupBy { it.accountId }
     
@@ -19,7 +20,10 @@ fun calculateNetWorth(
         val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
         val breakdown = mutableMapOf<String, BigDecimal>()
         
-        breakdown[account.currencyCode] = account.initialBalance
+        if (includeInitialBalance) {
+            breakdown[account.currencyCode] = account.initialBalance
+        }
+
         account.allowedCurrencies.forEach { curr ->
             breakdown.getOrPut(curr) { BigDecimal.ZERO }
         }

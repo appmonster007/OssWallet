@@ -33,6 +33,9 @@ import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.*
 
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountDetailScreen(
@@ -41,6 +44,7 @@ fun AccountDetailScreen(
     transactionViewModel: TransactionViewModel,
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
+    accountDetailViewModel: AccountDetailViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
@@ -48,91 +52,30 @@ fun AccountDetailScreen(
 ) {
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     
-    val accounts by accountViewModel.accounts.collectAsState()
-    val account = accounts.find { it.id == accountId }
-    
-    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
-    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId) {
-        transactionsWithBalance.filter { it.transaction.accountId == accountId }
-    }
-    val accountTransactions = remember(accountTransactionsWithBalance) {
-        accountTransactionsWithBalance.map { it.transaction }
-    }
+    val uiState by accountDetailViewModel.uiState.collectAsState()
     
     val categories by transactionViewModel.categories.collectAsState()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
-    val baseCurrency by settingsViewModel.currency.collectAsState()
-    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
-
-    val totalBalanceInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
-        derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf BigDecimal.ZERO
-            val initialBalance = currentAccount.initialBalance
-
-            val currencyTotals = accountTransactions.groupBy { it.currency }
-                .mapValues { (_, txs) ->
-                    txs.fold(BigDecimal.ZERO) { acc, tx ->
-                        if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
-                    }
-                }
-            
-            val transactionsSumInAccountCurrency = calculateTotalInCurrency(currencyTotals, currentAccount.currencyCode, exchangeRates, decimalPrecision)
-            initialBalance.add(transactionsSumInAccountCurrency)
-        }
+    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
+    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId) {
+        transactionsWithBalance.filter { it.transaction.accountId == accountId }
     }
-
-    val incomeInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
-        derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf BigDecimal.ZERO
-            val currencyTotals = accountTransactions.filter { it.isIncome }.groupBy { it.currency }
-                .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
-            calculateTotalInCurrency(currencyTotals, currentAccount.currencyCode, exchangeRates, decimalPrecision)
-        }
-    }
-
-    val expenseInAccountCurrency by remember(account, accountTransactions, exchangeRates, decimalPrecision) {
-        derivedStateOf {
-            val currentAccount = account ?: return@derivedStateOf BigDecimal.ZERO
-            val currencyTotals = accountTransactions.filter { !it.isIncome }.groupBy { it.currency }
-                .mapValues { (_, txs) -> txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
-            calculateTotalInCurrency(currencyTotals, currentAccount.currencyCode, exchangeRates, decimalPrecision)
-        }
-    }
-
-    val netInAccountCurrency = incomeInAccountCurrency.subtract(expenseInAccountCurrency)
-
-    val supportedCurrencies = remember(account, accountTransactions) {
-        val list = mutableSetOf<String>()
-        account?.let {
-            list.add(it.currencyCode)
-            list.addAll(it.allowedCurrencies)
-        }
-        // Also add any currencies present in transactions even if not in "allowed"
-        accountTransactions.forEach { list.add(it.currency) }
-        list.toList().sorted()
-    }
-
-
-    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
-    val accountsViewSettings by settingsViewModel.accountsViewSettings.collectAsState(initial = com.osscabinet.ossWallet.data.local.AccountsViewSettings())
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
-
-    LaunchedEffect(account?.id) {
-        val newCurrency = account?.currencyCode
-        if (newCurrency != null && newCurrency != analyticsUiState.selectedCurrency) {
-            analyticsViewModel.onCurrencySelected(newCurrency)
-        }
-    }
 
     Scaffold(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text(account?.name ?: "Account", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    title = { 
+                        val title = when (val state = uiState) {
+                            is AccountDetailUiState.Success -> state.account.name
+                            else -> "Account"
+                        }
+                        Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) 
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -184,114 +127,110 @@ fun AccountDetailScreen(
             )
         }
     ) { innerPadding ->
-        if (account == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        when (val state = uiState) {
+            is AccountDetailUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                if (selectedTabIndex == 0) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
-                        contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp) // Extra padding for FAB
-                    ) {
-                        item {
-                            AeonSectionHeader(title = "Account Summary")
-                            Spacer(modifier = Modifier.height(4.dp))
-                            AeonAccountHeroCard(
-                                account = account,
-                                balance = totalBalanceInAccountCurrency,
-                                netBalance = netInAccountCurrency,
-                                baseCurrency = baseCurrency,
-                                exchangeRates = exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-
-                        item {
-                            AeonCashFlowSummary(
-                                transactions = accountTransactions,
-                                baseCurrency = account.currencyCode,
-                                exchangeRates = exchangeRates,
-                                currentTheme = currentTheme,
-                                modifier = Modifier.fillMaxWidth(),
-                                showTitle = true,
-                                precision = decimalPrecision,
-                                showBaseConversion = accountsViewSettings.cashFlowSection.showBaseConversion,
-                                onShowBaseConversionChange = { settingsViewModel.updateAccountsViewCashFlowShowBaseConversion(it) }
-                            )
-                        }
-
-                        item {
-                            // Group by currency to show separate balances
-                            val finalBalances = remember(account, accountTransactions, supportedCurrencies) {
-                                val currentAccount = account
-                                val initialBalance = currentAccount?.initialBalance ?: BigDecimal.ZERO
-
-                                val txsByCurrency = accountTransactions.groupBy { it.currency }
-                                supportedCurrencies.associateWith { curr ->
-                                    val txSum = txsByCurrency[curr]?.fold(BigDecimal.ZERO) { acc, tx ->
-                                        if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
-                                    } ?: BigDecimal.ZERO
-                                    if (curr == currentAccount?.currencyCode) initialBalance.add(txSum) else txSum
-                                }
+            is AccountDetailUiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(state.message)
+                }
+            }
+            is AccountDetailUiState.Success -> {
+                val account = state.account
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    if (selectedTabIndex == 0) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp) // Extra padding for FAB
+                        ) {
+                            item {
+                                AeonSectionHeader(title = "Account Summary")
+                                Spacer(modifier = Modifier.height(4.dp))
+                                AeonAccountHeroCard(
+                                    account = account,
+                                    balance = account.balance,
+                                    netBalance = account.balance.subtract(account.initialBalance), // Correct net in account currency
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    precision = state.decimalPrecision
+                                )
                             }
 
-                            CurrencyAggregationSection(
-                                currencyTotals = finalBalances,
-                                baseCurrency = baseCurrency,
-                                exchangeRates = exchangeRates,
-                                modifier = Modifier.fillMaxWidth(),
-                                precision = decimalPrecision,
-                                layout = accountsViewSettings.currencyBalancesSection.layout,
-                                showBaseConversion = accountsViewSettings.currencyBalancesSection.showBaseConversion,
-                                onLayoutChange = { settingsViewModel.updateAccountsViewCurrencyBalancesLayout(it) },
-                                onShowBaseConversionChange = { settingsViewModel.updateAccountsViewCurrencyBalancesShowBaseConversion(it) }
-                            )
-                        }
-                    }
-                } else {
-                    val categories by transactionViewModel.categories.collectAsState()
-                    val categoryMap = remember(categories) { categories.associateBy { it.id } }
-
-                    if (accountTransactions.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Rounded.History,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                            item {
+                                AeonCashFlowSummary(
+                                    transactions = state.cashFlowTransactions,
+                                    baseCurrency = account.currencyCode,
+                                    exchangeRates = state.exchangeRates,
+                                    currentTheme = currentTheme,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    showTitle = true,
+                                    precision = state.decimalPrecision,
+                                    showBaseConversion = state.cashFlowShowBaseConversion,
+                                    timelineRange = state.cashFlowTimelineRange,
+                                    onShowBaseConversionChange = { accountDetailViewModel.updateCashFlowShowBaseConversion(it) },
+                                    onTimelineRangeChange = { accountDetailViewModel.updateCashFlowTimelineRange(it) }
                                 )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    "No transactions yet",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.outline
+                            }
+
+                            item {
+                                CurrencyAggregationSection(
+                                    currencyTotals = state.currencyTotals,
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    precision = state.decimalPrecision,
+                                    layout = state.currencyBalancesLayout,
+                                    showBaseConversion = state.showBaseConversion,
+                                    timelineRange = state.currencyBalancesTimelineRange,
+                                    onLayoutChange = { accountDetailViewModel.updateCurrencyBalancesLayout(it) },
+                                    onShowBaseConversionChange = { accountDetailViewModel.updateShowBaseConversion(it) },
+                                    onTimelineRangeChange = { accountDetailViewModel.updateCurrencyBalancesTimelineRange(it) }
                                 )
                             }
                         }
                     } else {
-                        AeonTransactionList(
-                            transactions = accountTransactionsWithBalance,
-                            accountMap = mapOf(account.id to account.name),
-                            categoryMap = categoryMap,
-                            onTransactionClick = { onEditTransactionClick(it.id) },
-                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
-                            precision = decimalPrecision
-                        )
+                        if (accountTransactionsWithBalance.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        Icons.Rounded.History,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        "No transactions yet",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                            }
+                        } else {
+                            AeonTransactionList(
+                                transactions = accountTransactionsWithBalance,
+                                accountMap = mapOf(account.id to account.name),
+                                categoryMap = categoryMap,
+                                onTransactionClick = { onEditTransactionClick(it.id) },
+                                contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
+                                precision = state.decimalPrecision
+                            )
+                        }
                     }
                 }
             }

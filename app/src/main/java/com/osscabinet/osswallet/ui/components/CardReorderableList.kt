@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -9,10 +11,14 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -20,8 +26,38 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
+import kotlin.math.max
+import kotlin.math.min
 
+/**
+ * A robust, Material 3-compliant reorderable list component designed for dashboard sections
+ * and complex card layouts.
+ *
+ * ### Key Constraints & Requirements:
+ * 1. **Unique Keys**: Each item [T] must have a stable, unique key provided by [key].
+ * 2. **Overlay Approach**: Uses a separate overlay for the dragged item to prevent disposal
+ *    glitches during long scrolls. The dragged item is removed from the [LazyColumn] and
+ *    rendered in a floating [Box].
+ * 3. **Centralized Gestures**: Gesture detection is handled by the root [Box] container. This
+ *    ensures that if the [LazyColumn] recycles an item during a scroll, the pointer tracker
+ *    isn't cancelled.
+ * 4. **Long Item Handling**: Specialized logic in [performReorder] and the auto-scroll loop
+ *    allows users to drag items over/through cards that are taller than the viewport.
+ * 5. **Material 3 Expressive Motion**:
+ *    - Uses [animateItem] for smooth background item swaps.
+ *    - Applies 1.05x scale and 16dp elevation to the dragged overlay.
+ *    - Dims non-dragged items to 0.6 alpha to focus attention.
+ *
+ * @param items The list of items to display.
+ * @param key Function to extract a unique key from an item.
+ * @param onReorder Callback triggered when a swap occurs.
+ * @param modifier Modifier for the root container.
+ * @param state State for the [LazyColumn].
+ * @param contentPadding Padding for the list content.
+ * @param verticalArrangement Spacing between items.
+ * @param itemContent The composable used to render each item.
+ */
 @Composable
 fun <T> CardReorderableList(
     items: List<T>,
@@ -35,146 +71,244 @@ fun <T> CardReorderableList(
 ) {
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    val scope = rememberCoroutineScope()
     
+    // Core Drag State
     var draggedKey by remember { mutableStateOf<Any?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
-    
+    var currentPointerY by remember { mutableFloatStateOf(0f) }
+    var touchOffsetOnItem by remember { mutableFloatStateOf(0f) }
+    var draggedItemHeight by remember { mutableIntStateOf(0) }
+    var lastSwapTime by remember { mutableLongStateOf(0L) }
+
     val currentItems by rememberUpdatedState(items)
     val currentOnReorder by rememberUpdatedState(onReorder)
     val currentKeySelector by rememberUpdatedState(key)
 
-    val spacingPx = with(density) { verticalArrangement.spacing.toPx() }
+    // Find the item data for the overlay
+    val draggedItem = remember(draggedKey, items) {
+        if (draggedKey != null) items.find { key(it) == draggedKey } else null
+    }
 
-    LazyColumn(
-        state = state,
-        contentPadding = contentPadding,
-        verticalArrangement = verticalArrangement,
+    /**
+     * Identifies the immediate adjacent swap target based on a strict hysteresis threshold.
+     * To eliminate oscillation jitter and handle direction changes gracefully:
+     * 1. Swapping Down: Leading edge (bottom) must travel through 95% of the next item's height.
+     * 2. Swapping Up: Leading edge (top) must travel through 95% of the previous item's height (from bottom).
+     * 
+     * Formula: threshold = (95% adjacent item height) - (50% current item height).
+     * This ensures the item feels "pushed" into its new position before swapping.
+     * 
+     * This adjacent-only approach ensures structural integrity during fast drags by cascading
+     * swaps one-by-one, synchronized with the LazyColumn's layout state via the Sync Guard.
+     */
+    fun performReorder() {
+        val now = System.currentTimeMillis()
+        // With 95% hysteresis, cooldown can be very short to allow fast successive swaps
+        if (now - lastSwapTime < 40) return 
+
+        val draggedKeyVal = draggedKey ?: return
+        val itemsList = currentItems
+        
+        val currentIndex = itemsList.indexOfFirst { currentKeySelector(it) == draggedKeyVal }
+        if (currentIndex == -1) return
+
+        val layoutInfo = state.layoutInfo
+        val visibleItems = layoutInfo.visibleItemsInfo
+        
+        // Sync Guard: Ensure layout and data are in sync before making structural changes.
+        // This prevents multiple swaps before the list has finished its previous transition.
+        val draggedItemInfo = visibleItems.find { it.key == draggedKeyVal }
+        if (draggedItemInfo != null && draggedItemInfo.index != currentIndex) return
+        
+        // Use the center point of the dragged item for directional decisions
+        val draggedCenter = currentPointerY - touchOffsetOnItem + (draggedItemHeight / 2f)
+
+        // Find the adjacent target based on the strict 95% travel threshold.
+        val targetItem = visibleItems.find { other ->
+            val isNext = other.index == currentIndex + 1
+            val isPrev = other.index == currentIndex - 1
+            if (!isNext && !isPrev) return@find false
+            
+            val otherTop = other.offset.toFloat()
+            val otherBottom = (other.offset + other.size).toFloat()
+            val otherHeight = other.size.toFloat()
+            
+            if (isNext) {
+                // Moving DOWN: Leading edge (bottom) must pass 95% of the next item's height
+                draggedCenter > (otherTop + otherHeight * 0.95f - draggedItemHeight * 0.5f)
+            } else {
+                // Moving UP: Leading edge (top) must pass 95% of the previous item's height (from the bottom)
+                draggedCenter < (otherBottom - (otherHeight * 0.95f - draggedItemHeight * 0.5f))
+            }
+        }
+
+        if (targetItem != null) {
+            val newList = itemsList.toMutableList()
+            val element = newList.removeAt(currentIndex)
+            newList.add(targetItem.index, element)
+            
+            lastSwapTime = now
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            currentOnReorder(newList)
+        }
+    }
+
+    // Auto-Scroll & Continuous Reorder Loop
+    LaunchedEffect(draggedKey) {
+        if (draggedKey != null) {
+            val maxScrollSpeed = with(density) { 24.dp.toPx() }
+            val bufferPx = with(density) { 50.dp.toPx() }
+
+            while (isActive) {
+                val layoutInfo = state.layoutInfo
+                val viewportHeight = (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset).toFloat()
+                
+                if (viewportHeight > 0) {
+                    val speed = when {
+                        currentPointerY < bufferPx -> {
+                            val distance = (bufferPx - currentPointerY).coerceIn(0f, bufferPx)
+                            -(distance / bufferPx) * maxScrollSpeed
+                        }
+                        currentPointerY > viewportHeight - bufferPx -> {
+                            val distance = (currentPointerY - (viewportHeight - bufferPx)).coerceIn(0f, bufferPx)
+                            (distance / bufferPx) * maxScrollSpeed
+                        }
+                        else -> 0f
+                    }
+
+                    if (speed != 0f) {
+                        state.scrollBy(speed)
+                        // Ensure reorder is recalculated during scroll animation
+                        performReorder()
+                    }
+                }
+                withFrameNanos { it }
+            }
+        }
+    }
+
+    Box(
         modifier = modifier
-    ) {
-        itemsIndexed(
-            items = items,
-            key = { _, item -> key(item) }
-        ) { index, item ->
-            val isDragging = draggedKey == key(item)
-            val zIndex = if (isDragging) 10f else 0f
-            
-            val scale by animateFloatAsState(
-                targetValue = if (isDragging) 1.05f else 1.0f,
-                label = "drag_scale"
-            )
-            
-            val elevation by animateDpAsState(
-                targetValue = if (isDragging) 12.dp else 0.dp,
-                label = "drag_elevation"
-            )
-
-            // Fluid swap offset for non-dragged items
-            val itemOffset by animateFloatAsState(
-                targetValue = if (!isDragging && draggedKey != null) {
-                    val draggedIndex = currentItems.indexOfFirst { currentKeySelector(it) == draggedKey }
-                    if (draggedIndex != -1) {
-                        val layoutInfo = state.layoutInfo
-                        val draggedInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.key == draggedKey }
-                        val currentInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.key == key(item) }
-                        
-                        if (draggedInfo != null && currentInfo != null) {
-                            val draggedCenter = draggedInfo.offset + (draggedInfo.size / 2) + dragOffset
-                            val currentCenter = currentInfo.offset + (currentInfo.size / 2)
-                            
-                            if (draggedIndex < index && draggedCenter > currentCenter) {
-                                -draggedInfo.size.toFloat() - spacingPx // Glide up
-                            } else if (draggedIndex > index && draggedCenter < currentCenter) {
-                                draggedInfo.size.toFloat() + spacingPx // Glide down
-                            } else 0f
-                        } else 0f
-                    } else 0f
-                } else 0f,
-                animationSpec = spring(stiffness = Spring.StiffnessLow),
-                label = "fluid_swap_offset"
-            )
-
-            val dragModifier = Modifier.pointerInput(key(item)) {
+            .pointerInput(Unit) {
+                // Centralized gesture detection on the container to prevent disposal-induced cancellations
                 detectDragGesturesAfterLongPress(
-                    onDragStart = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        draggedKey = key(item)
-                        dragOffset = 0f
+                    onDragStart = { offset ->
+                        val layoutInfo = state.layoutInfo
+                        val item = layoutInfo.visibleItemsInfo.firstOrNull { 
+                            offset.y.toInt() in it.offset..(it.offset + it.size)
+                        }
+                        if (item != null) {
+                            draggedKey = item.key
+                            draggedItemHeight = item.size
+                            touchOffsetOnItem = offset.y - item.offset
+                            currentPointerY = offset.y
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        dragOffset += dragAmount.y
-                        
-                        // Check for swap
-                        val currentIndex = currentItems.indexOfFirst { currentKeySelector(it) == draggedKey }
-                        if (currentIndex != -1) {
-                            val layoutInfo = state.layoutInfo
-                            val visibleItems = layoutInfo.visibleItemsInfo
-                            val currentItemInfo = visibleItems.firstOrNull { it.key == draggedKey }
-                            
-                            if (currentItemInfo != null) {
-                                val draggedItemCenter = currentItemInfo.offset + (currentItemInfo.size / 2) + dragOffset
-                                
-                                val targetItem = visibleItems.firstOrNull { other ->
-                                    if (other.key == draggedKey) return@firstOrNull false
-                                    val otherCenter = other.offset + (other.size / 2)
-                                    
-                                    if (dragOffset > 0 && other.index > currentIndex) {
-                                        draggedItemCenter > otherCenter
-                                    } else if (dragOffset < 0 && other.index < currentIndex) {
-                                        draggedItemCenter < otherCenter
-                                    } else false
-                                }
-                                
-                                if (targetItem != null) {
-                                    val newList = currentItems.toMutableList()
-                                    val element = newList.removeAt(currentIndex)
-                                    newList.add(targetItem.index, element)
-                                    
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    
-                                    // Root Cause Fix: Correctly calculate the offset jump when swapping items of different sizes.
-                                    // When swapping, the dragOffset must be adjusted by the relative distance between items.
-                                    val offsetAdjustment = if (targetItem.index > currentIndex) {
-                                        targetItem.size + spacingPx
-                                    } else {
-                                        -(targetItem.size + spacingPx)
-                                    }
-                                    
-                                    dragOffset -= offsetAdjustment
-                                    currentOnReorder(newList)
-                                }
-                            }
-                        }
+                        currentPointerY += dragAmount.y
+                        performReorder()
                     },
-                    onDragEnd = {
-                        draggedKey = null
-                        dragOffset = 0f
-                    },
-                    onDragCancel = {
-                        draggedKey = null
-                        dragOffset = 0f
-                    }
+                    onDragEnd = { draggedKey = null },
+                    onDragCancel = { draggedKey = null }
                 )
             }
+    ) {
+        LazyColumn(
+            state = state,
+            contentPadding = contentPadding,
+            verticalArrangement = verticalArrangement,
+            // Disable native scrolling while dragging to avoid gesture conflicts
+            userScrollEnabled = draggedKey == null,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            itemsIndexed(
+                items = items,
+                key = { _, item -> key(item) }
+            ) { _, item ->
+                val isDragging = draggedKey == key(item)
+                
+                // M3 Background Dimming
+                val alpha by animateFloatAsState(
+                    targetValue = if (draggedKey != null && !isDragging) 0.6f else 1.0f,
+                    label = "drag_alpha"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem() // Built-in smooth transition for swaps
+                        .graphicsLayer { this.alpha = alpha }
+                ) {
+                    if (isDragging) {
+                        // Ghost Placeholder with dashed outline
+                        val outlineColor = MaterialTheme.colorScheme.outlineVariant
+                        val cornerRadius = with(density) { 16.dp.toPx() }
+                        val strokeWidth = with(density) { 2.dp.toPx() }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(with(density) { draggedItemHeight.toDp() })
+                                .padding(vertical = 4.dp)
+                                .drawBehind {
+                                    val stroke = Stroke(
+                                        width = strokeWidth,
+                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                                    )
+                                    drawRoundRect(
+                                        color = outlineColor,
+                                        style = stroke,
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius)
+                                    )
+                                }
+                        )
+                    } else {
+                        // Normal Item
+                        itemContent(item, false, Modifier)
+                    }
+                }
+            }
+        }
+
+        // The Overlay: This is what makes the drag "glitch-free". 
+        // It stays in composition regardless of the list's scroll state.
+        val currentDraggedItem = draggedItem
+        if (draggedKey != null && currentDraggedItem != null) {
+            val scale by animateFloatAsState(targetValue = 1.05f, label = "overlay_scale")
+            val elevation by animateDpAsState(targetValue = 16.dp, label = "overlay_elevation")
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .zIndex(zIndex)
+                    .padding(
+                        start = contentPadding.calculateStartPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                        end = contentPadding.calculateEndPadding(androidx.compose.ui.unit.LayoutDirection.Ltr)
+                    )
                     .graphicsLayer {
-                        translationY = if (isDragging) dragOffset else itemOffset
+                        translationY = currentPointerY - touchOffsetOnItem
                         scaleX = scale
                         scaleY = scale
+                        shadowElevation = 8.dp.toPx()
+                        shape = RoundedCornerShape(16.dp)
+                        clip = true
                     }
+                    .zIndex(1.0f) // Task 3: Force zIndex to 1.0f
             ) {
                 Surface(
                     tonalElevation = elevation,
-                    shadowElevation = elevation,
+                    shadowElevation = 0.dp, // Elevation handled by graphicsLayer for better performance during animation
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.Transparent
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    itemContent(item, isDragging, dragModifier)
+                    // Provide LazyItemScope via a single-item LazyColumn
+                    LazyColumn(
+                        modifier = Modifier.wrapContentHeight(),
+                        userScrollEnabled = false
+                    ) {
+                        item {
+                            this@item.itemContent(currentDraggedItem, true, Modifier)
+                        }
+                    }
                 }
             }
         }

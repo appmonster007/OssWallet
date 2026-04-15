@@ -34,7 +34,8 @@ class AccountsViewViewModel(
 
     init {
         viewModelScope.launch {
-            settingsDataStore.accountsViewSectionOrder.collect { savedOrder ->
+            settingsDataStore.accountsViewSettings.collect { settings ->
+                val savedOrder = settings.layout.sectionOrder
                 if (savedOrder != null) {
                     try {
                         val sections = savedOrder.split(",").map { AccountsViewSection.valueOf(it) }
@@ -50,13 +51,13 @@ class AccountsViewViewModel(
     fun updateSectionOrder(newOrder: List<AccountsViewSection>) {
         _sectionOrder.value = newOrder
         viewModelScope.launch {
-            settingsDataStore.saveAccountsViewSectionOrder(newOrder.joinToString(",") { it.name })
+            settingsDataStore.updateAccountsViewSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinToString(",") { it.name })) }
         }
     }
 
     fun updateGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.saveAccountsViewGridColumns(columns)
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
@@ -67,10 +68,12 @@ class AccountsViewViewModel(
                 getTransactionsUseCase(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
-                settingsDataStore.accountsViewGridColumns
-            ) { accounts, allTransactions, analyticsState, precision, gridColumns ->
+                settingsDataStore.accountsViewSettings
+            ) { accounts, allTransactions, analyticsState, precision, accountsViewSettings ->
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
+                val gridColumns = accountsViewSettings.accountsSection.gridColumns
+                val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
                 
@@ -131,7 +134,8 @@ class AccountsViewViewModel(
                     currencyTotals = globalCurrencyTotals,
                     decimalPrecision = precision,
                     accountStats = accountStats,
-                    gridColumns = gridColumns
+                    gridColumns = gridColumns,
+                    showAddAccountCard = showAddAccountCard
                 )
             }
         }
@@ -151,7 +155,8 @@ sealed class AccountsViewUiState {
         val currencyTotals: Map<String, BigDecimal> = emptyMap(),
         val decimalPrecision: Int = 2,
         val accountStats: Map<String, AccountStats> = emptyMap(),
-        val gridColumns: Int = 1
+        val gridColumns: Int = 1,
+        val showAddAccountCard: Boolean = true
     ) : AccountsViewUiState()
     data class Error(val message: String) : AccountsViewUiState()
 }

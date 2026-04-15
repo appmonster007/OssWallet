@@ -6,8 +6,34 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+@Serializable
+data class AccountsSectionSettings(
+    val gridColumns: Int = 1,
+    val showAddAccountCard: Boolean = true
+)
+
+@Serializable
+data class LayoutSettings(
+    val sectionOrder: String? = null
+)
+
+@Serializable
+data class DashboardSettings(
+    val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
+    val layout: LayoutSettings = LayoutSettings()
+)
+
+@Serializable
+data class AccountsViewSettings(
+    val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 1),
+    val layout: LayoutSettings = LayoutSettings()
+)
 
 class SettingsDataStore(private val context: Context) {
 
@@ -15,15 +41,12 @@ class SettingsDataStore(private val context: Context) {
         val CURRENCY_KEY = stringPreferencesKey("currency")
         val THEME_KEY = stringPreferencesKey("theme")
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
-        val DASHBOARD_GRID_COLUMNS_KEY = intPreferencesKey("dashboard_grid_columns")
-        val ACCOUNTS_VIEW_GRID_COLUMNS_KEY = intPreferencesKey("accounts_view_grid_columns")
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
-        val DASHBOARD_SECTION_ORDER_KEY = stringPreferencesKey("dashboard_section_order")
-        val ACCOUNTS_VIEW_SECTION_ORDER_KEY = stringPreferencesKey("accounts_view_section_order")
-        val DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY = booleanPreferencesKey("dashboard_show_add_account_card")
-        val ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY = booleanPreferencesKey("accounts_view_show_add_account_card")
+        
+        val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
+        val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -38,14 +61,6 @@ class SettingsDataStore(private val context: Context) {
         preferences[CURRENT_PROFILE_ID_KEY] ?: 1
     }
 
-    val dashboardGridColumns: Flow<Int> = context.dataStore.data.map { preferences ->
-        preferences[DASHBOARD_GRID_COLUMNS_KEY] ?: 2
-    }
-
-    val accountsViewGridColumns: Flow<Int> = context.dataStore.data.map { preferences ->
-        preferences[ACCOUNTS_VIEW_GRID_COLUMNS_KEY] ?: 1
-    }
-
     val decimalPrecision: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[DECIMAL_PRECISION_KEY] ?: 2
     }
@@ -58,20 +73,24 @@ class SettingsDataStore(private val context: Context) {
         preferences[IS_ONBOARDING_COMPLETED_KEY] ?: false
     }
 
-    val dashboardSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[DASHBOARD_SECTION_ORDER_KEY]
+    val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
+        preferences[DASHBOARD_SETTINGS_KEY]?.let {
+            try {
+                Json.decodeFromString<DashboardSettings>(it)
+            } catch (e: Exception) {
+                DashboardSettings()
+            }
+        } ?: DashboardSettings()
     }
 
-    val accountsViewSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY]
-    }
-
-    val dashboardShowAddAccountCard: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY] ?: true
-    }
-
-    val accountsViewShowAddAccountCard: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY] ?: true
+    val accountsViewSettings: Flow<AccountsViewSettings> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
+            try {
+                Json.decodeFromString<AccountsViewSettings>(it)
+            } catch (e: Exception) {
+                AccountsViewSettings()
+            }
+        } ?: AccountsViewSettings()
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -89,18 +108,6 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveCurrentProfileId(profileId: Int) {
         context.dataStore.edit { preferences ->
             preferences[CURRENT_PROFILE_ID_KEY] = profileId
-        }
-    }
-
-    suspend fun saveDashboardGridColumns(columns: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[DASHBOARD_GRID_COLUMNS_KEY] = columns
-        }
-    }
-
-    suspend fun saveAccountsViewGridColumns(columns: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[ACCOUNTS_VIEW_GRID_COLUMNS_KEY] = columns
         }
     }
 
@@ -122,27 +129,29 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
-    suspend fun saveDashboardSectionOrder(order: String) {
+    suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) {
         context.dataStore.edit { preferences ->
-            preferences[DASHBOARD_SECTION_ORDER_KEY] = order
+            val current = preferences[DASHBOARD_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<DashboardSettings>(it)
+                } catch (e: Exception) {
+                    DashboardSettings()
+                }
+            } ?: DashboardSettings()
+            preferences[DASHBOARD_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 
-    suspend fun saveAccountsViewSectionOrder(order: String) {
+    suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) {
         context.dataStore.edit { preferences ->
-            preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY] = order
-        }
-    }
-
-    suspend fun saveDashboardShowAddAccountCard(show: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY] = show
-        }
-    }
-
-    suspend fun saveAccountsViewShowAddAccountCard(show: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY] = show
+            val current = preferences[ACCOUNTS_VIEW_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<AccountsViewSettings>(it)
+                } catch (e: Exception) {
+                    AccountsViewSettings()
+                }
+            } ?: AccountsViewSettings()
+            preferences[ACCOUNTS_VIEW_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 }

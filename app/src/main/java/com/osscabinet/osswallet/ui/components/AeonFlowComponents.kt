@@ -375,103 +375,104 @@ fun AeonAccountsSection(
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             AeonFlowSectionHeader(
-                title = "Accounts",
+                title = "ACCOUNTS",
                 modifier = if (onHeaderClick != null) headerModifier.clickable(onClick = onHeaderClick) else headerModifier,
                 trailing = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(
-                                Icons.Default.MoreHoriz,
-                                contentDescription = "Grid Settings",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        if (showMenu) {
-                            AlertDialog(
-                                onDismissRequest = { showMenu = false },
-                                confirmButton = {
-                                    TextButton(onClick = { showMenu = false }) {
-                                        Text("Done")
-                                    }
-                                },
-                                title = {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            settingsTitle,
-                                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                                        )
-                                        IconButton(
-                                            onClick = {
-                                                onManageClick()
-                                                showMenu = false
-                                            },
-                                            colors = IconButtonDefaults.iconButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                                contentColor = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Settings,
-                                                contentDescription = "Manage Accounts"
-                                            )
-                                        }
-                                    }
-                                },
-                                text = {
-                                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                            shape = RoundedCornerShape(20.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(16.dp),
-                                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                                            ) {
-                                                Text(
-                                                    "ACCOUNT GRID COLUMNS",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontWeight = FontWeight.Bold,
-                                                        letterSpacing = 1.sp
-                                                    ),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-
-                                                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                                    listOf(1, 2, 3).forEachIndexed { index, count ->
-                                                        SegmentedButton(
-                                                            selected = gridColumns == count,
-                                                            onClick = { onGridColumnsChange(count) },
-                                                            shape = SegmentedButtonDefaults.itemShape(
-                                                                index = index,
-                                                                count = 3
-                                                            ),
-                                                            label = { Text(count.toString()) }
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        AeonSettingsToggle(
-                                            label = "SHOW ADD ACCOUNT CARD",
-                                            checked = showAddAccountCard,
-                                            onCheckedChange = onShowAddAccountCardChange
-                                        )
-                                    }
-                                },
-                                shape = RoundedCornerShape(32.dp),
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        }
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreHoriz,
+                            contentDescription = "Grid Settings",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )
+
+            if (showMenu) {
+                AlertDialog(
+                    onDismissRequest = { showMenu = false },
+                    confirmButton = {
+                        TextButton(onClick = { showMenu = false }) {
+                            Text("Done")
+                        }
+                    },
+                    title = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                settingsTitle,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            IconButton(
+                                onClick = {
+                                    onManageClick()
+                                    showMenu = false
+                                },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Manage Accounts"
+                                )
+                            }
+                        }
+                    },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        "ACCOUNT GRID COLUMNS",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                        listOf(1, 2, 3).forEachIndexed { index, count ->
+                                            SegmentedButton(
+                                                selected = gridColumns == count,
+                                                onClick = { onGridColumnsChange(count) },
+                                                shape = SegmentedButtonDefaults.itemShape(
+                                                    index = index,
+                                                    count = 3
+                                                ),
+                                                label = { Text(count.toString()) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            AeonSettingsToggle(
+                                label = "SHOW ADD ACCOUNT CARD",
+                                checked = showAddAccountCard,
+                                onCheckedChange = onShowAddAccountCardChange
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(32.dp),
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            }
 
             if (accounts.isEmpty()) {
                 AeonAddAccountCard(

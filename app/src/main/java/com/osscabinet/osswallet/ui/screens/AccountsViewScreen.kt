@@ -194,6 +194,8 @@ fun AccountsViewScreen(
                                         baseCurrency = state.baseCurrency,
                                         exchangeRates = state.exchangeRates,
                                         precision = state.decimalPrecision,
+                                        fontSize = state.netWorthFontSize,
+                                        onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
                                     )

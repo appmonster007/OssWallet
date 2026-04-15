@@ -70,6 +70,12 @@ class DashboardViewModel(
         }
     }
 
+    fun updateNetWorthFontSize(fontSize: String) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
+        }
+    }
+
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -84,6 +90,7 @@ class DashboardViewModel(
                 val gridColumns = dashboardSettings.accountsSection.gridColumns
                 val showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
                 val currencyBalancesLayout = dashboardSettings.currencyBalancesSection.layout
+                val netWorthFontSize = dashboardSettings.netWorthSection.fontSize
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
                 
@@ -183,7 +190,8 @@ class DashboardViewModel(
                     accountStats = accountStats,
                     gridColumns = gridColumns,
                     showAddAccountCard = showAddAccountCard,
-                    currencyBalancesLayout = currencyBalancesLayout
+                    currencyBalancesLayout = currencyBalancesLayout,
+                    netWorthFontSize = netWorthFontSize
                 )
             }
         }
@@ -206,7 +214,8 @@ sealed class DashboardUiState {
         val accountStats: Map<String, AccountStats> = emptyMap(),
         val gridColumns: Int = 2,
         val showAddAccountCard: Boolean = true,
-        val currencyBalancesLayout: String = "scroll"
+        val currencyBalancesLayout: String = "scroll",
+        val netWorthFontSize: String = "Medium"
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }

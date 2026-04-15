@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.dashboard.NetWorthSettings
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,14 +22,14 @@ class NetWorthViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    val uiState: StateFlow<NetWorthUiState> = settingsDataStore.currentProfileId
+    fun getNetWorthUiState(settingsFlow: Flow<NetWorthSettings>): StateFlow<NetWorthUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
                 getTransactionsUseCase(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
-                settingsDataStore.dashboardSettings.map { it.netWorthSection }
+                settingsFlow
             ) { accounts, transactions, analyticsState, precision, sectionSettings ->
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
@@ -71,6 +72,7 @@ class NetWorthViewModel(
             initialValue = NetWorthUiState.Loading
         )
 
+    // These can be deprecated or removed since they are now screen-specific
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }

@@ -49,6 +49,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
 import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import com.osscabinet.ossWallet.ui.components.*
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -82,6 +83,10 @@ fun AccountsViewScreen(
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsState()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
+    
+    val netWorthUiState by remember(netWorthViewModel, accountsViewViewModel) {
+        netWorthViewModel.getNetWorthUiState(accountsViewViewModel.settingsDataStore.accountsViewSettings.map { it.netWorthSection })
+    }.collectAsState()
 
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -193,7 +198,9 @@ fun AccountsViewScreen(
                             when (section) {
                                 AccountsViewSection.NET_WORTH -> {
                                     NetWorthSection(
-                                        viewModel = netWorthViewModel,
+                                        uiState = netWorthUiState,
+                                        onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
+                                        onTimelineRangeChange = { accountsViewViewModel.updateNetWorthTimelineRange(it) },
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )

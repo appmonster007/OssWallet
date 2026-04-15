@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import kotlinx.coroutines.flow.map
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -439,6 +440,10 @@ fun DashboardContent(
     }
 
     val sectionOrder by dashboardViewModel.sectionOrder.collectAsState()
+    
+    val netWorthUiState by remember(netWorthViewModel, dashboardViewModel) {
+        netWorthViewModel.getNetWorthUiState(dashboardViewModel.settingsDataStore.dashboardSettings.map { it.netWorthSection })
+    }.collectAsState()
 
     HorizontalPager(
         state = pagerState,
@@ -462,7 +467,9 @@ fun DashboardContent(
                     when (section) {
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
                             NetWorthSection(
-                                viewModel = netWorthViewModel,
+                                uiState = netWorthUiState,
+                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) },
+                                onTimelineRangeChange = { dashboardViewModel.updateNetWorthTimelineRange(it) },
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier
                             )

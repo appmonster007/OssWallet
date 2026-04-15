@@ -116,6 +116,7 @@ fun AccountDetailScreen(
 
 
     val analyticsUiState by analyticsViewModel.uiState.collectAsState()
+    val accountsViewSettings by settingsViewModel.accountsViewSettings.collectAsState(initial = com.osscabinet.ossWallet.data.local.AccountsViewSettings())
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
@@ -216,8 +217,6 @@ fun AccountDetailScreen(
                         }
 
                         item {
-                            val accountsViewSettings by settingsViewModel.accountsViewSettings.collectAsState(initial = com.osscabinet.ossWallet.data.local.AccountsViewSettings())
-                            
                             AeonCashFlowSummary(
                                 transactions = accountTransactions,
                                 baseCurrency = account.currencyCode,
@@ -232,8 +231,6 @@ fun AccountDetailScreen(
                         }
 
                         item {
-                            AeonSectionHeader(title = "Currency Breakdown")
-                            Spacer(modifier = Modifier.height(4.dp))
                             // Group by currency to show separate balances
                             val finalBalances = remember(account, accountTransactions, supportedCurrencies) {
                                 val currentAccount = account
@@ -248,13 +245,16 @@ fun AccountDetailScreen(
                                 }
                             }
 
-                            AeonCurrencyBreakdown(
-                                balances = finalBalances,
+                            CurrencyAggregationSection(
+                                currencyTotals = finalBalances,
                                 baseCurrency = baseCurrency,
-                                accountCurrency = account.currencyCode,
                                 exchangeRates = exchangeRates,
-                                showTitle = false,
-                                precision = decimalPrecision
+                                modifier = Modifier.fillMaxWidth(),
+                                precision = decimalPrecision,
+                                layout = accountsViewSettings.currencyBalancesSection.layout,
+                                showBaseConversion = accountsViewSettings.currencyBalancesSection.showBaseConversion,
+                                onLayoutChange = { settingsViewModel.updateAccountsViewCurrencyBalancesLayout(it) },
+                                onShowBaseConversionChange = { settingsViewModel.updateAccountsViewCurrencyBalancesShowBaseConversion(it) }
                             )
                         }
                     }

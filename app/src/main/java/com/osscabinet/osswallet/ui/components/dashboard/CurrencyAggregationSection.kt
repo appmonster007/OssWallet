@@ -32,6 +32,7 @@ fun CurrencyAggregationSection(
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
+    title: String = "AGGREGATED CURRENCY BALANCES",
     precision: Int = 2,
     layout: String = "scroll",
     showBaseConversion: Boolean = true,
@@ -49,7 +50,7 @@ fun CurrencyAggregationSection(
         ) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AeonFlowSectionHeader(
-                    title = "AGGREGATED CURRENCY BALANCES",
+                    title = title,
                     modifier = headerModifier,
                     trailing = {
                         IconButton(

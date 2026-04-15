@@ -19,19 +19,41 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.*
+import kotlinx.serialization.Serializable
+
+@Serializable
 sealed class TimelineRange {
+    @Serializable
     object AllTime : TimelineRange()
-    data class ThisPeriod(val type: ThisPeriodType) : TimelineRange()
-    data class LastPeriod(val type: LastPeriodType) : TimelineRange()
+    @Serializable
+    data class ThisPeriod(val period: ThisPeriodType) : TimelineRange()
+    @Serializable
+    data class LastPeriod(val period: LastPeriodType) : TimelineRange()
+    @Serializable
     data class CustomRange(val start: Long, val end: Long) : TimelineRange()
 }
 
+@Serializable
 enum class ThisPeriodType(val label: String) {
-    TODAY("Today"), WEEK("This Week"), MONTH("This Month"), YEAR("This Year")
+    TODAY("Today"),
+    WEEK("This Week"),
+    MONTH("This Month"),
+    QUARTER("This Quarter"),
+    HALF_YEAR("Half Year"),
+    YEAR("This Year")
 }
 
+@Serializable
 enum class LastPeriodType(val label: String) {
-    LAST_24H("Last 24h"), LAST_7_DAYS("Last 7 Days"), LAST_30_DAYS("30 Days"), LAST_365_DAYS("365 Days")
+    LAST_24H("24h"),
+    LAST_7_DAYS("7 Days"),
+    LAST_30_DAYS("30 Days"),
+    LAST_12_WEEKS("12 Weeks"),
+    LAST_6_MONTHS("6 Months"),
+    LAST_1_YEAR("1 Year"),
+    LAST_5_YEARS("5 Years")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,10 +74,10 @@ fun TimelineFilterBar(
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(vertical = 8.dp)
         ) {
             val options = listOf(
-                Triple("All Time", Icons.Default.History, 0),
+                Triple("All", Icons.Default.History, 0),
                 Triple("This", Icons.Default.CalendarToday, 1),
                 Triple("Last", Icons.Default.Schedule, 2),
                 Triple("Custom", Icons.Default.DateRange, 3)
@@ -80,23 +102,23 @@ fun TimelineFilterBar(
                         }
                     },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                    label = { Text(label) }
+                    icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) }
                 )
             }
         }
 
-        // Secondary Row
+        // Secondary Row with expressive chips
         AnimatedVisibility(
             visible = currentRange !is TimelineRange.AllTime,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut()
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
         ) {
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -104,11 +126,13 @@ fun TimelineFilterBar(
                     is TimelineRange.ThisPeriod -> {
                         items(ThisPeriodType.values()) { type ->
                             FilterChip(
-                                selected = currentRange.type == type,
+                                selected = currentRange.period == type,
                                 onClick = { onRangeSelected(TimelineRange.ThisPeriod(type)) },
                                 label = { Text(type.label) },
+                                shape = RoundedCornerShape(12.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             )
                         }
@@ -116,24 +140,30 @@ fun TimelineFilterBar(
                     is TimelineRange.LastPeriod -> {
                         items(LastPeriodType.values()) { type ->
                             FilterChip(
-                                selected = currentRange.type == type,
+                                selected = currentRange.period == type,
                                 onClick = { onRangeSelected(TimelineRange.LastPeriod(type)) },
                                 label = { Text(type.label) },
+                                shape = RoundedCornerShape(12.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             )
                         }
                     }
                     is TimelineRange.CustomRange -> {
                         item {
+                            val formatter = SimpleDateFormat("MMM dd", Locale.getDefault())
                             FilterChip(
                                 selected = true,
                                 onClick = { showDatePicker = true },
-                                label = { Text("Change Range") },
-                                leadingIcon = { Icon(Icons.Default.DateRange, null, Modifier.size(16.dp)) },
+                                label = { 
+                                    Text("${formatter.format(Date(currentRange.start))} - ${formatter.format(Date(currentRange.end))}") 
+                                },
+                                leadingIcon = { Icon(Icons.Default.Edit, null, Modifier.size(14.dp)) },
+                                shape = RoundedCornerShape(12.dp),
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer
                                 )
                             )
                         }

@@ -33,19 +33,23 @@ class SettingsViewModel(
     val theme: StateFlow<String> = settingsDataStore.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
 
-    val dashboardGridColumns: StateFlow<Int> = settingsDataStore.dashboardGridColumns
+    val dashboardGridColumns: StateFlow<Int> = settingsDataStore.dashboardSettings
+        .map { it.accountsSection.gridColumns }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    val accountsViewGridColumns: StateFlow<Int> = settingsDataStore.accountsViewGridColumns
+    val accountsViewGridColumns: StateFlow<Int> = settingsDataStore.accountsViewSettings
+        .map { it.accountsSection.gridColumns }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.dashboardShowAddAccountCard
+    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.dashboardSettings
+        .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.accountsViewShowAddAccountCard
+    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.accountsViewSettings
+        .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
@@ -99,13 +103,13 @@ class SettingsViewModel(
 
     fun setDashboardGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.saveDashboardGridColumns(columns)
+            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
     fun setAccountsViewGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.saveAccountsViewGridColumns(columns)
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
@@ -117,13 +121,13 @@ class SettingsViewModel(
 
     fun setDashboardShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.saveDashboardShowAddAccountCard(show)
+            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 
     fun setAccountsViewShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.saveAccountsViewShowAddAccountCard(show)
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 

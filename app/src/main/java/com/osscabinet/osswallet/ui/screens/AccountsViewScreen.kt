@@ -85,7 +85,6 @@ fun AccountsViewScreen(
     
     val currentProfile by settingsViewModel.currentProfile.collectAsState()
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
-    val showAddAccountCard by settingsViewModel.accountsViewShowAddAccountCard.collectAsState()
     
     val dbTemplates by templateViewModel.templates.collectAsState()
     val starredTemplates by templateViewModel.starredTemplates.collectAsState()
@@ -221,7 +220,7 @@ fun AccountsViewScreen(
                                         currentTheme = currentTheme,
                                         gridColumns = state.gridColumns,
                                         precision = state.decimalPrecision,
-                                        showAddAccountCard = showAddAccountCard,
+                                        showAddAccountCard = state.showAddAccountCard,
                                         onShowAddAccountCardChange = { settingsViewModel.setAccountsViewShowAddAccountCard(it) },
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         modifier = Modifier.fillMaxWidth(),

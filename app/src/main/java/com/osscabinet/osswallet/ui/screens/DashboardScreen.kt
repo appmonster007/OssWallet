@@ -97,7 +97,6 @@ fun DashboardScreen(
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
-    val showAddAccountCard by settingsViewModel.dashboardShowAddAccountCard.collectAsState()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
@@ -226,7 +225,7 @@ fun DashboardScreen(
                                 tabs = tabs,
                                 state = state,
                                 currentTheme = currentTheme,
-                                gridColumns = gridColumns,
+                                gridColumns = state.gridColumns,
                                 decimalPrecision = state.decimalPrecision,
                                 onManageAccountsClick = onManageAccountsClick,
                                 onAccountsViewClick = onAccountsViewClick,
@@ -236,7 +235,7 @@ fun DashboardScreen(
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
                                 dashboardViewModel = dashboardViewModel,
-                                showAddAccountCard = showAddAccountCard,
+                                showAddAccountCard = state.showAddAccountCard,
                                 onShowAddAccountCardChange = { settingsViewModel.setDashboardShowAddAccountCard(it) }
                             )
                     }

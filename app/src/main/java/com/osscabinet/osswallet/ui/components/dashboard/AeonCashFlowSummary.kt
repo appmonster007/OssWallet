@@ -268,7 +268,7 @@ fun AeonFlowCard(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .size(iconHeight)
-                        .alpha(0.25f),
+                        .alpha(0.1f),
                     tint = color
                 )
             }

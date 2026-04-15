@@ -12,15 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import kotlinx.serialization.Serializable
-import java.math.BigDecimal
-
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 
 @Serializable
 data class NetWorthSettings(
@@ -29,21 +25,47 @@ data class NetWorthSettings(
 
 @Composable
 fun NetWorthSection(
-    accounts: List<Account>,
-    transactions: List<Transaction>,
-    baseCurrency: String,
+    viewModel: NetWorthViewModel,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    precision: Int = 2,
-    fontSize: String = "Medium",
-    onFontSizeChange: (String) -> Unit = {}
+    headerModifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    when (val state = uiState) {
+        is NetWorthUiState.Loading -> {
+            // Shimmer or placeholder
+            Box(modifier = modifier.height(100.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is NetWorthUiState.Success -> {
+            NetWorthContent(
+                netWorth = state.netWorth,
+                baseCurrency = state.baseCurrency,
+                precision = state.precision,
+                fontSize = state.fontSize,
+                onFontSizeChange = { viewModel.updateNetWorthFontSize(it) },
+                modifier = modifier,
+                headerModifier = headerModifier
+            )
+        }
+        is NetWorthUiState.Error -> {
+            Text("Error: ${state.message}")
+        }
+    }
+}
+
+@Composable
+private fun NetWorthContent(
+    netWorth: java.math.BigDecimal,
+    baseCurrency: String,
+    precision: Int,
+    fontSize: String,
+    onFontSizeChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier
 ) {
     var showSettings by remember { mutableStateOf(false) }
-
-    val totalInBase = remember(accounts, transactions, exchangeRates, baseCurrency, precision) {
-        calculateNetWorth(accounts, transactions, baseCurrency, exchangeRates, precision)
-    }
 
     val (textStyle, labelStyle) = when (fontSize) {
         "Small" -> MaterialTheme.typography.displaySmall to MaterialTheme.typography.labelSmall
@@ -83,7 +105,7 @@ fun NetWorthSection(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = formatCurrencyRight(totalInBase, baseCurrency, precision),
+                    text = formatCurrencyRight(netWorth, baseCurrency, precision),
                     style = textStyle.copy(
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-1).sp
@@ -104,66 +126,79 @@ fun NetWorthSection(
     }
 
     if (showSettings) {
-        AlertDialog(
-            onDismissRequest = { showSettings = false },
-            confirmButton = {
-                TextButton(onClick = { showSettings = false }) {
-                    Text("Done")
-                }
-            },
-            title = {
-                Text(
-                    "Net Worth Settings",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                "FONT SIZE",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
+        NetWorthSettingsDialog(
+            fontSize = fontSize,
+            onFontSizeChange = onFontSizeChange,
+            onDismiss = { showSettings = false }
+        )
+    }
+}
 
-                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
-                                    SegmentedButton(
-                                        selected = fontSize == size,
-                                        onClick = { onFontSizeChange(size) },
-                                        shape = SegmentedButtonDefaults.itemShape(
-                                            index = index,
-                                            count = 3
-                                        ),
-                                        label = { 
-                                            Text(
-                                                when(size) {
-                                                    "Small" -> "S"
-                                                    "Medium" -> "M"
-                                                    else -> "L"
-                                                }
-                                            )
-                                        }
-                                    )
-                                }
+@Composable
+private fun NetWorthSettingsDialog(
+    fontSize: String,
+    onFontSizeChange: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        },
+        title = {
+            Text(
+                "Net Worth Settings",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "FONT SIZE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                            listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
+                                SegmentedButton(
+                                    selected = fontSize == size,
+                                    onClick = { onFontSizeChange(size) },
+                                    shape = SegmentedButtonDefaults.itemShape(
+                                        index = index,
+                                        count = 3
+                                    ),
+                                    label = { 
+                                        Text(
+                                            when(size) {
+                                                "Small" -> "S"
+                                                "Medium" -> "M"
+                                                else -> "L"
+                                            }
+                                        )
+                                    }
+                                )
                             }
                         }
                     }
                 }
-            },
-            shape = RoundedCornerShape(32.dp),
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    }
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
 }

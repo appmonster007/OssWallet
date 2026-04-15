@@ -16,6 +16,12 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.ui.components.AeonBudgetProgress
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class BudgetSettings(
+    val showProgressLabels: Boolean = true
+)
 
 @Composable
 fun BudgetTrackingSection(

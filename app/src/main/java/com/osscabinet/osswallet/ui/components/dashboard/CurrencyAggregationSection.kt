@@ -16,7 +16,14 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+
+@Serializable
+data class CurrencyBalancesSettings(
+    val layout: String = "scroll", // "scroll" or "grid"
+    val showBaseConversion: Boolean = true
+)
 
 @Composable
 fun CurrencyAggregationSection(

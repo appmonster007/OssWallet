@@ -20,8 +20,14 @@ import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
+
+@Serializable
+data class CashFlowSettings(
+    val showBaseConversion: Boolean = true
+)
 
 @Composable
 fun AeonCashFlowSummary(

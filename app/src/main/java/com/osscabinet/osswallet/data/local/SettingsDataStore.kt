@@ -16,10 +16,12 @@ class SettingsDataStore(private val context: Context) {
         val THEME_KEY = stringPreferencesKey("theme")
         val CURRENT_PROFILE_ID_KEY = intPreferencesKey("current_profile_id")
         val DASHBOARD_GRID_COLUMNS_KEY = intPreferencesKey("dashboard_grid_columns")
+        val ACCOUNTS_VIEW_GRID_COLUMNS_KEY = intPreferencesKey("accounts_view_grid_columns")
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
         val DASHBOARD_SECTION_ORDER_KEY = stringPreferencesKey("dashboard_section_order")
+        val ACCOUNTS_VIEW_SECTION_ORDER_KEY = stringPreferencesKey("accounts_view_section_order")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -38,6 +40,10 @@ class SettingsDataStore(private val context: Context) {
         preferences[DASHBOARD_GRID_COLUMNS_KEY] ?: 2
     }
 
+    val accountsViewGridColumns: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNTS_VIEW_GRID_COLUMNS_KEY] ?: 1
+    }
+
     val decimalPrecision: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[DECIMAL_PRECISION_KEY] ?: 2
     }
@@ -52,6 +58,10 @@ class SettingsDataStore(private val context: Context) {
 
     val dashboardSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[DASHBOARD_SECTION_ORDER_KEY]
+    }
+
+    val accountsViewSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY]
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -78,6 +88,12 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
+    suspend fun saveAccountsViewGridColumns(columns: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCOUNTS_VIEW_GRID_COLUMNS_KEY] = columns
+        }
+    }
+
     suspend fun saveDecimalPrecision(precision: Int) {
         context.dataStore.edit { preferences ->
             preferences[DECIMAL_PRECISION_KEY] = precision
@@ -99,6 +115,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveDashboardSectionOrder(order: String) {
         context.dataStore.edit { preferences ->
             preferences[DASHBOARD_SECTION_ORDER_KEY] = order
+        }
+    }
+
+    suspend fun saveAccountsViewSectionOrder(order: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY] = order
         }
     }
 }

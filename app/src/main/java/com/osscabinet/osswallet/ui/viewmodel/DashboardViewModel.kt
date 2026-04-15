@@ -193,9 +193,3 @@ sealed class DashboardUiState {
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }
-
-data class AccountStats(
-    val currencyBalances: Map<String, BigDecimal>,
-    val incomeInAccountCurrency: BigDecimal,
-    val expenseInAccountCurrency: BigDecimal
-)

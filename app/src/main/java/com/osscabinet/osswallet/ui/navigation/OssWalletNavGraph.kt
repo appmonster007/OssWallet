@@ -103,6 +103,17 @@ fun OssWalletNavGraph(
         }
     )
 
+    val accountsViewViewModel: AccountsViewViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            AccountsViewViewModel(
+                appContainer.accountRepository,
+                appContainer.getTransactionsUseCase,
+                appContainer.settingsDataStore,
+                analyticsViewModel
+            )
+        }
+    )
+
     val tagViewModel: TagViewModel = viewModel(
         factory = GenericViewModelFactory {
             TagViewModel(appContainer.tagRepository)
@@ -190,7 +201,8 @@ fun OssWalletNavGraph(
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel
+                templateViewModel = templateViewModel,
+                accountsViewViewModel = accountsViewViewModel
             )
         }
 

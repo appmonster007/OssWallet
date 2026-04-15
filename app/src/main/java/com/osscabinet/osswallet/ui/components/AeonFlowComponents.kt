@@ -314,7 +314,9 @@ fun AeonAccountsSection(
     gridColumns: Int = 2,
     precision: Int = 2,
     onHeaderClick: (() -> Unit)? = null,
-    settingsTitle: String = "Account Settings"
+    settingsTitle: String = "Account Settings",
+    showAddAccountCard: Boolean = true,
+    onShowAddAccountCardChange: (Boolean) -> Unit = {}
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -407,6 +409,33 @@ fun AeonAccountsSection(
                                                 }
                                             }
                                         }
+
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                            shape = RoundedCornerShape(20.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    "SHOW ADD ACCOUNT CARD",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.sp
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Switch(
+                                                    checked = showAddAccountCard,
+                                                    onCheckedChange = onShowAddAccountCardChange
+                                                )
+                                            }
+                                        }
                                     }
                                 },
                                 shape = RoundedCornerShape(32.dp),
@@ -418,20 +447,13 @@ fun AeonAccountsSection(
             )
 
             if (accounts.isEmpty()) {
-                AeonAccountCardLarge(
-                    account = com.osscabinet.ossWallet.domain.model.Account("empty", "GET STARTED", BigDecimal.ZERO, BigDecimal.ZERO, baseCurrency, "Default", "#808080", "Add"),
-                    balanceInBase = BigDecimal.ZERO,
+                AeonAddAccountCard(
                     baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    isDarkTheme = when (currentTheme) {
-                        "Light" -> false
-                        "Dark", "Amoled" -> true
-                        else -> isSystemInDarkTheme()
-                    },
-                    isAmoled = currentTheme == "Amoled",
+                    currentTheme = currentTheme,
                     onClick = onManageClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    precision = precision
+                    precision = precision,
+                    gridColumns = gridColumns,
+                    modifier = Modifier.fillMaxWidth()
                 )
             } else {
                 FlowRow(
@@ -497,14 +519,88 @@ fun AeonAccountsSection(
                             )
                         }
                     }
-                    if (accounts.size % gridColumns != 0) {
-                        repeat(gridColumns - (accounts.size % gridColumns)) {
+
+                    if (showAddAccountCard) {
+                        AeonAddAccountCard(
+                            baseCurrency = baseCurrency,
+                            currentTheme = currentTheme,
+                            onClick = onManageClick,
+                            precision = precision,
+                            gridColumns = gridColumns,
+                            modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        )
+                    }
+
+                    val totalItems = accounts.size + if (showAddAccountCard) 1 else 0
+                    if (totalItems % gridColumns != 0) {
+                        repeat(gridColumns - (totalItems % gridColumns)) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AeonAddAccountCard(
+    baseCurrency: String,
+    currentTheme: String,
+    onClick: () -> Unit,
+    precision: Int,
+    gridColumns: Int,
+    modifier: Modifier = Modifier
+) {
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+    val placeholderAccount = com.osscabinet.ossWallet.domain.model.Account(
+        "empty",
+        "GET STARTED",
+        BigDecimal.ZERO,
+        BigDecimal.ZERO,
+        baseCurrency,
+        "Default",
+        "#808080",
+        "Add"
+    )
+
+    when (gridColumns) {
+        1 -> AeonAccountCardLarge(
+            account = placeholderAccount,
+            balanceInBase = BigDecimal.ZERO,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = onClick,
+            modifier = modifier,
+            precision = precision,
+            extraLabel = "Add New"
+        )
+        2 -> AeonAccountCardMedium(
+            account = placeholderAccount,
+            balanceInBase = BigDecimal.ZERO,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = onClick,
+            modifier = modifier,
+            precision = precision
+        )
+        else -> AeonAccountCardSmall(
+            account = placeholderAccount,
+            balanceInBase = BigDecimal.ZERO,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = onClick,
+            modifier = modifier,
+            precision = precision
+        )
     }
 }
 

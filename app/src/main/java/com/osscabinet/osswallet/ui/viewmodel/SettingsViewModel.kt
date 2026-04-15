@@ -42,6 +42,12 @@ class SettingsViewModel(
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.dashboardShowAddAccountCard
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.accountsViewShowAddAccountCard
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -106,6 +112,18 @@ class SettingsViewModel(
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
             settingsDataStore.saveDecimalPrecision(precision)
+        }
+    }
+
+    fun setDashboardShowAddAccountCard(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.saveDashboardShowAddAccountCard(show)
+        }
+    }
+
+    fun setAccountsViewShowAddAccountCard(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.saveAccountsViewShowAddAccountCard(show)
         }
     }
 

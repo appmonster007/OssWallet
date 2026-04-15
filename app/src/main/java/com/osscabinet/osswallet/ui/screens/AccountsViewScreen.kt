@@ -227,8 +227,10 @@ fun AccountsViewScreen(
                                         currentTheme = currentTheme,
                                         gridColumns = state.gridColumns,
                                         precision = state.decimalPrecision,
+                                        layout = state.accountsLayout,
+                                        onLayoutChange = { accountsViewViewModel.updateAccountsLayout(it) },
                                         showAddAccountCard = state.showAddAccountCard,
-                                        onShowAddAccountCardChange = { settingsViewModel.setAccountsViewShowAddAccountCard(it) },
+                                        onShowAddAccountCardChange = { accountsViewViewModel.updateShowAddAccountCard(it) },
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         modifier = Modifier.fillMaxWidth(),
                                         settingsTitle = "Accounts List Settings"

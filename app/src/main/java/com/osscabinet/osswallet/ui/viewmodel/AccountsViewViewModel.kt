@@ -79,6 +79,18 @@ class AccountsViewViewModel(
         }
     }
 
+    fun updateAccountsLayout(layout: String) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
+        }
+    }
+
+    fun updateShowAddAccountCard(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+        }
+    }
+
     val uiState: StateFlow<AccountsViewUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -91,6 +103,7 @@ class AccountsViewViewModel(
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
+                val accountsLayout = accountsViewSettings.accountsSection.layout
                 val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
                 val currencyBalancesLayout = accountsViewSettings.currencyBalancesSection.layout
                 val showBaseConversion = accountsViewSettings.currencyBalancesSection.showBaseConversion
@@ -156,6 +169,7 @@ class AccountsViewViewModel(
                     decimalPrecision = precision,
                     accountStats = accountStats,
                     gridColumns = gridColumns,
+                    accountsLayout = accountsLayout,
                     showAddAccountCard = showAddAccountCard,
                     currencyBalancesLayout = currencyBalancesLayout,
                     showBaseConversion = showBaseConversion,
@@ -180,6 +194,7 @@ sealed class AccountsViewUiState {
         val decimalPrecision: Int = 2,
         val accountStats: Map<String, AccountStats> = emptyMap(),
         val gridColumns: Int = 1,
+        val accountsLayout: String = "grid",
         val showAddAccountCard: Boolean = true,
         val currencyBalancesLayout: String = "scroll",
         val showBaseConversion: Boolean = true,

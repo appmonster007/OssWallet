@@ -3,6 +3,9 @@ package com.osscabinet.ossWallet.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
@@ -79,10 +83,83 @@ fun AeonBaseConversionToggle(
 }
 
 @Composable
+fun AeonLayoutToggle(
+    layout: String,
+    onLayoutChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "LAYOUT"
+) {
+    AeonSettingsToggle(
+        label = label,
+        description = if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
+        checked = layout == "grid",
+        onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
+        thumbContent = {
+            if (layout == "grid") {
+                Icon(
+                    imageVector = Icons.Default.GridView,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.ViewCarousel,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun AeonGridColumnsSettings(
+    gridColumns: Int,
+    onGridColumnsChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    maxColumns: Int = 3
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                "GRID COLUMNS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                (1..maxColumns).forEachIndexed { index, count ->
+                    SegmentedButton(
+                        selected = gridColumns == count,
+                        onClick = { onGridColumnsChange(count) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = maxColumns
+                        ),
+                        label = { Text(count.toString()) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun AeonFlowSectionHeader(
     title: String,
     modifier: Modifier = Modifier,
-    trailing: @Composable (() -> Unit) = {}
+    trailing: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -90,14 +167,16 @@ fun AeonFlowSectionHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = title.uppercase(),
+            title,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             ),
             color = MaterialTheme.colorScheme.primary
         )
-        trailing()
+        if (trailing != null) {
+            trailing()
+        }
     }
 }
 

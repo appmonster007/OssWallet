@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -14,14 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import java.math.BigDecimal
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AeonAccountsSection(
     onManageClick: () -> Unit,
@@ -35,7 +36,9 @@ fun AeonAccountsSection(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     gridColumns: Int = 2,
+    layout: String = "grid",
     precision: Int = 2,
+    onLayoutChange: (String) -> Unit = {},
     onHeaderClick: (() -> Unit)? = null,
     settingsTitle: String = "Account Settings",
     showAddAccountCard: Boolean = true,
@@ -60,7 +63,7 @@ fun AeonAccountsSection(
                     ) {
                         Icon(
                             Icons.Default.MoreHoriz,
-                            contentDescription = "Grid Settings",
+                            contentDescription = "Settings",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -104,38 +107,16 @@ fun AeonAccountsSection(
                     },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(20.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        "ACCOUNT GRID COLUMNS",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                            AeonLayoutToggle(
+                                layout = layout,
+                                onLayoutChange = onLayoutChange
+                            )
 
-                                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                                        listOf(1, 2, 3).forEachIndexed { index, count ->
-                                            SegmentedButton(
-                                                selected = gridColumns == count,
-                                                onClick = { onGridColumnsChange(count) },
-                                                shape = SegmentedButtonDefaults.itemShape(
-                                                    index = index,
-                                                    count = 3
-                                                ),
-                                                label = { Text(count.toString()) }
-                                            )
-                                        }
-                                    }
-                                }
+                            if (layout == "grid") {
+                                AeonGridColumnsSettings(
+                                    gridColumns = gridColumns,
+                                    onGridColumnsChange = onGridColumnsChange
+                                )
                             }
 
                             AeonSettingsToggle(
@@ -155,11 +136,11 @@ fun AeonAccountsSection(
                     baseCurrency = baseCurrency,
                     currentTheme = currentTheme,
                     onClick = onManageClick,
-                    gridColumns = gridColumns,
+                    gridColumns = if (layout == "grid") gridColumns else 2,
                     precision = precision,
                     modifier = Modifier.fillMaxWidth()
                 )
-            } else {
+            } else if (layout == "grid") {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -167,55 +148,17 @@ fun AeonAccountsSection(
                     maxItemsInEachRow = gridColumns
                 ) {
                     accounts.forEach { account ->
-                        val stats = accountStats[account.id]
-                        val totalInBase = stats?.currencyBalances?.let { balances ->
-                            com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency(
-                                balances,
-                                baseCurrency,
-                                exchangeRates,
-                                precision
-                            )
-                        } ?: BigDecimal.ZERO
-
-                        val isDarkTheme = when (currentTheme) {
-                            "Light" -> false
-                            "Dark", "Amoled" -> true
-                            else -> isSystemInDarkTheme()
-                        }
-                        val isAmoled = currentTheme == "Amoled"
-
-                        when (gridColumns) {
-                            1 -> AeonAccountCardLarge(
-                                account = account,
-                                balanceInBase = totalInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.fillMaxWidth(),
-                                precision = precision
-                            )
-                            2 -> AeonAccountCardMedium(
-                                account = account,
-                                balanceInBase = totalInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.weight(1f),
-                                precision = precision
-                            )
-                            else -> AeonAccountCardSmall(
-                                account = account,
-                                balanceInBase = totalInBase,
-                                baseCurrency = baseCurrency,
-                                isDarkTheme = isDarkTheme,
-                                isAmoled = isAmoled,
-                                onClick = { onAccountClick(account.id) },
-                                modifier = Modifier.weight(1f),
-                                precision = precision
-                            )
-                        }
+                        AccountItemWrapper(
+                            account = account,
+                            accountStats = accountStats,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = exchangeRates,
+                            currentTheme = currentTheme,
+                            gridColumns = gridColumns,
+                            precision = precision,
+                            onAccountClick = onAccountClick,
+                            modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                        )
                     }
 
                     if (showAddAccountCard) {
@@ -228,9 +171,39 @@ fun AeonAccountsSection(
                             modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                         )
                     } else if (gridColumns > 1 && accounts.size % gridColumns != 0) {
-                        // Fill remaining space if grid not full
                         repeat(gridColumns - (accounts.size % gridColumns)) {
                             Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 4.dp)
+                ) {
+                    items(accounts) { account ->
+                        AccountItemWrapper(
+                            account = account,
+                            accountStats = accountStats,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = exchangeRates,
+                            currentTheme = currentTheme,
+                            gridColumns = 2,
+                            precision = precision,
+                            onAccountClick = onAccountClick,
+                            modifier = Modifier.width(160.dp)
+                        )
+                    }
+                    if (showAddAccountCard) {
+                        item {
+                            AeonAddAccountCard(
+                                baseCurrency = baseCurrency,
+                                currentTheme = currentTheme,
+                                onClick = onManageClick,
+                                gridColumns = 2,
+                                precision = precision,
+                                modifier = Modifier.width(160.dp)
+                            )
                         }
                     }
                 }
@@ -239,8 +212,147 @@ fun AeonAccountsSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRowScope.AccountItemWrapper(
+    account: Account,
+    accountStats: Map<String, AccountStats>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    currentTheme: String,
+    gridColumns: Int,
+    precision: Int,
+    onAccountClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AccountItemContent(
+        account = account,
+        accountStats = accountStats,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        currentTheme = currentTheme,
+        gridColumns = gridColumns,
+        precision = precision,
+        onAccountClick = onAccountClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun AccountItemWrapper(
+    account: Account,
+    accountStats: Map<String, AccountStats>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    currentTheme: String,
+    gridColumns: Int,
+    precision: Int,
+    onAccountClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AccountItemContent(
+        account = account,
+        accountStats = accountStats,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        currentTheme = currentTheme,
+        gridColumns = gridColumns,
+        precision = precision,
+        onAccountClick = onAccountClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun AccountItemContent(
+    account: Account,
+    accountStats: Map<String, AccountStats>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    currentTheme: String,
+    gridColumns: Int,
+    precision: Int,
+    onAccountClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val stats = accountStats[account.id]
+    val totalInBase = stats?.currencyBalances?.let { balances ->
+        com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency(
+            balances,
+            baseCurrency,
+            exchangeRates,
+            precision
+        )
+    } ?: BigDecimal.ZERO
+
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+
+    when (gridColumns) {
+        1 -> AeonAccountCardLarge(
+            account = account,
+            balanceInBase = totalInBase,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = { onAccountClick(account.id) },
+            modifier = modifier,
+            precision = precision
+        )
+        2 -> AeonAccountCardMedium(
+            account = account,
+            balanceInBase = totalInBase,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = { onAccountClick(account.id) },
+            modifier = modifier,
+            precision = precision
+        )
+        else -> AeonAccountCardSmall(
+            account = account,
+            balanceInBase = totalInBase,
+            baseCurrency = baseCurrency,
+            isDarkTheme = isDarkTheme,
+            isAmoled = isAmoled,
+            onClick = { onAccountClick(account.id) },
+            modifier = modifier,
+            precision = precision
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun FlowRowScope.AeonAddAccountCard(
+    baseCurrency: String,
+    currentTheme: String,
+    onClick: () -> Unit,
+    gridColumns: Int = 2,
+    precision: Int = 2,
+    modifier: Modifier = Modifier
+) {
+    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, precision, modifier)
+}
+
 @Composable
 fun AeonAddAccountCard(
+    baseCurrency: String,
+    currentTheme: String,
+    onClick: () -> Unit,
+    gridColumns: Int = 2,
+    precision: Int = 2,
+    modifier: Modifier = Modifier
+) {
+    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, precision, modifier)
+}
+
+@Composable
+private fun AeonAddAccountCardContent(
     baseCurrency: String,
     currentTheme: String,
     onClick: () -> Unit,

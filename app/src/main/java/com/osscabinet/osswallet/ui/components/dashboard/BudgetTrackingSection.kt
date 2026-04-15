@@ -1,11 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.dashboard
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -13,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.ui.components.AeonBudgetProgress
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 
 @Composable
 fun BudgetTrackingSection(
@@ -21,8 +24,12 @@ fun BudgetTrackingSection(
     baseCurrency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    precision: Int = 2
+    precision: Int = 2,
+    showProgressLabels: Boolean = true,
+    onShowProgressLabelsChange: (Boolean) -> Unit = {}
 ) {
+    var showSettings by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
@@ -34,14 +41,16 @@ fun BudgetTrackingSection(
                 title = "BUDGET TRACKING",
                 modifier = headerModifier,
                 trailing = {
-                    Text(
-                        text = "MANAGE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        modifier = Modifier.clickable(onClick = onManageClick)
-                    )
+                    IconButton(
+                        onClick = { showSettings = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.MoreHoriz,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             )
 
@@ -56,10 +65,60 @@ fun BudgetTrackingSection(
                         total = budget.limit,
                         color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         baseCurrency = baseCurrency,
-                        precision = precision
+                        precision = precision,
+                        showLabels = showProgressLabels
                     )
                 }
             }
         }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Budget Settings",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    IconButton(
+                        onClick = {
+                            onManageClick()
+                            showSettings = false
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "Manage Budgets"
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    AeonSettingsToggle(
+                        label = "SHOW PROGRESS LABELS",
+                        checked = showProgressLabels,
+                        onCheckedChange = onShowProgressLabelsChange
+                    )
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 }

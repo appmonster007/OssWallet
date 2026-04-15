@@ -2,22 +2,18 @@ package com.osscabinet.ossWallet.ui.components.dashboard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
@@ -95,7 +91,7 @@ fun CurrencyAggregationSection(
                         }
                     }
                 } else {
-                    androidx.compose.foundation.lazy.LazyRow(
+                    LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(bottom = 4.dp)
                     ) {
@@ -131,26 +127,9 @@ fun CurrencyAggregationSection(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AeonSettingsToggle(
-                        label = "LAYOUT",
-                        description = if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
-                        checked = layout == "grid",
-                        onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
-                        thumbContent = {
-                            if (layout == "grid") {
-                                Icon(
-                                    imageVector = Icons.Default.GridView,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.ViewCarousel,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        }
+                    AeonLayoutToggle(
+                        layout = layout,
+                        onLayoutChange = onLayoutChange
                     )
 
                     AeonBaseConversionToggle(

@@ -14,7 +14,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 @Serializable
 data class AccountsSectionSettings(
-    val gridColumns: Int = 1,
+    val layout: String = "grid", // "scroll" or "grid"
+    val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true
 )
 
@@ -40,11 +41,17 @@ data class CashFlowSettings(
 )
 
 @Serializable
+data class BudgetSettings(
+    val showProgressLabels: Boolean = true
+)
+
+@Serializable
 data class DashboardSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val netWorthSection: NetWorthSettings = NetWorthSettings(),
     val cashFlowSection: CashFlowSettings = CashFlowSettings(),
+    val budgetSection: BudgetSettings = BudgetSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 

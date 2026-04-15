@@ -25,7 +25,7 @@ enum class AccountsViewSection {
 class AccountsViewViewModel(
     private val accountRepository: AccountRepository,
     private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val settingsDataStore: SettingsDataStore,
+    val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
@@ -76,6 +76,12 @@ class AccountsViewViewModel(
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
+        }
+    }
+
+    fun updateNetWorthTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
         }
     }
 

@@ -28,12 +28,12 @@ data class NetWorthSettings(
 
 @Composable
 fun NetWorthSection(
-    viewModel: NetWorthViewModel,
+    uiState: NetWorthUiState,
+    onFontSizeChange: (String) -> Unit,
+    onTimelineRangeChange: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
     when (val state = uiState) {
         is NetWorthUiState.Loading -> {
             // Shimmer or placeholder
@@ -48,8 +48,8 @@ fun NetWorthSection(
                 precision = state.precision,
                 fontSize = state.fontSize,
                 timelineRange = state.timelineRange,
-                onFontSizeChange = { viewModel.updateNetWorthFontSize(it) },
-                onTimelineRangeChange = { viewModel.updateTimelineRange(it) },
+                onFontSizeChange = onFontSizeChange,
+                onTimelineRangeChange = onTimelineRangeChange,
                 modifier = modifier,
                 headerModifier = headerModifier
             )

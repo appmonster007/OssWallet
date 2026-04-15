@@ -6,8 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
@@ -31,11 +30,18 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonClassDiscriminator
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+@JsonClassDiscriminator("timeline_type")
 sealed class TimelineRange {
     @Serializable
     object AllTime : TimelineRange()
@@ -190,8 +196,8 @@ fun AeonSegmentedControl(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier.fillMaxWidth().height(56.dp)
+        shape = RoundedCornerShape(20.dp), // Increased for smoother Aeon look
+        modifier = modifier.fillMaxWidth().height(60.dp) // Slightly taller
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(4.dp),
@@ -212,7 +218,7 @@ fun AeonSegmentedControl(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(16.dp)) // Increased for smoother Aeon look
                         .background(backgroundColor)
                         .clickable { onOptionSelected(index) },
                     contentAlignment = Alignment.Center
@@ -224,14 +230,14 @@ fun AeonSegmentedControl(
                         Icon(
                             imageVector = option.icon,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(20.dp), // Slightly larger
                             tint = contentColor
                         )
                         Text(
                             text = option.label,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 10.sp
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold, // Bolder
+                                fontSize = 11.sp // Slightly larger
                             ),
                             color = contentColor,
                             maxLines = 1,
@@ -265,36 +271,52 @@ fun <T> AeonDropdown(
             value = labelProvider(selectedOption),
             onValueChange = {},
             readOnly = true,
-            label = { Text(label) },
+            label = { 
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                ) 
+            },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(20.dp), // More rounded Aeon style
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedLabelColor = MaterialTheme.colorScheme.primary
-            )
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+            ),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
         )
 
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .clip(RoundedCornerShape(16.dp))
         ) {
             options.forEach { option ->
+                val isSelected = option == selectedOption
                 DropdownMenuItem(
                     text = { 
                         Text(
                             labelProvider(option),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (option == selectedOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
+                            ),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         ) 
                     },
                     onClick = {
                         onOptionSelected(option)
                         expanded = false
                     },
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
                 )
             }
         }
@@ -349,8 +371,10 @@ fun AeonDateRangePicker(
     ) {
         Column(modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp)) {
             // Quick Jump Header
-            val currentMonth = Calendar.getInstance().apply {
-                timeInMillis = state.displayedMonthMillis
+            val currentMonth = remember(state.displayedMonthMillis) {
+                Calendar.getInstance().apply {
+                    timeInMillis = state.displayedMonthMillis
+                }
             }
             
             Surface(
@@ -364,12 +388,17 @@ fun AeonDateRangePicker(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val months = remember {
+                        (0..11).map { m ->
+                            Calendar.getInstance().apply { set(Calendar.MONTH, m) }.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: ""
+                        }
+                    }
+
                     // Month Selector
                     AeonJumpSelector(
                         currentValue = currentMonth.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: "",
-                        options = (0..11).map { m ->
-                            Calendar.getInstance().apply { set(Calendar.MONTH, m) }.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: ""
-                        },
+                        options = months,
+                        selectedIndex = currentMonth.get(Calendar.MONTH),
                         onOptionSelected = { index ->
                             currentMonth.set(Calendar.MONTH, index)
                             state.displayedMonthMillis = currentMonth.timeInMillis
@@ -387,12 +416,13 @@ fun AeonDateRangePicker(
 
                     // Year Selector
                     val currentYear = currentMonth.get(Calendar.YEAR)
-                    val years = (1970..2100).toList()
+                    val years = remember { (1970..2100).map { it.toString() } }
                     AeonJumpSelector(
                         currentValue = currentYear.toString(),
-                        options = years.map { it.toString() },
+                        options = years,
+                        selectedIndex = (currentYear - 1970).coerceIn(0, years.size - 1),
                         onOptionSelected = { index ->
-                            val year = years[index]
+                            val year = 1970 + index
                             currentMonth.set(Calendar.YEAR, year)
                             state.displayedMonthMillis = currentMonth.timeInMillis
                         },
@@ -472,10 +502,11 @@ fun AeonDateRangePicker(
 fun AeonJumpSelector(
     currentValue: String,
     options: List<String>,
+    modifier: Modifier = Modifier,
+    selectedIndex: Int = -1,
     onOptionSelected: (Int) -> Unit,
     onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    modifier: Modifier = Modifier
+    onNext: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -515,16 +546,55 @@ fun AeonJumpSelector(
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier.heightIn(max = 300.dp).background(MaterialTheme.colorScheme.surface)
+                    modifier = Modifier
+                        .width(140.dp)
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
-                    options.forEachIndexed { index, option ->
-                        DropdownMenuItem(
-                            text = { Text(option, style = MaterialTheme.typography.bodyMedium) },
-                            onClick = {
-                                onOptionSelected(index)
-                                expanded = false
+                    val scrollState = rememberScrollState()
+                    val density = LocalDensity.current
+                    
+                    if (expanded) {
+                        LaunchedEffect(selectedIndex) {
+                            if (selectedIndex >= 0) {
+                                // Approximate item height (48dp standard for DropdownMenuItem)
+                                val itemHeightPx = with(density) { 48.dp.toPx() }
+                                val scrollPx = ((selectedIndex - 2).coerceAtLeast(0) * itemHeightPx).toInt()
+                                scrollState.scrollTo(scrollPx)
                             }
-                        )
+                        }
+                    }
+
+                    // Use a Box with fixed width and max height to:
+                    // 1. Avoid intrinsic measurement crash (by providing fixed width intrinsics)
+                    // 2. Avoid infinite height constraint crash for the inner scrollable Column
+                    Box(
+                        modifier = Modifier
+                            .width(140.dp)
+                            .heightIn(max = 280.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState)
+                        ) {
+                            options.forEachIndexed { index, option ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Text(
+                                            option, 
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal
+                                            ),
+                                            color = if (index == selectedIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        ) 
+                                    },
+                                    onClick = {
+                                        onOptionSelected(index)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }

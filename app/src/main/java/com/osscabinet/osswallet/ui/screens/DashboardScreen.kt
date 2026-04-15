@@ -97,6 +97,7 @@ fun DashboardScreen(
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val showAddAccountCard by settingsViewModel.dashboardShowAddAccountCard.collectAsState()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
@@ -234,7 +235,9 @@ fun DashboardScreen(
                                 onBudgetsClick = onBudgetsClick,
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
-                                dashboardViewModel = dashboardViewModel
+                                dashboardViewModel = dashboardViewModel,
+                                showAddAccountCard = showAddAccountCard,
+                                onShowAddAccountCardChange = { settingsViewModel.setDashboardShowAddAccountCard(it) }
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -427,7 +430,9 @@ fun DashboardContent(
     onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
-    dashboardViewModel: DashboardViewModel
+    dashboardViewModel: DashboardViewModel,
+    showAddAccountCard: Boolean,
+    onShowAddAccountCardChange: (Boolean) -> Unit
 ) {
     val activeTransactions = remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
@@ -501,6 +506,8 @@ fun DashboardContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 gridColumns = gridColumns,
                                 precision = decimalPrecision,
+                                showAddAccountCard = showAddAccountCard,
+                                onShowAddAccountCardChange = onShowAddAccountCardChange,
                                 headerModifier = dragModifier.fillMaxWidth(),
                                 settingsTitle = "Dashboard Settings"
                             )

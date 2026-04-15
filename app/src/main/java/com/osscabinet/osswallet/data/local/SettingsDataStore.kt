@@ -22,6 +22,8 @@ class SettingsDataStore(private val context: Context) {
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
         val DASHBOARD_SECTION_ORDER_KEY = stringPreferencesKey("dashboard_section_order")
         val ACCOUNTS_VIEW_SECTION_ORDER_KEY = stringPreferencesKey("accounts_view_section_order")
+        val DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY = booleanPreferencesKey("dashboard_show_add_account_card")
+        val ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY = booleanPreferencesKey("accounts_view_show_add_account_card")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -62,6 +64,14 @@ class SettingsDataStore(private val context: Context) {
 
     val accountsViewSectionOrder: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY]
+    }
+
+    val dashboardShowAddAccountCard: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY] ?: true
+    }
+
+    val accountsViewShowAddAccountCard: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY] ?: true
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -121,6 +131,18 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveAccountsViewSectionOrder(order: String) {
         context.dataStore.edit { preferences ->
             preferences[ACCOUNTS_VIEW_SECTION_ORDER_KEY] = order
+        }
+    }
+
+    suspend fun saveDashboardShowAddAccountCard(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[DASHBOARD_SHOW_ADD_ACCOUNT_CARD_KEY] = show
+        }
+    }
+
+    suspend fun saveAccountsViewShowAddAccountCard(show: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCOUNTS_VIEW_SHOW_ADD_ACCOUNT_CARD_KEY] = show
         }
     }
 }

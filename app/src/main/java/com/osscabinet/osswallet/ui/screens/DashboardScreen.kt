@@ -235,9 +235,7 @@ fun DashboardScreen(
                                 onBudgetsClick = onBudgetsClick,
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
-                                dashboardViewModel = dashboardViewModel,
-                                showAddAccountCard = state.showAddAccountCard,
-                                onShowAddAccountCardChange = { settingsViewModel.setDashboardShowAddAccountCard(it) }
+                                dashboardViewModel = dashboardViewModel
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -430,9 +428,7 @@ fun DashboardContent(
     onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
-    dashboardViewModel: DashboardViewModel,
-    showAddAccountCard: Boolean,
-    onShowAddAccountCardChange: (Boolean) -> Unit
+    dashboardViewModel: DashboardViewModel
 ) {
     val activeTransactions = remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
@@ -514,8 +510,10 @@ fun DashboardContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 gridColumns = gridColumns,
                                 precision = decimalPrecision,
-                                showAddAccountCard = showAddAccountCard,
-                                onShowAddAccountCardChange = onShowAddAccountCardChange,
+                                layout = state.accountsLayout,
+                                onLayoutChange = { dashboardViewModel.updateAccountsLayout(it) },
+                                showAddAccountCard = state.showAddAccountCard,
+                                onShowAddAccountCardChange = { dashboardViewModel.updateShowAddAccountCard(it) },
                                 headerModifier = dragModifier.fillMaxWidth(),
                                 settingsTitle = "Dashboard Settings"
                             )
@@ -528,7 +526,9 @@ fun DashboardContent(
                                     baseCurrency = state.baseCurrency,
                                     modifier = Modifier.fillMaxWidth(),
                                     precision = decimalPrecision,
-                                    headerModifier = dragModifier.fillMaxWidth()
+                                    headerModifier = dragModifier.fillMaxWidth(),
+                                    showProgressLabels = state.budgetShowProgressLabels,
+                                    onShowProgressLabelsChange = { dashboardViewModel.updateBudgetShowProgressLabels(it) }
                                 )
                             } else {
                                 Box(modifier = Modifier.size(0.dp))

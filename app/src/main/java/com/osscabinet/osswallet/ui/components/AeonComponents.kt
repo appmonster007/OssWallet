@@ -1210,11 +1210,13 @@ fun AeonShimmer(
 }
 
 @Composable
-fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String, precision: Int = 2) {
+fun AeonBudgetProgress(label: String, current: BigDecimal, total: BigDecimal, color: Color, baseCurrency: String, precision: Int = 2, showLabels: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-            Text("${formatCurrencyRight(current, baseCurrency, precision)} / ${formatCurrencyRight(total, baseCurrency, precision)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        if (showLabels) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(label, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text("${formatCurrencyRight(current, baseCurrency, precision)} / ${formatCurrencyRight(total, baseCurrency, precision)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            }
         }
         LinearProgressIndicator(
             progress = { if (total.signum() > 0) (current.toDouble() / total.toDouble()).toFloat() else 0f },

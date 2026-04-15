@@ -88,6 +88,24 @@ class DashboardViewModel(
         }
     }
 
+    fun updateBudgetShowProgressLabels(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(budgetSection = it.budgetSection.copy(showProgressLabels = show)) }
+        }
+    }
+
+    fun updateAccountsLayout(layout: String) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
+        }
+    }
+
+    fun updateShowAddAccountCard(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+        }
+    }
+
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -100,10 +118,12 @@ class DashboardViewModel(
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
                 val gridColumns = dashboardSettings.accountsSection.gridColumns
+                val accountsLayout = dashboardSettings.accountsSection.layout
                 val showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
                 val currencyBalancesLayout = dashboardSettings.currencyBalancesSection.layout
                 val showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
                 val cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
+                val budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels
                 val netWorthFontSize = dashboardSettings.netWorthSection.fontSize
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
@@ -203,10 +223,12 @@ class DashboardViewModel(
                     decimalPrecision = precision,
                     accountStats = accountStats,
                     gridColumns = gridColumns,
+                    accountsLayout = accountsLayout,
                     showAddAccountCard = showAddAccountCard,
                     currencyBalancesLayout = currencyBalancesLayout,
                     showBaseConversion = showBaseConversion,
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
+                    budgetShowProgressLabels = budgetShowProgressLabels,
                     netWorthFontSize = netWorthFontSize
                 )
             }
@@ -229,10 +251,12 @@ sealed class DashboardUiState {
         val decimalPrecision: Int = 2,
         val accountStats: Map<String, AccountStats> = emptyMap(),
         val gridColumns: Int = 2,
+        val accountsLayout: String = "grid",
         val showAddAccountCard: Boolean = true,
         val currencyBalancesLayout: String = "scroll",
         val showBaseConversion: Boolean = true,
         val cashFlowShowBaseConversion: Boolean = true,
+        val budgetShowProgressLabels: Boolean = true,
         val netWorthFontSize: String = "Medium"
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()

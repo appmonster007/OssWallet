@@ -332,39 +332,11 @@ fun AeonCashFlowSummary(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "BASE CONVERSION",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    "Show estimated value in $baseCurrency",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = showBaseConversion,
-                                onCheckedChange = onShowBaseConversionChange
-                            )
-                        }
-                    }
+                    AeonBaseConversionToggle(
+                        baseCurrency = baseCurrency,
+                        showBaseConversion = showBaseConversion,
+                        onShowBaseConversionChange = onShowBaseConversionChange
+                    )
                 }
             },
             shape = RoundedCornerShape(32.dp),
@@ -486,32 +458,11 @@ fun AeonAccountsSection(
                                             }
                                         }
 
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                            shape = RoundedCornerShape(20.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    "SHOW ADD ACCOUNT CARD",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontWeight = FontWeight.Bold,
-                                                        letterSpacing = 1.sp
-                                                    ),
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                                Switch(
-                                                    checked = showAddAccountCard,
-                                                    onCheckedChange = onShowAddAccountCardChange
-                                                )
-                                            }
-                                        }
+                                        AeonSettingsToggle(
+                                            label = "SHOW ADD ACCOUNT CARD",
+                                            checked = showAddAccountCard,
+                                            onCheckedChange = onShowAddAccountCardChange
+                                        )
                                     }
                                 },
                                 shape = RoundedCornerShape(32.dp),
@@ -678,6 +629,69 @@ fun AeonAddAccountCard(
             precision = precision
         )
     }
+}
+
+@Composable
+fun AeonSettingsToggle(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    thumbContent: (@Composable () -> Unit)? = null
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (description != null) {
+                    Text(
+                        description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                thumbContent = thumbContent
+            )
+        }
+    }
+}
+
+@Composable
+fun AeonBaseConversionToggle(
+    baseCurrency: String,
+    showBaseConversion: Boolean,
+    onShowBaseConversionChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AeonSettingsToggle(
+        label = "BASE CONVERSION",
+        description = "Show estimated value in $baseCurrency",
+        checked = showBaseConversion,
+        onCheckedChange = onShowBaseConversionChange,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -1002,88 +1016,33 @@ fun CurrencyAggregationSection(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "LAYOUT",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
+                    AeonSettingsToggle(
+                        label = "LAYOUT",
+                        description = if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
+                        checked = layout == "grid",
+                        onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
+                        thumbContent = {
+                            if (layout == "grid") {
+                                Icon(
+                                    imageVector = Icons.Default.GridView,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
                                 )
-                                Text(
-                                    if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.ViewCarousel,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
                                 )
                             }
-                            Switch(
-                                checked = layout == "grid",
-                                onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
-                                thumbContent = {
-                                    if (layout == "grid") {
-                                        Icon(
-                                            imageVector = Icons.Default.GridView,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Default.ViewCarousel,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                                        )
-                                    }
-                                }
-                            )
                         }
-                    }
+                    )
 
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "BASE CONVERSION",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    "Show estimated value in $baseCurrency",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = showBaseConversion,
-                                onCheckedChange = onShowBaseConversionChange
-                            )
-                        }
-                    }
+                    AeonBaseConversionToggle(
+                        baseCurrency = baseCurrency,
+                        showBaseConversion = showBaseConversion,
+                        onShowBaseConversionChange = onShowBaseConversionChange
+                    )
                 }
             },
             shape = RoundedCornerShape(32.dp),

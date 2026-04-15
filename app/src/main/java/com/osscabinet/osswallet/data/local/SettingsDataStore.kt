@@ -25,7 +25,8 @@ data class LayoutSettings(
 
 @Serializable
 data class CurrencyBalancesSettings(
-    val layout: String = "scroll" // "scroll" or "grid"
+    val layout: String = "scroll", // "scroll" or "grid"
+    val showBaseConversion: Boolean = true
 )
 
 @Serializable
@@ -34,10 +35,16 @@ data class NetWorthSettings(
 )
 
 @Serializable
+data class CashFlowSettings(
+    val showBaseConversion: Boolean = true
+)
+
+@Serializable
 data class DashboardSettings(
     val accountsSection: AccountsSectionSettings = AccountsSectionSettings(gridColumns = 2),
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val netWorthSection: NetWorthSettings = NetWorthSettings(),
+    val cashFlowSection: CashFlowSettings = CashFlowSettings(),
     val layout: LayoutSettings = LayoutSettings()
 )
 

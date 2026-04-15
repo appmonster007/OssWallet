@@ -207,7 +207,9 @@ fun AccountsViewScreen(
                                         exchangeRates = state.exchangeRates,
                                         precision = state.decimalPrecision,
                                         layout = state.currencyBalancesLayout,
+                                        showBaseConversion = state.showBaseConversion,
                                         onLayoutChange = { accountsViewViewModel.updateCurrencyBalancesLayout(it) },
+                                        onShowBaseConversionChange = { accountsViewViewModel.updateShowBaseConversion(it) },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
                                     )

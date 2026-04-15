@@ -67,6 +67,12 @@ class AccountsViewViewModel(
         }
     }
 
+    fun updateShowBaseConversion(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+        }
+    }
+
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
@@ -87,6 +93,7 @@ class AccountsViewViewModel(
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
                 val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
                 val currencyBalancesLayout = accountsViewSettings.currencyBalancesSection.layout
+                val showBaseConversion = accountsViewSettings.currencyBalancesSection.showBaseConversion
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 
                 val transactionsByAccount = allTransactions.groupBy { it.accountId }
@@ -151,6 +158,7 @@ class AccountsViewViewModel(
                     gridColumns = gridColumns,
                     showAddAccountCard = showAddAccountCard,
                     currencyBalancesLayout = currencyBalancesLayout,
+                    showBaseConversion = showBaseConversion,
                     netWorthFontSize = netWorthFontSize
                 )
             }
@@ -174,6 +182,7 @@ sealed class AccountsViewUiState {
         val gridColumns: Int = 1,
         val showAddAccountCard: Boolean = true,
         val currencyBalancesLayout: String = "scroll",
+        val showBaseConversion: Boolean = true,
         val netWorthFontSize: String = "Medium"
     ) : AccountsViewUiState()
     data class Error(val message: String) : AccountsViewUiState()

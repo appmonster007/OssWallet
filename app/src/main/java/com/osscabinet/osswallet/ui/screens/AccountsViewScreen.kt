@@ -268,22 +268,16 @@ fun AccountsViewScreen(
                         else -> isSystemInDarkTheme()
                     }
                     val isAmoled = currentTheme == "Amoled"
-                    
-                    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
-                    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
 
-                    AccountCard(
-                        title = account.name.uppercase(),
-                        balance = formatCurrencyRight(balanceInBase, baseCurrency, precision = decimalPrecision),
+                    AeonAccountCardLarge(
+                        account = account,
+                        balanceInBase = balanceInBase,
+                        baseCurrency = baseCurrency,
                         currencyBalances = accountCurrencyBalances,
                         incomeInAccountCurrency = incomeInAccountCurrency,
                         expenseInAccountCurrency = expenseInAccountCurrency,
-                        accountCurrencyCode = account.currencyCode,
-                        icon = AccountIconMap[account.icon] ?: Icons.Default.AccountBalance,
-                        containerColor = containerColor,
-                        contentColor = contentColor,
-                        subAccounts = listOf(account.structureType),
-                        border = isAmoled,
+                        isDarkTheme = isDarkTheme,
+                        isAmoled = isAmoled,
                         precision = decimalPrecision,
                         onClick = { onAccountClick(account.id) }
                     )
@@ -297,146 +291,4 @@ fun AccountsViewScreen(
     }
 }
 
-@Composable
-fun AccountCard(
-    title: String,
-    balance: String,
-    currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    incomeInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    expenseInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    accountCurrencyCode: String = "",
-    icon: ImageVector,
-    containerColor: Color,
-    contentColor: Color,
-    subAccounts: List<String>,
-    cardNumber: String? = null,
-    extraLabel: String? = null,
-    border: Boolean = false,
-    precision: Int = 2,
-    onClick: () -> Unit = {}
-) {
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .onSizeChanged { cardSize = it },
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(32.dp),
-        border = if (border) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Background Icon
-            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-//                    .offset { IntOffset(x = (cardSize.width * 0.1f).toInt(), y = 0) }
-                    .size(iconHeight)
-                    .alpha(0.15f),
-                tint = contentColor
-            )
-
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(title, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.7f))
-                    
-                    // Income/Expense Badges
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AeonFlowBadge(
-                            amount = incomeInAccountCurrency,
-                            type = CashFlowType.INCOME
-                        )
-                        AeonFlowBadge(
-                            amount = expenseInAccountCurrency,
-                            type = CashFlowType.EXPENSE
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        balance,
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                        color = contentColor
-                    )
-//                    Icon(icon, contentDescription = null, tint = contentColor.copy(alpha = 0.7f), modifier = Modifier.size(28.dp))
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Horizontal scrollable list for subAccounts and currency codes
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        subAccounts.forEach { sub ->
-                            Surface(
-                                color = contentColor.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Text(
-                                    sub.uppercase(),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                    color = contentColor
-                                )
-                            }
-                        }
-                        
-                        currencyBalances.forEach { (curr, bal) ->
-                            Surface(
-                                color = contentColor.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        curr,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
-                                        color = contentColor.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        com.osscabinet.ossWallet.ui.util.formatAmount(bal, precision = precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                        color = contentColor
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    if (cardNumber != null) {
-                        Text(cardNumber, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.5f))
-                    }
-                    if (extraLabel != null) {
-                        Text(extraLabel, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.5f))
-                    }
-                }
-            }
-        }
-    }
-}

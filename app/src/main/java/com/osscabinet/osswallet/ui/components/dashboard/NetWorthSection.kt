@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.ui.components.TimelineRange
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
@@ -20,7 +22,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class NetWorthSettings(
-    val fontSize: String = "Medium" // "Small", "Medium", "Large"
+    val fontSize: String = "Medium", // "Small", "Medium", "Large"
+    val timelineRange: TimelineRange = TimelineRange.AllTime
 )
 
 @Composable
@@ -44,7 +47,9 @@ fun NetWorthSection(
                 baseCurrency = state.baseCurrency,
                 precision = state.precision,
                 fontSize = state.fontSize,
+                timelineRange = state.timelineRange,
                 onFontSizeChange = { viewModel.updateNetWorthFontSize(it) },
+                onTimelineRangeChange = { viewModel.updateTimelineRange(it) },
                 modifier = modifier,
                 headerModifier = headerModifier
             )
@@ -61,7 +66,9 @@ private fun NetWorthContent(
     baseCurrency: String,
     precision: Int,
     fontSize: String,
+    timelineRange: TimelineRange,
     onFontSizeChange: (String) -> Unit,
+    onTimelineRangeChange: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -128,7 +135,9 @@ private fun NetWorthContent(
     if (showSettings) {
         NetWorthSettingsDialog(
             fontSize = fontSize,
+            timelineRange = timelineRange,
             onFontSizeChange = onFontSizeChange,
+            onTimelineRangeChange = onTimelineRangeChange,
             onDismiss = { showSettings = false }
         )
     }
@@ -137,7 +146,9 @@ private fun NetWorthContent(
 @Composable
 private fun NetWorthSettingsDialog(
     fontSize: String,
+    timelineRange: TimelineRange,
     onFontSizeChange: (String) -> Unit,
+    onTimelineRangeChange: (TimelineRange) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -155,6 +166,34 @@ private fun NetWorthSettingsDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Timeline Range Selection
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "TIMELINE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        TimelineFilterBar(
+                            currentRange = timelineRange,
+                            onRangeSelected = onTimelineRangeChange,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // Font Size Selection
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(20.dp),

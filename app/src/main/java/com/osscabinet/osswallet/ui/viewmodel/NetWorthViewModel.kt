@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.ui.components.TimelineRange
+import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -26,14 +28,29 @@ class NetWorthViewModel(
                 getTransactionsUseCase(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
-                settingsDataStore.dashboardSettings.map { it.netWorthSection.fontSize }
-            ) { accounts, transactions, analyticsState, precision, fontSize ->
+                settingsDataStore.dashboardSettings.map { it.netWorthSection }
+            ) { accounts, transactions, analyticsState, precision, sectionSettings ->
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
                 
+                val filteredTransactions = when (val range = sectionSettings.timelineRange) {
+                    is TimelineRange.AllTime -> transactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        transactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        transactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        transactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
+
                 val netWorth = calculateNetWorth(
                     accounts = accounts,
-                    allTransactions = transactions,
+                    allTransactions = filteredTransactions,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     precision = precision
@@ -43,7 +60,8 @@ class NetWorthViewModel(
                     netWorth = netWorth,
                     baseCurrency = baseCurrency,
                     precision = precision,
-                    fontSize = fontSize
+                    fontSize = sectionSettings.fontSize,
+                    timelineRange = sectionSettings.timelineRange
                 )
             }
         }
@@ -58,6 +76,12 @@ class NetWorthViewModel(
             settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
         }
     }
+
+    fun updateTimelineRange(range: TimelineRange) {
+        viewModelScope.launch {
+            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
+        }
+    }
 }
 
 sealed class NetWorthUiState {
@@ -66,7 +90,8 @@ sealed class NetWorthUiState {
         val netWorth: BigDecimal,
         val baseCurrency: String,
         val precision: Int,
-        val fontSize: String
+        val fontSize: String,
+        val timelineRange: TimelineRange
     ) : NetWorthUiState()
     data class Error(val message: String) : NetWorthUiState()
 }

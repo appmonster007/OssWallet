@@ -311,7 +311,8 @@ fun AeonDateRangePicker(
 ) {
     val state = rememberDateRangePickerState(
         initialSelectedStartDateMillis = initialStart,
-        initialSelectedEndDateMillis = initialEnd
+        initialSelectedEndDateMillis = initialEnd,
+        yearRange = 1970..2100
     )
 
     DatePickerDialog(
@@ -381,16 +382,17 @@ fun AeonDateRangePicker(
                             currentMonth.add(Calendar.MONTH, 1)
                             state.displayedMonthMillis = currentMonth.timeInMillis
                         },
-                        modifier = Modifier.weight(1.5f)
+                        modifier = Modifier.weight(1.2f)
                     )
 
                     // Year Selector
                     val currentYear = currentMonth.get(Calendar.YEAR)
+                    val years = (1970..2100).toList()
                     AeonJumpSelector(
                         currentValue = currentYear.toString(),
-                        options = (currentYear - 10..currentYear + 10).map { it.toString() },
+                        options = years.map { it.toString() },
                         onOptionSelected = { index ->
-                            val year = (currentYear - 10..currentYear + 10).toList()[index]
+                            val year = years[index]
                             currentMonth.set(Calendar.YEAR, year)
                             state.displayedMonthMillis = currentMonth.timeInMillis
                         },
@@ -404,6 +406,26 @@ fun AeonDateRangePicker(
                         },
                         modifier = Modifier.weight(1f)
                     )
+
+                    // Today Jump Button
+                    IconButton(
+                        onClick = {
+                            state.displayedMonthMillis = System.currentTimeMillis()
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Today,
+                            contentDescription = "Jump to Today",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 

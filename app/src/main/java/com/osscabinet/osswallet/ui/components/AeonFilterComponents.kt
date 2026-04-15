@@ -1,9 +1,14 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DateRange
@@ -13,7 +18,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -70,102 +82,82 @@ fun TimelineFilterBar(
             .fillMaxWidth()
             .animateContentSize()
     ) {
-        // Primary Selection
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            val options = listOf(
-                Triple("All", Icons.Default.History, 0),
-                Triple("This", Icons.Default.CalendarToday, 1),
-                Triple("Last", Icons.Default.Schedule, 2),
-                Triple("Custom", Icons.Default.DateRange, 3)
-            )
-
-            options.forEachIndexed { index, (label, icon, _) ->
-                val isSelected = when (currentRange) {
-                    is TimelineRange.AllTime -> index == 0
-                    is TimelineRange.ThisPeriod -> index == 1
-                    is TimelineRange.LastPeriod -> index == 2
-                    is TimelineRange.CustomRange -> index == 3
+        // Redesigned Primary Selection (Segmented Control)
+        AeonSegmentedControl(
+            options = listOf(
+                TimelineOption("All", Icons.Default.History),
+                TimelineOption("This", Icons.Default.CalendarToday),
+                TimelineOption("Last", Icons.Default.Schedule),
+                TimelineOption("Custom", Icons.Default.DateRange)
+            ),
+            selectedOption = when (currentRange) {
+                is TimelineRange.AllTime -> 0
+                is TimelineRange.ThisPeriod -> 1
+                is TimelineRange.LastPeriod -> 2
+                is TimelineRange.CustomRange -> 3
+            },
+            onOptionSelected = { index ->
+                when (index) {
+                    0 -> onRangeSelected(TimelineRange.AllTime)
+                    1 -> onRangeSelected(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
+                    2 -> onRangeSelected(TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS))
+                    3 -> showDatePicker = true
                 }
+            },
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
 
-                SegmentedButton(
-                    selected = isSelected,
-                    onClick = {
-                        when (index) {
-                            0 -> onRangeSelected(TimelineRange.AllTime)
-                            1 -> onRangeSelected(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
-                            2 -> onRangeSelected(TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS))
-                            3 -> showDatePicker = true
-                        }
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                    icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                    label = { Text(label, style = MaterialTheme.typography.labelSmall) }
-                )
-            }
-        }
-
-        // Secondary Row with expressive chips
+        // Dropdown for This/Last
         AnimatedVisibility(
-            visible = currentRange !is TimelineRange.AllTime,
+            visible = currentRange is TimelineRange.ThisPeriod || currentRange is TimelineRange.LastPeriod || currentRange is TimelineRange.CustomRange,
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
                 when (currentRange) {
                     is TimelineRange.ThisPeriod -> {
-                        items(ThisPeriodType.values()) { type ->
-                            FilterChip(
-                                selected = currentRange.period == type,
-                                onClick = { onRangeSelected(TimelineRange.ThisPeriod(type)) },
-                                label = { Text(type.label) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            )
-                        }
+                        AeonDropdown(
+                            label = "Select Period",
+                            options = ThisPeriodType.values().toList(),
+                            selectedOption = currentRange.period,
+                            onOptionSelected = { onRangeSelected(TimelineRange.ThisPeriod(it)) },
+                            labelProvider = { it.label }
+                        )
                     }
                     is TimelineRange.LastPeriod -> {
-                        items(LastPeriodType.values()) { type ->
-                            FilterChip(
-                                selected = currentRange.period == type,
-                                onClick = { onRangeSelected(TimelineRange.LastPeriod(type)) },
-                                label = { Text(type.label) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            )
-                        }
+                        AeonDropdown(
+                            label = "Select Range",
+                            options = LastPeriodType.values().toList(),
+                            selectedOption = currentRange.period,
+                            onOptionSelected = { onRangeSelected(TimelineRange.LastPeriod(it)) },
+                            labelProvider = { it.label }
+                        )
                     }
                     is TimelineRange.CustomRange -> {
-                        item {
-                            val formatter = SimpleDateFormat("MMM dd", Locale.getDefault())
-                            FilterChip(
-                                selected = true,
-                                onClick = { showDatePicker = true },
-                                label = { 
-                                    Text("${formatter.format(Date(currentRange.start))} - ${formatter.format(Date(currentRange.end))}") 
-                                },
-                                leadingIcon = { Icon(Icons.Default.Edit, null, Modifier.size(14.dp)) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            )
+                        val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                        OutlinedCard(
+                            onClick = { showDatePicker = true },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        "CUSTOM RANGE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        "${formatter.format(Date(currentRange.start))} - ${formatter.format(Date(currentRange.end))}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(20.dp))
+                            }
                         }
                     }
                     else -> {}
@@ -175,15 +167,161 @@ fun TimelineFilterBar(
     }
 
     if (showDatePicker) {
-        val dateRangePickerState = rememberDateRangePickerState()
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val start = dateRangePickerState.selectedStartDateMillis
-                    val end = dateRangePickerState.selectedEndDateMillis
+        AeonDateRangePicker(
+            initialStart = (currentRange as? TimelineRange.CustomRange)?.start,
+            initialEnd = (currentRange as? TimelineRange.CustomRange)?.end,
+            onDismiss = { showDatePicker = false },
+            onConfirmed = { start, end ->
+                onRangeSelected(TimelineRange.CustomRange(start, end))
+                showDatePicker = false
+            }
+        )
+    }
+}
+
+data class TimelineOption(val label: String, val icon: ImageVector)
+
+@Composable
+fun AeonSegmentedControl(
+    options: List<TimelineOption>,
+    selectedOption: Int,
+    onOptionSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth().height(56.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            options.forEachIndexed { index, option ->
+                val isSelected = selectedOption == index
+                val backgroundColor by animateColorAsState(
+                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    label = "bgColor"
+                )
+                val contentColor by animateColorAsState(
+                    if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    label = "contentColor"
+                )
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(backgroundColor)
+                        .clickable { onOptionSelected(index) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = option.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = contentColor
+                        )
+                        Text(
+                            text = option.label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 10.sp
+                            ),
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> AeonDropdown(
+    label: String,
+    options: List<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    labelProvider: (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = labelProvider(selectedOption),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedLabelColor = MaterialTheme.colorScheme.primary
+            )
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { 
+                        Text(
+                            labelProvider(option),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (option == selectedOption) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        ) 
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    },
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AeonDateRangePicker(
+    initialStart: Long?,
+    initialEnd: Long?,
+    onDismiss: () -> Unit,
+    onConfirmed: (Long, Long) -> Unit
+) {
+    val state = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = initialStart,
+        initialSelectedEndDateMillis = initialEnd
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(
+                onClick = {
+                    val start = state.selectedStartDateMillis
+                    val end = state.selectedEndDateMillis
                     if (start != null && end != null) {
-                        // Ensure end is at the very end of the day for inclusive filtering
                         val calendar = Calendar.getInstance().apply {
                             timeInMillis = end
                             set(Calendar.HOUR_OF_DAY, 23)
@@ -191,36 +329,187 @@ fun TimelineFilterBar(
                             set(Calendar.SECOND, 59)
                             set(Calendar.MILLISECOND, 999)
                         }
-                        onRangeSelected(TimelineRange.CustomRange(start, calendar.timeInMillis))
+                        onConfirmed(start, calendar.timeInMillis)
                     }
-                    showDatePicker = false
-                }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                },
+                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Confirm Selection")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+        shape = RoundedCornerShape(28.dp),
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp)) {
+            // Quick Jump Header
+            val currentMonth = Calendar.getInstance().apply {
+                timeInMillis = state.displayedMonthMillis
+            }
+            
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Month Selector
+                    AeonJumpSelector(
+                        currentValue = currentMonth.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: "",
+                        options = (0..11).map { m ->
+                            Calendar.getInstance().apply { set(Calendar.MONTH, m) }.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: ""
+                        },
+                        onOptionSelected = { index ->
+                            currentMonth.set(Calendar.MONTH, index)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        onPrevious = {
+                            currentMonth.add(Calendar.MONTH, -1)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        onNext = {
+                            currentMonth.add(Calendar.MONTH, 1)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        modifier = Modifier.weight(1.5f)
+                    )
+
+                    // Year Selector
+                    val currentYear = currentMonth.get(Calendar.YEAR)
+                    AeonJumpSelector(
+                        currentValue = currentYear.toString(),
+                        options = (currentYear - 10..currentYear + 10).map { it.toString() },
+                        onOptionSelected = { index ->
+                            val year = (currentYear - 10..currentYear + 10).toList()[index]
+                            currentMonth.set(Calendar.YEAR, year)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        onPrevious = {
+                            currentMonth.add(Calendar.YEAR, -1)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        onNext = {
+                            currentMonth.add(Calendar.YEAR, 1)
+                            state.displayedMonthMillis = currentMonth.timeInMillis
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
-        ) {
+
             DateRangePicker(
-                state = dateRangePickerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp),
-                title = { Text("Select date range", modifier = Modifier.padding(16.dp)) },
-                headline = { 
-                    val start = dateRangePickerState.selectedStartDateMillis
-                    val end = dateRangePickerState.selectedEndDateMillis
+                state = state,
+                modifier = Modifier.weight(1f),
+                title = null,
+                headline = {
                     val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                    Row(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        if (start != null) Text(formatter.format(Date(start)))
-                        Text(" - ")
-                        if (end != null) Text(formatter.format(Date(end)))
+                    val start = state.selectedStartDateMillis
+                    val end = state.selectedEndDateMillis
+                    
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                            Text(
+                                text = if (start != null && end != null) {
+                                    "${formatter.format(Date(start))} - ${formatter.format(Date(end))}"
+                                } else if (start != null) {
+                                    "${formatter.format(Date(start))} - Select End"
+                                } else {
+                                    "Select Range"
+                                },
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
+                },
+                showModeToggle = false,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.Transparent
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun AeonJumpSelector(
+    currentValue: String,
+    options: List<String>,
+    onOptionSelected: (Int) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(4.dp)
+        ) {
+            IconButton(onClick = onPrevious, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.ChevronLeft, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+            
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { expanded = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = currentValue,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.heightIn(max = 300.dp).background(MaterialTheme.colorScheme.surface)
+                ) {
+                    options.forEachIndexed { index, option ->
+                        DropdownMenuItem(
+                            text = { Text(option, style = MaterialTheme.typography.bodyMedium) },
+                            onClick = {
+                                onOptionSelected(index)
+                                expanded = false
+                            }
+                        )
                     }
                 }
-            )
+            }
+
+            IconButton(onClick = onNext, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }

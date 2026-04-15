@@ -49,6 +49,7 @@ fun EditTransactionScreen(
     onBackClick: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     val transaction = transactions.find { it.id == transactionId }
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
@@ -90,6 +91,7 @@ fun EditTransactionScreen(
     }
 
     var category by remember { mutableStateOf(transaction.category) }
+    var selectedCategoryId by remember { mutableStateOf(transaction.categoryId) }
     var tagsInput by remember { mutableStateOf(transaction.tags.joinToString(", ")) }
     
     // Inferred transaction type: 0: Expense, 1: Income, 2: Transfer
@@ -196,6 +198,7 @@ fun EditTransactionScreen(
                                         isIncome = isIncome,
                                         accountId = account.id,
                                         currency = selectedCurrency,
+                                        categoryId = if (isTransfer) null else selectedCategoryId,
                                         tags = tagsInput.split(",").map { it.trim() }.filter { it.isNotBlank() },
                                         timestamp = selectedDateMillis,
                                         payee = payee,
@@ -393,8 +396,9 @@ fun EditTransactionScreen(
                                 isSlim = true
                             )
                         } else {
+                            val selectedCategoryEntity = categories.find { it.id == selectedCategoryId }
                             RecordFieldCard(
-                                icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                                icon = categoryIcons[selectedCategoryEntity?.iconName ?: category] ?: Icons.Rounded.Category,
                                 label = "CATEGORY",
                                 value = category,
                                 onClick = { showCategorySheet = true },
@@ -689,9 +693,11 @@ fun EditTransactionScreen(
 
     if (showCategorySheet) {
         CategoryPickerSheet(
-            selectedCategory = category,
-            onCategorySelected = {
-                category = it
+            categories = categories,
+            selectedCategoryId = selectedCategoryId,
+            onCategorySelected = { cat ->
+                category = cat.name
+                selectedCategoryId = cat.id
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }

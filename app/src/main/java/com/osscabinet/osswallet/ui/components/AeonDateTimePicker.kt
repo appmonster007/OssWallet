@@ -32,7 +32,8 @@ fun AeonDateTimePicker(
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) { Text("CANCEL") }
-            }
+            },
+            shape = RoundedCornerShape(32.dp)
         ) {
             DatePicker(state = datePickerState)
         }
@@ -57,10 +58,15 @@ fun AeonDateTimePicker(
                 TextButton(onClick = { showDatePicker = true }) { Text("BACK") }
             },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     TimePicker(state = timePickerState)
                 }
-            }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }

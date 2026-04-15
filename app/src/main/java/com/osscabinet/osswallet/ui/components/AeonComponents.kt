@@ -322,40 +322,12 @@ fun AccountPickerSheet(
     onAccountSelected: (Account) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sortedAccounts = remember(accounts) { accounts.sortedBy { it.name } }
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-    ) {
-        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            AeonSectionHeader(title = "Select Account")
-            Spacer(modifier = Modifier.height(24.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(sortedAccounts) { account ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onAccountSelected(account) },
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (selectedAccount?.id == account.id) Color(android.graphics.Color.parseColor(account.colorHex)).copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        border = if (selectedAccount?.id == account.id) BorderStroke(2.dp, Color(android.graphics.Color.parseColor(account.colorHex))) else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(account.colorHex))))
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(account.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(formatCurrencyRight(account.balance, account.currencyCode), style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.outline)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    com.osscabinet.ossWallet.ui.components.accounts.AccountPickerSheet(
+        accounts = accounts,
+        selectedAccount = selectedAccount,
+        onAccountSelected = onAccountSelected,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable
@@ -735,8 +707,9 @@ fun PaymentMethodPickerSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerSheet(
-    selectedCategory: String,
-    onCategorySelected: (String) -> Unit,
+    categories: List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
+    selectedCategoryId: Long?,
+    onCategorySelected: (com.osscabinet.ossWallet.data.local.entity.CategoryEntity) -> Unit,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -752,13 +725,13 @@ fun CategoryPickerSheet(
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(categoryIcons.toList().sortedBy { it.first }) { (name, icon) ->
+                items(categories.sortedBy { it.name }) { category ->
                     CategoryItem(
-                        name = name,
-                        icon = icon,
-                        isSelected = selectedCategory == name,
+                        name = category.name,
+                        icon = categoryIcons[category.iconName] ?: Icons.Rounded.Category,
+                        isSelected = selectedCategoryId == category.id,
                         onClick = {
-                            onCategorySelected(name)
+                            onCategorySelected(category)
                         }
                     )
                 }
@@ -902,315 +875,6 @@ fun AeonAccountHeroCard(
     }
 }
 
-@Composable
-fun AeonAccountCardSmall(
-    account: Account,
-    balanceInBase: BigDecimal,
-    baseCurrency: String,
-    isDarkTheme: Boolean,
-    isAmoled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
-) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
-    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                account.name.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Black,
-                    fontSize = 9.sp,
-                    letterSpacing = 0.5.sp
-                ),
-                color = contentColor.copy(alpha = 0.6f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Column {
-                Text(
-                    formatCurrencyRight(account.balance, account.currencyCode, precision),
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = contentColor.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AeonAccountCardMedium(
-    account: Account,
-    balanceInBase: BigDecimal,
-    baseCurrency: String,
-    isDarkTheme: Boolean,
-    isAmoled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    precision: Int = 2
-) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
-    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
-    ) {
-        Box {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 10.dp)
-                    .size(80.dp)
-                    .alpha(0.1f),
-                tint = contentColor
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = contentColor.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        account.name.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Black,
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = contentColor.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    formatCurrencyRight(account.balance, account.currencyCode, precision),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = contentColor.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AeonAccountCardLarge(
-    account: Account,
-    balanceInBase: BigDecimal,
-    baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    incomeInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    expenseInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    isDarkTheme: Boolean,
-    isAmoled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    precision: Int = 2,
-    cardNumber: String? = null,
-    extraLabel: String? = null
-) {
-    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-    val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
-    val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-    
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .onSizeChanged { cardSize = it },
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(32.dp),
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Background Icon
-            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(iconHeight)
-                    .alpha(0.15f),
-                tint = contentColor
-            )
-
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = contentColor.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            account.name.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = contentColor.copy(alpha = 0.7f)
-                        )
-                    }
-
-                    
-                    // Income/Expense Badges
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AeonFlowBadge(
-                            amount = incomeInAccountCurrency,
-                            type = CashFlowType.INCOME,
-                            precision = precision
-                        )
-                        AeonFlowBadge(
-                            amount = expenseInAccountCurrency,
-                            type = CashFlowType.EXPENSE,
-                            precision = precision
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        formatCurrencyRight(balanceInBase, baseCurrency, precision = precision),
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                        color = contentColor
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Horizontal scrollable list for subAccounts and currency codes
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            color = contentColor.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text(
-                                account.structureType.uppercase(),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = contentColor
-                            )
-                        }
-                        
-                        currencyBalances.forEach { (curr, bal) ->
-                            Surface(
-                                color = contentColor.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        curr,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
-                                        color = contentColor.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        formatAmount(bal, precision = precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                        color = contentColor
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        if (cardNumber != null) {
-                            Text(
-                                cardNumber, 
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), 
-                                color = contentColor.copy(alpha = 0.5f)
-                            )
-                        }
-                        if (extraLabel != null) {
-                            Text(
-                                extraLabel, 
-                                style = MaterialTheme.typography.labelSmall, 
-                                color = contentColor.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 
@@ -1295,127 +959,23 @@ val categoryIcons = mapOf(
 fun AeonTransactionList(
     transactions: List<TransactionWithBalance>,
     accountMap: Map<String, String>,
-    categoryMap: Map<String, CategoryEntity>,
+    categoryMap: Map<Long, CategoryEntity>,
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     showDailyHeader: Boolean = true,
     precision: Int = 2
 ) {
-    val sortedGroupedTransactions = remember(transactions) {
-        transactions.sortedByDescending { it.transaction.timestamp }
-            .groupBy {
-                val cal = Calendar.getInstance().apply { timeInMillis = it.transaction.timestamp }
-                cal.set(Calendar.HOUR_OF_DAY, 0)
-                cal.set(Calendar.MINUTE, 0)
-                cal.set(Calendar.SECOND, 0)
-                cal.set(Calendar.MILLISECOND, 0)
-                cal.timeInMillis
-            }
-    }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
+    com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList(
+        transactions = transactions,
+        accountNames = accountMap,
+        categories = categoryMap,
+        onTransactionClick = onTransactionClick,
+        modifier = modifier,
         contentPadding = contentPadding,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        sortedGroupedTransactions.forEach { (dateMillis, dayTransactions) ->
-            if (showDailyHeader) {
-                stickyHeader {
-                    val dayTotal = dayTransactions.fold(BigDecimal.ZERO) { acc, item ->
-                        if (item.transaction.isIncome) acc.add(item.transaction.amount) else acc.subtract(item.transaction.amount)
-                    }
-                    val currency = dayTransactions.first().transaction.currency
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date(dateMillis)),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "DAILY NET",
-                                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                    Text(
-                                        text = formatCurrencyRight(dayTotal, currency, precision),
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontFeatureSettings = "tnum"
-                                        ),
-                                        color = if (dayTotal.signum() >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                            HorizontalDivider(
-                                modifier = Modifier.padding(top = 8.dp),
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            items(dayTransactions, key = { it.transaction.id }) { item ->
-                val tx = item.transaction
-                val categoryEntity = categoryMap[tx.category.lowercase()]
-
-                val displayTimestamp = remember(tx.timestamp) {
-                    Calendar.getInstance()
-                    val today = Calendar.getInstance().apply {
-                        set(Calendar.HOUR_OF_DAY, 0)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }.timeInMillis
-
-                    val txDay = Calendar.getInstance().apply {
-                        timeInMillis = tx.timestamp
-                        set(Calendar.HOUR_OF_DAY, 0)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }.timeInMillis
-
-                    when (txDay) {
-                        today -> "Today, " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
-                        today - 86400000 -> "Yesterday, " + SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
-                        else -> SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(tx.timestamp))
-                    }
-                }
-
-                val balanceBeforeValue = item.balanceAfter - (if (tx.isIncome) tx.amount else -tx.amount)
-
-                AeonTransactionItem(
-                    category = tx.category,
-                    account = accountMap[tx.accountId] ?: "Unknown",
-                    amount = formatCurrencyRight(if (tx.isIncome) tx.amount else -tx.amount, tx.currency, precision),
-                    balanceBefore = formatCurrencyRight(balanceBeforeValue, tx.currency, precision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, tx.currency, precision),
-                    type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                    timestamp = displayTimestamp,
-                    note = tx.note,
-                    tags = tx.tags,
-                    icon = if (categoryEntity != null) categoryIcons[categoryEntity.name] else null,
-                    iconBg = categoryEntity?.let { Color(it.colorHex) },
-                    onClick = { onTransactionClick(tx) },
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
-            }
-        }
-    }
+        showAccountName = true, // default
+        precision = precision
+    )
 }
 
 @Composable
@@ -1435,135 +995,22 @@ fun AeonTransactionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem(
+        category = category,
+        account = account,
+        amount = amount,
+        balanceBefore = balanceBefore,
+        balanceAfter = balanceAfter,
+        type = type,
+        timestamp = timestamp,
+        note = note,
+        tags = tags,
+        icon = icon,
+        iconBg = iconBg,
+        precision = precision,
+        onClick = onClick,
         modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        color = Color.Transparent
-    ) {
-        Row(
-            modifier = Modifier.padding(vertical = 12.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            val isIncome = type == CashFlowType.INCOME
-            // Category Icon
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = iconBg?.copy(alpha = 0.15f) ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon ?: Icons.Rounded.Category,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = iconBg ?: MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                // Category and Amount
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        category,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        amount,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                    )
-                }
-
-                // Account and Balance
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        account,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-//                        "$balanceBefore → $balanceAfter",
-                        balanceAfter,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFeatureSettings = "tnum",
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-
-                // Note and Timestamp
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    if (!note.isNullOrBlank()) {
-                        Text(
-                            note,
-                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                            color = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.weight(1f).padding(top = 2.dp, end = 8.dp),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                    Text(
-                        timestamp,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-
-                // Tags Row
-                if (tags.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier
-                            .padding(top = 10.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        tags.forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                            ) {
-                                Text(
-                                    tag,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    )
 }
 
 @Composable

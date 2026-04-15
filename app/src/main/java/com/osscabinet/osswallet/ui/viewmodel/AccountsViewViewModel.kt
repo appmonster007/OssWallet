@@ -170,6 +170,7 @@ class AccountsViewViewModel(
 
                 AccountsViewUiState.Success(
                     accounts = nonArchivedAccounts,
+                    allTransactions = allTransactions,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     currencyTotals = globalCurrencyTotals,
@@ -196,6 +197,7 @@ sealed class AccountsViewUiState {
     object Loading : AccountsViewUiState()
     data class Success(
         val accounts: List<Account>,
+        val allTransactions: List<Transaction> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyTotals: Map<String, BigDecimal> = emptyMap(),

@@ -192,6 +192,7 @@ fun AccountsViewScreen(
                                 AccountsViewSection.NET_WORTH -> {
                                     NetWorthSection(
                                         accounts = state.accounts,
+                                        transactions = state.allTransactions,
                                         baseCurrency = state.baseCurrency,
                                         exchangeRates = state.exchangeRates,
                                         precision = state.decimalPrecision,

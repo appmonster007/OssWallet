@@ -459,6 +459,7 @@ fun DashboardContent(
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
                             NetWorthSection(
                                 accounts = state.accounts,
+                                transactions = activeTransactions,
                                 baseCurrency = state.baseCurrency,
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,

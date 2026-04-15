@@ -19,6 +19,9 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.ui.util.calculateNetWorth
+
 @Serializable
 data class NetWorthSettings(
     val fontSize: String = "Medium" // "Small", "Medium", "Large"
@@ -27,6 +30,7 @@ data class NetWorthSettings(
 @Composable
 fun NetWorthSection(
     accounts: List<Account>,
+    transactions: List<Transaction>,
     baseCurrency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -37,10 +41,8 @@ fun NetWorthSection(
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
-    val totalInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
-        val totals = accounts.groupBy { it.currencyCode }
-            .mapValues { (_, accs) -> accs.sumOf { it.balance } }
-        calculateTotalInCurrency(totals, baseCurrency, exchangeRates, precision)
+    val totalInBase = remember(accounts, transactions, exchangeRates, baseCurrency, precision) {
+        calculateNetWorth(accounts, transactions, baseCurrency, exchangeRates, precision)
     }
 
     val (textStyle, labelStyle) = when (fontSize) {

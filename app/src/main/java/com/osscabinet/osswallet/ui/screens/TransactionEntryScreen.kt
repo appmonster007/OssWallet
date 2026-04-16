@@ -26,11 +26,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.*
@@ -58,6 +60,7 @@ fun TransactionEntryScreen(
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     val dbTemplates by templateViewModel.templates.collectAsState()
+    val allTags by tagViewModel.tags.collectAsState()
 
     TransactionEntryContent(
         transactionId = transactionId,
@@ -70,6 +73,8 @@ fun TransactionEntryScreen(
         exchangeRates = exchangeRates,
         decimalPrecision = decimalPrecision,
         dbTemplates = dbTemplates,
+        allTags = allTags,
+        onAddTag = { tagViewModel.addTag(it) },
         onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate ->
             if (transactionId != null && transactionId != -1L) {
                 val existingTransaction = transactions.find { it.id == transactionId }
@@ -167,8 +172,7 @@ fun TransactionEntryScreen(
             viewModel.deleteTransaction(id)
             onBackClick()
         },
-        onBackClick = onBackClick,
-        tagViewModel = tagViewModel
+        onBackClick = onBackClick
     )
 }
 
@@ -185,10 +189,11 @@ fun TransactionEntryContent(
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     decimalPrecision: Int = 2,
     dbTemplates: List<TemplateEntity> = emptyList(),
+    allTags: List<TagEntity> = emptyList(),
+    onAddTag: (String) -> Unit = {},
     onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal) -> Unit,
     onDelete: (Long) -> Unit,
-    onBackClick: () -> Unit,
-    tagViewModel: TagViewModel? = null
+    onBackClick: () -> Unit
 ) {
     val isEditMode = transactionId != null && transactionId != -1L
     val existingTransaction = remember(transactionId, transactions) {
@@ -853,12 +858,13 @@ fun TransactionEntryContent(
         )
     }
 
-    if (showLabelSheet && tagViewModel != null) {
+    if (showLabelSheet) {
         LabelPickerSheet(
             selectedTags = selectedTags,
             onTagsChanged = { selectedTags = it },
             onDismiss = { showLabelSheet = false },
-            tagViewModel = tagViewModel
+            allTags = allTags,
+            onAddTag = onAddTag
         )
     }
 
@@ -961,7 +967,7 @@ fun TransactionEntryContent(
                 AeonSectionHeader(title = "Select Transaction To Link")
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
+                        items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
@@ -1042,11 +1048,18 @@ fun TransactionEntryPreview() {
         CategoryEntity(2, "Transport", "DirectionsCar", 0xFF2196F3.toInt()),
         CategoryEntity(3, "Shopping", "ShoppingBag", 0xFFFFC107.toInt())
     )
+
+    val sampleTags = listOf(
+        TagEntity(1, "Essential", 0xFFE91E63.toInt()),
+        TagEntity(2, "Work", 0xFF2196F3.toInt()),
+        TagEntity(3, "Vacation", 0xFF009688.toInt())
+    )
     
     OssWalletTheme {
         TransactionEntryContent(
             accounts = sampleAccounts,
             categories = sampleCategories,
+            allTags = sampleTags,
             onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
             onDelete = {},
             onBackClick = {}

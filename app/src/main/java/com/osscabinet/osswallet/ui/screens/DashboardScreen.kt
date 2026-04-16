@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -609,8 +610,8 @@ fun DashboardContent(
                             note = transaction.note,
                             tags = transaction.tags,
                             icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
-                            precision = decimalPrecision,
                             iconBg = categoryEntity?.let { Color(it.colorHex) },
+                            precision = decimalPrecision,
                             onClick = { /* Navigate to edit? */ },
                             modifier = Modifier.padding(horizontal = 24.dp)
                         )

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -46,6 +47,7 @@ fun AddTemplateScreen(
     val accounts by accountViewModel.accounts.collectAsState()
     val categoriesList by transactionViewModel.categories.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val allTags by tagViewModel.tags.collectAsState()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
 
     var name by remember { mutableStateOf(template?.name ?: "") }
@@ -377,7 +379,8 @@ fun AddTemplateScreen(
             selectedTags = tags,
             onTagsChanged = { tags = it },
             onDismiss = { showLabelSheet = false },
-            tagViewModel = tagViewModel
+            allTags = allTags,
+            onAddTag = { tagViewModel.addTag(it) }
         )
     }
 }

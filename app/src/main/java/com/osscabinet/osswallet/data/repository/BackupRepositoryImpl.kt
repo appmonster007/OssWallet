@@ -40,7 +40,24 @@ class BackupRepositoryImpl(
                 ) 
             },
             transactions = transactionDao.getAllTransactionsSync().map { 
-                TransactionBackup(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.profileId)
+                TransactionBackup(
+                    id = it.id,
+                    title = it.title,
+                    amount = it.amount,
+                    category = it.category,
+                    timestamp = it.timestamp,
+                    currency = it.currency,
+                    isIncome = it.isIncome,
+                    accountId = it.accountId,
+                    categoryId = it.categoryId,
+                    tags = it.tags,
+                    paymentMethod = it.paymentMethod,
+                    payee = it.payee,
+                    note = it.note,
+                    recurring = it.recurring,
+                    linkedTransactionId = it.linkedTransactionId,
+                    profileId = it.profileId
+                )
             },
             categories = categoryDao.getAllCategoriesSync().map { 
                 CategoryBackup(it.id, it.name, it.iconName, it.colorHex, it.isDefault)
@@ -105,7 +122,26 @@ class BackupRepositoryImpl(
             )
         }
         backup.transactions.forEach { 
-            transactionDao.insertTransaction(TransactionEntity(it.id, it.title, it.amount, it.category, it.timestamp, it.currency, it.isIncome, it.accountId, it.categoryId, it.tags, it.paymentMethod, it.profileId))
+            transactionDao.insertTransaction(
+                TransactionEntity(
+                    id = it.id,
+                    title = it.title,
+                    amount = it.amount,
+                    category = it.category,
+                    timestamp = it.timestamp,
+                    currency = it.currency,
+                    isIncome = it.isIncome,
+                    accountId = it.accountId,
+                    categoryId = it.categoryId,
+                    tags = it.tags,
+                    paymentMethod = it.paymentMethod,
+                    payee = it.payee,
+                    note = it.note,
+                    recurring = it.recurring,
+                    linkedTransactionId = it.linkedTransactionId,
+                    profileId = it.profileId
+                )
+            )
         }
         backup.categories.forEach { 
             categoryDao.insertCategory(CategoryEntity(it.id, it.name, it.iconName, it.colorHex, it.isDefault))

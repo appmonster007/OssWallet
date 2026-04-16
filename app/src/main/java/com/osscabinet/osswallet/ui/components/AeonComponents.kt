@@ -390,7 +390,7 @@ fun DetailDrawer(
                         }
                     },
                 shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color(0xFFC2D2FF),
                 shadowElevation = 8.dp
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -782,6 +782,7 @@ val categoryIcons = mapOf(
     "Income" to Icons.Rounded.Payments,
     "Coffee" to Icons.Rounded.CoffeeMaker,
     "Grocery" to Icons.Rounded.ShoppingCart,
+    "Transfer" to Icons.Rounded.SyncAlt,
     "Other" to Icons.Rounded.MoreHoriz
 )
 

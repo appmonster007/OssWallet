@@ -179,7 +179,10 @@ fun AeonTransactionList(
                 AeonTransactionItem(
                     category = category?.name ?: "Uncategorized",
                     account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                    amount = formatCurrencyRight(amountInBase.abs(), baseCurrency, precision),
+                    amount = formatCurrencyRight(item.transaction.amount.abs(), item.transaction.currency, precision),
+                    convertedAmount = if (item.transaction.currency != baseCurrency) {
+                        formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
+                    } else null,
                     balanceBefore = formatCurrencyRight(balanceBeforeInBase, baseCurrency, precision),
                     balanceAfter = formatCurrencyRight(balanceAfterInBase, baseCurrency, precision),
                     type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
@@ -209,11 +212,12 @@ fun AeonTransactionItem(
     category: String,
     account: String,
     amount: String,
+    modifier: Modifier = Modifier,
+    convertedAmount: String? = null,
     balanceBefore: String,
     balanceAfter: String,
     type: CashFlowType,
     timestamp: String,
-    modifier: Modifier = Modifier,
     note: String? = null,
     tags: List<String> = emptyList(),
     icon: ImageVector? = null,
@@ -222,8 +226,10 @@ fun AeonTransactionItem(
     useNoteAsHeader: Boolean = false,
     onClick: () -> Unit
 ) {
-    val headerText = if (useNoteAsHeader && !note.isNullOrBlank()) note else category
-    val subHeaderText = if (useNoteAsHeader && !note.isNullOrBlank()) category else account
+    val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
+    val headerText = if (isNoteHeader) note else category
+    val subHeaderText = account
+    val bottomText = if (isNoteHeader) category else note
 
     Surface(
         modifier = modifier
@@ -268,7 +274,8 @@ fun AeonTransactionItem(
                             headerText,
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
                         Text(
                             (if (type == CashFlowType.INCOME) "+" else "-") + amount,
@@ -285,23 +292,40 @@ fun AeonTransactionItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            if (useNoteAsHeader && !note.isNullOrBlank()) "$subHeaderText • $account" else subHeaderText,
+                            subHeaderText,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline,
                             modifier = Modifier.weight(1f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        if (convertedAmount != null) {
+                            Text(
+                                (if (type == CashFlowType.INCOME) "+" else "-") + convertedAmount,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.7f)
+                            )
+                        } else {
+                            Text(
+                                "$balanceBefore → $balanceAfter",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+                    if (convertedAmount != null) {
                         Text(
                             "$balanceBefore → $balanceAfter",
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                            modifier = Modifier.align(Alignment.End)
                         )
                     }
 
-                    if (!useNoteAsHeader && !note.isNullOrBlank()) {
+                    if (!bottomText.isNullOrBlank()) {
                         Text(
-                            note,
+                            bottomText,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),

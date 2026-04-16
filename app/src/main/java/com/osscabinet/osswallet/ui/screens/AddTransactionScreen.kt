@@ -78,10 +78,6 @@ fun AddTransactionScreen(
     var targetCurrency by remember { mutableStateOf("") }
     var exchangeRate by remember { mutableStateOf(BigDecimal.ONE) }
 
-    // Calculator State
-    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
-    var operator by remember { mutableStateOf<String?>(null) }
-    var isEnteringSecondOperand by remember { mutableStateOf(false) }
 
     val dbTemplates by templateViewModel.templates.collectAsState()
     remember(dbTemplates) {
@@ -143,24 +139,6 @@ fun AddTransactionScreen(
     var showLabelSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
-
-    fun calculateResult() {
-        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
-            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            val rawResult = when (operator) {
-                "+" -> firstOperand!!.add(secondOperand)
-                "−" -> firstOperand!!.subtract(secondOperand)
-                "×" -> firstOperand!!.multiply(secondOperand)
-                "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(secondOperand, decimalPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-                else -> secondOperand
-            }
-            val result = rawResult.abs()
-            amount = result.stripTrailingZeros().toPlainString()
-            firstOperand = null
-            operator = null
-            isEnteringSecondOperand = false
-        }
-    }
 
     LaunchedEffect(accounts) {
         if (selectedAccount == null && accounts.isNotEmpty()) {
@@ -484,71 +462,14 @@ fun AddTransactionScreen(
                 // Number Pad
                 if (isNumpadVisible) {
                     Numpad(
-                        onNumberClick = { input ->
-                            if (isEnteringSecondOperand) {
-                                amount = if (input == ".") "0." else input
-                                isEnteringSecondOperand = false
-                            } else {
-                                if (input == ".") {
-                                    if (!amount.contains(".")) {
-                                        amount += if (amount.isEmpty()) "0." else "."
-                                    }
-                                } else if (input == "00") {
-                                    if (amount.isNotEmpty() && amount != "0") {
-                                        if (amount.contains(".")) {
-                                             if (amount.substringAfter(".").length < decimalPrecision) {
-                                                 amount += "00"
-                                             }
-                                        } else {
-                                            amount += "00"
-                                        }
-                                    }
-                                } else {
-                                    amount = if (amount == "0") input else amount + input
-                                }
-                            }
-                        },
-                        onDeleteClick = {
-                            if (amount.isNotEmpty()) amount = amount.dropLast(1)
-                        },
-                        onOperatorClick = { op ->
-                            if (amount.isNotEmpty()) {
-                                if (operator != null) calculateResult()
-                                firstOperand = amount.toBigDecimalOrNull()
-                                operator = op
-                                isEnteringSecondOperand = true
-                            }
-                        },
-                        onEqualClick = { calculateResult() },
-                        onClearClick = {
-                            amount = ""
-                            firstOperand = null
-                            operator = null
-                            isEnteringSecondOperand = false
-                        },
+                        amount = amount,
+                        onAmountChange = { amount = it },
+                        decimalPrecision = decimalPrecision,
+                        onDone = { isNumpadVisible = false },
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
                     )
-                    
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        onClick = { isNumpadVisible = false }
-                    ) {
-                        Text(
-                            "Done",
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                textAlign = TextAlign.Center
-                            )
-                        )
-                    }
                 }
             }
         }

@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,11 +39,13 @@ fun AddTemplateScreen(
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     tagViewModel: TagViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
     val templates by templateViewModel.templates.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val categoriesList by transactionViewModel.categories.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
 
     var name by remember { mutableStateOf(template?.name ?: "") }
@@ -209,7 +212,7 @@ fun AddTemplateScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    text = if (amount.isEmpty()) "0.00" else (if (isIncome) "+" else "-") + amount,
+                                    text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else (if (isIncome) "+" else "-") + amount,
                                     style = TextStyle(
                                         fontSize = 56.sp,
                                         fontWeight = FontWeight.Black,
@@ -230,118 +233,93 @@ fun AddTemplateScreen(
                     }
                 }
 
-                EditorialInput(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Template Name",
-                    icon = Icons.Rounded.Label
-                )
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RecordFieldCard(
-                        icon = Icons.Rounded.AccountBalance,
-                        label = "ACCOUNT",
-                        value = selectedAccount?.name ?: "Select",
-                        onClick = { showAccountSheet = true },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
+                if (!isNumpadVisible) {
+                    EditorialInput(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = "Template Name",
+                        icon = Icons.Rounded.Label
                     )
 
-                    RecordFieldCard(
-                        icon = categoryIcons[category] ?: Icons.Rounded.Category,
-                        label = "CATEGORY",
-                        value = category,
-                        onClick = { showCategorySheet = true },
-                        modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
-                    )
-                }
-
-                EditorialInput(
-                    value = payee,
-                    onValueChange = { payee = it },
-                    label = "Payee",
-                    icon = Icons.Rounded.Person
-                )
-
-                EditorialInput(
-                    value = paymentMethod,
-                    onValueChange = { paymentMethod = it },
-                    label = "Payment Method",
-                    icon = Icons.Rounded.Payment,
-                    readOnly = true,
-                    onClick = { showPaymentMethodSheet = true }
-                )
-
-                EditorialInput(
-                    value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
-                    onValueChange = { },
-                    label = "Labels",
-                    icon = Icons.Rounded.Label,
-                    readOnly = true,
-                    onClick = { showLabelSheet = true }
-                )
-
-                EditorialInput(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = "Location",
-                    icon = Icons.Rounded.LocationOn
-                )
-
-                EditorialInput(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = "Note",
-                    icon = Icons.AutoMirrored.Rounded.Notes
-                )
-                
-                Spacer(modifier = Modifier.height(80.dp))
-            }
-        }
-
-        if (isNumpadVisible) {
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface),
-                shadowElevation = 16.dp
-            ) {
-                Column {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        TextButton(onClick = { isNumpadVisible = false }) {
-                            Text("Done", fontWeight = FontWeight.Bold)
-                        }
+                        RecordFieldCard(
+                            icon = Icons.Rounded.AccountBalance,
+                            label = "ACCOUNT",
+                            value = selectedAccount?.name ?: "Select",
+                            onClick = { showAccountSheet = true },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            isSlim = true
+                        )
+
+                        RecordFieldCard(
+                            icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                            label = "CATEGORY",
+                            value = category,
+                            onClick = { showCategorySheet = true },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                            isSlim = true
+                        )
                     }
+
+                    EditorialInput(
+                        value = payee,
+                        onValueChange = { payee = it },
+                        label = "Payee",
+                        icon = Icons.Rounded.Person
+                    )
+
+                    EditorialInput(
+                        value = paymentMethod,
+                        onValueChange = { paymentMethod = it },
+                        label = "Payment Method",
+                        icon = Icons.Rounded.Payment,
+                        readOnly = true,
+                        onClick = { showPaymentMethodSheet = true }
+                    )
+
+                    EditorialInput(
+                        value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
+                        onValueChange = { },
+                        label = "Labels",
+                        icon = Icons.Rounded.Label,
+                        readOnly = true,
+                        onClick = { showLabelSheet = true }
+                    )
+
+                    EditorialInput(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = "Location",
+                        icon = Icons.Rounded.LocationOn
+                    )
+
+                    EditorialInput(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = "Note",
+                        icon = Icons.AutoMirrored.Rounded.Notes
+                    )
+
+                    Spacer(modifier = Modifier.height(80.dp))
+                } else {
                     Numpad(
-                        onNumberClick = { input ->
-                            if (input == ".") {
-                                if (!amount.contains(".")) {
-                                    amount = if (amount.isEmpty()) "0." else amount + "."
-                                }
-                            } else {
-                                amount = if (amount == "0") input else amount + input
-                            }
-                        },
-                        onDeleteClick = {
-                            if (amount.isNotEmpty()) {
-                                amount = amount.dropLast(1)
-                            }
-                        },
-                        onClearClick = { amount = "" },
-                        onOperatorClick = {},
-                        onEqualClick = { isNumpadVisible = false },
-                        modifier = Modifier.height(320.dp)
+                        amount = amount,
+                        onAmountChange = { amount = it },
+                        decimalPrecision = decimalPrecision,
+                        onDone = { isNumpadVisible = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                     )
                 }
             }
         }
+
         
         // Background dimming for Sheets
         if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showLabelSheet) {

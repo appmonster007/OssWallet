@@ -35,30 +35,8 @@ fun EditBudgetScreen(
     val budgets by viewModel.budgets.collectAsState()
     val currency by settingsViewModel.currency.collectAsState()
     val budget = budgets.find { it.category == category }
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
-
-    // Calculator State
-    var firstOperand by remember { mutableStateOf<Double?>(null) }
-    var operator by remember { mutableStateOf<String?>(null) }
-    var isEnteringSecondOperand by remember { mutableStateOf(false) }
-
-    fun calculateResult() {
-        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
-            val secondOperand = amount.toDoubleOrNull() ?: 0.0
-            val rawResult = when (operator) {
-                "+" -> firstOperand!! + secondOperand
-                "−" -> firstOperand!! - secondOperand
-                "×" -> firstOperand!! * secondOperand
-                "÷" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else 0.0
-                else -> secondOperand
-            }
-            val result = kotlin.math.abs(rawResult)
-            amount = if (result % 1 == 0.0) result.toLong().toString() else String.format(Locale.getDefault(), "%.2f", result)
-            firstOperand = null
-            operator = null
-            isEnteringSecondOperand = false
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -173,39 +151,12 @@ fun EditBudgetScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Numpad(
-                onNumberClick = { input ->
-                    if (isEnteringSecondOperand) {
-                        amount = if (input == ".") "0." else input
-                        isEnteringSecondOperand = false
-                    } else {
-                        if (input == ".") {
-                            if (!amount.contains(".")) {
-                                amount += if (amount.isEmpty()) "0." else "."
-                            }
-                        } else if (input == "00") {
-                            if (amount.isNotEmpty() && amount != "0") amount += "00"
-                        } else {
-                            amount = if (amount == "0") input else amount + input
-                        }
-                    }
-                },
-                onDeleteClick = {
-                    if (amount.isNotEmpty()) amount = amount.dropLast(1)
-                },
-                onOperatorClick = { op ->
-                    if (amount.isNotEmpty()) {
-                        if (operator != null) calculateResult()
-                        firstOperand = amount.toDoubleOrNull()
-                        operator = op
-                        isEnteringSecondOperand = true
-                    }
-                },
-                onEqualClick = { calculateResult() },
-                onClearClick = {
-                    amount = ""
-                    firstOperand = null
-                    operator = null
-                    isEnteringSecondOperand = false
+                amount = amount,
+                onAmountChange = { amount = it },
+                decimalPrecision = decimalPrecision,
+                onDone = {
+                    viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
+                    onBackClick()
                 },
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )

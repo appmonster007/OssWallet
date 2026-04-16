@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -392,97 +393,67 @@ fun TransactionEntryContent(
     val isIncome = transactionType == 1
     val isTransfer = transactionType == 2
 
-    var showOCR by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showAccountSheet by remember { mutableStateOf(false) }
     var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showExchangeRateDialog by remember { mutableStateOf(false) }
-    var isDetailDrawerOpen by remember { mutableStateOf(false) }
     var showTemplateSheet by remember { mutableStateOf(false) }
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
     var showLabelSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { 
-                        Text(
-                            if (isEditMode) "Edit Record" else "New Record", 
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) 
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurface)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(if (isEditMode) "Edit Transaction" else "New Transaction") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (isEditMode) {
+                        IconButton(onClick = { transactionId?.let { onDelete(it) } }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                         }
-                    },
-                    actions = {
-                        if (isEditMode) {
-                            IconButton(onClick = {
-                                transactionId?.let { onDelete(it) }
-                            }) {
-                                Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-
-                        Surface(
-                            modifier = Modifier.padding(end = 16.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color(0xFF4A5C92),
-                            onClick = {
-                                val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                selectedAccount?.id?.let { accId ->
-                                    onSave(
-                                        title,
-                                        amountValue,
-                                        if (isTransfer) "Transfer" else category,
-                                        if (isTransfer) null else selectedCategoryId,
-                                        isIncome,
-                                        accId,
-                                        selectedCurrency,
-                                        selectedTags,
-                                        paymentMethod,
-                                        selectedDateMillis,
-                                        payee,
-                                        note,
-                                        linkedTransactionId,
-                                        isTransfer,
-                                        targetAccount,
-                                        targetCurrency,
-                                        exchangeRate
-                                    )
-                                }
-                            },
-                            enabled = selectedAccount != null
-                        ) {
-                            Text(
-                                "Save",
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
+                    }
+                    IconButton(
+                        onClick = {
+                            val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                            onSave(
+                                title,
+                                amountValue,
+                                category,
+                                selectedCategoryId,
+                                isIncome,
+                                selectedAccount?.id ?: "",
+                                selectedCurrency,
+                                selectedTags,
+                                paymentMethod,
+                                selectedDateMillis,
+                                payee,
+                                note,
+                                linkedTransactionId,
+                                isTransfer,
+                                targetAccount,
+                                targetCurrency,
+                                exchangeRate
                             )
                         }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.surface
-        ) { innerPadding ->
+                    ) {
+                        Icon(Icons.Rounded.Done, contentDescription = "Save")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -616,7 +587,7 @@ fun TransactionEntryContent(
                                         isTransfer -> ""
                                         else -> "-"
                                     }
-                                    val displayAmount = if (amount.isEmpty()) "0.00" else amount
+                                    val displayAmount = amount.ifEmpty { "0.00" }
                                     Text(
                                         text = "$prefix$displayAmount",
                                         style = TextStyle(
@@ -743,30 +714,7 @@ fun TransactionEntryContent(
                         }
                     }
                 }
-            }
-        }
 
-        // Numpad Overlay
-        Numpad(
-            amount = amount,
-            onAmountChange = { amount = it },
-            decimalPrecision = decimalPrecision,
-            onDone = { isNumpadVisible = false },
-            isVisible = isNumpadVisible,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        )
-
-        // Right Detail Drawer
-        DetailDrawer(
-            isOpen = isDetailDrawerOpen,
-            onClose = { isDetailDrawerOpen = false },
-            onSwipeOpen = { isDetailDrawerOpen = true },
-            tabAlignment = Alignment.TopEnd,
-            tabOffsetY = 180.dp
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Metadata Section
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -849,7 +797,7 @@ fun TransactionEntryContent(
                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
                                     Text(
-                                        if (selectedTags.isEmpty()) "LABEL" else "${selectedTags.size} LABELS",
+                                        if (selectedTags.isEmpty()) "+ LABEL" else "${selectedTags.size} LABELS",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -940,183 +888,185 @@ fun TransactionEntryContent(
                         Switch(checked = isWarrantyEnabled, onCheckedChange = { isWarrantyEnabled = it })
                     }
                 }
-            }
-        }
-    }
-
-    if (showAccountSheet) {
-        AccountPickerSheet(
-            accounts = accounts,
-            selectedAccount = selectedAccount,
-            onAccountSelected = { account ->
-                selectedAccount = account
-                selectedCurrency = account.currencyCode
-                showAccountSheet = false
-            },
-            onDismiss = { showAccountSheet = false }
-        )
-    }
-
-    if (showTargetAccountSheet) {
-        AccountPickerSheet(
-            accounts = accounts,
-            selectedAccount = targetAccount,
-            onAccountSelected = { account ->
-                targetAccount = account
-                targetCurrency = account.currencyCode
-                showTargetAccountSheet = false
-            },
-            onDismiss = { showTargetAccountSheet = false }
-        )
-    }
-
-    if (showExchangeRateDialog) {
-        ExchangeRateDialog(
-            initialRate = exchangeRate,
-            onDismiss = { showExchangeRateDialog = false },
-            onConfirm = { 
-                exchangeRate = it
-                showExchangeRateDialog = false
-            }
-        )
-    }
-
-    if (showDatePicker) {
-        AeonDateTimePicker(
-            initialDateTime = selectedDateMillis,
-            onDateTimeSelected = { selectedDateMillis = it },
-            onDismiss = { showDatePicker = false }
-        )
-    }
-
-    if (showLabelSheet) {
-        LabelPickerSheet(
-            selectedTags = selectedTags,
-            onTagsChanged = { selectedTags = it },
-            onDismiss = { showLabelSheet = false },
-            allTags = allTags,
-            onAddTag = onAddTag
-        )
-    }
-
-    if (showPaymentMethodSheet) {
-        PaymentMethodPickerSheet(
-            selectedMethod = paymentMethod,
-            onMethodSelected = { paymentMethod = it },
-            onDismiss = { showPaymentMethodSheet = false }
-        )
-    }
-
-    if (showCategorySheet) {
-        CategoryPickerSheet(
-            categories = categories,
-            selectedCategoryId = selectedCategoryId,
-            onCategorySelected = {
-                category = it.name
-                selectedCategoryId = it.id
-                showCategorySheet = false
-            },
-            onDismiss = { showCategorySheet = false }
-        )
-    }
-
-    if (showOCR) {
-        OCRScanner(
-            onResult = { result ->
-                if (result != null) {
-                    amount = result.toString()
-                }
-                showOCR = false
-            },
-            onDismiss = { showOCR = false }
-        )
-    }
-
-    if (showTemplateSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showTemplateSheet = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-        ) {
-            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                AeonSectionHeader(title = "Quick Templates")
+                
                 Spacer(modifier = Modifier.height(24.dp))
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (dbTemplates.isEmpty()) {
-                        val defaultTemplates = listOf(
-                            Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
-                            Triple("Salary Deposit", Icons.Rounded.Payments, 1),
-                            Triple("Rent Payment", Icons.Rounded.Home, 0),
-                            Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
-                        )
-                        items(defaultTemplates) { (name, icon, type) ->
-                            TemplateItemRow(name, icon) {
-                                selectedTemplateName = name
-                                title = name
-                                transactionType = type
-                                when (name) {
-                                    "Grocery Run" -> category = "Food"
-                                    "Salary Deposit" -> category = "Salary"
-                                    "Rent Payment" -> category = "Rent"
-                                    "Coffee" -> category = "Food"
-                                }
-                                showTemplateSheet = false
-                            }
-                        }
-                    } else {
-                        items(dbTemplates) { template ->
-                            TemplateItemRow(template.name, Icons.Rounded.Category) {
-                                selectedTemplateName = template.name
-                                title = template.name
-                                category = template.category
-                                transactionType = template.transactionType
-                                if (template.amount > BigDecimal.ZERO) amount = template.amount.toPlainString()
-                                template.note?.let { note = it }
-                                template.accountId?.let { id ->
-                                    val acc = accounts.find { it.id == id }
-                                    if (acc != null) {
-                                        selectedAccount = acc
-                                        selectedCurrency = acc.currencyCode
+            }
+
+            // Numpad Overlay
+            Numpad(
+                amount = amount,
+                onAmountChange = { amount = it },
+                decimalPrecision = decimalPrecision,
+                onDone = { isNumpadVisible = false },
+                isVisible = isNumpadVisible,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
+
+        if (showAccountSheet) {
+            AccountPickerSheet(
+                accounts = accounts,
+                selectedAccount = selectedAccount,
+                onAccountSelected = { account ->
+                    selectedAccount = account
+                    selectedCurrency = account.currencyCode
+                    showAccountSheet = false
+                },
+                onDismiss = { showAccountSheet = false }
+            )
+        }
+
+        if (showTargetAccountSheet) {
+            AccountPickerSheet(
+                accounts = accounts,
+                selectedAccount = targetAccount,
+                onAccountSelected = { account ->
+                    targetAccount = account
+                    targetCurrency = account.currencyCode
+                    showTargetAccountSheet = false
+                },
+                onDismiss = { showTargetAccountSheet = false }
+            )
+        }
+
+        if (showExchangeRateDialog) {
+            ExchangeRateDialog(
+                initialRate = exchangeRate,
+                onDismiss = { showExchangeRateDialog = false },
+                onConfirm = {
+                    exchangeRate = it
+                    showExchangeRateDialog = false
+                }
+            )
+        }
+
+        if (showDatePicker) {
+            AeonDateTimePicker(
+                initialDateTime = selectedDateMillis,
+                onDateTimeSelected = { selectedDateMillis = it },
+                onDismiss = { showDatePicker = false }
+            )
+        }
+
+        if (showLabelSheet) {
+            LabelPickerSheet(
+                selectedTags = selectedTags,
+                onTagsChanged = { selectedTags = it },
+                onDismiss = { showLabelSheet = false },
+                allTags = allTags,
+                onAddTag = onAddTag
+            )
+        }
+
+        if (showPaymentMethodSheet) {
+            PaymentMethodPickerSheet(
+                selectedMethod = paymentMethod,
+                onMethodSelected = { paymentMethod = it },
+                onDismiss = { showPaymentMethodSheet = false }
+            )
+        }
+
+        if (showCategorySheet) {
+            CategoryPickerSheet(
+                categories = categories,
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = {
+                    category = it.name
+                    selectedCategoryId = it.id
+                    showCategorySheet = false
+                },
+                onDismiss = { showCategorySheet = false }
+            )
+        }
+
+        if (showTemplateSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showTemplateSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                    AeonSectionHeader(title = "Quick Templates")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (dbTemplates.isEmpty()) {
+                            val defaultTemplates = listOf(
+                                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
+                                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
+                                Triple("Rent Payment", Icons.Rounded.Home, 0),
+                                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
+                            )
+                            items(defaultTemplates) { (name, icon, type) ->
+                                TemplateItemRow(name, icon) {
+                                    selectedTemplateName = name
+                                    title = name
+                                    transactionType = type
+                                    when (name) {
+                                        "Grocery Run" -> category = "Food"
+                                        "Salary Deposit" -> category = "Salary"
+                                        "Rent Payment" -> category = "Rent"
+                                        "Coffee" -> category = "Food"
                                     }
+                                    showTemplateSheet = false
                                 }
-                                showTemplateSheet = false
+                            }
+                        } else {
+                            items(dbTemplates) { template ->
+                                TemplateItemRow(template.name, Icons.Rounded.Category) {
+                                    selectedTemplateName = template.name
+                                    title = template.name
+                                    category = template.category
+                                    transactionType = template.transactionType
+                                    if (template.amount > BigDecimal.ZERO) amount = template.amount.toPlainString()
+                                    template.note?.let { note = it }
+                                    template.accountId?.let { id ->
+                                        val acc = accounts.find { it.id == id }
+                                        if (acc != null) {
+                                            selectedAccount = acc
+                                            selectedCurrency = acc.currencyCode
+                                        }
+                                    }
+                                    showTemplateSheet = false
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
 
-    if (showLinkedTransactionSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showLinkedTransactionSheet = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-        ) {
-            Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
-                AeonSectionHeader(title = "Select Transaction To Link")
-                Spacer(modifier = Modifier.height(24.dp))
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (showLinkedTransactionSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showLinkedTransactionSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
+                    AeonSectionHeader(title = "Select Transaction To Link")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
-                        AeonTransactionItem(
-                            category = tx.category,
-                            account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
-                            balanceBefore = "", 
-                            balanceAfter = "",  
-                            type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                            timestamp = formatDateTime(tx.timestamp),
-                            note = tx.note,
-                            tags = tx.tags,
-                            icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
-                            precision = decimalPrecision,
-                            onClick = {
-                                linkedTransactionId = tx.id
-                                showLinkedTransactionSheet = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                            AeonTransactionItem(
+                                category = tx.category,
+                                account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
+                                amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
+                                balanceBefore = "",
+                                balanceAfter = "",
+                                type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                timestamp = formatDateTime(tx.timestamp),
+                                note = tx.note,
+                                tags = tx.tags,
+                                icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
+                                precision = decimalPrecision,
+                                onClick = {
+                                    linkedTransactionId = tx.id
+                                    showLinkedTransactionSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

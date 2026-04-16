@@ -335,7 +335,7 @@ fun OssWalletNavGraph(
             val accountId = backStackEntry.arguments?.getString("accountId")
             val type = backStackEntry.arguments?.getInt("type") ?: 0
             val template = backStackEntry.arguments?.getString("template")
-            AddTransactionScreen(
+            TransactionEntryScreen(
                 accountId = accountId,
                 initialType = type,
                 initialTemplate = template,
@@ -351,13 +351,14 @@ fun OssWalletNavGraph(
 
         composable(Screen.EditTransaction.route) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId")?.toLongOrNull() ?: -1L
-            EditTransactionScreen(
+            TransactionEntryScreen(
                 transactionId = transactionId,
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
-                settingsViewModel = settingsViewModel,
+                templateViewModel = templateViewModel,
                 tagViewModel = tagViewModel,
+                settingsViewModel = settingsViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

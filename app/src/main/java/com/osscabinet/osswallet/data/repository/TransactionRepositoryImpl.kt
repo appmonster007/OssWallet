@@ -58,7 +58,11 @@ class TransactionRepositoryImpl(
             accountId = accountId,
             categoryId = categoryId,
             tags = tags.split(",").filter { it.isNotBlank() },
-            paymentMethod = paymentMethod
+            paymentMethod = paymentMethod,
+            payee = payee,
+            note = note,
+            recurring = recurring,
+            linkedTransactionId = linkedTransactionId
         )
     }
 
@@ -75,7 +79,11 @@ class TransactionRepositoryImpl(
             categoryId = categoryId,
             tags = tags.joinToString(","),
             profileId = profileId,
-            paymentMethod = paymentMethod
+            paymentMethod = paymentMethod,
+            payee = payee,
+            note = note,
+            recurring = recurring,
+            linkedTransactionId = linkedTransactionId
         )
     }
 }

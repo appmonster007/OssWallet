@@ -42,5 +42,9 @@ data class TransactionEntity(
     val categoryId: Long? = null,
     val tags: String = "", // Comma-separated tags
     val paymentMethod: String = "Cash",
+    val payee: String = "",
+    val note: String = "",
+    val recurring: String? = null,
+    val linkedTransactionId: Long? = null,
     val profileId: Int = 1
 )

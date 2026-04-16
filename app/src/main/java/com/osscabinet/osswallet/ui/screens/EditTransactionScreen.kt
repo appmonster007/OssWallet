@@ -131,6 +131,7 @@ fun EditTransactionScreen(
     var showTemplateSheet by remember { mutableStateOf(false) }
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
     var showLabelSheet by remember { mutableStateOf(false) }
+    var isNumpadVisible by remember { mutableStateOf(false) }
 
     val templates = listOf(
         "Grocery Run" to (Icons.Rounded.ShoppingCart to "Shopping"),
@@ -279,7 +280,9 @@ fun EditTransactionScreen(
 
                         // Amount & Currency Area
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable { isNumpadVisible = true },
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
@@ -366,93 +369,127 @@ fun EditTransactionScreen(
                 }
 
                 // Slim Action Cards
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EditorialInput(
-                        value = title, 
-                        onValueChange = { title = it }, 
-                        label = "RECORD TITLE", 
-                        icon = Icons.Rounded.Edit
-                    )
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        RecordFieldCard(
-                            icon = Icons.Rounded.AccountBalance,
-                            label = if (isTransfer) "FROM" else "ACCOUNT",
-                            value = selectedAccount?.name ?: "Select",
-                            onClick = { showAccountSheet = true },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                            isSlim = true
+                if (!isNumpadVisible) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        EditorialInput(
+                            value = title, 
+                            onValueChange = { title = it }, 
+                            label = "RECORD TITLE", 
+                            icon = Icons.Rounded.Edit
                         )
-                        
-                        if (isTransfer) {
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             RecordFieldCard(
                                 icon = Icons.Rounded.AccountBalance,
-                                label = "TO",
-                                value = targetAccount?.name ?: "Select",
-                                onClick = { showTargetAccountSheet = true },
+                                label = if (isTransfer) "FROM" else "ACCOUNT",
+                                value = selectedAccount?.name ?: "Select",
+                                onClick = { showAccountSheet = true },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                                 isSlim = true
                             )
-                        } else {
-                            val selectedCategoryEntity = categories.find { it.id == selectedCategoryId }
-                            RecordFieldCard(
-                                icon = categoryIcons[selectedCategoryEntity?.iconName ?: category] ?: Icons.Rounded.Category,
-                                label = "CATEGORY",
-                                value = category,
-                                onClick = { showCategorySheet = true },
-                                modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                isSlim = true
-                            )
+                            
+                            if (isTransfer) {
+                                RecordFieldCard(
+                                    icon = Icons.Rounded.AccountBalance,
+                                    label = "TO",
+                                    value = targetAccount?.name ?: "Select",
+                                    onClick = { showTargetAccountSheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                    isSlim = true
+                                )
+                            } else {
+                                val selectedCategoryEntity = categories.find { it.id == selectedCategoryId }
+                                RecordFieldCard(
+                                    icon = categoryIcons[selectedCategoryEntity?.iconName ?: category] ?: Icons.Rounded.Category,
+                                    label = "CATEGORY",
+                                    value = category,
+                                    onClick = { showCategorySheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                    isSlim = true
+                                )
+                            }
                         }
                     }
                 }
 
                 // Number Pad
-                Numpad(
-                    onNumberClick = { input ->
-                        if (isEnteringSecondOperand) {
-                            amount = if (input == ".") "0." else input
-                            isEnteringSecondOperand = false
-                        } else {
-                            if (input == ".") {
-                                if (!amount.contains(".")) {
-                                    amount += if (amount.isEmpty()) "0." else "."
-                                }
-                            } else if (input == "00") {
-                                if (amount.isNotEmpty() && amount != "0") amount += "00"
+                if (isNumpadVisible) {
+                    Numpad(
+                        onNumberClick = { input ->
+                            if (isEnteringSecondOperand) {
+                                amount = if (input == ".") "0." else input
+                                isEnteringSecondOperand = false
                             } else {
-                                amount = if (amount == "0") input else amount + input
+                                if (input == ".") {
+                                    if (!amount.contains(".")) {
+                                        amount += if (amount.isEmpty()) "0." else "."
+                                    }
+                                } else if (input == "00") {
+                                    if (amount.isNotEmpty() && amount != "0") {
+                                        if (amount.contains(".")) {
+                                            if (amount.substringAfter(".").length < decimalPrecision) {
+                                                amount += "00"
+                                            }
+                                        } else {
+                                            amount += "00"
+                                        }
+                                    }
+                                } else {
+                                    amount = if (amount == "0") input else amount + input
+                                }
                             }
-                        }
-                    },
-                    onDeleteClick = {
-                        if (amount.isNotEmpty()) amount = amount.dropLast(1)
-                    },
-                    onOperatorClick = { op ->
-                        if (amount.isNotEmpty()) {
-                            if (operator != null) calculateResult()
-                            firstOperand = amount.toBigDecimalOrNull()
-                            operator = op
-                            isEnteringSecondOperand = true
-                        }
-                    },
-                    onEqualClick = { calculateResult() },
-                    onClearClick = {
-                        amount = ""
-                        firstOperand = null
-                        operator = null
-                        isEnteringSecondOperand = false
-                    },
-                    modifier = Modifier.fillMaxWidth().weight(1f)
-                )
+                        },
+                        onDeleteClick = {
+                            if (amount.isNotEmpty()) amount = amount.dropLast(1)
+                        },
+                        onOperatorClick = { op ->
+                            if (amount.isNotEmpty()) {
+                                if (operator != null) calculateResult()
+                                firstOperand = amount.toBigDecimalOrNull()
+                                operator = op
+                                isEnteringSecondOperand = true
+                            }
+                        },
+                        onEqualClick = { calculateResult() },
+                        onClearClick = {
+                            amount = ""
+                            firstOperand = null
+                            operator = null
+                            isEnteringSecondOperand = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        onClick = { isNumpadVisible = false }
+                    ) {
+                        Text(
+                            "Done",
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        )
+                    }
+                }
             }
         }
 
         // Right Detail Drawer
-        DetailDrawer(
+        if (!isNumpadVisible) {
+            DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true },
@@ -775,12 +812,13 @@ fun EditTransactionScreen(
                             tags = tx.tags,
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
                             precision = decimalPrecision,
-                            onClick = {
-                                linkedTransactionId = tx.id
-                                showLinkedTransactionSheet = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                                onClick = {
+                                    linkedTransactionId = tx.id
+                                    showLinkedTransactionSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

@@ -142,6 +142,7 @@ fun AddTransactionScreen(
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
     var showLabelSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
+    var isNumpadVisible by remember { mutableStateOf(false) }
 
     fun calculateResult() {
         if (firstOperand != null && operator != null && amount.isNotEmpty()) {
@@ -343,7 +344,9 @@ fun AddTransactionScreen(
 
                         // Amount & Currency Area (Fills remaining space and centers content)
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable { isNumpadVisible = true },
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
@@ -363,7 +366,7 @@ fun AddTransactionScreen(
                                     }
 
                                     Text(
-                                        text = if (amount.isEmpty()) "0.00" else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
+                                        text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
                                         style = TextStyle(
                                             fontSize = if (isTransfer) 48.sp else 64.sp,
                                             fontWeight = FontWeight.Black,
@@ -430,95 +433,129 @@ fun AddTransactionScreen(
                 }
 
                 // Slim Action Cards
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RecordFieldCard(
-                        icon = Icons.Rounded.AutoAwesome,
-                        label = "SELECT TEMPLATE",
-                        value = selectedTemplateName ?: "None Selected",
-                        trailingIcon = Icons.Rounded.KeyboardArrowDown,
-                        onClick = { showTemplateSheet = true },
-                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
-                    )
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!isNumpadVisible) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         RecordFieldCard(
-                            icon = Icons.Rounded.AccountBalance,
-                            label = if (isTransfer) "FROM" else "ACCOUNT",
-                            value = selectedAccount?.name ?: "Select",
-                            onClick = { showAccountSheet = true },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            icon = Icons.Rounded.AutoAwesome,
+                            label = "SELECT TEMPLATE",
+                            value = selectedTemplateName ?: "None Selected",
+                            trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                            onClick = { showTemplateSheet = true },
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                             isSlim = true
                         )
 
-                        if (isTransfer) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             RecordFieldCard(
                                 icon = Icons.Rounded.AccountBalance,
-                                label = "TO",
-                                value = targetAccount?.name ?: "Select",
-                                onClick = { showTargetAccountSheet = true },
+                                label = if (isTransfer) "FROM" else "ACCOUNT",
+                                value = selectedAccount?.name ?: "Select",
+                                onClick = { showAccountSheet = true },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                                 isSlim = true
                             )
-                        } else {
-                            RecordFieldCard(
-                                icon = categoryIcons[category] ?: Icons.Rounded.Category,
-                                label = "CATEGORY",
-                                value = category,
-                                onClick = { showCategorySheet = true },
-                                modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                isSlim = true
-                            )
+
+                            if (isTransfer) {
+                                RecordFieldCard(
+                                    icon = Icons.Rounded.AccountBalance,
+                                    label = "TO",
+                                    value = targetAccount?.name ?: "Select",
+                                    onClick = { showTargetAccountSheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                    isSlim = true
+                                )
+                            } else {
+                                RecordFieldCard(
+                                    icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                                    label = "CATEGORY",
+                                    value = category,
+                                    onClick = { showCategorySheet = true },
+                                    modifier = Modifier.weight(1f),
+                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                    isSlim = true
+                                )
+                            }
                         }
                     }
                 }
 
                 // Number Pad
-                Numpad(
-                    onNumberClick = { input ->
-                        if (isEnteringSecondOperand) {
-                            amount = if (input == ".") "0." else input
-                            isEnteringSecondOperand = false
-                        } else {
-                            if (input == ".") {
-                                if (!amount.contains(".")) {
-                                    amount += if (amount.isEmpty()) "0." else "."
-                                }
-                            } else if (input == "00") {
-                                if (amount.isNotEmpty() && amount != "0") amount += "00"
+                if (isNumpadVisible) {
+                    Numpad(
+                        onNumberClick = { input ->
+                            if (isEnteringSecondOperand) {
+                                amount = if (input == ".") "0." else input
+                                isEnteringSecondOperand = false
                             } else {
-                                amount = if (amount == "0") input else amount + input
+                                if (input == ".") {
+                                    if (!amount.contains(".")) {
+                                        amount += if (amount.isEmpty()) "0." else "."
+                                    }
+                                } else if (input == "00") {
+                                    if (amount.isNotEmpty() && amount != "0") {
+                                        if (amount.contains(".")) {
+                                             if (amount.substringAfter(".").length < decimalPrecision) {
+                                                 amount += "00"
+                                             }
+                                        } else {
+                                            amount += "00"
+                                        }
+                                    }
+                                } else {
+                                    amount = if (amount == "0") input else amount + input
+                                }
                             }
-                        }
-                    },
-                    onDeleteClick = {
-                        if (amount.isNotEmpty()) amount = amount.dropLast(1)
-                    },
-                    onOperatorClick = { op ->
-                        if (amount.isNotEmpty()) {
-                            if (operator != null) calculateResult()
-                            firstOperand = amount.toBigDecimalOrNull()
-                            operator = op
-                            isEnteringSecondOperand = true
-                        }
-                    },
-                    onEqualClick = { calculateResult() },
-                    onClearClick = {
-                        amount = ""
-                        firstOperand = null
-                        operator = null
-                        isEnteringSecondOperand = false
-                    },
-                    modifier = Modifier.fillMaxWidth().weight(1f)
-                )
+                        },
+                        onDeleteClick = {
+                            if (amount.isNotEmpty()) amount = amount.dropLast(1)
+                        },
+                        onOperatorClick = { op ->
+                            if (amount.isNotEmpty()) {
+                                if (operator != null) calculateResult()
+                                firstOperand = amount.toBigDecimalOrNull()
+                                operator = op
+                                isEnteringSecondOperand = true
+                            }
+                        },
+                        onEqualClick = { calculateResult() },
+                        onClearClick = {
+                            amount = ""
+                            firstOperand = null
+                            operator = null
+                            isEnteringSecondOperand = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                    
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        onClick = { isNumpadVisible = false }
+                    ) {
+                        Text(
+                            "Done",
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = TextAlign.Center
+                            )
+                        )
+                    }
+                }
             }
         }
 
         // Right Detail Drawer
-        DetailDrawer(
+        if (!isNumpadVisible) {
+            DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true },
@@ -870,11 +907,12 @@ fun AddTransactionScreen(
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
                             precision = decimalPrecision,
                             onClick = {
-                                linkedTransactionId = tx.id
-                                showLinkedTransactionSheet = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                                    linkedTransactionId = tx.id
+                                    showLinkedTransactionSheet = false
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

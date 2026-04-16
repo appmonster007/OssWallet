@@ -163,7 +163,8 @@ fun AddTemplateScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
+                        .height(200.dp)
+                        .clickable { isNumpadVisible = true },
                     shape = RoundedCornerShape(40.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
@@ -204,7 +205,7 @@ fun AddTemplateScreen(
 
                         // Amount & Currency Area
                         Box(
-                            modifier = Modifier.fillMaxSize().clickable { isNumpadVisible = true },
+                            modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
@@ -233,94 +234,93 @@ fun AddTemplateScreen(
                     }
                 }
 
-                if (!isNumpadVisible) {
-                    EditorialInput(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = "Template Name",
-                        icon = Icons.Rounded.Label
+                EditorialInput(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Template Name",
+                    icon = Icons.Rounded.Label
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RecordFieldCard(
+                        icon = Icons.Rounded.AccountBalance,
+                        label = "ACCOUNT",
+                        value = selectedAccount?.name ?: "Select",
+                        onClick = { showAccountSheet = true },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        isSlim = true
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        RecordFieldCard(
-                            icon = Icons.Rounded.AccountBalance,
-                            label = "ACCOUNT",
-                            value = selectedAccount?.name ?: "Select",
-                            onClick = { showAccountSheet = true },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                            isSlim = true
-                        )
-
-                        RecordFieldCard(
-                            icon = categoryIcons[category] ?: Icons.Rounded.Category,
-                            label = "CATEGORY",
-                            value = category,
-                            onClick = { showCategorySheet = true },
-                            modifier = Modifier.weight(1f),
-                            iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                            isSlim = true
-                        )
-                    }
-
-                    EditorialInput(
-                        value = payee,
-                        onValueChange = { payee = it },
-                        label = "Payee",
-                        icon = Icons.Rounded.Person
-                    )
-
-                    EditorialInput(
-                        value = paymentMethod,
-                        onValueChange = { paymentMethod = it },
-                        label = "Payment Method",
-                        icon = Icons.Rounded.Payment,
-                        readOnly = true,
-                        onClick = { showPaymentMethodSheet = true }
-                    )
-
-                    EditorialInput(
-                        value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
-                        onValueChange = { },
-                        label = "Labels",
-                        icon = Icons.Rounded.Label,
-                        readOnly = true,
-                        onClick = { showLabelSheet = true }
-                    )
-
-                    EditorialInput(
-                        value = location,
-                        onValueChange = { location = it },
-                        label = "Location",
-                        icon = Icons.Rounded.LocationOn
-                    )
-
-                    EditorialInput(
-                        value = note,
-                        onValueChange = { note = it },
-                        label = "Note",
-                        icon = Icons.AutoMirrored.Rounded.Notes
-                    )
-
-                    Spacer(modifier = Modifier.height(80.dp))
-                } else {
-                    Numpad(
-                        amount = amount,
-                        onAmountChange = { amount = it },
-                        decimalPrecision = decimalPrecision,
-                        onDone = { isNumpadVisible = false },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
+                    RecordFieldCard(
+                        icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                        label = "CATEGORY",
+                        value = category,
+                        onClick = { showCategorySheet = true },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                        isSlim = true
                     )
                 }
+
+                EditorialInput(
+                    value = payee,
+                    onValueChange = { payee = it },
+                    label = "Payee",
+                    icon = Icons.Rounded.Person
+                )
+
+                EditorialInput(
+                    value = paymentMethod,
+                    onValueChange = { paymentMethod = it },
+                    label = "Payment Method",
+                    icon = Icons.Rounded.Payment,
+                    readOnly = true,
+                    onClick = { showPaymentMethodSheet = true }
+                )
+
+                EditorialInput(
+                    value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
+                    onValueChange = { },
+                    label = "Labels",
+                    icon = Icons.Rounded.Label,
+                    readOnly = true,
+                    onClick = { showLabelSheet = true }
+                )
+
+                EditorialInput(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = "Location",
+                    icon = Icons.Rounded.LocationOn
+                )
+
+                EditorialInput(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = "Note",
+                    icon = Icons.AutoMirrored.Rounded.Notes
+                )
+
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
 
-        
+        // Numpad Overlay
+        Numpad(
+            amount = amount,
+            onAmountChange = { amount = it },
+            decimalPrecision = decimalPrecision,
+            onDone = { isNumpadVisible = false },
+            isVisible = isNumpadVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        )
+
         // Background dimming for Sheets
         if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showLabelSheet) {
             Box(

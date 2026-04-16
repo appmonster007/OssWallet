@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.formatDateTime
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
@@ -411,72 +412,68 @@ fun AddTransactionScreen(
                 }
 
                 // Slim Action Cards
-                if (!isNumpadVisible) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RecordFieldCard(
+                        icon = Icons.Rounded.AutoAwesome,
+                        label = "SELECT TEMPLATE",
+                        value = selectedTemplateName ?: "None Selected",
+                        trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                        onClick = { showTemplateSheet = true },
+                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                        isSlim = true
+                    )
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         RecordFieldCard(
-                            icon = Icons.Rounded.AutoAwesome,
-                            label = "SELECT TEMPLATE",
-                            value = selectedTemplateName ?: "None Selected",
-                            trailingIcon = Icons.Rounded.KeyboardArrowDown,
-                            onClick = { showTemplateSheet = true },
-                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            icon = Icons.Rounded.AccountBalance,
+                            label = if (isTransfer) "FROM" else "ACCOUNT",
+                            value = selectedAccount?.name ?: "Select",
+                            onClick = { showAccountSheet = true },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                             isSlim = true
                         )
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (isTransfer) {
                             RecordFieldCard(
                                 icon = Icons.Rounded.AccountBalance,
-                                label = if (isTransfer) "FROM" else "ACCOUNT",
-                                value = selectedAccount?.name ?: "Select",
-                                onClick = { showAccountSheet = true },
+                                label = "TO",
+                                value = targetAccount?.name ?: "Select",
+                                onClick = { showTargetAccountSheet = true },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
                                 isSlim = true
                             )
-
-                            if (isTransfer) {
-                                RecordFieldCard(
-                                    icon = Icons.Rounded.AccountBalance,
-                                    label = "TO",
-                                    value = targetAccount?.name ?: "Select",
-                                    onClick = { showTargetAccountSheet = true },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                    isSlim = true
-                                )
-                            } else {
-                                RecordFieldCard(
-                                    icon = categoryIcons[category] ?: Icons.Rounded.Category,
-                                    label = "CATEGORY",
-                                    value = category,
-                                    onClick = { showCategorySheet = true },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                    isSlim = true
-                                )
-                            }
+                        } else {
+                            RecordFieldCard(
+                                icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                                label = "CATEGORY",
+                                value = category,
+                                onClick = { showCategorySheet = true },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                isSlim = true
+                            )
                         }
                     }
-                }
-
-                // Number Pad
-                if (isNumpadVisible) {
-                    Numpad(
-                        amount = amount,
-                        onAmountChange = { amount = it },
-                        decimalPrecision = decimalPrecision,
-                        onDone = { isNumpadVisible = false },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    )
                 }
             }
         }
 
+        // Numpad Overlay
+        Numpad(
+            amount = amount,
+            onAmountChange = { amount = it },
+            decimalPrecision = decimalPrecision,
+            onDone = { isNumpadVisible = false },
+            isVisible = isNumpadVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        )
+
         // Right Detail Drawer
-        if (!isNumpadVisible) {
-            DetailDrawer(
+        DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true },
@@ -838,7 +835,6 @@ fun AddTransactionScreen(
                 }
             }
         }
-    }
 }
 
 @Composable

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -84,6 +85,7 @@ fun TransactionListScreen(
         floatingActionButton = {
             AeonFloatingActionButton(
                 onClick = onAddTransactionClick,
+                icon = Icons.Rounded.Add,
                 containerColor = Color(0xFF2E7D32),
                 contentColor = Color.White,
                 contentDescription = "Add"

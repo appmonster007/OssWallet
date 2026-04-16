@@ -150,6 +150,7 @@ fun AccountManagementScreen(
             } else {
                 AeonFloatingActionButton(
                     onClick = onAddAccountClick,
+                    icon = Icons.Rounded.Add,
                     contentDescription = "Add New Account"
                 )
             }

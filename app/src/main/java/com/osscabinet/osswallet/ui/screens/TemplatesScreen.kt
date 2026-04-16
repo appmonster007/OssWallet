@@ -80,6 +80,7 @@ fun TemplatesScreen(
             if (!isReorderMode) {
                 AeonFloatingActionButton(
                     onClick = { onAddTemplateClick(null) },
+                    icon = Icons.Rounded.Add,
                     contentDescription = "Add Template"
                 )
             }

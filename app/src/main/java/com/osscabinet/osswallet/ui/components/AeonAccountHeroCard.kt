@@ -74,40 +74,40 @@ fun AeonAccountHeroCard(
             )
 
             Column(modifier = Modifier.padding(24.dp)) {
-                // First Row: Account Icon and Name
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = contentColor.copy(alpha = 0.9f)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = account.name.uppercase(),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = contentColor
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Structure Type and Balance
+                // First Row: Account Icon, Name, Structure Type and Balance
                 Column {
-                    Text(
-                        text = account.structureType.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.5.sp
-                        ),
-                        color = contentColor.copy(alpha = 0.7f)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = contentColor.copy(alpha = 0.9f)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = account.name.uppercase(),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = contentColor
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Surface(
+                            color = contentColor.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                account.structureType.uppercase(),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                color = contentColor
+                            )
+                        }
+                    }
                     Text(
                         text = formatCurrencyRight(balance, account.currencyCode, precision),
                         style = MaterialTheme.typography.displayMedium.copy(

@@ -231,6 +231,7 @@ fun OssWalletNavGraph(
                 viewModel = settingsViewModel,
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onManageLabelsClick = { navController.navigate(Screen.ManageLabels.route) },
+                onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onBackClick = { navController.popBackStack() }
             )
@@ -239,6 +240,13 @@ fun OssWalletNavGraph(
         composable(Screen.ManageLabels.route) {
             ManageLabelsScreen(
                 viewModel = tagViewModel,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ManageCategories.route) {
+            CategoryManagementScreen(
+                viewModel = transactionViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

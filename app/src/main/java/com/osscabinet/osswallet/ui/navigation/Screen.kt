@@ -43,4 +43,5 @@ sealed class Screen(val route: String) {
     }
 
     object ManageLabels : Screen("manage_labels")
+    object ManageCategories : Screen("manage_categories")
 }

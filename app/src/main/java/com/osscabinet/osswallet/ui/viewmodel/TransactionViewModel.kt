@@ -226,6 +226,34 @@ class TransactionViewModel(
             deleteTransactionUseCase(id)
         }
     }
+
+    fun upsertCategory(
+        id: Long = 0,
+        name: String,
+        iconName: String,
+        colorHex: Int,
+        parentId: Long? = null,
+        isDefault: Boolean = false
+    ) {
+        viewModelScope.launch {
+            categoryDao.insertCategory(
+                com.osscabinet.ossWallet.data.local.entity.CategoryEntity(
+                    id = id,
+                    name = name,
+                    iconName = iconName,
+                    colorHex = colorHex,
+                    parentId = parentId,
+                    isDefault = isDefault
+                )
+            )
+        }
+    }
+
+    fun deleteCategory(category: com.osscabinet.ossWallet.data.local.entity.CategoryEntity) {
+        viewModelScope.launch {
+            categoryDao.deleteCategory(category)
+        }
+    }
 }
 
 class TransactionViewModelFactory(

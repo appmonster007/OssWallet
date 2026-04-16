@@ -28,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -318,7 +319,12 @@ fun TransactionEntryContent(
     var warrantyExpirationMillis by remember { mutableLongStateOf(System.currentTimeMillis() + 31536000000L) } // Default +1 year
     var showWarrantyDatePicker by remember { mutableStateOf(false) }
     var locationCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    var linkedTransactionId by remember { mutableStateOf<Long?>(null) }
+    var linkedTransactionId by remember(existingTransaction) { mutableStateOf(existingTransaction?.linkedTransactionId) }
+    val linkedTx = remember(linkedTransactionId, transactions) {
+        if (linkedTransactionId != null) {
+            transactions.find { it.id == linkedTransactionId }
+        } else null
+    }
     
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
@@ -346,7 +352,8 @@ fun TransactionEntryContent(
             selectedDateMillis = existingTransaction.timestamp
             payee = existingTransaction.payee
             note = existingTransaction.note
-            linkedTransactionId = existingTransaction.linkedTransactionId
+            // Already handled by separate LaunchedEffect for better reactivity
+            // linkedTransactionId = existingTransaction.linkedTransactionId
             
             selectedAccount = accounts.find { it.id == existingTransaction.accountId }
             selectedCurrency = existingTransaction.currency
@@ -408,10 +415,9 @@ fun TransactionEntryContent(
 
     LaunchedEffect(transactionType == 2, selectedCurrency, targetCurrency, exchangeRates) {
         if (transactionType == 2 && !isEditMode) {
-            val baseRates = exchangeRates
-            if (baseRates.isNotEmpty()) {
-                val sourceRateInUSD = baseRates[selectedCurrency] ?: BigDecimal.ONE
-                val destRateInUSD = baseRates[targetCurrency] ?: BigDecimal.ONE
+            if (exchangeRates.isNotEmpty()) {
+                val sourceRateInUSD = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
+                val destRateInUSD = exchangeRates[targetCurrency] ?: BigDecimal.ONE
                 if (sourceRateInUSD.signum() != 0) {
                     exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
                 }
@@ -444,7 +450,7 @@ fun TransactionEntryContent(
                 },
                 actions = {
                     if (isEditMode) {
-                        IconButton(onClick = { transactionId?.let { onDelete(it) } }) {
+                        IconButton(onClick = { onDelete(transactionId) }) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -747,71 +753,126 @@ fun TransactionEntryContent(
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         // Note - First item
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            BasicTextField(
-                                value = note,
-                                onValueChange = { note = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                decorationBox = { innerTextField ->
-                                    if (note.isEmpty()) Text("Add Note", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                                    innerTextField()
-                                }
-                            )
-                        }
+                        EditorialInput(
+                            value = note,
+                            onValueChange = { note = it },
+                            label = "NOTE",
+                            icon = Icons.AutoMirrored.Rounded.Notes
+                        )
 
                         // Payee - Second item
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            BasicTextField(
-                                value = payee,
-                                onValueChange = { payee = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                decorationBox = { innerTextField ->
-                                    if (payee.isEmpty()) Text("Add Payee", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                                    innerTextField()
-                                }
-                            )
-                        }
+                        EditorialInput(
+                            value = payee,
+                            onValueChange = { payee = it },
+                            label = "PAYEE",
+                            icon = Icons.Rounded.Person
+                        )
                         
                         // Linked Transaction Field - Last item
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { showLinkedTransactionSheet = true },
-                            color = Color.Transparent
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    val linkedTx = transactions.find { it.id == linkedTransactionId }
-                                    Text(
-                                        text = linkedTx?.let { "${it.title} (${it.amount})" } ?: "Link to Transaction",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = if (linkedTransactionId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                                    )
-                                    if (linkedTransactionId != null) {
-                                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        val currentLinkedTx = linkedTx
+                        if (currentLinkedTx != null) {
+                            Surface(
+                                shape = RoundedCornerShape(28.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val linkedCategory = categories.find { it.name == currentLinkedTx.category }
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        modifier = Modifier.size(48.dp)
+                                    ) {
+                                        Icon(
+                                            categoryIcons[linkedCategory?.iconName] ?: categoryIcons[currentLinkedTx.category] ?: Icons.Rounded.Category,
+                                            contentDescription = null,
+                                            modifier = Modifier.padding(12.dp).size(24.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
                                     }
-                                }
-                                if (linkedTransactionId != null) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    IconButton(onClick = { linkedTransactionId = null }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "Unlink", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        val displayTitle = currentLinkedTx.note.ifBlank { currentLinkedTx.category }
+                                        val amountSign = if (currentLinkedTx.isIncome) "+" else "-"
+                                        val formattedAmount = "$amountSign${formatCurrencyRight(currentLinkedTx.amount.abs(), currentLinkedTx.currency, precision = decimalPrecision)}"
+                                        
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = displayTitle,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = formattedAmount,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
+                                        
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = if (currentLinkedTx.note.isNotBlank()) currentLinkedTx.category else "",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = formatDateTime(currentLinkedTx.timestamp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                    
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    IconButton(
+                                        onClick = { linkedTransactionId = null },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Close,
+                                            contentDescription = "Unlink",
+                                            modifier = Modifier.size(20.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
                                     }
                                 }
                             }
+                        } else {
+                            RecordFieldCard(
+                                icon = Icons.Rounded.Link,
+                                label = "LINK TRANSACTION",
+                                value = "None Linked",
+                                onClick = { showLinkedTransactionSheet = true },
+                                trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            )
                         }
 
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -1349,14 +1410,17 @@ fun TransactionMetadataPreview() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Linked to Monthly Rent", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                        Column {
+                            Text("Monthly Rent", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                            Text("Housing • -$1,200.00 • Oct 12, 2023 14:30", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
 
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)) {
                             Text("RECURRING", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
@@ -1374,6 +1438,55 @@ fun TransactionMetadataPreview() {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionEntryWithLongLinkPreview() {
+    val sampleAccounts = listOf(
+        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), BigDecimal("1000.00"), "USD", "Bank", "#FF0000", "account_balance"),
+    )
+
+    val sampleCategories = listOf(
+        CategoryEntity(1, "Food", "Restaurant", 0xFF4CAF50.toInt()),
+    )
+
+    val sampleTransactions = listOf(
+        Transaction(
+            id = 100L,
+            title = "Very long title for the linked transaction that might push the close button off screen",
+            amount = BigDecimal("1234.56"),
+            category = "Extremely Long Category Name For Testing Purposes",
+            isIncome = false,
+            accountId = "1",
+            currency = "USD",
+            timestamp = System.currentTimeMillis(),
+            note = "Very long note that might push the close button off screen if not handled properly in the UI layout"
+        ),
+        Transaction(
+            id = 1L,
+            title = "Main Transaction",
+            amount = BigDecimal("100.00"),
+            category = "Food",
+            isIncome = false,
+            accountId = "1",
+            currency = "USD",
+            timestamp = System.currentTimeMillis(),
+            linkedTransactionId = 100L
+        )
+    )
+
+    OssWalletTheme {
+        TransactionEntryContent(
+            transactionId = 1L,
+            accounts = sampleAccounts,
+            categories = sampleCategories,
+            transactions = sampleTransactions,
+            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onDelete = {},
+            onBackClick = {}
+        )
     }
 }
 

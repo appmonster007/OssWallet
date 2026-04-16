@@ -1202,17 +1202,20 @@ fun TransactionEntryContent(
                 containerColor = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
-                    AeonSectionHeader(title = "Select Transaction To Link")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
+                    AeonSectionHeader(
+                        title = "Select Transaction To Link",
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                    )
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                         items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
+                            val txAccount = accounts.find { it.id == tx.accountId }
                             AeonTransactionItem(
                                 category = tx.category,
-                                account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
+                                account = txAccount?.name ?: "Unknown",
                                 amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
-                                balanceBefore = "",
-                                balanceAfter = "",
+                                balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = decimalPrecision), // Simplified for picker
+                                balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision), // Simplified for picker
                                 type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                                 timestamp = formatDateTime(tx.timestamp),
                                 note = tx.note,
@@ -1224,6 +1227,12 @@ fun TransactionEntryContent(
                                     showLinkedTransactionSheet = false
                                 },
                                 modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        item {
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                             )
                         }
                     }

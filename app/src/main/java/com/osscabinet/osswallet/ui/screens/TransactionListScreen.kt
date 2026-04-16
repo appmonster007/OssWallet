@@ -35,6 +35,7 @@ import java.util.*
 fun TransactionListScreen(
     viewModel: TransactionViewModel,
     accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
+    analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     onAddTransactionClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
@@ -43,9 +44,12 @@ fun TransactionListScreen(
     val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val accountMap = accounts.associate { it.id to it.name }
+    val accountCurrencyMap = accounts.associate { it.id to it.currencyCode }
     val categories by viewModel.categories.collectAsState()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
+    val analyticsState by analyticsViewModel.uiState.collectAsState()
+    val selectedAccountId by viewModel.selectedAccountId.collectAsState()
 
     var showFilterSheet by remember { mutableStateOf(false) }
 
@@ -160,7 +164,11 @@ fun TransactionListScreen(
                     categoryMap = categoryMap,
                     onTransactionClick = { onEditTransactionClick(it.id) },
                     contentPadding = PaddingValues(bottom = 16.dp),
-                    precision = decimalPrecision
+                    precision = decimalPrecision,
+                    baseCurrency = analyticsState.selectedCurrency,
+                    exchangeRates = analyticsState.exchangeRates,
+                    accountCurrencyMap = accountCurrencyMap,
+                    filterAccountId = selectedAccountId
                 )
             }
         }

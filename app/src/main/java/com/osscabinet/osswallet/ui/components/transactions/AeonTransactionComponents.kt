@@ -26,6 +26,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import java.math.BigDecimal
 
 import java.text.SimpleDateFormat
@@ -42,7 +44,11 @@ fun AeonTransactionList(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     showDailyHeader: Boolean = true,
     precision: Int = 2,
-    useNoteAsHeader: Boolean = false
+    useNoteAsHeader: Boolean = false,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    accountCurrencyMap: Map<String, String> = emptyMap(),
+    filterAccountId: String? = null
 ) {
     val calendar = Calendar.getInstance()
     val groupedByWeek = transactions.groupBy {
@@ -67,26 +73,59 @@ fun AeonTransactionList(
             val weekEnd = calendar.time
             val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
 
-            val weekIncome = weekTransactions.filter { it.transaction.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
-            val weekExpense = weekTransactions.filter { !it.transaction.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
-            val closingBalance = weekTransactions.maxByOrNull { it.transaction.timestamp }?.balanceAfter ?: BigDecimal.ZERO
+            // Aggregation using CurrencyUtils (CurrencyUtilkit)
+            val incomeTotals = weekTransactions.filter { it.transaction.isIncome }
+                .groupBy { it.transaction.currency }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
+            val weekIncome = calculateTotalInCurrency(incomeTotals, baseCurrency, exchangeRates, precision)
+
+            val expenseTotals = weekTransactions.filter { !it.transaction.isIncome }
+                .groupBy { it.transaction.currency }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
+            val weekExpense = calculateTotalInCurrency(expenseTotals, baseCurrency, exchangeRates, precision)
+
+            val weekNet = weekIncome.subtract(weekExpense)
+            
+            // Determine if we should show closing balance: 
+            // 1. If we are filtering by a specific account
+            // 2. Or if all transactions in this week belong to the same account
+            val uniqueAccountIds = weekTransactions.map { it.transaction.accountId }.distinct()
+            val showBalanceColumn = filterAccountId != null || uniqueAccountIds.size == 1
+            
+            val closingBalance = if (showBalanceColumn) {
+                val targetAccId = filterAccountId ?: uniqueAccountIds.firstOrNull()
+                weekTransactions.filter { it.transaction.accountId == targetAccId }
+                    .maxByOrNull { it.transaction.timestamp }?.let { lastItem ->
+                        val accountCurrency = accountCurrencyMap[lastItem.transaction.accountId] ?: baseCurrency
+                        convertAmount(lastItem.balanceAfter, accountCurrency, baseCurrency, exchangeRates, precision)
+                    } ?: BigDecimal.ZERO
+            } else {
+                BigDecimal.ZERO
+            }
 
             stickyHeader {
+                val positiveColor = Color(0xFF4CAF50)
+                val negativeColor = MaterialTheme.colorScheme.error
+                val netColor = if (weekNet >= BigDecimal.ZERO) positiveColor else negativeColor
+                val surfaceColor = MaterialTheme.colorScheme.surface
+                val outlineColor = MaterialTheme.colorScheme.outline
+                val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface
+                    color = surfaceColor
                 ) {
                     Column {
                         HorizontalDivider(
                             thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            color = dividerColor
                         )
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Text(
                                 text = "WEEK $week ($weekRange)".uppercase(),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.outline,
+                                    color = outlineColor,
                                     letterSpacing = 1.sp
                                 )
                             )
@@ -97,21 +136,26 @@ fun AeonTransactionList(
                             ) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     Column {
-                                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                                        Text(formatCurrencyRight(weekIncome, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50)))
+                                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
+                                        Text(formatCurrencyRight(weekIncome, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50)))
                                     }
                                     Column {
-                                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                                        Text(formatCurrencyRight(weekExpense, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error))
+                                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
+                                        Text(formatCurrencyRight(weekExpense, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = negativeColor))
                                     }
                                     Column {
-                                        Text("TOTAL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                                        Text("∑ " + formatCurrencyRight(weekIncome-weekExpense, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error))
+                                        Text("TOTAL", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
+                                        Text(
+                                            (if (weekNet > BigDecimal.ZERO) "+ " else "") + formatCurrencyRight(weekNet, baseCurrency, precision),
+                                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = netColor)
+                                        )
                                     }
                                 }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text("Balance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-                                    Text(formatCurrencyRight(closingBalance, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
+                                if (showBalanceColumn) {
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text("Balance", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
+                                        Text(formatCurrencyRight(closingBalance, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
+                                    }
                                 }
                             }
                         }
@@ -124,14 +168,20 @@ fun AeonTransactionList(
                 val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
 
-                val balanceBefore = item.balanceAfter.subtract(item.transaction.amount)
+                val accountCurrency = accountCurrencyMap[item.transaction.accountId] ?: baseCurrency
+                val txAmountInAccountCurrency = convertAmount(item.transaction.amount, item.transaction.currency, accountCurrency, exchangeRates, precision + 4)
+                val balanceBeforeAccount = if (item.transaction.isIncome) item.balanceAfter.subtract(txAmountInAccountCurrency) else item.balanceAfter.add(txAmountInAccountCurrency)
+
+                val amountInBase = convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
+                val balanceBeforeInBase = convertAmount(balanceBeforeAccount, accountCurrency, baseCurrency, exchangeRates, precision)
+                val balanceAfterInBase = convertAmount(item.balanceAfter, accountCurrency, baseCurrency, exchangeRates, precision)
 
                 AeonTransactionItem(
                     category = category?.name ?: "Uncategorized",
                     account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                    amount = formatCurrencyRight(item.transaction.amount.abs(), "", precision),
-                    balanceBefore = formatCurrencyRight(balanceBefore, "", precision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, "", precision),
+                    amount = formatCurrencyRight(amountInBase.abs(), baseCurrency, precision),
+                    balanceBefore = formatCurrencyRight(balanceBeforeInBase, baseCurrency, precision),
+                    balanceAfter = formatCurrencyRight(balanceAfterInBase, baseCurrency, precision),
                     type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                     note = item.transaction.note,
@@ -248,13 +298,6 @@ fun AeonTransactionItem(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                         )
                     }
-                    
-                    Text(
-                        timestamp,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        modifier = Modifier.align(Alignment.End)
-                    )
 
                     if (!useNoteAsHeader && !note.isNullOrBlank()) {
                         Text(
@@ -291,6 +334,15 @@ fun AeonTransactionItem(
                             }
                         }
                     }
+
+                    Text(
+                        timestamp,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 4.dp)
+                    )
                 }
             }
         }

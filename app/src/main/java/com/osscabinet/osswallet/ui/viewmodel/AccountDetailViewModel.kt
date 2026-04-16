@@ -54,6 +54,18 @@ class AccountDetailViewModel(
         }
     }
 
+    fun updateShowPlannedPayments(show: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountDetailSettings { it.copy(transactionsSection = it.transactionsSection.copy(showPlannedPayments = show)) }
+        }
+    }
+
+    fun updateUseNoteAsHeader(use: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.updateAccountDetailSettings { it.copy(transactionsSection = it.transactionsSection.copy(useNoteAsHeader = use)) }
+        }
+    }
+
     val uiState: StateFlow<AccountDetailUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -72,8 +84,15 @@ class AccountDetailViewModel(
                 val currencyBalancesTimelineRange = settings.currencyBalancesSection.timelineRange
                 val cashFlowShowBaseConversion = settings.cashFlowSection.showBaseConversion
                 val cashFlowTimelineRange = settings.cashFlowSection.timelineRange
+                val showPlannedPayments = settings.transactionsSection.showPlannedPayments
+                val useNoteAsHeader = settings.transactionsSection.useNoteAsHeader
 
-                val accountTransactions = allTransactions.filter { it.accountId == accountId }
+                var accountTransactions = allTransactions.filter { it.accountId == accountId }
+                
+                if (!showPlannedPayments) {
+                    val now = System.currentTimeMillis()
+                    accountTransactions = accountTransactions.filter { it.timestamp <= now }
+                }
 
                 val filteredTransactionsForBalances = when (val range = currencyBalancesTimelineRange) {
                     is TimelineRange.AllTime -> accountTransactions
@@ -136,7 +155,9 @@ class AccountDetailViewModel(
                     showBaseConversion = showBaseConversion,
                     currencyBalancesTimelineRange = currencyBalancesTimelineRange,
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
-                    cashFlowTimelineRange = cashFlowTimelineRange
+                    cashFlowTimelineRange = cashFlowTimelineRange,
+                    showPlannedPayments = showPlannedPayments,
+                    useNoteAsHeader = useNoteAsHeader
                 )
             }
         }
@@ -160,7 +181,9 @@ sealed class AccountDetailUiState {
         val showBaseConversion: Boolean,
         val currencyBalancesTimelineRange: TimelineRange,
         val cashFlowShowBaseConversion: Boolean,
-        val cashFlowTimelineRange: TimelineRange
+        val cashFlowTimelineRange: TimelineRange,
+        val showPlannedPayments: Boolean = false,
+        val useNoteAsHeader: Boolean = false
     ) : AccountDetailUiState()
     data class Error(val message: String) : AccountDetailUiState()
 }

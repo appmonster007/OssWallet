@@ -51,6 +51,9 @@ fun AccountSetupScreen(
 
     Scaffold(
         topBar = {
+            val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
+            val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank() && allowedCurrencies.isNotEmpty()
+
             CenterAlignedTopAppBar(
                 title = { 
                     Text("New Account", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
@@ -61,43 +64,30 @@ fun AccountSetupScreen(
                     }
                 },
                 actions = {
-                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
-                    val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank() && allowedCurrencies.isNotEmpty()
-                    
-                    Surface(
-                        modifier = Modifier.padding(end = 16.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (canCreate) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
-                        onClick = {
-                            if (canCreate) {
-                                viewModel.addAccount(
-                                    name = accountName,
-                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                                    currency = primaryCurrency,
-                                    structureType = structureType,
-                                    colorHex = accentColorHex,
-                                    icon = selectedIconName,
-                                    allowedCurrencies = allowedCurrencies.toList()
-                                )
-                                onAccountCreated()
-                            }
-                        },
-                        enabled = canCreate
-                    ) {
-                        Text(
-                            "CREATE",
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (canCreate) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
+                    AeonFormHeader(
+                        title = "", // Not used in top bar actions directly but for consistency
+                        onSaveClick = {
+                            viewModel.addAccount(
+                                name = accountName,
+                                balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                currency = primaryCurrency,
+                                structureType = structureType,
+                                colorHex = accentColorHex,
+                                icon = selectedIconName,
+                                allowedCurrencies = allowedCurrencies.toList()
                             )
-                        )
-                    }
+                            onAccountCreated()
+                        },
+                        saveButtonEnabled = canCreate,
+                        accentColorHex = accentColorHex,
+                        saveButtonText = "CREATE",
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
                 }
             )
         }
-    ) { innerPadding ->
+    ) {
+innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -108,11 +98,10 @@ fun AccountSetupScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Header Section
-            AccountHeroHeader(
-                name = accountName,
-                balance = initialBalance,
-                currencyCode = primaryCurrency,
-                colorHex = accentColorHex,
+            AeonHeroHeader(
+                title = accountName,
+                subtitle = "$primaryCurrency ${initialBalance.ifBlank { "0.00" }}",
+                accentColorHex = accentColorHex,
                 iconName = selectedIconName
             )
 

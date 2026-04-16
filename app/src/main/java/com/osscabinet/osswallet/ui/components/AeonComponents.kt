@@ -1,58 +1,66 @@
 package com.osscabinet.ossWallet.ui.components
 
-import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.ui.components.dashboard.CurrencyAggregationSection
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.draw.drawBehind
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-
+import java.util.*
 
 
 @Composable
@@ -87,16 +95,42 @@ fun RecordFieldCard(
                 color = iconContainerColor
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(innerIconSize), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(innerIconSize)
+                    )
                 }
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.outline,
+                        fontSize = if (isSlim) 9.sp else 11.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = if (isSlim) 14.sp else 16.sp
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             if (trailingIcon != null) {
-                Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.outline)
+                Icon(
+                    trailingIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -108,45 +142,64 @@ fun EditorialInput(
     onValueChange: (String) -> Unit,
     label: String,
     icon: ImageVector,
-    isMultiline: Boolean = false,
-    onFocus: () -> Unit = {},
     readOnly: Boolean = false,
-    onClick: (() -> Unit)? = null
+    onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+            .clickable(enabled = readOnly, onClick = onClick),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = if (isMultiline) Alignment.Top else Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp).padding(top = if (isMultiline) 4.dp else 0.dp), tint = MaterialTheme.colorScheme.outline)
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth().then(if (onClick == null) Modifier.clickable { onFocus() } else Modifier),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium),
-                    singleLine = !isMultiline,
-                    minLines = if (isMultiline) 3 else 1,
-                    readOnly = readOnly || onClick != null,
-                    enabled = onClick == null,
-                    decorationBox = { innerTextField ->
-                        if (value.isEmpty()) Text("Tap to add...", color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), style = MaterialTheme.typography.bodyLarge)
-                        innerTextField()
-                    }
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.outline,
+                        letterSpacing = 0.5.sp
+                    )
                 )
+                if (readOnly) {
+                    Text(
+                        value,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                } else {
+                    BasicTextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        decorationBox = { innerTextField ->
+                            if (value.isEmpty()) Text("Enter $label", color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                            innerTextField()
+                        }
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountPickerSheet(
     accounts: List<Account>,
@@ -154,39 +207,12 @@ fun AccountPickerSheet(
     onAccountSelected: (Account) -> Unit,
     onDismiss: () -> Unit
 ) {
-    @OptIn(ExperimentalMaterial3Api::class)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-    ) {
-        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            AeonSectionHeader(title = "Select Account")
-            Spacer(modifier = Modifier.height(24.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(accounts) { account ->
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable { onAccountSelected(account) },
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (selectedAccount?.id == account.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                    ) {
-                        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), modifier = Modifier.size(40.dp)) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(account.currencyCode, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(account.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text(account.structureType, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    com.osscabinet.ossWallet.ui.components.accounts.AccountPickerSheet(
+        accounts = accounts,
+        selectedAccount = selectedAccount,
+        onAccountSelected = onAccountSelected,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable
@@ -197,53 +223,72 @@ fun CurrencySelector(
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
-    Surface(
-        onClick = { showDialog = true },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Box {
+        Surface(
+            modifier = Modifier.clickable { showDialog = true },
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ) {
-            Text(
-                selectedCurrency,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    selectedCurrency.ifEmpty { "USD" },
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
-            Icon(
-                Icons.Rounded.ArrowDropDown,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-    }
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Select Currency") },
-            text = {
-                Column {
-                    supportedCurrencies.forEach { currency ->
-                        TextButton(
-                            onClick = {
-                                onCurrencySelected(currency)
-                                showDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(currency, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("Select Currency", fontWeight = FontWeight.Bold) },
+                text = {
+                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                        LazyColumn {
+                            val list = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
+                            items(list) { currency ->
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onCurrencySelected(currency)
+                                            showDialog = false
+                                        },
+                                    color = if (selectedCurrency == currency) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        currency,
+                                        modifier = Modifier.padding(16.dp),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = if (selectedCurrency == currency) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            },
-            confirmButton = {}
-        )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Cancel")
+                    }
+                },
+                shape = RoundedCornerShape(28.dp)
+            )
+        }
     }
 }
 
@@ -253,69 +298,61 @@ fun ExchangeRateDialog(
     onDismiss: () -> Unit,
     onConfirm: (BigDecimal) -> Unit
 ) {
-    var rateText by remember { mutableStateOf(initialRate.toPlainString()) }
-
+    var rate by remember { mutableStateOf(initialRate.toPlainString()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set Exchange Rate") },
+        title = { Text("Exchange Rate", fontWeight = FontWeight.Bold) },
         text = {
-            Column {
-                Text("1 Source Currency = X Destination Currency", style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = rateText,
-                    onValueChange = { rateText = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            OutlinedTextField(
+                value = rate,
+                onValueChange = { rate = it },
+                label = { Text("Rate (Source to Target)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
         },
         confirmButton = {
-            Button(onClick = {
-                rateText.toBigDecimalOrNull()?.let { onConfirm(it) }
-            }) {
+            Button(
+                onClick = { onConfirm(rate.toBigDecimalOrNull() ?: BigDecimal.ONE) },
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Text("Confirm")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
     )
 }
 
 @Composable
-fun CategoryItem(
-    name: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
+fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() }
-            .padding(8.dp)
+        modifier = Modifier.clickable(onClick = onClick)
     ) {
         Surface(
+            modifier = Modifier.size(64.dp),
             shape = CircleShape,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-            modifier = Modifier.size(56.dp)
+            color = if (isSelected) Color(0xFF004D56) else Color(0xFFF1F3F4)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
-                    contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    contentDescription = name,
+                    tint = if (isSelected) Color.White else Color(0xFF546E7A),
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             name,
             style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            color = if (isSelected) Color(0xFF004D56) else Color(0xFF546E7A)
         )
     }
 }
@@ -329,88 +366,87 @@ fun DetailDrawer(
     tabOffsetY: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
-    val drawerWidth = 320.dp
-    val density = LocalDensity.current
-    val drawerWidthPx = with(density) { drawerWidth.toPx() }
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val offset by animateDpAsState(if (isOpen) 0.dp else screenWidth)
 
-    var offset by remember { mutableFloatStateOf(if (isOpen) 0f else drawerWidthPx) }
-
-    LaunchedEffect(isOpen) {
-        offset = if (isOpen) 0f else drawerWidthPx
-    }
-
-    val animatedOffset by animateFloatAsState(
-        targetValue = offset,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioLowBouncy),
-        label = "drawer_offset"
-    )
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Scrim
-        if (isOpen || animatedOffset < drawerWidthPx) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = (1f - (animatedOffset / drawerWidthPx)) * 0.4f))
-                    .clickable(enabled = isOpen) { onClose() }
-            )
-        }
-
-        // Drawer Content
-        Surface(
-            modifier = Modifier
-                .width(drawerWidth)
-                .fillMaxHeight()
-                .align(Alignment.CenterEnd)
-                .offset { IntOffset(animatedOffset.toInt(), 0) }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (offset > drawerWidthPx * 0.4f) onClose()
-                            else offset = 0f
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            offset = (offset + dragAmount).coerceIn(0f, drawerWidthPx)
-                        }
-                    )
-                },
-            shape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
-            shadowElevation = 16.dp
-        ) {
-            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                content()
-            }
-        }
-
-        // Floating Tab (Handle)
-        if (!isOpen && animatedOffset >= drawerWidthPx) {
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Tab indicator on the right edge when closed
+        if (!isOpen) {
             Surface(
-                onClick = onSwipeOpen,
                 modifier = Modifier
                     .align(tabAlignment)
-                    .offset(y = tabOffsetY)
-                    .size(width = 48.dp, height = 80.dp)
-                    .offset(x = 24.dp), // Peek a bit
+                    .offset(x = 8.dp, y = tabOffsetY) // Hide slightly
+                    .width(48.dp)
+                    .height(80.dp)
+                    .clickable { onSwipeOpen() }
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, dragAmount ->
+                            if (dragAmount < -20) {
+                                change.consume()
+                                onSwipeOpen()
+                            }
+                        }
+                    },
                 shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-                color = MaterialTheme.colorScheme.primary,
-                tonalElevation = 4.dp
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 8.dp
             ) {
-                Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(start = 8.dp)) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                         contentDescription = "Open Details",
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        modifier = Modifier.padding(end = 12.dp)
                     )
+                }
+            }
+        }
+
+        // Drawer content overlay
+        if (isOpen || offset < screenWidth) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(screenWidth)
+                    .offset(x = offset)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, dragAmount ->
+                            if (dragAmount > 20) {
+                                change.consume()
+                                onClose()
+                            }
+                        }
+                    },
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 24.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onClose) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Back")
+                        }
+                        Text(
+                            "Additional Details",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        content()
+                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LabelPickerSheet(
     selectedTags: List<String>,
@@ -418,53 +454,96 @@ fun LabelPickerSheet(
     onDismiss: () -> Unit,
     tagViewModel: TagViewModel
 ) {
-    val allTags by tagViewModel.tags.collectAsState()
-    var newTagText by remember { mutableStateOf("") }
+    var tagInput by remember { mutableStateOf("") }
+    val dbTags by tagViewModel.tags.collectAsState()
+    val sortedTags = remember(dbTags) { dbTags.sortedBy { it.name.lowercase() } }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
-        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        ) {
             AeonSectionHeader(title = "Labels")
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Add Tag
-            OutlinedTextField(
-                value = newTagText,
-                onValueChange = { newTagText = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("New Label...") },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        if (newTagText.isNotBlank()) {
-                            tagViewModel.addTag(newTagText)
-                            newTagText = ""
-                        }
-                    }) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add")
-                    }
-                },
-                shape = RoundedCornerShape(16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-            @OptIn(ExperimentalLayoutApi::class)
+            // Current Tags
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                allTags.forEach { tag ->
-                    val isSelected = selectedTags.contains(tag.name)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            val newList = if (isSelected) selectedTags - tag.name else selectedTags + tag.name
-                            onTagsChanged(newList)
+                selectedTags.forEach { tag ->
+                    InputChip(
+                        selected = true,
+                        onClick = { onTagsChanged(selectedTags - tag) },
+                        label = { Text(tag) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Rounded.Close,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
                         },
+                        colors = InputChipDefaults.inputChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = null,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            if (selectedTags.isNotEmpty()) Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = tagInput,
+                onValueChange = { tagInput = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Add custom label (multi-word)") },
+                shape = RoundedCornerShape(16.dp),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (tagInput.isNotBlank()) {
+                                val newTag = tagInput.trim()
+                                if (newTag !in dbTags.map { it.name }) {
+                                    tagViewModel.addTag(newTag)
+                                }
+                                onTagsChanged((selectedTags + newTag).distinct())
+                                tagInput = ""
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "SUGGESTIONS",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                sortedTags.filter { it.name !in selectedTags }.forEach { tag ->
+                    SuggestionChip(
+                        onClick = { onTagsChanged((selectedTags + tag.name).distinct()) },
                         label = { Text(tag.name) },
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -474,15 +553,25 @@ fun LabelPickerSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentMethodPickerSheet(
     selectedMethod: String,
     onMethodSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val methods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "E-Wallet", "Crypto")
+    val methods = listOf(
+        "Cash" to Icons.Rounded.Payments,
+        "Credit Card" to Icons.Rounded.CreditCard,
+        "Debit Card" to Icons.Rounded.CreditCard,
+        "Bank Transfer" to Icons.Rounded.AccountBalance,
+        "Digital Wallet" to Icons.Rounded.Wallet,
+        "Mobile Payment" to Icons.Rounded.Contactless,
+        "Check" to Icons.Rounded.Description,
+        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+        "Other" to Icons.Rounded.MoreHoriz
+    )
 
-    @OptIn(ExperimentalMaterial3Api::class)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -491,32 +580,33 @@ fun PaymentMethodPickerSheet(
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
             AeonSectionHeader(title = "Payment Method")
             Spacer(modifier = Modifier.height(24.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(methods) { method ->
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(methods) { (name, icon) ->
                     Surface(
-                        onClick = {
-                            onMethodSelected(method)
-                            onDismiss()
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (selectedMethod == method) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onMethodSelected(name)
+                                onDismiss()
+                            },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (selectedMethod == name) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                     ) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            val icon = when (method) {
-                                "Cash" -> Icons.Rounded.Payments
-                                "Credit Card" -> Icons.Rounded.CreditCard
-                                "Bank Transfer" -> Icons.Rounded.AccountBalance
-                                "Debit Card" -> Icons.Rounded.Contactless
-                                "E-Wallet" -> Icons.Rounded.AccountBalanceWallet
-                                else -> Icons.Rounded.Token
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(icon, contentDescription = null, tint = if (selectedMethod == name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = if (selectedMethod == name) FontWeight.Bold else FontWeight.Medium
+                            )
+                            if (selectedMethod == name) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
-                            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = if (selectedMethod == method) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(method, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -525,14 +615,14 @@ fun PaymentMethodPickerSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerSheet(
-    categories: List<CategoryEntity>,
+    categories: List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
     selectedCategoryId: Long?,
-    onCategorySelected: (CategoryEntity) -> Unit,
+    onCategorySelected: (com.osscabinet.ossWallet.data.local.entity.CategoryEntity) -> Unit,
     onDismiss: () -> Unit
 ) {
-    @OptIn(ExperimentalMaterial3Api::class)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -540,18 +630,20 @@ fun CategoryPickerSheet(
     ) {
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
             AeonSectionHeader(title = "Classification")
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(categories) { category ->
+                items(categories.sortedBy { it.name }) { category ->
                     CategoryItem(
                         name = category.name,
                         icon = categoryIcons[category.iconName] ?: Icons.Rounded.Category,
                         isSelected = selectedCategoryId == category.id,
-                        onClick = { onCategorySelected(category) }
+                        onClick = {
+                            onCategorySelected(category)
+                        }
                     )
                 }
             }
@@ -571,12 +663,11 @@ fun AeonSectionHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Black,
-                letterSpacing = 0.5.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
+            title,
+            style = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         )
         trailing?.invoke()
     }
@@ -584,37 +675,118 @@ fun AeonSectionHeader(
 
 @Composable
 fun AeonCurrencyBreakdown(
-    currencyTotals: Map<String, BigDecimal>,
+    balances: Map<String, BigDecimal>,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
     precision: Int = 2,
-    layout: String = "GRID",
-    showBaseConversion: Boolean = false,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    layout: String = "scroll",
+    showBaseConversion: Boolean = true,
+    timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
     onLayoutChange: (String) -> Unit = {},
     onShowBaseConversionChange: (Boolean) -> Unit = {},
-    onTimelineRangeChange: (TimelineRange) -> Unit = {}
+    onTimelineRangeChange: (com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) -> Unit = {}
 ) {
-    // Basic placeholder for the actual implementation in specific files
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        AeonSectionHeader(
+            title = "Aggregated Balances",
+            trailing = {
+                IconButton(onClick = { /* Settings handled by parent or dialog */ }) {
+                    Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+        )
+
+        val sortedBalances = balances.toList().sortedBy { it.first }
+
+        if (layout == "grid") {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.heightIn(max = 400.dp)
+            ) {
+                items(sortedBalances) { (currency, amount) ->
+                    AeonCurrencyCard(currency, amount, baseCurrency, exchangeRates, precision, showBaseConversion)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                sortedBalances.forEach { (currency, amount) ->
+                    AeonCurrencyCard(currency, amount, baseCurrency, exchangeRates, precision, showBaseConversion)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AeonCurrencyCard(
+    currency: String,
+    amount: BigDecimal,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    precision: Int,
+    showBaseConversion: Boolean
+) {
+    val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
+    
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        modifier = Modifier.width(140.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                currency,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            )
+            Text(
+                formatCurrencyRight(amount, currency, precision),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (showBaseConversion && currency != baseCurrency) {
+                Text(
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
 }
 
 val categoryIcons = mapOf(
-    "Shopping" to Icons.Rounded.ShoppingCart,
     "Food" to Icons.Rounded.Restaurant,
     "Transport" to Icons.Rounded.DirectionsCar,
+    "Shopping" to Icons.Rounded.ShoppingBag,
+    "Electronics" to Icons.Rounded.Smartphone,
+    "Entertainment" to Icons.Rounded.SportsEsports,
     "Health" to Icons.Rounded.MedicalServices,
+    "Bills" to Icons.Rounded.Receipt,
+    "Investment" to Icons.AutoMirrored.Rounded.TrendingUp,
+    "Housing" to Icons.Rounded.Home,
     "Education" to Icons.Rounded.School,
-    "Bills" to Icons.AutoMirrored.Rounded.ReceiptLong,
-    "Salary" to Icons.Rounded.Payments,
-    "Savings" to Icons.Rounded.Savings,
-    "Home" to Icons.Rounded.Home,
+    "Income" to Icons.Rounded.Payments,
     "Coffee" to Icons.Rounded.CoffeeMaker,
-    "Rent" to Icons.Rounded.Home,
-    "Entertainment" to Icons.Rounded.Movie,
-    "Other" to Icons.Rounded.Category
+    "Grocery" to Icons.Rounded.ShoppingCart,
+    "Other" to Icons.Rounded.MoreHoriz
 )
 
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AeonTransactionList(
     transactions: List<TransactionWithBalance>,
@@ -623,10 +795,65 @@ fun AeonTransactionList(
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    isSelectionMode: Boolean = false,
+    showDailyHeader: Boolean = true,
     precision: Int = 2
 ) {
-    // Basic placeholder
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val grouped = if (showDailyHeader) {
+            transactions.groupBy { 
+                SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(it.transaction.timestamp))
+            }
+        } else {
+            mapOf("" to transactions)
+        }
+
+        grouped.forEach { (date, dailyTransactions) ->
+            if (date.isNotEmpty()) {
+                stickyHeader {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Text(
+                            text = date.uppercase(),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.outline,
+                                letterSpacing = 1.sp
+                            )
+                        )
+                    }
+                }
+            }
+
+            items(dailyTransactions, key = { it.transaction.id }) { item ->
+                val category = categoryMap[item.transaction.categoryId]
+                val icon = categoryIcons[category?.iconName] ?: Icons.Rounded.Category
+                val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
+
+                AeonTransactionItem(
+                    category = category?.name ?: "Uncategorized",
+                    account = accountMap[item.transaction.accountId] ?: "Unknown Account",
+                    amount = formatCurrencyRight(item.transaction.amount.abs(), "", precision),
+                    balanceBefore = formatCurrencyRight(item.balanceAfter.subtract(item.transaction.amount), "", precision),
+                    balanceAfter = formatCurrencyRight(item.balanceAfter, "", precision),
+                    type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                    timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
+                    note = item.transaction.note,
+                    tags = item.transaction.tags,
+                    icon = icon,
+                    iconBg = iconBg,
+                    precision = precision,
+                    onClick = { onTransactionClick(item.transaction) }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -638,32 +865,91 @@ fun AeonTransactionItem(
     balanceAfter: String,
     type: CashFlowType,
     timestamp: String,
-    note: String?,
-    tags: List<String>,
-    icon: ImageVector?,
-    precision: Int,
+    note: String? = null,
+    tags: List<String> = emptyList(),
+    icon: ImageVector? = null,
+    iconBg: Color? = null,
+    precision: Int = 2,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    iconBg: Color? = null
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = iconBg ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), modifier = Modifier.size(48.dp)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
+            ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon ?: Icons.Rounded.Category, contentDescription = null, tint = if (iconBg != null) Color.White else MaterialTheme.colorScheme.primary)
+                    Icon(
+                        icon ?: Icons.Rounded.Category,
+                        contentDescription = null,
+                        tint = iconBg ?: MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
+
             Spacer(modifier = Modifier.width(16.dp))
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(category, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(account, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        category,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        (if (type == CashFlowType.INCOME) "+" else "-") + amount,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                        )
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "$account • $timestamp",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        "$balanceBefore → $balanceAfter",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                    )
+                }
+
+                if (!note.isNullOrBlank()) {
+                    Text(
+                        note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-            Text(amount, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (type == CashFlowType.INCOME) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -674,32 +960,64 @@ fun AeonDashedButton(
     text: String,
     icon: ImageVector,
     modifier: Modifier = Modifier,
-    isSlim: Boolean = false,
-    isDashed: Boolean = true
+    isError: Boolean = false,
+    enabled: Boolean = true
 ) {
-    val stroke = Stroke(width = 2.dp.value, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
-    val color = MaterialTheme.colorScheme.outlineVariant
+    val contentColor = if (isError) {
+        if (enabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
+    } else {
+        if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    }
+
+    val borderColor = if (isError) {
+        if (enabled) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+    } else {
+        if (enabled) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(if (isSlim) 48.dp else 56.dp)
-            .clickable(onClick = onClick)
+            .height(64.dp)
+            .clip(RoundedCornerShape(32.dp))
+            .clickable(enabled = enabled, onClick = onClick)
             .drawBehind {
-                if (isDashed) {
-                    drawRoundRect(
-                        color = color,
-                        style = stroke,
-                        cornerRadius = CornerRadius(16.dp.toPx())
-                    )
-                }
+                val strokeWidth = 1.5.dp.toPx()
+                val dashLength = 12f
+                val dashGap = 8f
+                val stroke = Stroke(
+                    width = strokeWidth,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashLength, dashGap), 0f)
+                )
+                drawRoundRect(
+                    color = borderColor,
+                    style = stroke,
+                    cornerRadius = CornerRadius(32.dp.toPx(), 32.dp.toPx()),
+                    size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                    topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+                )
             },
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = contentColor
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = contentColor
+            )
         }
     }
 }
@@ -707,7 +1025,7 @@ fun AeonDashedButton(
 @Composable
 fun AeonFloatingActionButton(
     onClick: () -> Unit,
-    icon: ImageVector,
+    icon: ImageVector = Icons.Rounded.Add,
     contentDescription: String? = null,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.primary,
@@ -718,9 +1036,10 @@ fun AeonFloatingActionButton(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
     ) {
-        Icon(icon, contentDescription = contentDescription)
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(24.dp))
     }
 }
 
@@ -735,25 +1054,112 @@ fun AeonExtendedFloatingActionButton(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        icon = { Icon(icon, contentDescription = null) },
-        text = { Text(text, fontWeight = FontWeight.Bold) },
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(20.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+        text = { 
+            Text(
+                text, 
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+            ) 
+        }
     )
 }
 
 @Composable
 fun AeonShimmer(
     innerPadding: PaddingValues,
-    showCashflow: Boolean = true,
     showNetWorth: Boolean = true,
+    showCurrency: Boolean = true,
+    showCashflow: Boolean = true,
     showAccounts: Boolean = true,
-    showCurrencyBreakdown: Boolean = true,
-    showTransactions: Boolean = true
+    showBudgets: Boolean = false
 ) {
-    // Basic Shimmer implementation placeholder
+    val shimmerColors = listOf(
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+    )
+
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset.Zero,
+        end = Offset(x = translateAnim, y = translateAnim)
+    )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+    ) {
+        if (showNetWorth) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(modifier = Modifier.size(150.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
+                    Box(modifier = Modifier.size(250.dp, 48.dp).background(brush, RoundedCornerShape(8.dp)))
+                    Box(modifier = Modifier.size(100.dp, 24.dp).background(brush, RoundedCornerShape(16.dp)))
+                }
+            }
+        }
+        if (showCurrency) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    repeat(3) {
+                        Box(modifier = Modifier.size(120.dp, 60.dp).background(brush, RoundedCornerShape(20.dp)))
+                    }
+                }
+            }
+        }
+        if (showCashflow) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp).background(brush, RoundedCornerShape(32.dp)))
+            }
+        }
+        if (showAccounts) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Box(modifier = Modifier.size(100.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
+                        Box(modifier = Modifier.size(60.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(24.dp)))
+                        Box(modifier = Modifier.weight(1f).height(120.dp).background(brush, RoundedCornerShape(24.dp)))
+                    }
+                }
+            }
+        }
+        if (showBudgets) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(modifier = Modifier.size(120.dp, 20.dp).background(brush, RoundedCornerShape(4.dp)))
+                    repeat(2) {
+                        Box(modifier = Modifier.fillMaxWidth().height(60.dp).background(brush, RoundedCornerShape(16.dp)))
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -763,8 +1169,53 @@ fun AeonBudgetProgress(
     total: BigDecimal,
     color: Color,
     baseCurrency: String,
-    precision: Int,
-    showLabels: Boolean
+    precision: Int = 2,
+    showLabels: Boolean = true
 ) {
-    // Basic Budget implementation placeholder
+    val progress = if (total.signum() > 0) (current.toDouble() / total.toDouble()).toFloat().coerceIn(0f, 1f) else 0f
+    
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (showLabels) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "${formatCurrencyRight(current, baseCurrency, precision)} / ${formatCurrencyRight(total, baseCurrency, precision)}",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+        }
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                color.copy(alpha = 0.7f),
+                                color
+                            )
+                        )
+                    )
+            )
+        }
+    }
 }

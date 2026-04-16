@@ -22,25 +22,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.formatDateTime
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionScreen(
+fun TransactionEntryScreen(
+    transactionId: Long? = null,
     accountId: String? = null,
     initialType: Int = 0,
     initialTemplate: String? = null,
@@ -49,9 +49,161 @@ fun AddTransactionScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     tagViewModel: TagViewModel,
-    settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
+    settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
+    val transactions by viewModel.transactions.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val accounts by accountViewModel.accounts.collectAsState()
+    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val dbTemplates by templateViewModel.templates.collectAsState()
+
+    TransactionEntryContent(
+        transactionId = transactionId,
+        accountId = accountId,
+        initialType = initialType,
+        initialTemplate = initialTemplate,
+        transactions = transactions,
+        categories = categories,
+        accounts = accounts,
+        exchangeRates = exchangeRates,
+        decimalPrecision = decimalPrecision,
+        dbTemplates = dbTemplates,
+        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate ->
+            if (transactionId != null && transactionId != -1L) {
+                val existingTransaction = transactions.find { it.id == transactionId }
+                if (existingTransaction != null) {
+                    viewModel.updateTransaction(
+                        oldTransaction = existingTransaction,
+                        title = title.ifBlank { if (isTransfer) "Transfer" else category },
+                        amount = amountValue,
+                        category = if (isTransfer) "Transfer" else category,
+                        isIncome = isIncome,
+                        accountId = accId,
+                        currency = currency,
+                        categoryId = if (isTransfer) null else categoryId,
+                        tags = tags,
+                        timestamp = timestamp,
+                        payee = payee,
+                        note = note,
+                        linkedTransactionId = linkedId
+                    )
+                    
+                    if (isTransfer && linkedId != null) {
+                        val linkedTx = transactions.find { it.id == linkedId }
+                        if (linkedTx != null && targetAcc != null) {
+                            val targetAmount = amountValue.multiply(rate)
+                            viewModel.updateTransaction(
+                                oldTransaction = linkedTx,
+                                title = linkedTx.title,
+                                amount = targetAmount,
+                                category = "Transfer",
+                                isIncome = true,
+                                accountId = targetAcc.id,
+                                currency = targetCurrency,
+                                tags = tags,
+                                timestamp = timestamp,
+                                payee = payee,
+                                note = note,
+                                linkedTransactionId = transactionId
+                            )
+                        }
+                    }
+                }
+            } else {
+                if (isTransfer) {
+                    viewModel.addTransaction(
+                        title = title.ifBlank { "Transfer to ${targetAcc?.name}" },
+                        amount = amountValue,
+                        category = "Transfer",
+                        isIncome = false,
+                        accountId = accId,
+                        currency = currency,
+                        tags = tags,
+                        paymentMethod = paymentMethod,
+                        timestamp = timestamp,
+                        payee = payee,
+                        note = note
+                    )
+
+                    targetAcc?.id?.let { targetId ->
+                        val targetAmount = amountValue.multiply(rate)
+                        viewModel.addTransaction(
+                            title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
+                            amount = targetAmount,
+                            category = "Transfer",
+                            isIncome = true,
+                            accountId = targetId,
+                            currency = targetCurrency,
+                            tags = tags,
+                            paymentMethod = paymentMethod,
+                            timestamp = timestamp,
+                            payee = payee,
+                            note = note
+                        )
+                    }
+                } else {
+                    viewModel.addTransaction(
+                        title = title.ifBlank { category },
+                        amount = amountValue,
+                        category = category,
+                        categoryId = categoryId,
+                        isIncome = isIncome,
+                        accountId = accId,
+                        currency = currency,
+                        tags = tags,
+                        paymentMethod = paymentMethod,
+                        timestamp = timestamp,
+                        payee = payee,
+                        note = note,
+                        linkedTransactionId = linkedId
+                    )
+                }
+            }
+            onBackClick()
+        },
+        onDelete = { id ->
+            viewModel.deleteTransaction(id)
+            onBackClick()
+        },
+        onBackClick = onBackClick,
+        tagViewModel = tagViewModel
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TransactionEntryContent(
+    transactionId: Long? = null,
+    accountId: String? = null,
+    initialType: Int = 0,
+    initialTemplate: String? = null,
+    transactions: List<Transaction> = emptyList(),
+    categories: List<CategoryEntity> = emptyList(),
+    accounts: List<Account> = emptyList(),
+    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    decimalPrecision: Int = 2,
+    dbTemplates: List<TemplateEntity> = emptyList(),
+    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal) -> Unit,
+    onDelete: (Long) -> Unit,
+    onBackClick: () -> Unit,
+    tagViewModel: TagViewModel? = null
+) {
+    val isEditMode = transactionId != null && transactionId != -1L
+    val existingTransaction = remember(transactionId, transactions) {
+        if (transactionId != null && transactionId != -1L) {
+            transactions.find { it.id == transactionId }
+        } else null
+    }
+
+    if (isEditMode && existingTransaction == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     var title by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Shopping") }
@@ -59,75 +211,113 @@ fun AddTransactionScreen(
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var paymentMethod by remember { mutableStateOf("Cash") }
     var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
-    val isIncome = transactionType == 1
-    val isTransfer = transactionType == 2
-    var selectedDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var selectedDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var payee by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var isWarrantyEnabled by remember { mutableStateOf(false) }
     var linkedTransactionId by remember { mutableStateOf<Long?>(null) }
     
-    val accounts by accountViewModel.accounts.collectAsState()
-    val transactions by viewModel.transactions.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
     
     var targetAccount by remember { mutableStateOf<Account?>(null) }
     var targetCurrency by remember { mutableStateOf("") }
     var exchangeRate by remember { mutableStateOf(BigDecimal.ONE) }
-
-
-    val dbTemplates by templateViewModel.templates.collectAsState()
-    remember(dbTemplates) {
-        if (dbTemplates.isEmpty()) {
-            listOf(
-                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
-                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
-                Triple("Rent Payment", Icons.Rounded.Home, 0),
-                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
-            )
-        } else {
-            dbTemplates.map { Triple(it.name, Icons.Rounded.Category, it.transactionType) }
-        }
-    }
     var selectedTemplateName by remember { mutableStateOf(initialTemplate) }
 
-    LaunchedEffect(initialTemplate, dbTemplates, accounts) {
-        if (initialTemplate != null) {
-            val template = dbTemplates.find { it.name == initialTemplate }
-            if (template != null) {
-                title = template.name
-                category = template.category
-                transactionType = template.transactionType
-                if (template.amount.compareTo(BigDecimal.ZERO) > 0) amount = template.amount.toPlainString()
-                selectedTemplateName = template.name
-                template.note?.let { note = it }
-                if (template.tags.isNotEmpty()) {
-                    selectedTags = template.tags.split(",").filter { it.isNotBlank() }
-                }
-                template.accountId?.let { id ->
-                    val acc = accounts.find { it.id == id }
-                    if (acc != null) {
-                        selectedAccount = acc
-                        selectedCurrency = acc.currencyCode
+    // Initialize state from existing transaction or initial parameters
+    LaunchedEffect(existingTransaction, accounts) {
+        if (isEditMode && existingTransaction != null) {
+            title = existingTransaction.title
+            amount = existingTransaction.amount.toPlainString()
+            category = existingTransaction.category
+            selectedCategoryId = existingTransaction.categoryId
+            selectedTags = existingTransaction.tags
+            paymentMethod = existingTransaction.paymentMethod
+            transactionType = when {
+                existingTransaction.category == "Transfer" -> 2
+                existingTransaction.isIncome -> 1
+                else -> 0
+            }
+            selectedDateMillis = existingTransaction.timestamp
+            payee = existingTransaction.payee
+            note = existingTransaction.note
+            linkedTransactionId = existingTransaction.linkedTransactionId
+            
+            selectedAccount = accounts.find { it.id == existingTransaction.accountId }
+            selectedCurrency = existingTransaction.currency
+
+            if (transactionType == 2 && existingTransaction.linkedTransactionId != null) {
+                val linkedTx = transactions.find { it.id == existingTransaction.linkedTransactionId }
+                if (linkedTx != null) {
+                    targetAccount = accounts.find { it.id == linkedTx.accountId }
+                    targetCurrency = linkedTx.currency
+                    if (existingTransaction.amount.signum() != 0) {
+                        exchangeRate = linkedTx.amount.divide(existingTransaction.amount, 8, RoundingMode.HALF_UP).abs()
                     }
                 }
-            } else {
-                // Fallback for default templates if DB is empty or template not found
-                when (initialTemplate) {
-                    "Grocery Run" -> { category = "Food"; transactionType = 0; title = "Grocery Run" }
-                    "Salary Deposit" -> { category = "Salary"; transactionType = 1; title = "Salary Deposit" }
-                    "Rent Payment" -> { category = "Rent"; transactionType = 0; title = "Rent Payment" }
-                    "Coffee" -> { category = "Food"; transactionType = 0; title = "Coffee" }
+            }
+        } else {
+            if (initialTemplate != null) {
+                val template = dbTemplates.find { it.name == initialTemplate }
+                if (template != null) {
+                    title = template.name
+                    category = template.category
+                    transactionType = template.transactionType
+                    if (template.amount > BigDecimal.ZERO) amount = template.amount.toPlainString()
+                    selectedTemplateName = template.name
+                    template.note?.let { note = it }
+                    if (template.tags.isNotEmpty()) {
+                        selectedTags = template.tags.split(",").filter { it.isNotBlank() }
+                    }
+                    template.accountId?.let { id ->
+                        val acc = accounts.find { it.id == id }
+                        if (acc != null) {
+                            selectedAccount = acc
+                            selectedCurrency = acc.currencyCode
+                        }
+                    }
+                } else {
+                    when (initialTemplate) {
+                        "Grocery Run" -> { category = "Food"; transactionType = 0; title = "Grocery Run" }
+                        "Salary Deposit" -> { category = "Salary"; transactionType = 1; title = "Salary Deposit" }
+                        "Rent Payment" -> { category = "Rent"; transactionType = 0; title = "Rent Payment" }
+                        "Coffee" -> { category = "Food"; transactionType = 0; title = "Coffee" }
+                    }
+                    selectedTemplateName = initialTemplate
                 }
-                selectedTemplateName = initialTemplate
+            }
+            
+            if (selectedAccount == null && accounts.isNotEmpty()) {
+                selectedAccount = accounts.find { it.id == accountId } 
+                    ?: accounts.find { it.name == "Aeon Prime Savings" } 
+                    ?: accounts.first()
+                selectedCurrency = selectedAccount?.currencyCode ?: "USD"
+            }
+            
+            if (transactionType == 2 && targetAccount == null && accounts.size > 1) {
+                targetAccount = accounts.find { it.id != (selectedAccount?.id ?: accountId) } ?: accounts.last()
+                targetCurrency = targetAccount?.currencyCode ?: "USD"
             }
         }
     }
-    
+
+    LaunchedEffect(transactionType == 2, selectedCurrency, targetCurrency, exchangeRates) {
+        if (transactionType == 2 && !isEditMode) {
+            val baseRates = exchangeRates
+            if (baseRates.isNotEmpty()) {
+                val sourceRateInUSD = baseRates[selectedCurrency] ?: BigDecimal.ONE
+                val destRateInUSD = baseRates[targetCurrency] ?: BigDecimal.ONE
+                if (sourceRateInUSD.signum() != 0) {
+                    exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
+                }
+            }
+        }
+    }
+
+    val isIncome = transactionType == 1
+    val isTransfer = transactionType == 2
+
     var showOCR by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
@@ -141,44 +331,13 @@ fun AddTransactionScreen(
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(accounts) {
-        if (selectedAccount == null && accounts.isNotEmpty()) {
-            selectedAccount = accounts.find { it.id == accountId } 
-                ?: accounts.find { it.name == "Aeon Prime Savings" } 
-                ?: accounts.first()
-            selectedCurrency = selectedAccount?.currencyCode ?: "USD"
-        }
-        if (targetAccount == null && accounts.size > 1) {
-            targetAccount = accounts.find { it.id != (selectedAccount?.id ?: accountId) } ?: accounts.last()
-            targetCurrency = targetAccount?.currencyCode ?: "USD"
-        } else if (targetAccount == null && accounts.isNotEmpty()) {
-            targetAccount = accounts.first()
-            targetCurrency = targetAccount?.currencyCode ?: "USD"
-        }
-    }
-
-    LaunchedEffect(isTransfer, selectedCurrency, targetCurrency, exchangeRates) {
-        if (isTransfer) {
-            val baseRates = exchangeRates
-            if (baseRates.isNotEmpty()) {
-                val sourceRateInUSD = baseRates[selectedCurrency] ?: BigDecimal.ONE
-                val destRateInUSD = baseRates[targetCurrency] ?: BigDecimal.ONE
-                if (sourceRateInUSD.signum() != 0) {
-                    exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
-                }
-            }
-        }
-    }
-
-    rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
                     title = { 
                         Text(
-                            "New Record", 
+                            if (isEditMode) "Edit Record" else "New Record", 
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -191,64 +350,40 @@ fun AddTransactionScreen(
                         }
                     },
                     actions = {
+                        if (isEditMode) {
+                            IconButton(onClick = {
+                                transactionId?.let { onDelete(it) }
+                            }) {
+                                Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+
                         Surface(
                             modifier = Modifier.padding(end = 16.dp),
                             shape = RoundedCornerShape(24.dp),
                             color = MaterialTheme.colorScheme.primary,
                             onClick = {
                                 val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                selectedAccount?.id?.let { accountId ->
-                                    if (isTransfer) {
-                                        // 1. Withdrawal from source
-                                        viewModel.addTransaction(
-                                            title = title.ifBlank { "Transfer to ${targetAccount?.name}" },
-                                            amount = amountValue,
-                                            category = "Transfer",
-                                            isIncome = false,
-                                            accountId = accountId,
-                                            currency = selectedCurrency,
-                                            tags = selectedTags,
-                                            paymentMethod = paymentMethod,
-                                            timestamp = selectedDateMillis,
-                                            payee = payee,
-                                            note = note
-                                        )
-
-                                        // 2. Deposit to target
-                                        targetAccount?.id?.let { targetId ->
-                                            val targetAmount = amountValue.multiply(exchangeRate)
-                                            viewModel.addTransaction(
-                                                title = title.ifBlank { "Transfer from ${selectedAccount?.name}" },
-                                                amount = targetAmount,
-                                                category = "Transfer",
-                                                isIncome = true,
-                                                accountId = targetId,
-                                                currency = targetCurrency,
-                                                tags = selectedTags,
-                                                paymentMethod = paymentMethod,
-                                                timestamp = selectedDateMillis,
-                                                payee = payee,
-                                                note = note
-                                            )
-                                        }
-                                    } else {
-                                        viewModel.addTransaction(
-                                            title = title.ifBlank { category },
-                                            amount = amountValue,
-                                            category = category,
-                                            categoryId = selectedCategoryId,
-                                            isIncome = isIncome,
-                                            accountId = accountId,
-                                            currency = selectedCurrency,
-                                            tags = selectedTags,
-                                            paymentMethod = paymentMethod,
-                                            timestamp = selectedDateMillis,
-                                            payee = payee,
-                                            note = note,
-                                            linkedTransactionId = linkedTransactionId
-                                        )
-                                    }
-                                    onBackClick()
+                                selectedAccount?.id?.let { accId ->
+                                    onSave(
+                                        title,
+                                        amountValue,
+                                        if (isTransfer) "Transfer" else category,
+                                        if (isTransfer) null else selectedCategoryId,
+                                        isIncome,
+                                        accId,
+                                        selectedCurrency,
+                                        selectedTags,
+                                        paymentMethod,
+                                        selectedDateMillis,
+                                        payee,
+                                        note,
+                                        linkedTransactionId,
+                                        isTransfer,
+                                        targetAccount,
+                                        targetCurrency,
+                                        exchangeRate
+                                    )
                                 }
                             },
                             enabled = selectedAccount != null
@@ -277,7 +412,7 @@ fun AddTransactionScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Header Card: Type & Amount (Aeon Style)
+                // Header Card: Type & Amount
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -289,7 +424,7 @@ fun AddTransactionScreen(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Transaction Type Row (Fixed at top)
+                        // Transaction Type Row
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(32.dp))
@@ -321,7 +456,7 @@ fun AddTransactionScreen(
                             }
                         }
 
-                        // Amount & Currency Area (Fills remaining space and centers content)
+                        // Amount & Currency Area
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -413,15 +548,24 @@ fun AddTransactionScreen(
 
                 // Slim Action Cards
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RecordFieldCard(
-                        icon = Icons.Rounded.AutoAwesome,
-                        label = "SELECT TEMPLATE",
-                        value = selectedTemplateName ?: "None Selected",
-                        trailingIcon = Icons.Rounded.KeyboardArrowDown,
-                        onClick = { showTemplateSheet = true },
-                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
-                    )
+                    if (isEditMode) {
+                        EditorialInput(
+                            value = title, 
+                            onValueChange = { title = it }, 
+                            label = "RECORD TITLE", 
+                            icon = Icons.Rounded.Edit
+                        )
+                    } else {
+                        RecordFieldCard(
+                            icon = Icons.Rounded.AutoAwesome,
+                            label = "SELECT TEMPLATE",
+                            value = selectedTemplateName ?: "None Selected",
+                            trailingIcon = Icons.Rounded.KeyboardArrowDown,
+                            onClick = { showTemplateSheet = true },
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            isSlim = true
+                        )
+                    }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         RecordFieldCard(
@@ -445,10 +589,14 @@ fun AddTransactionScreen(
                                 isSlim = true
                             )
                         } else {
+                            val displayCategory = if (isEditMode) {
+                                categories.find { it.id == selectedCategoryId }?.name ?: category
+                            } else category
+                            
                             RecordFieldCard(
-                                icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                                icon = categoryIcons[displayCategory] ?: Icons.Rounded.Category,
                                 label = "CATEGORY",
-                                value = category,
+                                value = displayCategory,
                                 onClick = { showCategorySheet = true },
                                 modifier = Modifier.weight(1f),
                                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
@@ -703,7 +851,7 @@ fun AddTransactionScreen(
         )
     }
 
-    if (showLabelSheet) {
+    if (showLabelSheet && tagViewModel != null) {
         LabelPickerSheet(
             selectedTags = selectedTags,
             onTagsChanged = { selectedTags = it },
@@ -783,7 +931,7 @@ fun AddTransactionScreen(
                                 title = template.name
                                 category = template.category
                                 transactionType = template.transactionType
-                                if (template.amount.compareTo(BigDecimal.ZERO) > 0) amount = template.amount.toPlainString()
+                                if (template.amount > BigDecimal.ZERO) amount = template.amount.toPlainString()
                                 template.note?.let { note = it }
                                 template.accountId?.let { id ->
                                     val acc = accounts.find { it.id == id }
@@ -811,13 +959,13 @@ fun AddTransactionScreen(
                 AeonSectionHeader(title = "Select Transaction To Link")
                 Spacer(modifier = Modifier.height(24.dp))
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(transactions.sortedByDescending { it.timestamp }) { tx ->
+                    items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
                             amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency, precision = decimalPrecision),
-                            balanceBefore = "", // Not needed in picker
-                            balanceAfter = "",  // Not needed in picker
+                            balanceBefore = "", 
+                            balanceAfter = "",  
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                             timestamp = formatDateTime(tx.timestamp),
                             note = tx.note,
@@ -825,24 +973,28 @@ fun AddTransactionScreen(
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
                             precision = decimalPrecision,
                             onClick = {
-                                    linkedTransactionId = tx.id
-                                    showLinkedTransactionSheet = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                                linkedTransactionId = tx.id
+                                showLinkedTransactionSheet = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
         }
+    }
 }
 
 @Composable
-fun TemplateItemRow(name: String, icon: ImageVector, onClick: () -> Unit) {
+private fun TemplateItemRow(
+    name: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
@@ -850,9 +1002,52 @@ fun TemplateItemRow(name: String, icon: ImageVector, onClick: () -> Unit) {
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+            Text(
+                name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionEntryPreview() {
+    val sampleAccounts = listOf(
+        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), BigDecimal("1000.00"), "USD", "Bank", "#FF0000", "account_balance"),
+        Account("2", "Cash Wallet", BigDecimal("45.00"), BigDecimal("50.00"), "USD", "Cash", "#00FF00", "wallet")
+    )
+
+    val sampleCategories = listOf(
+        CategoryEntity(1, "Food", "Restaurant", 0xFF4CAF50.toInt()),
+        CategoryEntity(2, "Transport", "DirectionsCar", 0xFF2196F3.toInt()),
+        CategoryEntity(3, "Shopping", "ShoppingBag", 0xFFFFC107.toInt())
+    )
+    
+    OssWalletTheme {
+        TransactionEntryContent(
+            accounts = sampleAccounts,
+            categories = sampleCategories,
+            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onDelete = {},
+            onBackClick = {}
+        )
     }
 }

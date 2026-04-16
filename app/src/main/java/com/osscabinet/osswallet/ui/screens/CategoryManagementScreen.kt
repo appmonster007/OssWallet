@@ -138,34 +138,20 @@ fun CategoryEditSheet(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    if (category == null || category.id == 0L) "New Category" else "Edit Category",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                )
-                
-                val currentAccentColor = try { Color(android.graphics.Color.parseColor(displayColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+            AeonFormHeader(
+                title = if (category == null || category.id == 0L) "New Category" else "Edit Category",
+                onSaveClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
+                saveButtonEnabled = name.isNotBlank(),
+                accentColorHex = displayColorHex
+            )
 
-                Surface(
-                    shape = RoundedCornerShape(24.dp),
-                    color = if (name.isNotBlank()) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
-                    onClick = { if (name.isNotBlank()) onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
-                    enabled = name.isNotBlank()
-                ) {
-                    Text(
-                        "SAVE",
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (name.isNotBlank()) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
-                        )
-                    )
-                }
-            }
+            // Preview Header
+            AeonHeroHeader(
+                title = name,
+                subtitle = if (selectedParentId != null) "Sub-category of ${parentCategories.find { it.id == selectedParentId }?.name}" else "Root Category",
+                iconName = selectedIcon,
+                accentColorHex = displayColorHex
+            )
 
             // Identity Section
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

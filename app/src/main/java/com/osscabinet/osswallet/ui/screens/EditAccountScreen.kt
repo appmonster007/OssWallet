@@ -66,6 +66,8 @@ fun EditAccountScreen(
 
     Scaffold(
         topBar = {
+            val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank()
+
             CenterAlignedTopAppBar(
                 title = { Text("Edit Account", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
@@ -74,41 +76,28 @@ fun EditAccountScreen(
                     }
                 },
                 actions = {
-                    val currentAccentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
-                    val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank()
-                    
-                    Surface(
-                        modifier = Modifier.padding(end = 16.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (canSave) currentAccentColor else MaterialTheme.colorScheme.surfaceVariant,
-                        onClick = {
-                            if (canSave) {
-                                viewModel.updateAccount(account.copy(
-                                    name = accountName,
-                                    structureType = structureType,
-                                    currencyCode = primaryCurrency,
-                                    allowedCurrencies = allowedCurrencies.toList(),
-                                    colorHex = accentColorHex,
-                                    icon = selectedIconName
-                                ))
-                                onBackClick()
-                            }
+                    AeonFormHeader(
+                        title = "",
+                        onSaveClick = {
+                            viewModel.updateAccount(account.copy(
+                                name = accountName,
+                                structureType = structureType,
+                                currencyCode = primaryCurrency,
+                                allowedCurrencies = allowedCurrencies.toList(),
+                                colorHex = accentColorHex,
+                                icon = selectedIconName
+                            ))
+                            onBackClick()
                         },
-                        enabled = canSave
-                    ) {
-                        Text(
-                            "SAVE",
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (canSave) (if (currentAccentColor.isDark()) Color.White else Color.Black) else MaterialTheme.colorScheme.outline
-                            )
-                        )
-                    }
+                        saveButtonEnabled = canSave,
+                        accentColorHex = accentColorHex,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
                 }
             )
         }
-    ) { innerPadding ->
+    ) {
+innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -119,11 +108,10 @@ fun EditAccountScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Header Section
-            AccountHeroHeader(
-                name = accountName,
-                balance = account.balance.toString(),
-                currencyCode = primaryCurrency,
-                colorHex = accentColorHex,
+            AeonHeroHeader(
+                title = accountName,
+                subtitle = "$primaryCurrency ${account.balance}",
+                accentColorHex = accentColorHex,
                 iconName = selectedIconName
             )
 

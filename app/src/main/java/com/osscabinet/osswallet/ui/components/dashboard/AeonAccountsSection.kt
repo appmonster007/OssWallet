@@ -28,6 +28,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+
 @Serializable
 data class AccountsSectionSettings(
     val layout: String = "grid", // "scroll" or "grid"
@@ -483,5 +486,47 @@ private fun AeonAddAccountCardContent(
             modifier = modifier,
             precision = precision
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonAccountsSectionPreview() {
+    val sampleAccount = Account(
+        id = "1",
+        name = "Main Bank",
+        balance = BigDecimal("1000.00"),
+        initialBalance = BigDecimal("1000.00"),
+        currencyCode = "USD",
+        structureType = "Default",
+        colorHex = "#2196F3",
+        icon = "bank",
+        allowedCurrencies = listOf("USD"),
+        isArchived = false,
+        displayOrder = 0
+    )
+
+    val sampleAccountStats = mapOf(
+        "1" to AccountStats(
+            currencyBalances = mapOf("USD" to BigDecimal("1000.00")),
+            incomeInAccountCurrency = BigDecimal("200.00"),
+            expenseInAccountCurrency = BigDecimal("100.00")
+        )
+    )
+
+    OssWalletTheme {
+        Surface {
+            AeonAccountsSection(
+                onManageClick = {},
+                onAccountClick = {},
+                onGridColumnsChange = {},
+                accounts = listOf(sampleAccount),
+                accountStats = sampleAccountStats,
+                baseCurrency = "USD",
+                exchangeRates = emptyMap(),
+                currentTheme = "Light",
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
 }

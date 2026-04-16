@@ -23,6 +23,10 @@ import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import kotlinx.serialization.Serializable
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
+
 @Serializable
 data class NetWorthSettings(
     val fontSize: String = "Medium", // "Small", "Medium", "Large"
@@ -260,4 +264,25 @@ private fun NetWorthSettingsDialog(
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surface
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NetWorthSectionPreview() {
+    OssWalletTheme {
+        Surface {
+            NetWorthSection(
+                uiState = NetWorthUiState.Success(
+                    netWorth = BigDecimal("12345.67"),
+                    baseCurrency = "USD",
+                    precision = 2,
+                    fontSize = "Medium",
+                    timelineRange = TimelineRange.AllTime
+                ),
+                onFontSizeChange = {},
+                onTimelineRangeChange = {},
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
 }

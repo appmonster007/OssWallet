@@ -24,6 +24,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+
 @Serializable
 data class CurrencyBalancesSettings(
     val layout: String = "scroll", // "scroll" or "grid"
@@ -275,6 +278,31 @@ fun AeonCurrencyBalanceItem(
                     )
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CurrencyAggregationSectionPreview() {
+    val sampleCurrencyTotals = mapOf(
+        "USD" to BigDecimal("1000.00"),
+        "EUR" to BigDecimal("500.00"),
+        "GBP" to BigDecimal("250.00")
+    )
+    val sampleExchangeRates = mapOf(
+        "EUR" to BigDecimal("1.10"),
+        "GBP" to BigDecimal("1.25")
+    )
+
+    OssWalletTheme {
+        Surface {
+            CurrencyAggregationSection(
+                currencyTotals = sampleCurrencyTotals,
+                baseCurrency = "USD",
+                exchangeRates = sampleExchangeRates,
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

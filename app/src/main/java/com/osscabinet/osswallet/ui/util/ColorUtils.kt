@@ -9,6 +9,14 @@ fun Color.isDark(): Boolean {
     return luminance < 0.5
 }
 
+fun Int.toHex(): String = String.format("#%06X", 0xFFFFFF and this)
+
+fun String.toColorInt(): Int = try {
+    android.graphics.Color.parseColor(this)
+} catch (e: Exception) {
+    -1
+}
+
 /**
  * Pastels a color by increasing its lightness and decreasing its saturation.
  * This makes it suitable for Material You surfaces.

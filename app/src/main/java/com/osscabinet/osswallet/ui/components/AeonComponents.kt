@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -62,9 +63,9 @@ fun RecordFieldCard(
     iconContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     isSlim: Boolean = false
 ) {
-    val verticalPadding = if (isSlim) 10.dp else 16.dp
-    val iconSize = if (isSlim) 36.dp else 48.dp
-    val innerIconSize = if (isSlim) 18.dp else 24.dp
+    val verticalPadding = if (isSlim) 8.dp else 16.dp
+    val iconSize = if (isSlim) 32.dp else 48.dp
+    val innerIconSize = if (isSlim) 16.dp else 24.dp
 
     Surface(
         modifier = modifier
@@ -603,6 +604,161 @@ fun PaymentMethodPickerSheet(
     }
 }
 
+@Composable
+fun CategoryListItem(
+    category: CategoryEntity,
+    isParent: Boolean,
+    isSelected: Boolean = false,
+    hasChildren: Boolean = false,
+    isExpanded: Boolean = false,
+    isManagementMode: Boolean = false,
+    onToggleExpand: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
+        Surface(
+            modifier = Modifier.size(if (isParent) 40.dp else 32.dp),
+            shape = CircleShape,
+            color = Color(displayColor).copy(alpha = 0.2f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    AccountIconMap[category.iconName] ?: Icons.Rounded.Category,
+                    contentDescription = null,
+                    modifier = Modifier.size(if (isParent) 20.dp else 16.dp),
+                    tint = Color(displayColor)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Text(
+            category.name,
+            style = if (isParent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isParent) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        
+        if (isManagementMode) {
+            IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Rounded.Edit, contentDescription = "Edit", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.outline)
+            }
+        } else if (isSelected) {
+            Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        }
+        
+        if (isParent && hasChildren) {
+            IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonCategoryList(
+    categories: List<CategoryEntity>,
+    selectedCategoryId: Long? = null,
+    onCategorySelected: (CategoryEntity) -> Unit,
+    isManagementMode: Boolean = false,
+    onEditClick: (CategoryEntity) -> Unit = {},
+    onAddSubCategoryClick: (CategoryEntity) -> Unit = {}
+) {
+    val parentCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
+    
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        parentCategories.forEach { parent ->
+            var expanded by remember { mutableStateOf(categories.any { it.parentId == parent.id && it.id == selectedCategoryId }) }
+            val children = categories.filter { it.parentId == parent.id }.sortedBy { it.name }
+            
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
+                Column {
+                    CategoryListItem(
+                        category = parent,
+                        isParent = true,
+                        isSelected = selectedCategoryId == parent.id,
+                        hasChildren = children.isNotEmpty(),
+                        isExpanded = expanded,
+                        isManagementMode = isManagementMode,
+                        onToggleExpand = { expanded = !expanded },
+                        onEditClick = { onEditClick(parent) },
+                        onClick = {
+                            if (isManagementMode) onEditClick(parent) else onCategorySelected(parent)
+                        }
+                    )
+                    
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(start = 16.dp, end = 8.dp, bottom = 8.dp)) {
+                            children.forEach { child ->
+                                CategoryListItem(
+                                    category = child,
+                                    isParent = false,
+                                    isSelected = selectedCategoryId == child.id,
+                                    isManagementMode = isManagementMode,
+                                    onEditClick = { onEditClick(child) },
+                                    onClick = {
+                                        if (isManagementMode) onEditClick(child) else onCategorySelected(child)
+                                    }
+                                )
+                            }
+                            
+                            if (isManagementMode) {
+                                // Add Sub-category button
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { onAddSubCategoryClick(parent) }
+                                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                                    color = Color.Transparent
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Rounded.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            "Add sub-category",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerSheet(
@@ -618,19 +774,16 @@ fun CategoryPickerSheet(
     ) {
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
             AeonSectionHeader(title = "Classification")
-            Spacer(modifier = Modifier.height(32.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(categories.sortedBy { it.name }) { category ->
-                    CategoryItem(
-                        name = category.name,
-                        icon = categoryIcons[category.iconName] ?: Icons.Rounded.Category,
-                        isSelected = selectedCategoryId == category.id,
-                        onClick = {
-                            onCategorySelected(category)
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    AeonCategoryList(
+                        categories = categories,
+                        selectedCategoryId = selectedCategoryId,
+                        onCategorySelected = {
+                            onCategorySelected(it)
+                            onDismiss()
                         }
                     )
                 }
@@ -662,23 +815,7 @@ fun AeonSectionHeader(
 }
 
 
-val categoryIcons = mapOf(
-    "Food" to Icons.Rounded.Restaurant,
-    "Transport" to Icons.Rounded.DirectionsCar,
-    "Shopping" to Icons.Rounded.ShoppingBag,
-    "Electronics" to Icons.Rounded.Smartphone,
-    "Entertainment" to Icons.Rounded.SportsEsports,
-    "Health" to Icons.Rounded.MedicalServices,
-    "Bills" to Icons.Rounded.Receipt,
-    "Investment" to Icons.AutoMirrored.Rounded.TrendingUp,
-    "Housing" to Icons.Rounded.Home,
-    "Education" to Icons.Rounded.School,
-    "Income" to Icons.Rounded.Payments,
-    "Coffee" to Icons.Rounded.CoffeeMaker,
-    "Grocery" to Icons.Rounded.ShoppingCart,
-    "Transfer" to Icons.Rounded.SyncAlt,
-    "Other" to Icons.Rounded.MoreHoriz
-)
+val categoryIcons = AccountIconMap
 
 @Composable
 fun AeonDashedButton(

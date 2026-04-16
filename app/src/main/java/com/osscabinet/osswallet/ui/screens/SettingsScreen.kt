@@ -34,6 +34,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onManageAccountsClick: () -> Unit,
     onManageLabelsClick: () -> Unit,
+    onManageCategoriesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -369,6 +370,12 @@ fun SettingsScreen(
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
                     onClick = onManageLabelsClick
+                )
+                SettingsItem(
+                    title = "Manage Categories",
+                    subtitle = "Organize income and expenses",
+                    icon = Icons.Rounded.Category,
+                    onClick = onManageCategoriesClick
                 )
                 SettingsItem(
                     title = "Transaction Templates",

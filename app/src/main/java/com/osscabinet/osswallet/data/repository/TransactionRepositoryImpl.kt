@@ -7,11 +7,13 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class TransactionRepositoryImpl(
+class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao
 ) : TransactionRepository {
+
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions(profileId).map { entities ->
             entities.map { it.toDomain() }
@@ -22,18 +24,19 @@ class TransactionRepositoryImpl(
         return transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
     }
 
-    override suspend fun deleteTransaction(id: Long) {
-        transactionDao.getTransactionById(id)?.let {
-            transactionDao.deleteTransactionWithBalanceUpdate(it, accountDao)
-        }
-    }
-
     override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
         transactionDao.updateTransactionWithBalanceUpdate(
             oldTransaction.toEntity(profileId),
             newTransaction.toEntity(profileId),
             accountDao
         )
+    }
+
+    override suspend fun deleteTransaction(id: Long) {
+        val transaction = transactionDao.getTransactionById(id)
+        transaction?.let {
+            transactionDao.deleteTransactionWithBalanceUpdate(it, accountDao)
+        }
     }
 
     override suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
@@ -57,12 +60,15 @@ class TransactionRepositoryImpl(
             isIncome = isIncome,
             accountId = accountId,
             categoryId = categoryId,
-            tags = tags.split(",").filter { it.isNotBlank() },
+            tags = if (tags.isEmpty()) emptyList() else tags.split(","),
             paymentMethod = paymentMethod,
             payee = payee,
             note = note,
             recurring = recurring,
-            linkedTransactionId = linkedTransactionId
+            linkedTransactionId = linkedTransactionId,
+            latitude = latitude,
+            longitude = longitude,
+            warrantyExpiration = warrantyExpiration
         )
     }
 
@@ -83,7 +89,10 @@ class TransactionRepositoryImpl(
             payee = payee,
             note = note,
             recurring = recurring,
-            linkedTransactionId = linkedTransactionId
+            linkedTransactionId = linkedTransactionId,
+            latitude = latitude,
+            longitude = longitude,
+            warrantyExpiration = warrantyExpiration
         )
     }
 }

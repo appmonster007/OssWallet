@@ -1102,7 +1102,7 @@ fun TransactionEntryContent(
                         AeonTransactionItem(
                             category = tx.category,
                             account = accounts.find { it.id == tx.accountId }?.name ?: "Unknown",
-                            amount = formatCurrencyRight(if (tx.isIncome) tx.amount else tx.amount.negate(), tx.currency, precision = decimalPrecision),
+                            amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
                             balanceBefore = "", 
                             balanceAfter = "",  
                             type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,

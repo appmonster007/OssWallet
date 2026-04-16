@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -487,42 +491,96 @@ fun TransactionEntryContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(240.dp),
-                    shape = RoundedCornerShape(40.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    shape = RoundedCornerShape(48.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 2.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Transaction Type Row
-                        Row(
+                        // Transaction Type Row - Expressive Design
+                        Box(
                             modifier = Modifier
+                                .height(40.dp)
                                 .clip(RoundedCornerShape(32.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                                .padding(6.dp)
                         ) {
                             val types = listOf(
-                                Icons.Rounded.Remove,
-                                Icons.Rounded.Add,
-                                Icons.Rounded.SwapHoriz
+                                Icons.Rounded.Remove to "Expense",
+                                Icons.Rounded.Add to "Income",
+                                Icons.Rounded.SwapHoriz to "Transfer"
                             )
-                            types.forEachIndexed { index, icon ->
-                                val isSelected = transactionType == index
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) Color(0xFF4A5C92) else Color.Transparent)
-                                        .clickable { transactionType = index },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        icon,
-                                        contentDescription = null,
-                                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(24.dp)
+
+                            val expenseColor = lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.6f)
+                            val incomeColor = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.6f)
+                            val transferColor = MaterialTheme.colorScheme.tertiary
+
+                            val indicatorColor by animateColorAsState(
+                                targetValue = when(transactionType) {
+                                    0 -> expenseColor
+                                    1 -> incomeColor
+                                    else -> transferColor
+                                },
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                label = "indicatorColor"
+                            )
+
+                            val indicatorOffset by animateDpAsState(
+                                targetValue = when(transactionType) {
+                                    0 -> 0.dp
+                                    1 -> 72.dp
+                                    else -> 144.dp
+                                },
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                ),
+                                label = "indicatorOffset"
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = indicatorOffset)
+                                    .width(72.dp)
+                                    .fillMaxHeight()
+                                    .clip(CircleShape)
+                                    .background(indicatorColor)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxHeight(),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp)
+                            ) {
+                                types.forEachIndexed { index, pair ->
+                                    val isSelected = transactionType == index
+                                    val scale by animateFloatAsState(
+                                        targetValue = if (isSelected) 1.2f else 1.0f,
+                                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                                        label = "iconScale"
                                     )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .width(72.dp)
+                                            .fillMaxHeight()
+                                            .clip(CircleShape)
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null
+                                            ) { transactionType = index },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            pair.first,
+                                            contentDescription = pair.second,
+                                            tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                            modifier = Modifier
+                                                .size(26.dp)
+                                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -531,7 +589,10 @@ fun TransactionEntryContent(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clickable { isNumpadVisible = true },
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { isNumpadVisible = true },
                             contentAlignment = Alignment.Center
                         ) {
                             Column(

@@ -104,9 +104,13 @@ fun AeonTransactionList(
                                         Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
                                         Text(formatCurrencyRight(weekExpense, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error))
                                     }
+                                    Column {
+                                        Text("TOTAL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                        Text("∑ " + formatCurrencyRight(weekIncome-weekExpense, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error))
+                                    }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("CLOSING", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                    Text("Balance", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
                                     Text(formatCurrencyRight(closingBalance, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
                                 }
                             }

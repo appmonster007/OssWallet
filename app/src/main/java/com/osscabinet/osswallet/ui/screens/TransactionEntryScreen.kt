@@ -361,7 +361,7 @@ fun TransactionEntryContent(
                         Surface(
                             modifier = Modifier.padding(end = 16.dp),
                             shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = Color(0xFF4A5C92),
                             onClick = {
                                 val amountValue = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 selectedAccount?.id?.let { accId ->
@@ -393,7 +393,7 @@ fun TransactionEntryContent(
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
                                 style = MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = Color.White
                                 )
                             )
                         }
@@ -433,24 +433,25 @@ fun TransactionEntryContent(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val types = listOf(
-                                Icons.Rounded.RemoveCircleOutline,
-                                Icons.Rounded.AddCircleOutline,
-                                Icons.Rounded.SyncAlt
+                                Icons.Rounded.Remove,
+                                Icons.Rounded.Add,
+                                Icons.Rounded.SwapHoriz
                             )
                             types.forEachIndexed { index, icon ->
+                                val isSelected = transactionType == index
                                 Box(
                                     modifier = Modifier
                                         .size(44.dp)
                                         .clip(CircleShape)
-                                        .background(if (transactionType == index) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                        .background(if (isSelected) Color(0xFF4A5C92) else Color.Transparent)
                                         .clickable { transactionType = index },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         icon,
                                         contentDescription = null,
-                                        tint = if (transactionType == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
+                                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
@@ -479,22 +480,23 @@ fun TransactionEntryContent(
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
 
+                                    val displayAmount = if (amount.isEmpty()) "0.00" else amount
                                     Text(
-                                        text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else (if (isIncome) "+" else if (isTransfer) "" else "-") + amount,
+                                        text = displayAmount,
                                         style = TextStyle(
-                                            fontSize = if (isTransfer) 48.sp else 64.sp,
-                                            fontWeight = FontWeight.Black,
+                                            fontSize = 80.sp,
+                                            fontWeight = FontWeight.Bold,
                                             textAlign = TextAlign.Center,
                                             color = when {
                                                 isIncome -> Color(0xFF2E7D32)
                                                 isTransfer -> MaterialTheme.colorScheme.onSurface
-                                                else -> MaterialTheme.colorScheme.error
+                                                else -> Color(0xFFB71C1C)
                                             }
                                         ),
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
 
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Spacer(modifier = Modifier.width(16.dp))
 
                                     CurrencySelector(
                                         selectedCurrency = selectedCurrency,

@@ -57,6 +57,10 @@ data class TransactionBackup(
     val categoryId: Long?,
     val tags: String,
     val paymentMethod: String = "Cash",
+    val payee: String = "",
+    val note: String = "",
+    val recurring: String? = null,
+    val linkedTransactionId: Long? = null,
     val profileId: Int
 )
 

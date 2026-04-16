@@ -59,12 +59,66 @@ fun AccountDetailScreen(
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
     val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
-    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId) {
-        transactionsWithBalance.filter { it.transaction.accountId == accountId }
+    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId, uiState) {
+        val filtered = transactionsWithBalance.filter { it.transaction.accountId == accountId }
+        val state = uiState as? AccountDetailUiState.Success
+        if (state != null && !state.showPlannedPayments) {
+            val now = System.currentTimeMillis()
+            filtered.filter { it.transaction.timestamp <= now }
+        } else {
+            filtered
+        }
     }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
+
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
+    if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
+        val state = uiState as AccountDetailUiState.Success
+        AlertDialog(
+            onDismissRequest = { showSettingsDialog = false },
+            title = { Text("Transaction Settings") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Show Planned Payments", style = MaterialTheme.typography.bodyLarge)
+                            Text("Include future transactions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(
+                            checked = state.showPlannedPayments,
+                            onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) }
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Use Note as Header", style = MaterialTheme.typography.bodyLarge)
+                            Text("Primary header will show transaction note", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(
+                            checked = state.useNoteAsHeader,
+                            onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettingsDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -86,8 +140,8 @@ fun AccountDetailScreen(
                         IconButton(onClick = { onEditAccountClick(accountId) }) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                         }
-                        IconButton(onClick = { /* More actions like Delete */ }) {
-                            Icon(Icons.Rounded.MoreHoriz, contentDescription = "More")
+                        IconButton(onClick = { showSettingsDialog = true }) {
+                            Icon(Icons.Rounded.Settings, contentDescription = "Settings")
                         }
                     }
                 )
@@ -229,7 +283,8 @@ fun AccountDetailScreen(
                                 categoryMap = categoryMap,
                                 onTransactionClick = { onEditTransactionClick(it.id) },
                                 contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
-                                precision = state.decimalPrecision
+                                precision = state.decimalPrecision,
+                                useNoteAsHeader = state.useNoteAsHeader
                             )
                         }
                     }

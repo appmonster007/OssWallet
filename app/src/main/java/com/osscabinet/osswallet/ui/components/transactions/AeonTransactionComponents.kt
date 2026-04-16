@@ -28,6 +28,9 @@ import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
+import java.text.SimpleDateFormat
+import java.util.*
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AeonTransactionList(
@@ -38,14 +41,15 @@ fun AeonTransactionList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     showDailyHeader: Boolean = true,
-    precision: Int = 2
+    precision: Int = 2,
+    useNoteAsHeader: Boolean = false
 ) {
-    val grouped = if (showDailyHeader) {
-        transactions.groupBy {
-            java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(it.transaction.timestamp))
-        }
-    } else {
-        mapOf("" to transactions)
+    val calendar = Calendar.getInstance()
+    val groupedByWeek = transactions.groupBy {
+        calendar.timeInMillis = it.transaction.timestamp
+        val weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR)
+        val year = calendar.get(Calendar.YEAR)
+        "$year-W$weekOfYear"
     }
 
     LazyColumn(
@@ -53,33 +57,65 @@ fun AeonTransactionList(
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        grouped.forEach { (date, dailyTransactions) ->
-            if (date.isNotEmpty() && showDailyHeader) {
-                stickyHeader {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Column {
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+        groupedByWeek.forEach { (weekKey, weekTransactions) ->
+            val (year, week) = weekKey.split("-W").map { it.toInt() }
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.WEEK_OF_YEAR, week)
+            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            val weekStart = calendar.time
+            calendar.add(Calendar.DAY_OF_WEEK, 6)
+            val weekEnd = calendar.time
+            val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
+
+            val weekIncome = weekTransactions.filter { it.transaction.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
+            val weekExpense = weekTransactions.filter { !it.transaction.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
+            val closingBalance = weekTransactions.maxByOrNull { it.transaction.timestamp }?.balanceAfter ?: BigDecimal.ZERO
+
+            stickyHeader {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column {
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Text(
-                                text = date.uppercase(),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                text = "WEEK $week ($weekRange)".uppercase(),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                     color = MaterialTheme.colorScheme.outline,
                                     letterSpacing = 1.sp
                                 )
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Column {
+                                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                        Text(formatCurrencyRight(weekIncome, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50)))
+                                    }
+                                    Column {
+                                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                        Text(formatCurrencyRight(weekExpense, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error))
+                                    }
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("CLOSING", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                                    Text(formatCurrencyRight(closingBalance, "", precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            items(dailyTransactions, key = { it.transaction.id }) { item ->
+            items(weekTransactions, key = { it.transaction.id }) { item ->
                 val category = categoryMap[item.transaction.categoryId]
                 val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
@@ -93,12 +129,13 @@ fun AeonTransactionList(
                     balanceBefore = formatCurrencyRight(balanceBefore, "", precision),
                     balanceAfter = formatCurrencyRight(item.balanceAfter, "", precision),
                     type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                    timestamp = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.transaction.timestamp)),
+                    timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                     note = item.transaction.note,
                     tags = item.transaction.tags,
                     icon = icon,
                     iconBg = iconBg,
                     precision = precision,
+                    useNoteAsHeader = useNoteAsHeader,
                     onClick = { onTransactionClick(item.transaction) }
                 )
             }
@@ -128,8 +165,12 @@ fun AeonTransactionItem(
     icon: ImageVector? = null,
     iconBg: Color? = null,
     precision: Int = 2,
+    useNoteAsHeader: Boolean = false,
     onClick: () -> Unit
 ) {
+    val headerText = if (useNoteAsHeader && !note.isNullOrBlank()) note else category
+    val subHeaderText = if (useNoteAsHeader && !note.isNullOrBlank()) category else account
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -170,7 +211,7 @@ fun AeonTransactionItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            category,
+                            headerText,
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -190,9 +231,12 @@ fun AeonTransactionItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "$account • $timestamp",
+                            if (useNoteAsHeader && !note.isNullOrBlank()) "$subHeaderText • $account" else subHeaderText,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             "$balanceBefore → $balanceAfter",
@@ -200,8 +244,15 @@ fun AeonTransactionItem(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                         )
                     }
+                    
+                    Text(
+                        timestamp,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier.align(Alignment.End)
+                    )
 
-                    if (!note.isNullOrBlank()) {
+                    if (!useNoteAsHeader && !note.isNullOrBlank()) {
                         Text(
                             note,
                             style = MaterialTheme.typography.bodySmall,
@@ -216,7 +267,7 @@ fun AeonTransactionItem(
                         FlowRow(
                             modifier = Modifier.padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             tags.forEach { tag ->
                                 Surface(

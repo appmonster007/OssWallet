@@ -42,10 +42,16 @@ data class AccountsViewSettings(
 )
 
 @Serializable
+data class TransactionSectionSettings(
+    val showPlannedPayments: Boolean = false,
+    val useNoteAsHeader: Boolean = false
+)
+
+@Serializable
 data class AccountDetailSettings(
     val currencyBalancesSection: CurrencyBalancesSettings = CurrencyBalancesSettings(),
     val cashFlowSection: CashFlowSettings = CashFlowSettings(),
-    val transactionsSection: AccountsSectionSettings = AccountsSectionSettings() // For consistency
+    val transactionsSection: TransactionSectionSettings = TransactionSectionSettings()
 )
 
 class SettingsDataStore(private val context: Context) {

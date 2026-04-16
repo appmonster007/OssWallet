@@ -46,5 +46,8 @@ data class TransactionEntity(
     val note: String = "",
     val recurring: String? = null,
     val linkedTransactionId: Long? = null,
-    val profileId: Int = 1
+    val profileId: Int = 1,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val warrantyExpiration: Long? = null
 )

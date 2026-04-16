@@ -17,7 +17,10 @@ data class Transaction(
     val payee: String = "",
     val note: String = "",
     val recurring: String? = null,
-    val linkedTransactionId: Long? = null
+    val linkedTransactionId: Long? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val warrantyExpiration: Long? = null
 )
 
 data class TransactionWithBalance(

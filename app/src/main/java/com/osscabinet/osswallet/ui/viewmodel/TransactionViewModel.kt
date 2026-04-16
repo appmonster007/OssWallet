@@ -148,6 +148,9 @@ class TransactionViewModel(
         payee: String = "",
         note: String = "",
         linkedTransactionId: Long? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        warrantyExpiration: Long? = null,
         onComplete: ((Long) -> Unit)? = null
     ) {
         viewModelScope.launch {
@@ -165,7 +168,10 @@ class TransactionViewModel(
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
-                linkedTransactionId = linkedTransactionId
+                linkedTransactionId = linkedTransactionId,
+                latitude = latitude,
+                longitude = longitude,
+                warrantyExpiration = warrantyExpiration
             )
             val id = insertTransactionUseCase(transaction, profileId)
             onComplete?.invoke(id)
@@ -186,7 +192,10 @@ class TransactionViewModel(
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
-        linkedTransactionId: Long? = null
+        linkedTransactionId: Long? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        warrantyExpiration: Long? = null
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -203,7 +212,10 @@ class TransactionViewModel(
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
-                linkedTransactionId = linkedTransactionId
+                linkedTransactionId = linkedTransactionId,
+                latitude = latitude,
+                longitude = longitude,
+                warrantyExpiration = warrantyExpiration
             )
             updateTransactionUseCase(oldTransaction, newTransaction, profileId)
         }

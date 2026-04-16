@@ -81,7 +81,7 @@ fun TransactionEntryScreen(
         dbTemplates = dbTemplates,
         allTags = allTags,
         onAddTag = { tagViewModel.addTag(it) },
-        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate ->
+        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp ->
             if (transactionId != null && transactionId != -1L) {
                 val existingTransaction = transactions.find { it.id == transactionId }
                 if (existingTransaction != null) {
@@ -106,7 +106,10 @@ fun TransactionEntryScreen(
                             timestamp = timestamp,
                             payee = payee,
                             note = note,
-                            linkedTransactionId = null
+                            linkedTransactionId = null,
+                            latitude = coords?.first,
+                            longitude = coords?.second,
+                            warrantyExpiration = warrantyExp
                         )
                     } else if (!wasTransfer && isTransfer) {
                         // Changed from Income/Expense to Transfer
@@ -126,6 +129,9 @@ fun TransactionEntryScreen(
                                 payee = payee,
                                 note = note,
                                 linkedTransactionId = transactionId,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp,
                                 onComplete = { newLinkedId ->
                                     // Update current transaction with link to new target transaction
                                     viewModel.updateTransaction(
@@ -141,7 +147,10 @@ fun TransactionEntryScreen(
                                         timestamp = timestamp,
                                         payee = payee,
                                         note = note,
-                                        linkedTransactionId = newLinkedId
+                                        linkedTransactionId = newLinkedId,
+                                        latitude = coords?.first,
+                                        longitude = coords?.second,
+                                        warrantyExpiration = warrantyExp
                                     )
                                 }
                             )
@@ -161,7 +170,10 @@ fun TransactionEntryScreen(
                             timestamp = timestamp,
                             payee = payee,
                             note = note,
-                            linkedTransactionId = linkedId
+                            linkedTransactionId = linkedId,
+                            latitude = coords?.first,
+                            longitude = coords?.second,
+                            warrantyExpiration = warrantyExp
                         )
                         
                         if (isTransfer && linkedId != null) {
@@ -180,7 +192,10 @@ fun TransactionEntryScreen(
                                     timestamp = timestamp,
                                     payee = payee,
                                     note = note,
-                                    linkedTransactionId = transactionId
+                                    linkedTransactionId = transactionId,
+                                    latitude = coords?.first,
+                                    longitude = coords?.second,
+                                    warrantyExpiration = warrantyExp
                                 )
                             }
                         }
@@ -199,7 +214,10 @@ fun TransactionEntryScreen(
                         paymentMethod = paymentMethod,
                         timestamp = timestamp,
                         payee = payee,
-                        note = note
+                        note = note,
+                        latitude = coords?.first,
+                        longitude = coords?.second,
+                        warrantyExpiration = warrantyExp
                     )
 
                     targetAcc?.id?.let { targetId ->
@@ -215,7 +233,11 @@ fun TransactionEntryScreen(
                             paymentMethod = paymentMethod,
                             timestamp = timestamp,
                             payee = payee,
-                            note = note
+                            note = note,
+                            linkedTransactionId = null,
+                            latitude = coords?.first,
+                            longitude = coords?.second,
+                            warrantyExpiration = warrantyExp
                         )
                     }
                 } else {
@@ -232,7 +254,10 @@ fun TransactionEntryScreen(
                         timestamp = timestamp,
                         payee = payee,
                         note = note,
-                        linkedTransactionId = linkedId
+                        linkedTransactionId = linkedId,
+                        latitude = coords?.first,
+                        longitude = coords?.second,
+                        warrantyExpiration = warrantyExp
                     )
                 }
             }
@@ -261,7 +286,7 @@ fun TransactionEntryContent(
     dbTemplates: List<TemplateEntity> = emptyList(),
     allTags: List<TagEntity> = emptyList(),
     onAddTag: (String) -> Unit = {},
-    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal) -> Unit,
+    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?) -> Unit,
     onDelete: (Long) -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -302,6 +327,7 @@ fun TransactionEntryContent(
     var targetCurrency by remember { mutableStateOf("") }
     var exchangeRate by remember { mutableStateOf(BigDecimal.ONE) }
     var selectedTemplateName by remember { mutableStateOf(initialTemplate) }
+    var showLocationSheet by remember { mutableStateOf(false) }
 
     // Initialize state from existing transaction or initial parameters
     LaunchedEffect(existingTransaction, accounts) {
@@ -442,7 +468,9 @@ fun TransactionEntryContent(
                                 isTransfer,
                                 targetAccount,
                                 targetCurrency,
-                                exchangeRate
+                                exchangeRate,
+                                locationCoords,
+                                if (isWarrantyEnabled) warrantyExpirationMillis else null
                             )
                         }
                     ) {
@@ -718,6 +746,7 @@ fun TransactionEntryContent(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // Note - First item
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                             Spacer(modifier = Modifier.width(12.dp))
@@ -727,12 +756,13 @@ fun TransactionEntryContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                                 decorationBox = { innerTextField ->
-                                    if (note.isEmpty()) Text("Add Note", color = MaterialTheme.colorScheme.outline)
+                                    if (note.isEmpty()) Text("Add Note", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                                     innerTextField()
                                 }
                             )
                         }
 
+                        // Payee - Second item
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                             Spacer(modifier = Modifier.width(12.dp))
@@ -742,13 +772,13 @@ fun TransactionEntryContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                                 decorationBox = { innerTextField ->
-                                    if (payee.isEmpty()) Text("Add Payee", color = MaterialTheme.colorScheme.outline)
+                                    if (payee.isEmpty()) Text("Add Payee", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                                     innerTextField()
                                 }
                             )
                         }
                         
-                        // Linked Transaction Field
+                        // Linked Transaction Field - Last item
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = { showLinkedTransactionSheet = true },
@@ -779,6 +809,7 @@ fun TransactionEntryContent(
 
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -814,7 +845,7 @@ fun TransactionEntryContent(
                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
                                     Text(
-                                        if (selectedTags.isEmpty()) " LABEL" else " ${selectedTags.size} LABELS",
+                                        " LABEL",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -825,49 +856,39 @@ fun TransactionEntryContent(
                 }
 
                 // Occurrence & Payment Method
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(
-                        modifier = Modifier.weight(1f).height(80.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        onClick = { showDatePicker = true }
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
-                            Text("OCCURRENCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF42A5F5))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(formatDateTime(selectedDateMillis), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    Surface(
-                        modifier = Modifier.weight(1f).height(80.dp),
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        onClick = { showPaymentMethodSheet = true }
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
-                            Text("PAYMENT METHOD", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                val methods = listOf(
-                                    "Cash" to Icons.Rounded.Payments,
-                                    "Credit Card" to Icons.Rounded.CreditCard,
-                                    "Debit Card" to Icons.Rounded.CreditCard,
-                                    "Bank Transfer" to Icons.Rounded.AccountBalance,
-                                    "Digital Wallet" to Icons.Rounded.Wallet,
-                                    "Mobile Payment" to Icons.Rounded.Contactless,
-                                    "Check" to Icons.Rounded.Description,
-                                    "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
-                                    "Other" to Icons.Rounded.MoreHoriz
-                                )
-                                val currentMethodIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
-                                Icon(currentMethodIcon, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF26C6DA))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(paymentMethod, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RecordFieldCard(
+                        icon = Icons.Rounded.CalendarToday,
+                        label = "OCCURRENCE",
+                        value = formatDateTime(selectedDateMillis),
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = Color(0xFF42A5F5).copy(alpha = 0.2f),
+                        isSlim = true
+                    )
+
+                    val methods = listOf(
+                        "Cash" to Icons.Rounded.Payments,
+                        "Credit Card" to Icons.Rounded.CreditCard,
+                        "Debit Card" to Icons.Rounded.CreditCard,
+                        "Bank Transfer" to Icons.Rounded.AccountBalance,
+                        "Digital Wallet" to Icons.Rounded.Wallet,
+                        "Mobile Payment" to Icons.Rounded.Contactless,
+                        "Check" to Icons.Rounded.Description,
+                        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                        "Other" to Icons.Rounded.MoreHoriz
+                    )
+                    val currentMethodIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
+
+                    RecordFieldCard(
+                        icon = currentMethodIcon,
+                        label = "PAYMENT METHOD",
+                        value = paymentMethod,
+                        onClick = { showPaymentMethodSheet = true },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = Color(0xFF26C6DA).copy(alpha = 0.2f),
+                        isSlim = true
+                    )
                 }
 
                 // Map/Location Card
@@ -875,10 +896,7 @@ fun TransactionEntryContent(
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                    onClick = {
-                        // Dummy location for now, but state is updated
-                        locationCoords = 37.7749 to -122.4194
-                    }
+                    onClick = { showLocationSheet = true }
                 ) {
                     Box {
                         Image(
@@ -961,6 +979,14 @@ fun TransactionEntryContent(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+            )
+        }
+
+        if (showLocationSheet) {
+            LocationPickerSheet(
+                currentCoords = locationCoords,
+                onLocationSelected = { locationCoords = it },
+                onDismiss = { showLocationSheet = false }
             )
         }
 
@@ -1146,6 +1172,110 @@ fun TransactionEntryContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LocationPickerSheet(
+    currentCoords: Pair<Double, Double>?,
+    onLocationSelected: (Pair<Double, Double>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    var mapCenter by remember { mutableStateOf(currentCoords ?: (37.7749 to -122.4194)) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).fillMaxHeight(0.8f)) {
+            AeonSectionHeader(title = "Select Location")
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search for address or place") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Map Placeholder
+            Surface(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    // Map background simulation
+                    Image(
+                        painter = painterResource(id = android.R.drawable.ic_menu_mapmode),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        alpha = 0.2f
+                    )
+                    
+                    // The Center Pin
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Rounded.Place,
+                            contentDescription = "Pin",
+                            modifier = Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            modifier = Modifier.size(12.dp, 4.dp)
+                        ) {}
+                    }
+                    
+                    Text(
+                        "Drag map to position pin",
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.MyLocation, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("COORDINATES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    Text(
+                        "${mapCenter.first.format(6)}, ${mapCenter.second.format(6)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Button(
+                onClick = {
+                    onLocationSelected(mapCenter)
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Confirm Location")
+            }
+        }
+    }
+}
+
 @Composable
 private fun TemplateItemRow(
     name: String,
@@ -1201,18 +1331,21 @@ fun TransactionMetadataPreview() {
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Note first
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Grocery shopping for the week", style = MaterialTheme.typography.bodyLarge)
                     }
 
+                    // Payee second
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("Whole Foods Market", style = MaterialTheme.typography.bodyLarge)
                     }
                     
+                    // Link last
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.width(12.dp))
@@ -1221,6 +1354,7 @@ fun TransactionMetadataPreview() {
 
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -1233,7 +1367,7 @@ fun TransactionMetadataPreview() {
                         Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                             Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp))
-                                Text(" 2 LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                Text(" LABEL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -1270,7 +1404,7 @@ fun TransactionEntryPreview() {
             accounts = sampleAccounts,
             categories = sampleCategories,
             allTags = sampleTags,
-            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
             onDelete = {},
             onBackClick = {}
         )

@@ -64,13 +64,77 @@ import java.util.*
 
 @Composable
 fun Numpad(
-    onNumberClick: (String) -> Unit,
-    onDeleteClick: () -> Unit,
-    onOperatorClick: (String) -> Unit,
-    onEqualClick: () -> Unit,
-    onClearClick: () -> Unit,
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    decimalPrecision: Int,
+    onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
+    var operator by remember { mutableStateOf<String?>(null) }
+    var isEnteringSecondOperand by remember { mutableStateOf(false) }
+
+    fun calculateResult() {
+        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
+            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val rawResult = try {
+                when (operator) {
+                    "+" -> firstOperand!!.add(secondOperand)
+                    "−" -> firstOperand!!.subtract(secondOperand)
+                    "×" -> firstOperand!!.multiply(secondOperand)
+                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(
+                        secondOperand,
+                        decimalPrecision,
+                        java.math.RoundingMode.HALF_UP
+                    ) else BigDecimal.ZERO
+                    else -> secondOperand
+                }
+            } catch (e: Exception) {
+                BigDecimal.ZERO
+            }
+
+            val result = rawResult.abs().stripTrailingZeros()
+            onAmountChange(result.toPlainString())
+            firstOperand = null
+            operator = null
+            isEnteringSecondOperand = false
+        }
+    }
+
+    fun handleNumberInput(input: String) {
+        if (isEnteringSecondOperand) {
+            onAmountChange(if (input == ".") "0." else input)
+            isEnteringSecondOperand = false
+        } else {
+            if (input == ".") {
+                if (!amount.contains(".")) {
+                    onAmountChange(if (amount.isEmpty()) "0." else amount + ".")
+                }
+            } else if (input == "00") {
+                if (amount.isNotEmpty() && amount != "0") {
+                    if (amount.contains(".")) {
+                        if (amount.substringAfter(".").length < decimalPrecision) {
+                            onAmountChange(amount + "00")
+                        }
+                    } else {
+                        onAmountChange(amount + "00")
+                    }
+                }
+            } else {
+                onAmountChange(if (amount == "0") input else amount + input)
+            }
+        }
+    }
+
+    fun handleOperatorInput(op: String) {
+        if (amount.isNotEmpty()) {
+            if (operator != null) calculateResult()
+            firstOperand = amount.toBigDecimalOrNull()
+            operator = op
+            isEnteringSecondOperand = true
+        }
+    }
+
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -128,43 +192,54 @@ fun Numpad(
 
         // Row 1: C, ÷, ×, DEL
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("C", onClearClick, Modifier.weight(1f))
-            NumpadKey("÷", { onOperatorClick("÷") }, Modifier.weight(1f))
-            NumpadKey("×", { onOperatorClick("×") }, Modifier.weight(1f))
-            NumpadKey("DEL", onDeleteClick, Modifier.weight(1f))
+            NumpadKey("C", {
+                onAmountChange("")
+                firstOperand = null
+                operator = null
+                isEnteringSecondOperand = false
+            }, Modifier.weight(1f))
+            NumpadKey("÷", { handleOperatorInput("÷") }, Modifier.weight(1f))
+            NumpadKey("×", { handleOperatorInput("×") }, Modifier.weight(1f))
+            NumpadKey("DEL", { if (amount.isNotEmpty()) onAmountChange(amount.dropLast(1)) }, Modifier.weight(1f))
         }
         // Row 2: 7, 8, 9, −
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("7", { onNumberClick("7") }, Modifier.weight(1f))
-            NumpadKey("8", { onNumberClick("8") }, Modifier.weight(1f))
-            NumpadKey("9", { onNumberClick("9") }, Modifier.weight(1f))
-            NumpadKey("−", { onOperatorClick("−") }, Modifier.weight(1f))
+            NumpadKey("7", { handleNumberInput("7") }, Modifier.weight(1f))
+            NumpadKey("8", { handleNumberInput("8") }, Modifier.weight(1f))
+            NumpadKey("9", { handleNumberInput("9") }, Modifier.weight(1f))
+            NumpadKey("−", { handleOperatorInput("−") }, Modifier.weight(1f))
         }
         // Row 3: 4, 5, 6, +
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("4", { onNumberClick("4") }, Modifier.weight(1f))
-            NumpadKey("5", { onNumberClick("5") }, Modifier.weight(1f))
-            NumpadKey("6", { onNumberClick("6") }, Modifier.weight(1f))
-            NumpadKey("+", { onOperatorClick("+") }, Modifier.weight(1f))
+            NumpadKey("4", { handleNumberInput("4") }, Modifier.weight(1f))
+            NumpadKey("5", { handleNumberInput("5") }, Modifier.weight(1f))
+            NumpadKey("6", { handleNumberInput("6") }, Modifier.weight(1f))
+            NumpadKey("+", { handleOperatorInput("+") }, Modifier.weight(1f))
         }
         // Rows 4 & 5
         Row(modifier = Modifier.weight(2f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(modifier = Modifier.weight(3f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumpadKey("1", { onNumberClick("1") }, Modifier.weight(1f))
-                    NumpadKey("2", { onNumberClick("2") }, Modifier.weight(1f))
-                    NumpadKey("3", { onNumberClick("3") }, Modifier.weight(1f))
+                    NumpadKey("1", { handleNumberInput("1") }, Modifier.weight(1f))
+                    NumpadKey("2", { handleNumberInput("2") }, Modifier.weight(1f))
+                    NumpadKey("3", { handleNumberInput("3") }, Modifier.weight(1f))
                 }
                 Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumpadKey(".", { onNumberClick(".") }, Modifier.weight(1f))
-                    NumpadKey("0", { onNumberClick("0") }, Modifier.weight(1f))
-                    NumpadKey("00", { onNumberClick("00") }, Modifier.weight(1f))
+                    NumpadKey(".", { handleNumberInput(".") }, Modifier.weight(1f))
+                    NumpadKey("0", { handleNumberInput("0") }, Modifier.weight(1f))
+                    NumpadKey("00", { handleNumberInput("00") }, Modifier.weight(1f))
                 }
             }
             // Equal button spanning two rows
             NumpadKey(
                 key = "=",
-                onClick = onEqualClick,
+                onClick = {
+                    if (operator != null) {
+                        calculateResult()
+                    } else {
+                        onDone()
+                    }
+                },
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -172,6 +247,7 @@ fun Numpad(
         }
     }
 }
+
 
 @Composable
 fun RecordFieldCard(

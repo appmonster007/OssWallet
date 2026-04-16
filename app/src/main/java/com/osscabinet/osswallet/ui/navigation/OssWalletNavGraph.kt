@@ -270,6 +270,7 @@ fun OssWalletNavGraph(
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 tagViewModel = tagViewModel,
+                settingsViewModel = settingsViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

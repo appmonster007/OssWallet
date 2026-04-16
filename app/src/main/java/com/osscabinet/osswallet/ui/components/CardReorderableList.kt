@@ -88,11 +88,13 @@ fun <T> CardReorderableList(
         if (draggedKey != null) items.find { key(it) == draggedKey } else null
     }
 
+    val verticalSpacingPx = with(density) { 12.dp.toPx() }
+
     /**
      * Identifies the immediate adjacent swap target based on a strict hysteresis threshold.
      * To eliminate oscillation jitter and handle direction changes gracefully:
-     * 1. Swapping Down: Leading edge (bottom) must travel through 95% of the next item's height.
-     * 2. Swapping Up: Leading edge (top) must travel through 95% of the previous item's height (from bottom).
+     * 1. Swapping Down: Leading edge (bottom) must travel through 95% of the next item's total height (including spacing).
+     * 2. Swapping Up: Leading edge (top) must travel through 95% of the previous item's total height (from bottom).
      * 
      * Formula: threshold = (95% adjacent item height) - (50% current item height).
      * This ensures the item feels "pushed" into its new position before swapping.
@@ -130,7 +132,8 @@ fun <T> CardReorderableList(
             
             val otherTop = other.offset.toFloat()
             val otherBottom = (other.offset + other.size).toFloat()
-            val otherHeight = other.size.toFloat()
+            // In M3 Expressive, we consider the spacing part of the item's logical boundary for reordering
+            val otherHeight = other.size.toFloat() + verticalSpacingPx
             
             if (isNext) {
                 // Moving DOWN: Leading edge (bottom) must pass 95% of the next item's height

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -79,7 +80,7 @@ fun CategoryEditSheet(
                 subtitle = if (selectedParentId != null) {
                     "Sub-category of ${parentCategories.find { it.id == selectedParentId }?.name}"
                 } else {
-                    "Root Category"
+                    "Primary Category"
                 },
                 iconName = selectedIcon,
                 accentColorHex = displayColorHex
@@ -102,85 +103,85 @@ fun CategoryEditSheet(
                 )
 
                 val parentCategory = parentCategories.find { it.id == selectedParentId }
-                var showParentPicker by remember { mutableStateOf(false) }
+                var showParentDropdown by remember { mutableStateOf(false) }
 
-                RecordFieldCard(
-                    icon = Icons.Rounded.AccountTree,
-                    label = "PARENT CATEGORY",
-                    value = parentCategory?.name ?: "None (Root Level)",
-                    onClick = { showParentPicker = true },
-                    trailingIcon = Icons.Rounded.KeyboardArrowDown,
-                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    RecordFieldCard(
+                        icon = Icons.Rounded.AccountTree,
+                        label = "PARENT CATEGORY",
+                        value = parentCategory?.name ?: "None",
+                        onClick = { showParentDropdown = true },
+                        trailingIcon = if (showParentDropdown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    )
 
-                if (showParentPicker) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showParentPicker = false },
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                    DropdownMenu(
+                        expanded = showParentDropdown,
+                        onDismissRequest = { showParentDropdown = false },
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .background(MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(24.dp)
                     ) {
-                        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                            Text(
-                                "SELECT PARENT",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item {
-                                    Surface(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                selectedParentId = null
-                                                showParentPicker = false
-                                            },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = if (selectedParentId == null) {
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                        }
-                                    ) {
-                                        Text(
-                                            "None (Root Level)",
-                                            modifier = Modifier.padding(16.dp),
-                                            style = MaterialTheme.typography.bodyLarge
-                                        )
+                        DropdownMenuItem(
+                            text = { Text("None", fontWeight = FontWeight.Medium) },
+                            onClick = {
+                                selectedParentId = null
+                                showParentDropdown = false
+                            },
+                            leadingIcon = {
+                                Surface(
+                                    modifier = Modifier.size(32.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
                                     }
                                 }
-                                items(parentCategories.filter { it.id != (category?.id ?: 0L) }) { parent ->
+                            },
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                        
+                        if (parentCategories.isNotEmpty()) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        parentCategories.filter { it.id != (category?.id ?: 0L) }.forEach { parent ->
+                            val isSelected = selectedParentId == parent.id
+                            DropdownMenuItem(
+                                text = { Text(parent.name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
+                                onClick = {
+                                    selectedParentId = parent.id
+                                    showParentDropdown = false
+                                },
+                                leadingIcon = {
                                     Surface(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                selectedParentId = parent.id
-                                                showParentPicker = false
-                                            },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = if (selectedParentId == parent.id) {
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                        }
+                                        modifier = Modifier.size(32.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(parent.colorHex).copy(alpha = 0.1f)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
+                                        Box(contentAlignment = Alignment.Center) {
                                             Icon(
                                                 AccountIconMap[parent.iconName] ?: Icons.Rounded.Category,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
+                                                modifier = Modifier.size(16.dp),
                                                 tint = Color(parent.colorHex)
                                             )
-                                            Spacer(modifier = Modifier.width(12.dp))
-                                            Text(parent.name, style = MaterialTheme.typography.bodyLarge)
                                         }
                                     }
-                                }
-                            }
+                                },
+                                trailingIcon = if (isSelected) {
+                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
+                                } else null,
+                                colors = MenuDefaults.itemColors(
+                                    textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            )
                         }
                     }
                 }
@@ -221,7 +222,8 @@ fun CategoryEditSheet(
                     if (selectedParentId == null) {
                         selectedColorHex = it 
                     }
-                }
+                },
+                isColorLocked = selectedParentId != null
             )
         }
     }

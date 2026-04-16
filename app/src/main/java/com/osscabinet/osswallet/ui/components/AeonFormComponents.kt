@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -524,7 +525,8 @@ fun VisualIdentitySection(
     selectedIconName: String,
     onIconSelected: (String) -> Unit,
     accentColorHex: String,
-    onColorSelected: (String) -> Unit
+    onColorSelected: (String) -> Unit,
+    isColorLocked: Boolean = false
 ) {
     val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
@@ -596,9 +598,25 @@ fun VisualIdentitySection(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
+                    if (isColorLocked) {
+                        Icon(
+                            Icons.Rounded.Lock,
+                            contentDescription = "Locked",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+                
+                val alpha = if (isColorLocked) 0.5f else 1f
+                
                 Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .alpha(alpha),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -613,7 +631,7 @@ fun VisualIdentitySection(
                                     if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                     else Color.Transparent
                                 )
-                                .clickable { onColorSelected(colorHex) },
+                                .clickable(enabled = !isColorLocked) { onColorSelected(colorHex) },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -635,18 +653,22 @@ fun VisualIdentitySection(
                         }
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.alpha(alpha),
+                    verticalAlignment = Alignment.CenterVertically, 
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     val color = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color.DarkGray }
                     Box(modifier = Modifier.size(48.dp).clip(CircleShape).background(color))
                     AeonTextField(
                         value = accentColorHex,
-                        onValueChange = { if (it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
+                        onValueChange = { if (!isColorLocked && it.length <= 7) onColorSelected(if (it.startsWith("#")) it else "#$it") },
                         placeholder = "#004D5F",
                         prefix = "HEX",
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(
-                        onClick = { showColorPicker = true },
+                        onClick = { if (!isColorLocked) showColorPicker = true },
                         modifier = Modifier.size(48.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), CircleShape)
                     ) {
                         Icon(Icons.Rounded.Colorize, contentDescription = "Color Picker")

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -243,140 +244,108 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState)
-                .padding(24.dp),
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            SettingsSection("GENERAL") {
+            SettingsSection("PREFERENCE") {
                 SettingsItem(
                     title = "Base Currency",
                     subtitle = "${getCurrencySymbol(currencyCode)} ${getCurrencyName(currencyCode)}",
                     icon = Icons.Rounded.CurrencyExchange,
                     onClick = { showCurrencyDialog = true }
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "App Appearance",
                     subtitle = theme,
                     icon = Icons.Rounded.Palette,
                     onClick = { showThemeDialog = true }
                 )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Auto-save Exchange Rates",
+                    subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
+                    icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
+                    trailingContent = {
+                        Switch(
+                            checked = autoSaveExchangeRates,
+                            onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Auto-save Exchange Rates", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                        Text(
-                            if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
                         )
                     }
-                    Switch(
-                        checked = autoSaveExchangeRates,
-                        onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                    )
-                }
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.PrecisionManufacturing, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Decimal Precision", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                        Text("Toggle between 2 and 3 places", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                    }
-                    
-                    Row(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                CircleShape
-                            )
-                            .padding(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        listOf(2, 3).forEach { p ->
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(40.dp)
-                                    .clickable {
-                                        if (decimalPrecision != p) {
-                                            viewModel.setDecimalPrecision(p)
-                                            Toast.makeText(context, "Precision set to $p decimal places", Toast.LENGTH_SHORT).show()
-                                        }
-                                    },
-                                shape = CircleShape,
-                                color = if (decimalPrecision == p) MaterialTheme.colorScheme.primary else Color.Transparent
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        p.toString(),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (decimalPrecision == p) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Decimal Precision",
+                    subtitle = "Toggle between 2 and 3 places",
+                    icon = Icons.Rounded.PrecisionManufacturing,
+                    trailingContent = {
+                        Row(
+                            modifier = Modifier
+                                .height(32.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    CircleShape
+                                )
+                                .padding(2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listOf(2, 3).forEach { p ->
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(40.dp)
+                                        .clickable {
+                                            if (decimalPrecision != p) {
+                                                viewModel.setDecimalPrecision(p)
+                                                Toast.makeText(context, "Precision set to $p decimal places", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                    shape = CircleShape,
+                                    color = if (decimalPrecision == p) MaterialTheme.colorScheme.primary else Color.Transparent
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            p.toString(),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (decimalPrecision == p) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                )
+            }
 
+            SettingsSection("ORGANIZATION") {
                 SettingsItem(
                     title = "Manage Accounts",
                     subtitle = "Reorder, hide, or edit your accounts",
                     icon = Icons.Rounded.AccountBalance,
                     onClick = onManageAccountsClick
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Labels",
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
                     onClick = onManageLabelsClick
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Categories",
                     subtitle = "Organize income and expenses",
                     icon = Icons.Rounded.Category,
                     onClick = onManageCategoriesClick
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Transaction Templates",
                     subtitle = "Quick shortcuts for frequent entries",
@@ -385,19 +354,21 @@ fun SettingsScreen(
                 )
             }
 
-            SettingsSection("DATA MANAGEMENT") {
+            SettingsSection("DATA & SECURITY") {
                 SettingsItem(
                     title = "Import Backup",
                     subtitle = "Restore your history from a JSON file",
                     icon = Icons.Rounded.CloudSync,
                     onClick = { importLauncher.launch("application/json") }
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Export Data",
                     subtitle = "Download JSON of all records",
                     icon = Icons.Rounded.FileDownload,
                     onClick = { exportLauncher.launch("osswallet_backup_${System.currentTimeMillis()}.json") }
                 )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Delete All Data",
                     subtitle = "Permanently clear your account",
@@ -438,18 +409,22 @@ fun SettingsScreen(
 
 @Composable
 fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
-            letterSpacing = 1.sp
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.2.sp
+            ),
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
         Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         ) {
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column {
                 content()
             }
         }
@@ -461,13 +436,15 @@ fun SettingsItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
-    onClick: () -> Unit,
-    color: Color = MaterialTheme.colorScheme.onSurface
+    onClick: (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    showChevron: Boolean = onClick != null && trailingContent == null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -485,6 +462,11 @@ fun SettingsItem(
             Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = color)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
         }
-        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+        
+        if (trailingContent != null) {
+            trailingContent()
+        } else if (showChevron) {
+            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+        }
     }
 }

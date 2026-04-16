@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.Add
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanType
 import androidx.compose.ui.layout.onSizeChanged
@@ -59,6 +60,7 @@ fun LoansScreen(
         floatingActionButton = {
             AeonFloatingActionButton(
                 onClick = { showAddDialog = true },
+                icon = Icons.Rounded.Add,
                 contentDescription = "Add Loan"
             )
         }

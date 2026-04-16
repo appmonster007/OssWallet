@@ -344,70 +344,66 @@ fun EditTransactionScreen(
                 }
 
                 // Slim Action Cards
-                if (!isNumpadVisible) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        EditorialInput(
-                            value = title, 
-                            onValueChange = { title = it }, 
-                            label = "RECORD TITLE", 
-                            icon = Icons.Rounded.Edit
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EditorialInput(
+                        value = title, 
+                        onValueChange = { title = it }, 
+                        label = "RECORD TITLE", 
+                        icon = Icons.Rounded.Edit
+                    )
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        RecordFieldCard(
+                            icon = Icons.Rounded.AccountBalance,
+                            label = if (isTransfer) "FROM" else "ACCOUNT",
+                            value = selectedAccount?.name ?: "Select",
+                            onClick = { showAccountSheet = true },
+                            modifier = Modifier.weight(1f),
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            isSlim = true
+                        )
+                        
+                        if (isTransfer) {
                             RecordFieldCard(
                                 icon = Icons.Rounded.AccountBalance,
-                                label = if (isTransfer) "FROM" else "ACCOUNT",
-                                value = selectedAccount?.name ?: "Select",
-                                onClick = { showAccountSheet = true },
+                                label = "TO",
+                                value = targetAccount?.name ?: "Select",
+                                onClick = { showTargetAccountSheet = true },
                                 modifier = Modifier.weight(1f),
-                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
                                 isSlim = true
                             )
-                            
-                            if (isTransfer) {
-                                RecordFieldCard(
-                                    icon = Icons.Rounded.AccountBalance,
-                                    label = "TO",
-                                    value = targetAccount?.name ?: "Select",
-                                    onClick = { showTargetAccountSheet = true },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                    isSlim = true
-                                )
-                            } else {
-                                val selectedCategoryEntity = categories.find { it.id == selectedCategoryId }
-                                RecordFieldCard(
-                                    icon = categoryIcons[selectedCategoryEntity?.iconName ?: category] ?: Icons.Rounded.Category,
-                                    label = "CATEGORY",
-                                    value = category,
-                                    onClick = { showCategorySheet = true },
-                                    modifier = Modifier.weight(1f),
-                                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                                    isSlim = true
-                                )
-                            }
+                        } else {
+                            val selectedCategoryEntity = categories.find { it.id == selectedCategoryId }
+                            RecordFieldCard(
+                                icon = categoryIcons[selectedCategoryEntity?.iconName ?: category] ?: Icons.Rounded.Category,
+                                label = "CATEGORY",
+                                value = category,
+                                onClick = { showCategorySheet = true },
+                                modifier = Modifier.weight(1f),
+                                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                                isSlim = true
+                            )
                         }
                     }
-                }
-
-                // Number Pad
-                if (isNumpadVisible) {
-                    Numpad(
-                        amount = amount,
-                        onAmountChange = { amount = it },
-                        decimalPrecision = decimalPrecision,
-                        onDone = { isNumpadVisible = false },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    )
                 }
             }
         }
 
+        // Numpad Overlay
+        Numpad(
+            amount = amount,
+            onAmountChange = { amount = it },
+            decimalPrecision = decimalPrecision,
+            onDone = { isNumpadVisible = false },
+            isVisible = isNumpadVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        )
+
         // Right Detail Drawer
-        if (!isNumpadVisible) {
-            DetailDrawer(
+        DetailDrawer(
             isOpen = isDetailDrawerOpen,
             onClose = { isDetailDrawerOpen = false },
             onSwipeOpen = { isDetailDrawerOpen = true },
@@ -730,13 +726,12 @@ fun EditTransactionScreen(
                             tags = tx.tags,
                             icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
                             precision = decimalPrecision,
-                                onClick = {
-                                    linkedTransactionId = tx.id
-                                    showLinkedTransactionSheet = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                            onClick = {
+                                linkedTransactionId = tx.id
+                                showLinkedTransactionSheet = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }

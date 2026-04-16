@@ -314,6 +314,7 @@ fun DashboardScreen(
                                     isFabExpanded = false
                                     onAddClick(type, name)
                                 },
+                                icon = icon,
                                 modifier = Modifier.size(40.dp),
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -608,6 +609,7 @@ fun DashboardContent(
                             note = transaction.note,
                             tags = transaction.tags,
                             icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
+                            precision = decimalPrecision,
                             iconBg = categoryEntity?.let { Color(it.colorHex) },
                             onClick = { /* Navigate to edit? */ },
                             modifier = Modifier.padding(horizontal = 24.dp)

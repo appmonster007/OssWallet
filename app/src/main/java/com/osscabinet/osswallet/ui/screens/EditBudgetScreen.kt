@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,143 +38,149 @@ fun EditBudgetScreen(
     val budget = budgets.find { it.category == category }
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
+    var isNumpadVisible by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Edit Goal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("Edit Goal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Header Card: Large Amount Display (Aeon Style)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isNumpadVisible = true },
+                    shape = RoundedCornerShape(40.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "SET SPENDING LIMIT",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            letterSpacing = 1.sp
+                        )
+
+                        Text(
+                            text = amount.ifEmpty { "0.00" },
+                            style = TextStyle(
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        
+                        Text(
+                            currency,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.outline
+                        )
                     }
                 }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Header Card: Large Amount Display (Aeon Style)
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(40.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            ) {
+
                 Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        "SET SPENDING LIMIT",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        letterSpacing = 1.sp
+                        "Target Details",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                     )
 
-                    Text(
-                        text = amount.ifEmpty { "0.00" },
-                        style = TextStyle(
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Black,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    EditorialInput(
+                        value = category,
+                        onValueChange = { },
+                        label = "CLASSIFICATION",
+                        icon = Icons.Rounded.Category,
+                        readOnly = true
                     )
-                    
-                    Text(
-                        currency,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
 
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    "Target Details",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-                )
-
-                EditorialInput(
-                    value = category,
-                    onValueChange = { },
-                    label = "CLASSIFICATION",
-                    icon = Icons.Rounded.Category,
-                    readOnly = true
-                )
-
-                budget?.let {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    budget?.let {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(28.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                         ) {
-                            Icon(
-                                if (it.isOverBudget) Icons.Rounded.Warning else Icons.Rounded.Info,
-                                contentDescription = null,
-                                tint = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(
-                                    "CURRENT CONSUMPTION",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.outline
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    if (it.isOverBudget) Icons.Rounded.Warning else Icons.Rounded.Info,
+                                    contentDescription = null,
+                                    tint = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                                Text(
-                                    formatCurrencyRight(it.spent, currency),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text(
+                                        "CURRENT CONSUMPTION",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
                                     )
-                                )
+                                    Text(
+                                        formatCurrencyRight(it.spent, currency),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (it.isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-            Numpad(
-                amount = amount,
-                onAmountChange = { amount = it },
-                decimalPrecision = decimalPrecision,
-                onDone = {
-                    viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
-                    onBackClick()
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f)
-            )
-
-            Button(
-                onClick = { 
-                    viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
-                    onBackClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(32.dp),
-                enabled = amount.isNotBlank()
-            ) {
-                Text("SAVE GOAL", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = { 
+                        viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
+                        onBackClick()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(32.dp),
+                    enabled = amount.isNotBlank()
+                ) {
+                    Text("SAVE GOAL", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                }
             }
         }
+
+        // Numpad Overlay
+        Numpad(
+            amount = amount,
+            onAmountChange = { amount = it },
+            decimalPrecision = decimalPrecision,
+            onDone = { isNumpadVisible = false },
+            isVisible = isNumpadVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        )
     }
 }

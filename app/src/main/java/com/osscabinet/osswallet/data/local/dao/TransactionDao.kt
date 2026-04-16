@@ -11,13 +11,14 @@ abstract class TransactionDao {
     abstract fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun _insertTransaction(transaction: TransactionEntity)
+    abstract suspend fun _insertTransaction(transaction: TransactionEntity): Long
 
     @Transaction
-    open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
-        _insertTransaction(transaction)
+    open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
+        val id = _insertTransaction(transaction)
         val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
         accountDao.updateBalance(transaction.accountId, updateAmount)
+        return id
     }
 
     @Query("SELECT * FROM transactions WHERE id = :id")

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -79,40 +80,104 @@ fun TransactionEntryScreen(
             if (transactionId != null && transactionId != -1L) {
                 val existingTransaction = transactions.find { it.id == transactionId }
                 if (existingTransaction != null) {
-                    viewModel.updateTransaction(
-                        oldTransaction = existingTransaction,
-                        title = title.ifBlank { if (isTransfer) "Transfer" else category },
-                        amount = amountValue,
-                        category = if (isTransfer) "Transfer" else category,
-                        isIncome = isIncome,
-                        accountId = accId,
-                        currency = currency,
-                        categoryId = if (isTransfer) null else categoryId,
-                        tags = tags,
-                        timestamp = timestamp,
-                        payee = payee,
-                        note = note,
-                        linkedTransactionId = linkedId
-                    )
+                    val wasTransfer = existingTransaction.category == "Transfer"
                     
-                    if (isTransfer && linkedId != null) {
-                        val linkedTx = transactions.find { it.id == linkedId }
-                        if (linkedTx != null && targetAcc != null) {
+                    if (wasTransfer && !isTransfer) {
+                        // Changed from Transfer to Income/Expense
+                        // Delete linked transaction if it exists
+                        existingTransaction.linkedTransactionId?.let { viewModel.deleteTransaction(it) }
+                        
+                        // Update current transaction to normal income/expense
+                        viewModel.updateTransaction(
+                            oldTransaction = existingTransaction,
+                            title = title.ifBlank { category },
+                            amount = amountValue,
+                            category = category,
+                            isIncome = isIncome,
+                            accountId = accId,
+                            currency = currency,
+                            categoryId = categoryId,
+                            tags = tags,
+                            timestamp = timestamp,
+                            payee = payee,
+                            note = note,
+                            linkedTransactionId = null
+                        )
+                    } else if (!wasTransfer && isTransfer) {
+                        // Changed from Income/Expense to Transfer
+                        // Create target transaction first to get its ID
+                        targetAcc?.id?.let { targetId ->
                             val targetAmount = amountValue.multiply(rate)
-                            viewModel.updateTransaction(
-                                oldTransaction = linkedTx,
-                                title = linkedTx.title,
+                            viewModel.addTransaction(
+                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = targetAmount,
                                 category = "Transfer",
                                 isIncome = true,
-                                accountId = targetAcc.id,
+                                accountId = targetId,
                                 currency = targetCurrency,
                                 tags = tags,
+                                paymentMethod = paymentMethod,
                                 timestamp = timestamp,
                                 payee = payee,
                                 note = note,
-                                linkedTransactionId = transactionId
+                                linkedTransactionId = transactionId,
+                                onComplete = { newLinkedId ->
+                                    // Update current transaction with link to new target transaction
+                                    viewModel.updateTransaction(
+                                        oldTransaction = existingTransaction,
+                                        title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                                        amount = amountValue,
+                                        category = "Transfer",
+                                        isIncome = false,
+                                        accountId = accId,
+                                        currency = currency,
+                                        categoryId = null,
+                                        tags = tags,
+                                        timestamp = timestamp,
+                                        payee = payee,
+                                        note = note,
+                                        linkedTransactionId = newLinkedId
+                                    )
+                                }
                             )
+                        }
+                    } else {
+                        // Standard update (no type change between Transfer and others)
+                        viewModel.updateTransaction(
+                            oldTransaction = existingTransaction,
+                            title = title.ifBlank { if (isTransfer) "Transfer" else category },
+                            amount = amountValue,
+                            category = if (isTransfer) "Transfer" else category,
+                            isIncome = isIncome,
+                            accountId = accId,
+                            currency = currency,
+                            categoryId = if (isTransfer) null else categoryId,
+                            tags = tags,
+                            timestamp = timestamp,
+                            payee = payee,
+                            note = note,
+                            linkedTransactionId = linkedId
+                        )
+                        
+                        if (isTransfer && linkedId != null) {
+                            val linkedTx = transactions.find { it.id == linkedId }
+                            if (linkedTx != null && targetAcc != null) {
+                                val targetAmount = amountValue.multiply(rate)
+                                viewModel.updateTransaction(
+                                    oldTransaction = linkedTx,
+                                    title = linkedTx.title,
+                                    amount = targetAmount,
+                                    category = "Transfer",
+                                    isIncome = true,
+                                    accountId = targetAcc.id,
+                                    currency = targetCurrency,
+                                    tags = tags,
+                                    timestamp = timestamp,
+                                    payee = payee,
+                                    note = note,
+                                    linkedTransactionId = transactionId
+                                )
+                            }
                         }
                     }
                 }
@@ -485,17 +550,22 @@ fun TransactionEntryContent(
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
 
+                                    val prefix = when {
+                                        isIncome -> "+"
+                                        isTransfer -> ""
+                                        else -> "-"
+                                    }
                                     val displayAmount = if (amount.isEmpty()) "0.00" else amount
                                     Text(
-                                        text = displayAmount,
+                                        text = "$prefix$displayAmount",
                                         style = TextStyle(
-                                            fontSize = 80.sp,
+                                            fontSize = 72.sp,
                                             fontWeight = FontWeight.Bold,
                                             textAlign = TextAlign.Center,
                                             color = when {
-                                                isIncome -> Color(0xFF2E7D32)
+                                                isIncome -> lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
                                                 isTransfer -> MaterialTheme.colorScheme.onSurface
-                                                else -> Color(0xFFB71C1C)
+                                                else -> lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.5f)
                                             }
                                         ),
                                         modifier = Modifier.weight(1f, fill = false)
@@ -533,11 +603,11 @@ fun TransactionEntryContent(
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            text = convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString(),
+                                            text = "+${convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()}",
                                             style = TextStyle(
                                                 fontSize = 32.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF2E7D32)
+                                                color = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
                                             )
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))

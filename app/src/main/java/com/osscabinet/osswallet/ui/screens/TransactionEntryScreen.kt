@@ -290,6 +290,9 @@ fun TransactionEntryContent(
     var payee by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var isWarrantyEnabled by remember { mutableStateOf(false) }
+    var warrantyExpirationMillis by remember { mutableLongStateOf(System.currentTimeMillis() + 31536000000L) } // Default +1 year
+    var showWarrantyDatePicker by remember { mutableStateOf(false) }
+    var locationCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var linkedTransactionId by remember { mutableStateOf<Long?>(null) }
     
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
@@ -657,14 +660,7 @@ fun TransactionEntryContent(
 
                 // Slim Action Cards
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (isEditMode) {
-                        EditorialInput(
-                            value = title, 
-                            onValueChange = { title = it }, 
-                            label = "RECORD TITLE", 
-                            icon = Icons.Rounded.Edit
-                        )
-                    } else {
+                    if (!isEditMode) {
                         RecordFieldCard(
                             icon = Icons.Rounded.AutoAwesome,
                             label = "SELECT TEMPLATE",
@@ -723,21 +719,6 @@ fun TransactionEntryContent(
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            BasicTextField(
-                                value = payee,
-                                onValueChange = { payee = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                decorationBox = { innerTextField ->
-                                    if (payee.isEmpty()) Text("Add Payee", color = MaterialTheme.colorScheme.outline)
-                                    innerTextField()
-                                }
-                            )
-                        }
-                        
-                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
                             Spacer(modifier = Modifier.width(12.dp))
                             BasicTextField(
@@ -752,6 +733,21 @@ fun TransactionEntryContent(
                             )
                         }
 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            BasicTextField(
+                                value = payee,
+                                onValueChange = { payee = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                                decorationBox = { innerTextField ->
+                                    if (payee.isEmpty()) Text("Add Payee", color = MaterialTheme.colorScheme.outline)
+                                    innerTextField()
+                                }
+                            )
+                        }
+                        
                         // Linked Transaction Field
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -781,7 +777,11 @@ fun TransactionEntryContent(
                             }
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
@@ -789,6 +789,23 @@ fun TransactionEntryContent(
                             ) {
                                 Text("RECURRING", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                             }
+
+                            selectedTags.forEach { tag ->
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
+                                    onClick = { showLabelSheet = true }
+                                ) {
+                                    Text(
+                                        tag.uppercase(),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -797,7 +814,7 @@ fun TransactionEntryContent(
                                 Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.outline)
                                     Text(
-                                        if (selectedTags.isEmpty()) "+ LABEL" else "${selectedTags.size} LABELS",
+                                        if (selectedTags.isEmpty()) " LABEL" else " ${selectedTags.size} LABELS",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -833,7 +850,19 @@ fun TransactionEntryContent(
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
                             Text("PAYMENT METHOD", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Contactless, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF26C6DA))
+                                val methods = listOf(
+                                    "Cash" to Icons.Rounded.Payments,
+                                    "Credit Card" to Icons.Rounded.CreditCard,
+                                    "Debit Card" to Icons.Rounded.CreditCard,
+                                    "Bank Transfer" to Icons.Rounded.AccountBalance,
+                                    "Digital Wallet" to Icons.Rounded.Wallet,
+                                    "Mobile Payment" to Icons.Rounded.Contactless,
+                                    "Check" to Icons.Rounded.Description,
+                                    "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                                    "Other" to Icons.Rounded.MoreHoriz
+                                )
+                                val currentMethodIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
+                                Icon(currentMethodIcon, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF26C6DA))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(paymentMethod, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                             }
@@ -845,7 +874,11 @@ fun TransactionEntryContent(
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+                    onClick = {
+                        // Dummy location for now, but state is updated
+                        locationCoords = 37.7749 to -122.4194
+                    }
                 ) {
                     Box {
                         Image(
@@ -864,7 +897,11 @@ fun TransactionEntryContent(
                             Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Place, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Select Location", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    if (locationCoords == null) "Select Location" else "${locationCoords?.first?.format(4)}, ${locationCoords?.second?.format(4)}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -876,16 +913,38 @@ fun TransactionEntryContent(
                     shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
                 ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = Color(0xFFB3E5FC), modifier = Modifier.size(40.dp)) {
-                            Icon(Icons.Rounded.GppGood, contentDescription = null, modifier = Modifier.padding(10.dp), tint = Color(0xFF0288D1))
+                    Column {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = CircleShape, color = Color(0xFFB3E5FC), modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Rounded.GppGood, contentDescription = null, modifier = Modifier.padding(10.dp), tint = Color(0xFF0288D1))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Warranty Tracking", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                Text("Notify before expiration", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            }
+                            Switch(checked = isWarrantyEnabled, onCheckedChange = { isWarrantyEnabled = it })
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Warranty Tracking", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                            Text("Notify before expiration", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        
+                        if (isWarrantyEnabled) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showWarrantyDatePicker = true }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Rounded.EventAvailable, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("Expiration Date", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                    Text(formatDateTime(warrantyExpirationMillis), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                            }
                         }
-                        Switch(checked = isWarrantyEnabled, onCheckedChange = { isWarrantyEnabled = it })
                     }
                 }
                 
@@ -950,6 +1009,14 @@ fun TransactionEntryContent(
             )
         }
 
+        if (showWarrantyDatePicker) {
+            AeonDateTimePicker(
+                initialDateTime = warrantyExpirationMillis,
+                onDateTimeSelected = { warrantyExpirationMillis = it },
+                onDismiss = { showWarrantyDatePicker = false }
+            )
+        }
+
         if (showLabelSheet) {
             LabelPickerSheet(
                 selectedTags = selectedTags,
@@ -988,7 +1055,12 @@ fun TransactionEntryContent(
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Quick Templates")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        AeonSectionHeader(title = "Quick Templates")
+                        IconButton(onClick = { /* Navigate to Create Template */ }) {
+                            Icon(Icons.Rounded.Add, contentDescription = "Add Template", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     Spacer(modifier = Modifier.height(24.dp))
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (dbTemplates.isEmpty()) {
@@ -1115,6 +1187,63 @@ private fun TemplateItemRow(
         }
     }
 }
+
+@Composable
+fun TransactionMetadataPreview() {
+    OssWalletTheme {
+        Surface(
+            modifier = Modifier.padding(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.AutoMirrored.Rounded.Notes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Grocery shopping for the week", style = MaterialTheme.typography.bodyLarge)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Person, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Whole Foods Market", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Link, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Linked to Monthly Rent", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+                    }
+
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)) {
+                            Text("RECURRING", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
+                        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)) {
+                            Text("FOOD", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        }
+                        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Text(" 2 LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 @Preview(showBackground = true)
 @Composable

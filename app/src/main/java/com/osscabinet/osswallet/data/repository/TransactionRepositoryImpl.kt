@@ -18,8 +18,8 @@ class TransactionRepositoryImpl(
         }
     }
 
-    override suspend fun insertTransaction(transaction: Transaction, profileId: Int) {
-        transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
+    override suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long {
+        return transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
     }
 
     override suspend fun deleteTransaction(id: Long) {

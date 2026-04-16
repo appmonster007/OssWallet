@@ -147,7 +147,8 @@ class TransactionViewModel(
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
-        linkedTransactionId: Long? = null
+        linkedTransactionId: Long? = null,
+        onComplete: ((Long) -> Unit)? = null
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -166,7 +167,8 @@ class TransactionViewModel(
                 note = note,
                 linkedTransactionId = linkedTransactionId
             )
-            insertTransactionUseCase(transaction, profileId)
+            val id = insertTransactionUseCase(transaction, profileId)
+            onComplete?.invoke(id)
         }
     }
 

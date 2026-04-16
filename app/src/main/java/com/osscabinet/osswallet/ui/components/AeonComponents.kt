@@ -465,7 +465,7 @@ fun LabelPickerSheet(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 selectedTags.forEach { tag ->
                     InputChip(
@@ -528,7 +528,7 @@ fun LabelPickerSheet(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 sortedTags.filter { it.name !in selectedTags }.forEach { tag ->
                     SuggestionChip(

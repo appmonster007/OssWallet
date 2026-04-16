@@ -18,7 +18,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.*
@@ -26,7 +25,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -37,30 +35,20 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.ui.components.dashboard.CurrencyAggregationSection
+import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.math.BigDecimal
-import java.text.SimpleDateFormat
-import java.util.*
 
 
 @Composable
@@ -68,9 +56,9 @@ fun RecordFieldCard(
     icon: ImageVector,
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     trailingIcon: ImageVector? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     iconContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     isSlim: Boolean = false
 ) {
@@ -452,11 +440,11 @@ fun LabelPickerSheet(
     selectedTags: List<String>,
     onTagsChanged: (List<String>) -> Unit,
     onDismiss: () -> Unit,
-    tagViewModel: TagViewModel
+    allTags: List<TagEntity>,
+    onAddTag: (String) -> Unit
 ) {
     var tagInput by remember { mutableStateOf("") }
-    val dbTags by tagViewModel.tags.collectAsState()
-    val sortedTags = remember(dbTags) { dbTags.sortedBy { it.name.lowercase() } }
+    val sortedTags = remember(allTags) { allTags.sortedBy { it.name.lowercase() } }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -513,8 +501,8 @@ fun LabelPickerSheet(
                         onClick = {
                             if (tagInput.isNotBlank()) {
                                 val newTag = tagInput.trim()
-                                if (newTag !in dbTags.map { it.name }) {
-                                    tagViewModel.addTag(newTag)
+                                if (newTag !in allTags.map { it.name }) {
+                                    onAddTag(newTag)
                                 }
                                 onTagsChanged((selectedTags + newTag).distinct())
                                 tagInput = ""
@@ -618,9 +606,9 @@ fun PaymentMethodPickerSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerSheet(
-    categories: List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
+    categories: List<CategoryEntity>,
     selectedCategoryId: Long?,
-    onCategorySelected: (com.osscabinet.ossWallet.data.local.entity.CategoryEntity) -> Unit,
+    onCategorySelected: (CategoryEntity) -> Unit,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -673,100 +661,6 @@ fun AeonSectionHeader(
     }
 }
 
-@Composable
-fun AeonCurrencyBreakdown(
-    balances: Map<String, BigDecimal>,
-    baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    modifier: Modifier = Modifier,
-    precision: Int = 2,
-    layout: String = "scroll",
-    showBaseConversion: Boolean = true,
-    timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
-    onLayoutChange: (String) -> Unit = {},
-    onShowBaseConversionChange: (Boolean) -> Unit = {},
-    onTimelineRangeChange: (com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) -> Unit = {}
-) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        AeonSectionHeader(
-            title = "Aggregated Balances",
-            trailing = {
-                IconButton(onClick = { /* Settings handled by parent or dialog */ }) {
-                    Icon(Icons.Rounded.Settings, contentDescription = null, modifier = Modifier.size(20.dp))
-                }
-            }
-        )
-
-        val sortedBalances = balances.toList().sortedBy { it.first }
-
-        if (layout == "grid") {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.heightIn(max = 400.dp)
-            ) {
-                items(sortedBalances) { (currency, amount) ->
-                    AeonCurrencyCard(currency, amount, baseCurrency, exchangeRates, precision, showBaseConversion)
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                sortedBalances.forEach { (currency, amount) ->
-                    AeonCurrencyCard(currency, amount, baseCurrency, exchangeRates, precision, showBaseConversion)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AeonCurrencyCard(
-    currency: String,
-    amount: BigDecimal,
-    baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    precision: Int,
-    showBaseConversion: Boolean
-) {
-    val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
-    
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        modifier = Modifier.width(140.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                currency,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            )
-            Text(
-                formatCurrencyRight(amount, currency, precision),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (showBaseConversion && currency != baseCurrency) {
-                Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
 
 val categoryIcons = mapOf(
     "Food" to Icons.Rounded.Restaurant,
@@ -785,175 +679,6 @@ val categoryIcons = mapOf(
     "Transfer" to Icons.Rounded.SyncAlt,
     "Other" to Icons.Rounded.MoreHoriz
 )
-
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AeonTransactionList(
-    transactions: List<TransactionWithBalance>,
-    accountMap: Map<String, String>,
-    categoryMap: Map<Long, CategoryEntity>,
-    onTransactionClick: (Transaction) -> Unit,
-    modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
-    showDailyHeader: Boolean = true,
-    precision: Int = 2
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = contentPadding,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val grouped = if (showDailyHeader) {
-            transactions.groupBy { 
-                SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date(it.transaction.timestamp))
-            }
-        } else {
-            mapOf("" to transactions)
-        }
-
-        grouped.forEach { (date, dailyTransactions) ->
-            if (date.isNotEmpty()) {
-                stickyHeader {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Text(
-                            text = date.uppercase(),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.outline,
-                                letterSpacing = 1.sp
-                            )
-                        )
-                    }
-                }
-            }
-
-            items(dailyTransactions, key = { it.transaction.id }) { item ->
-                val category = categoryMap[item.transaction.categoryId]
-                val icon = categoryIcons[category?.iconName] ?: Icons.Rounded.Category
-                val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
-
-                AeonTransactionItem(
-                    category = category?.name ?: "Uncategorized",
-                    account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                    amount = formatCurrencyRight(item.transaction.amount.abs(), "", precision),
-                    balanceBefore = formatCurrencyRight(item.balanceAfter.subtract(item.transaction.amount), "", precision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, "", precision),
-                    type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                    timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
-                    note = item.transaction.note,
-                    tags = item.transaction.tags,
-                    icon = icon,
-                    iconBg = iconBg,
-                    precision = precision,
-                    onClick = { onTransactionClick(item.transaction) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AeonTransactionItem(
-    category: String,
-    account: String,
-    amount: String,
-    balanceBefore: String,
-    balanceAfter: String,
-    type: CashFlowType,
-    timestamp: String,
-    note: String? = null,
-    tags: List<String> = emptyList(),
-    icon: ImageVector? = null,
-    iconBg: Color? = null,
-    precision: Int = 2,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon ?: Icons.Rounded.Category,
-                        contentDescription = null,
-                        tint = iconBg ?: MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        category,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        (if (type == CashFlowType.INCOME) "+" else "-") + amount,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
-                        )
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "$account • $timestamp",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Text(
-                        "$balanceBefore → $balanceAfter",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                    )
-                }
-
-                if (!note.isNullOrBlank()) {
-                    Text(
-                        note,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun AeonDashedButton(
@@ -1026,9 +751,9 @@ fun AeonDashedButton(
 @Composable
 fun AeonFloatingActionButton(
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Rounded.Add,
     contentDescription: String? = null,
-    modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.primary,
     contentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {

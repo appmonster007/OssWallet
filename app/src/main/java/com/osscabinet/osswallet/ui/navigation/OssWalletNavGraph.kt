@@ -314,6 +314,7 @@ fun OssWalletNavGraph(
             TransactionListScreen(
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
+                analyticsViewModel = analyticsViewModel,
                 onAddTransactionClick = { navController.navigate(Screen.AddTransaction.route) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                 onBackClick = { navController.popBackStack() },

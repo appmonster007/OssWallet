@@ -6,18 +6,20 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.*
 
-fun formatCurrencyRight(amount: BigDecimal, currencyCode: String, precision: Int = 2): String {
+fun formatCurrencyRight(amount: BigDecimal?, currencyCode: String?, precision: Int = 2): String {
+    val validAmount = amount ?: BigDecimal.ZERO
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = amount.abs()
+    val absAmount = validAmount.abs()
     val absFormatted = formatAmount(absAmount, precision)
-    return if (amount.compareTo(BigDecimal.ZERO) < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
+    return if (validAmount.compareTo(BigDecimal.ZERO) < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
 }
 
-fun formatCurrencyLeft(amount: BigDecimal, currencyCode: String, precision: Int = 2): String {
+fun formatCurrencyLeft(amount: BigDecimal?, currencyCode: String?, precision: Int = 2): String {
+    val validAmount = amount ?: BigDecimal.ZERO
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = amount.abs()
+    val absAmount = validAmount.abs()
     val absFormatted = formatAmount(absAmount, precision)
-    return if (amount.compareTo(BigDecimal.ZERO) < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
+    return if (validAmount.compareTo(BigDecimal.ZERO) < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
 }
 
 fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
@@ -33,17 +35,21 @@ fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
     return format.format(amount)
 }
 
-fun getCurrencySymbol(currencyCode: String): String {
+fun getCurrencySymbol(currencyCode: String?): String {
+    if (currencyCode.isNullOrBlank()) return ""
     return try {
-        Currency.getInstance(currencyCode).symbol
+        // Handle cases where currencyCode might be a non-ISO 4217 string
+        // java.util.Currency.getInstance(String) throws IllegalArgumentException for invalid codes
+        Currency.getInstance(currencyCode.uppercase().trim()).symbol
     } catch (e: Exception) {
         currencyCode
     }
 }
 
-fun getCurrencyName(currencyCode: String): String {
+fun getCurrencyName(currencyCode: String?): String {
+    if (currencyCode.isNullOrBlank()) return ""
     return try {
-        Currency.getInstance(currencyCode).getDisplayName(Locale.getDefault())
+        Currency.getInstance(currencyCode.uppercase().trim()).getDisplayName(Locale.getDefault())
     } catch (e: Exception) {
         currencyCode
     }

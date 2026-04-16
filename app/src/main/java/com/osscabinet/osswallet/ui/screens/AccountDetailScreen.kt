@@ -284,7 +284,11 @@ fun AccountDetailScreen(
                                 onTransactionClick = { onEditTransactionClick(it.id) },
                                 contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
                                 precision = state.decimalPrecision,
-                                useNoteAsHeader = state.useNoteAsHeader
+                                useNoteAsHeader = state.useNoteAsHeader,
+                                baseCurrency = account.currencyCode,
+                                exchangeRates = state.exchangeRates,
+                                accountCurrencyMap = mapOf(account.id to account.currencyCode),
+                                filterAccountId = accountId
                             )
                         }
                     }

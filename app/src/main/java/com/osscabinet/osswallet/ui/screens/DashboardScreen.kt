@@ -578,14 +578,14 @@ fun DashboardContent(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
+                        .background(MaterialTheme.colorScheme.background),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
                     item {
                         AeonSectionHeader(
                             title = "Recent Activities",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             trailing = {
                                 TextButton(onClick = onRecordsClick) {
                                     Text("View all", color = MaterialTheme.colorScheme.primary)
@@ -602,7 +602,7 @@ fun DashboardContent(
                         AeonTransactionItem(
                             category = transaction.category,
                             account = accountMap[transaction.accountId] ?: "Unknown",
-                            amount = formatCurrencyRight(transaction.amount.abs(), "", decimalPrecision),
+                            amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
                             balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
                             balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
                             type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
@@ -612,8 +612,14 @@ fun DashboardContent(
                             icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
                             iconBg = categoryEntity?.let { Color(it.colorHex) },
                             precision = decimalPrecision,
-                            onClick = { /* Navigate to edit? */ },
-                            modifier = Modifier.padding(horizontal = 24.dp)
+                            onClick = { /* Navigate to edit? */ }
+                        )
+                    }
+                    
+                    item {
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
                     }
                 }

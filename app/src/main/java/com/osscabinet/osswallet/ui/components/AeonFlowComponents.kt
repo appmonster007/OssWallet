@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun AeonSettingsToggle(
@@ -204,5 +206,108 @@ fun AeonFlowBadge(
                 fontFeatureSettings = "tnum"
             )
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonSettingsTogglePreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AeonSettingsToggle(
+                label = "Notifications",
+                checked = true,
+                onCheckedChange = {},
+                description = "Enable push notifications"
+            )
+            AeonSettingsToggle(
+                label = "Dark Mode",
+                checked = false,
+                onCheckedChange = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonBaseConversionTogglePreview() {
+    OssWalletTheme {
+        AeonBaseConversionToggle(
+            baseCurrency = "USD",
+            showBaseConversion = true,
+            onShowBaseConversionChange = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonLayoutTogglePreview() {
+    OssWalletTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            AeonLayoutToggle(
+                layout = "grid",
+                onLayoutChange = {}
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            AeonLayoutToggle(
+                layout = "scroll",
+                onLayoutChange = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonGridColumnsSettingsPreview() {
+    OssWalletTheme {
+        AeonGridColumnsSettings(
+            gridColumns = 2,
+            onGridColumnsChange = {},
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonFlowSectionHeaderPreview() {
+    OssWalletTheme {
+        AeonFlowSectionHeader(
+            title = "TRANSACTION HISTORY",
+            modifier = Modifier.padding(16.dp),
+            trailing = {
+                Text(
+                    "SEE ALL",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonFlowBadgePreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AeonFlowBadge(
+                    amount = BigDecimal("1500.00"),
+                    type = CashFlowType.INCOME
+                )
+                AeonFlowBadge(
+                    amount = BigDecimal("450.50"),
+                    type = CashFlowType.EXPENSE
+                )
+            }
+        }
     }
 }

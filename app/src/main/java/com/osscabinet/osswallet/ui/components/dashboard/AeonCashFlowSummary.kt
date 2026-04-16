@@ -32,6 +32,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+
 @Serializable
 data class CashFlowSettings(
     val showBaseConversion: Boolean = true,
@@ -247,6 +250,45 @@ fun AeonCashFlowSummary(
             shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surface
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonCashFlowSummaryPreview() {
+    val sampleTransactions = listOf(
+        Transaction(
+            id = 1L,
+            title = "Salary",
+            amount = BigDecimal("5000.00"),
+            category = "Salary",
+            timestamp = System.currentTimeMillis(),
+            currency = "USD",
+            isIncome = true,
+            accountId = "1"
+        ),
+        Transaction(
+            id = 2L,
+            title = "Rent",
+            amount = BigDecimal("1200.00"),
+            category = "Rent",
+            timestamp = System.currentTimeMillis(),
+            currency = "USD",
+            isIncome = false,
+            accountId = "1"
+        )
+    )
+
+    OssWalletTheme {
+        Surface {
+            AeonCashFlowSummary(
+                transactions = sampleTransactions,
+                baseCurrency = "USD",
+                exchangeRates = emptyMap(),
+                currentTheme = "Light",
+                modifier = Modifier.padding(16.dp)
+            )
+        }
     }
 }
 

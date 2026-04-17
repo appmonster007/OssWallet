@@ -39,12 +39,7 @@ fun FilterSheetContent(
     var localFilter by remember { mutableStateOf(filter) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .padding(horizontal = 24.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
         AeonPeriodSelector(
             filter = localFilter,
@@ -58,14 +53,19 @@ fun FilterSheetContent(
             backgroundColor = backgroundColor
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(backgroundColor)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -74,231 +74,231 @@ fun FilterSheetContent(
                     Text("Clear All", color = MaterialTheme.colorScheme.primary)
                 }
             }
-        }
 
-        // Text Search: Note & Payee
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("SEARCH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            
-            OutlinedTextField(
-                value = localFilter.queryNote ?: "",
-                onValueChange = { localFilter = localFilter.copy(queryNote = it.ifBlank { null }) },
-                label = { Text("Note") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Checkbox(
-                            checked = localFilter.isNoteRegex,
-                            onCheckedChange = { localFilter = localFilter.copy(isNoteRegex = it) }
-                        )
-                    }
-                }
-            )
-
-            OutlinedTextField(
-                value = localFilter.queryPayee ?: "",
-                onValueChange = { localFilter = localFilter.copy(queryPayee = it.ifBlank { null }) },
-                label = { Text("Payee") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Checkbox(
-                            checked = localFilter.isPayeeRegex,
-                            onCheckedChange = { localFilter = localFilter.copy(isPayeeRegex = it) }
-                        )
-                    }
-                }
-            )
-        }
-
-        // Type (Income/Expense)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("TRANSACTION TYPE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = localFilter.isIncome == null,
-                    onClick = { localFilter = localFilter.copy(isIncome = null) },
-                    label = { Text("All") },
-                    shape = RoundedCornerShape(12.dp)
-                )
-                FilterChip(
-                    selected = localFilter.isIncome == true,
-                    onClick = { localFilter = localFilter.copy(isIncome = true) },
-                    label = { Text("Income") },
-                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(16.dp)) },
-                    shape = RoundedCornerShape(12.dp)
-                )
-                FilterChip(
-                    selected = localFilter.isIncome == false,
-                    onClick = { localFilter = localFilter.copy(isIncome = false) },
-                    label = { Text("Expense") },
-                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(16.dp)) },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-        }
-
-        // Date Range
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("DATE RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                var showStartDatePicker by remember { mutableStateOf(false) }
-                var showEndDatePicker by remember { mutableStateOf(false) }
-
-                OutlinedButton(
-                    onClick = { showStartDatePicker = true },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                ) {
-                    Text(localFilter.startDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Start Date", color = MaterialTheme.colorScheme.onSurface)
-                }
-                Text("to", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedButton(
-                    onClick = { showEndDatePicker = true },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                ) {
-                    Text(localFilter.endDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "End Date", color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                if (showStartDatePicker) {
-                    AeonDateTimePicker(
-                        initialDateTime = localFilter.startDate ?: System.currentTimeMillis(),
-                        onDateTimeSelected = { localFilter = localFilter.copy(startDate = it) },
-                        onDismiss = { showStartDatePicker = false }
-                    )
-                }
-                if (showEndDatePicker) {
-                    AeonDateTimePicker(
-                        initialDateTime = localFilter.endDate ?: System.currentTimeMillis(),
-                        onDateTimeSelected = { localFilter = localFilter.copy(endDate = it) },
-                        onDismiss = { showEndDatePicker = false }
-                    )
-                }
-            }
-        }
-
-        // Amount Range
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("AMOUNT RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Text Search: Note & Payee
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("SEARCH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
                 OutlinedTextField(
-                    value = localFilter.minAmount?.toString() ?: "",
-                    onValueChange = { localFilter = localFilter.copy(minAmount = it.toBigDecimalOrNull()) },
-                    label = { Text("Min") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    value = localFilter.queryNote ?: "",
+                    onValueChange = { localFilter = localFilter.copy(queryNote = it.ifBlank { null }) },
+                    label = { Text("Note") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     ),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                            Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Checkbox(
+                                checked = localFilter.isNoteRegex,
+                                onCheckedChange = { localFilter = localFilter.copy(isNoteRegex = it) }
+                            )
+                        }
+                    }
                 )
+
                 OutlinedTextField(
-                    value = localFilter.maxAmount?.toString() ?: "",
-                    onValueChange = { localFilter = localFilter.copy(maxAmount = it.toBigDecimalOrNull()) },
-                    label = { Text("Max") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
+                    value = localFilter.queryPayee ?: "",
+                    onValueChange = { localFilter = localFilter.copy(queryPayee = it.ifBlank { null }) },
+                    label = { Text("Payee") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     ),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                            Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Checkbox(
+                                checked = localFilter.isPayeeRegex,
+                                onCheckedChange = { localFilter = localFilter.copy(isPayeeRegex = it) }
+                            )
+                        }
+                    }
                 )
             }
-        }
 
-        // Categories (Multi-select)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                allCategories.forEach { category ->
+            // Type (Income/Expense)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("TRANSACTION TYPE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
-                        selected = category.id in localFilter.categoryIds,
-                        onClick = {
-                            val current = localFilter.categoryIds.toMutableList()
-                            if (category.id in current) current.remove(category.id) else current.add(category.id)
-                            localFilter = localFilter.copy(categoryIds = current)
-                        },
-                        label = { Text(category.name) },
+                        selected = localFilter.isIncome == null,
+                        onClick = { localFilter = localFilter.copy(isIncome = null) },
+                        label = { Text("All") },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.isIncome == true,
+                        onClick = { localFilter = localFilter.copy(isIncome = true) },
+                        label = { Text("Income") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(16.dp)) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.isIncome == false,
+                        onClick = { localFilter = localFilter.copy(isIncome = false) },
+                        label = { Text("Expense") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(16.dp)) },
                         shape = RoundedCornerShape(12.dp)
                     )
                 }
             }
-        }
 
-        // Accounts (Multi-select)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                accounts.forEach { account ->
-                    FilterChip(
-                        selected = account.id in localFilter.accountIds,
-                        onClick = {
-                            val current = localFilter.accountIds.toMutableList()
-                            if (account.id in current) current.remove(account.id) else current.add(account.id)
-                            localFilter = localFilter.copy(accountIds = current)
-                        },
-                        label = { Text(account.name) },
-                        shape = RoundedCornerShape(12.dp)
+            // Date Range
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("DATE RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    var showStartDatePicker by remember { mutableStateOf(false) }
+                    var showEndDatePicker by remember { mutableStateOf(false) }
+
+                    OutlinedButton(
+                        onClick = { showStartDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    ) {
+                        Text(localFilter.startDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Start Date", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text("to", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(
+                        onClick = { showEndDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    ) {
+                        Text(localFilter.endDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "End Date", color = MaterialTheme.colorScheme.onSurface)
+                    }
+
+                    if (showStartDatePicker) {
+                        AeonDateTimePicker(
+                            initialDateTime = localFilter.startDate ?: System.currentTimeMillis(),
+                            onDateTimeSelected = { localFilter = localFilter.copy(startDate = it) },
+                            onDismiss = { showStartDatePicker = false }
+                        )
+                    }
+                    if (showEndDatePicker) {
+                        AeonDateTimePicker(
+                            initialDateTime = localFilter.endDate ?: System.currentTimeMillis(),
+                            onDateTimeSelected = { localFilter = localFilter.copy(endDate = it) },
+                            onDismiss = { showEndDatePicker = false }
+                        )
+                    }
+                }
+            }
+
+            // Amount Range
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("AMOUNT RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = localFilter.minAmount?.toString() ?: "",
+                        onValueChange = { localFilter = localFilter.copy(minAmount = it.toBigDecimalOrNull()) },
+                        label = { Text("Min") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        ),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+                    )
+                    OutlinedTextField(
+                        value = localFilter.maxAmount?.toString() ?: "",
+                        onValueChange = { localFilter = localFilter.copy(maxAmount = it.toBigDecimalOrNull()) },
+                        label = { Text("Max") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        ),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
                     )
                 }
             }
-        }
 
-        // Actions
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onClose,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-            ) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+            // Categories (Multi-select)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    allCategories.forEach { category ->
+                        FilterChip(
+                            selected = category.id in localFilter.categoryIds,
+                            onClick = {
+                                val current = localFilter.categoryIds.toMutableList()
+                                if (category.id in current) current.remove(category.id) else current.add(category.id)
+                                localFilter = localFilter.copy(categoryIds = current)
+                            },
+                            label = { Text(category.name) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
             }
-            Button(
-                onClick = {
-                    onApplyFilter(localFilter)
-                    onClose()
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Apply Filter")
+
+            // Accounts (Multi-select)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    accounts.forEach { account ->
+                        FilterChip(
+                            selected = account.id in localFilter.accountIds,
+                            onClick = {
+                                val current = localFilter.accountIds.toMutableList()
+                                if (account.id in current) current.remove(account.id) else current.add(account.id)
+                                localFilter = localFilter.copy(accountIds = current)
+                            },
+                            label = { Text(account.name) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
             }
+
+            // Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onClose,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+                }
+                Button(
+                    onClick = {
+                        onApplyFilter(localFilter)
+                        onClose()
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Apply Filter")
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }

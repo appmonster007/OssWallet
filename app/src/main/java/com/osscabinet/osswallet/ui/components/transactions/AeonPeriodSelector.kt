@@ -51,13 +51,14 @@ fun AeonPeriodSelector(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(top = 12.dp)
     ) {
         // Main Bar
         Surface(
             color = backgroundColor,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -157,7 +158,6 @@ fun AeonPeriodSelector(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = (-12.dp))
                     .size(width = 90.dp, height = 24.dp)
                     .background(
                         backgroundColor, 

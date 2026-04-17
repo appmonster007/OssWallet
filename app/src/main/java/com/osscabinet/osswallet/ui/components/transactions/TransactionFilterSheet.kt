@@ -40,7 +40,6 @@ fun TransactionFilterSheet(
     onClose: () -> Unit,
     isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
-//    backgroundColor: Color = MaterialTheme.colorScheme.primaryContainer
 ) {
     Box(
         modifier = Modifier.fillMaxHeight(0.9f)

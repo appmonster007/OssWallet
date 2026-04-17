@@ -5,8 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
@@ -39,7 +40,8 @@ fun FilterSheetContent(
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     isExpanded: Boolean,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    showAccountFilter: Boolean = true
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterId by remember { mutableStateOf<Long?>(null) }
@@ -67,6 +69,8 @@ fun FilterSheetContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -166,9 +170,14 @@ fun FilterSheetContent(
             // Shared Filter Fields
             FilterFields(
                 filter = localFilter,
-                onFilterChange = { localFilter = it },
+                onFilterChange = { 
+                    localFilter = it
+                    // Clear preset selection when a field is manually modified
+                    selectedFilterId = null
+                },
                 accounts = accounts,
-                allCategories = allCategories
+                allCategories = allCategories,
+                showAccountFilter = showAccountFilter
             )
 
             // Apply Button

@@ -33,7 +33,8 @@ fun FilterFields(
     filter: TransactionFilter,
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
-    allCategories: List<CategoryEntity>
+    allCategories: List<CategoryEntity>,
+    showAccountFilter: Boolean = true
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
@@ -205,18 +206,20 @@ fun FilterFields(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MultiSelectDropdown(
-                label = "Accounts",
-                selectedCount = filter.accountIds.size,
-                modifier = Modifier.weight(1f),
-                onClick = { activeDialog = "Accounts" },
-                onClear = { onFilterChange(filter.copy(accountIds = emptyList())) }
-            )
+            if (showAccountFilter) {
+                MultiSelectDropdown(
+                    label = "Accounts",
+                    selectedCount = filter.accountIds.size,
+                    modifier = Modifier.weight(1f),
+                    onClick = { activeDialog = "Accounts" },
+                    onClear = { onFilterChange(filter.copy(accountIds = emptyList())) }
+                )
+            }
 
             MultiSelectDropdown(
                 label = "Categories",
                 selectedCount = filter.categoryIds.size,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(if (showAccountFilter) 1f else 2f),
                 onClick = { activeDialog = "Categories" },
                 onClear = { onFilterChange(filter.copy(categoryIds = emptyList())) }
             )

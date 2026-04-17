@@ -14,12 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -299,6 +302,51 @@ fun FilterSheetContent(
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FilterSheetContentPreview() {
+    val sampleAccounts = listOf(
+        Account(
+            id = "1",
+            name = "Checking",
+            balance = BigDecimal("1000.00"),
+            currencyCode = "USD",
+            structureType = "Personal",
+            colorHex = "#FF0000",
+            icon = "account_balance"
+        ),
+        Account(
+            id = "2",
+            name = "Savings",
+            balance = BigDecimal("5000.00"),
+            currencyCode = "USD",
+            structureType = "Personal",
+            colorHex = "#00FF00",
+            icon = "savings"
+        )
+    )
+    val sampleCategories = listOf(
+        CategoryEntity(id = 1, name = "Food", iconName = "restaurant", colorHex = 0xFFFF0000.toInt()),
+        CategoryEntity(id = 2, name = "Transport", iconName = "directions_bus", colorHex = 0xFF00FF00.toInt()),
+        CategoryEntity(id = 3, name = "Shopping", iconName = "shopping_cart", colorHex = 0xFF0000FF.toInt())
+    )
+
+    OssWalletTheme {
+        Surface {
+            FilterSheetContent(
+                filter = TransactionFilter(),
+                accounts = sampleAccounts,
+                allCategories = sampleCategories,
+                onSetDateRange = { _, _ -> },
+                onApplyFilter = {},
+                onToggleExpand = {},
+                onClose = {},
+                isExpanded = false
+            )
         }
     }
 }

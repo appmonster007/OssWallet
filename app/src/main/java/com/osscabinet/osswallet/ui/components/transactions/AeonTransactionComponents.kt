@@ -47,6 +47,8 @@ fun AeonTransactionList(
     showDailyHeader: Boolean = true,
     precision: Int = 2,
     useNoteAsHeader: Boolean = false,
+    showOpeningBalance: Boolean = false,
+    showClosingBalance: Boolean = true,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     accountCurrencyMap: Map<String, String> = emptyMap(),
@@ -153,6 +155,8 @@ fun AeonTransactionList(
                     iconBg = iconBg,
                     precision = precision,
                     useNoteAsHeader = useNoteAsHeader,
+                    showOpeningBalance = showOpeningBalance,
+                    showClosingBalance = showClosingBalance,
                     onClick = { onTransactionClick(item.transaction) }
                 )
             }
@@ -398,6 +402,8 @@ fun AeonTransactionItem(
     iconBg: Color? = null,
     precision: Int = 2,
     useNoteAsHeader: Boolean = false,
+    showOpeningBalance: Boolean = false,
+    showClosingBalance: Boolean = true,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -485,11 +491,18 @@ fun AeonTransactionItem(
                             )
                         }
 
-                        Text(
-                            "$balanceBefore → $balanceAfter",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                        )
+                        if (showOpeningBalance || showClosingBalance) {
+                            val balanceText = when {
+                                showOpeningBalance && showClosingBalance -> "$balanceBefore → $balanceAfter"
+                                showOpeningBalance -> balanceBefore
+                                else -> balanceAfter
+                            }
+                            Text(
+                                balanceText,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                            )
+                        }
 
                         if (tags.isNotEmpty()) {
                             FlowRow(

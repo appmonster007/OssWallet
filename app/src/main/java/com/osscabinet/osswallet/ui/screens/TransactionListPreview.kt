@@ -57,12 +57,14 @@ fun TransactionListFilteredPreview() {
             decimalPrecision = 2,
             analyticsState = AnalyticsUiState(selectedCurrency = "USD"),
             filter = TransactionFilter(queryPayee = "Burger"),
+            recordsSettings = com.osscabinet.ossWallet.data.local.TransactionSectionSettings(),
             onAddTransactionClick = {},
             onEditTransactionClick = {},
             onBackClick = {},
             onAccountDetailClick = {},
             onUpdateFilter = {},
-            onSetDateRange = { _, _ -> }
+            onSetDateRange = { _, _ -> },
+            onUpdateRecordsSettings = {}
         )
     }
 }

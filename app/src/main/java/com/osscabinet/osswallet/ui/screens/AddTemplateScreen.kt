@@ -70,6 +70,15 @@ fun AddTemplateScreen(
     var showLabelSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     val isIncome = transactionType == 1
 
     LaunchedEffect(selectedAccount) {
@@ -92,7 +101,7 @@ fun AddTemplateScreen(
                         ) 
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = { navigate(onBackClick) }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     },
@@ -103,39 +112,41 @@ fun AddTemplateScreen(
                             color = MaterialTheme.colorScheme.primary,
                             onClick = {
                                 if (name.isNotBlank()) {
-                                    val entity = TemplateEntity(
-                                        id = templateId ?: 0,
-                                        name = name,
-                                        category = category,
-                                        amount = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                                        transactionType = transactionType,
-                                        accountId = accountId,
-                                        note = note.ifBlank { null },
-                                        payee = payee.ifBlank { null },
-                                        location = location.ifBlank { null },
-                                        paymentMethod = paymentMethod.ifBlank { null },
-                                        currency = currency.ifBlank { null },
-                                        tags = tags.joinToString(","),
-                                        isStarred = template?.isStarred ?: false
-                                    )
-                                    if (templateId == null) {
-                                        templateViewModel.addTemplate(
-                                            name = entity.name,
-                                            category = entity.category,
-                                            amount = entity.amount,
-                                            type = entity.transactionType,
-                                            note = entity.note,
-                                            accountId = entity.accountId,
-                                            payee = entity.payee,
-                                            location = entity.location,
-                                            paymentMethod = entity.paymentMethod,
-                                            currency = entity.currency,
-                                            tags = tags
+                                    navigate {
+                                        val entity = TemplateEntity(
+                                            id = templateId ?: 0,
+                                            name = name,
+                                            category = category,
+                                            amount = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                            transactionType = transactionType,
+                                            accountId = accountId,
+                                            note = note.ifBlank { null },
+                                            payee = payee.ifBlank { null },
+                                            location = location.ifBlank { null },
+                                            paymentMethod = paymentMethod.ifBlank { null },
+                                            currency = currency.ifBlank { null },
+                                            tags = tags.joinToString(","),
+                                            isStarred = template?.isStarred ?: false
                                         )
-                                    } else {
-                                        templateViewModel.updateTemplate(entity)
+                                        if (templateId == null) {
+                                            templateViewModel.addTemplate(
+                                                name = entity.name,
+                                                category = entity.category,
+                                                amount = entity.amount,
+                                                type = entity.transactionType,
+                                                note = entity.note,
+                                                accountId = entity.accountId,
+                                                payee = entity.payee,
+                                                location = entity.location,
+                                                paymentMethod = entity.paymentMethod,
+                                                currency = entity.currency,
+                                                tags = tags
+                                            )
+                                        } else {
+                                            templateViewModel.updateTemplate(entity)
+                                        }
+                                        onBackClick()
                                     }
-                                    onBackClick()
                                 }
                             }
                         ) {

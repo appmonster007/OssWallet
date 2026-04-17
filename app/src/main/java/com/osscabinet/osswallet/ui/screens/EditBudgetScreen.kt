@@ -40,13 +40,22 @@ fun EditBudgetScreen(
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
                     title = { Text("Edit Goal", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = { navigate(onBackClick) }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     }
@@ -157,8 +166,10 @@ fun EditBudgetScreen(
 
                 Button(
                     onClick = { 
-                        viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
-                        onBackClick()
+                        navigate {
+                            viewModel.upsertBudget(category, amount.toBigDecimalOrNull() ?: BigDecimal.ZERO)
+                            onBackClick()
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()

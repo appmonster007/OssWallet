@@ -41,20 +41,30 @@ fun EditFilterScreen(
     var filterName by remember { mutableStateOf(filterEntity?.name ?: "") }
     var localFilter by remember { mutableStateOf(filterEntity?.toDomain() ?: TransactionFilter()) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (filterEntity == null) "New Filter" else "Edit Filter") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     TextButton(onClick = {
                         if (filterName.isNotBlank()) {
-                            onSaveFilter(localFilter.toEntity(filterName, filterEntity?.id ?: 0))
+                            navigate {
+                                onSaveFilter(localFilter.toEntity(filterName, filterEntity?.id ?: 0))
+                            }
                         }
                     }) {
                         Text("Save", fontWeight = FontWeight.Bold)

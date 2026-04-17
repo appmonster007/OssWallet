@@ -34,12 +34,21 @@ fun CategoryManagementScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedCategoryForEdit by remember { mutableStateOf<CategoryEntity?>(null) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Manage Categories") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },

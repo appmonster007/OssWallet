@@ -64,6 +64,15 @@ fun EditAccountScreen(
     var selectedIconName by remember { mutableStateOf(account.icon) }
     var accentColorHex by remember { mutableStateOf(account.colorHex) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             val canSave = accountName.isNotBlank() && primaryCurrency.isNotBlank()
@@ -71,7 +80,7 @@ fun EditAccountScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Edit Account", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -79,15 +88,17 @@ fun EditAccountScreen(
                     AeonFormHeader(
                         title = "",
                         onSaveClick = {
-                            viewModel.updateAccount(account.copy(
-                                name = accountName,
-                                structureType = structureType,
-                                currencyCode = primaryCurrency,
-                                allowedCurrencies = allowedCurrencies.toList(),
-                                colorHex = accentColorHex,
-                                icon = selectedIconName
-                            ))
-                            onBackClick()
+                            navigate {
+                                viewModel.updateAccount(account.copy(
+                                    name = accountName,
+                                    structureType = structureType,
+                                    currencyCode = primaryCurrency,
+                                    allowedCurrencies = allowedCurrencies.toList(),
+                                    colorHex = accentColorHex,
+                                    icon = selectedIconName
+                                ))
+                                onBackClick()
+                            }
                         },
                         saveButtonEnabled = canSave,
                         accentColorHex = accentColorHex,
@@ -183,8 +194,10 @@ innerPadding ->
 
             Button(
                 onClick = {
-                    viewModel.deleteAccount(accountId)
-                    onBackClick()
+                    navigate {
+                        viewModel.deleteAccount(accountId)
+                        onBackClick()
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

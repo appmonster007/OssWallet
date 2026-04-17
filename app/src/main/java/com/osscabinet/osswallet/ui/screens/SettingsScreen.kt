@@ -50,6 +50,14 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -232,7 +240,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("Settings", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate { onBackClick() } }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -330,35 +338,35 @@ fun SettingsScreen(
                     title = "Manage Accounts",
                     subtitle = "Reorder, hide, or edit your accounts",
                     icon = Icons.Rounded.AccountBalance,
-                    onClick = onManageAccountsClick
+                    onClick = { navigate(onManageAccountsClick) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Labels",
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
-                    onClick = onManageLabelsClick
+                    onClick = { navigate(onManageLabelsClick) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Manage Categories",
                     subtitle = "Organize income and expenses",
                     icon = Icons.Rounded.Category,
-                    onClick = onManageCategoriesClick
+                    onClick = { navigate(onManageCategoriesClick) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Transaction Templates",
                     subtitle = "Quick shortcuts for frequent entries",
                     icon = Icons.Rounded.AutoAwesome,
-                    onClick = onTemplatesClick
+                    onClick = { navigate(onTemplatesClick) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
                     title = "Saved Filters",
                     subtitle = "Templates for quick transaction searching",
                     icon = Icons.Rounded.FilterList,
-                    onClick = onManageFiltersClick
+                    onClick = { navigate(onManageFiltersClick) }
                 )
             }
 

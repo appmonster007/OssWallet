@@ -53,6 +53,15 @@ fun AccountDetailScreen(
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val allTemplates by templateViewModel.templates.collectAsState()
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
 
@@ -115,12 +124,12 @@ fun AccountDetailScreen(
                         Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) 
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = { navigate { onBackClick() } }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                         }
                     },
                     actions = {
-                        IconButton(onClick = { onEditAccountClick(accountId) }) {
+                        IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                         }
                         IconButton(onClick = { showSettingsDialog = true }) {
@@ -387,7 +396,7 @@ fun AccountDetailScreen(
                                         transactions = filteredTransactions,
                                         accountMap = accountNamesMap,
                                         categoryMap = categoryMap,
-                                        onTransactionClick = { tx -> onEditTransactionClick(tx.id) },
+                                        onTransactionClick = { tx -> navigate { onEditTransactionClick(tx.id) } },
                                         contentPadding = PaddingValues(
                                             bottom = sheetPadding.calculateBottomPadding() + screenPadding.calculateBottomPadding() + 16.dp
                                         ),
@@ -410,7 +419,7 @@ fun AccountDetailScreen(
         }
 
         AeonExpandableFab(
-            onAddClick = { type, name -> onAddTransactionClick(accountId, type, name) },
+            onAddClick = { type, name -> navigate { onAddTransactionClick(accountId, type, name) } },
             templates = allTemplates,
             fabPaddingBottom = if (selectedTabIndex == 1) 100.dp else 16.dp
         )

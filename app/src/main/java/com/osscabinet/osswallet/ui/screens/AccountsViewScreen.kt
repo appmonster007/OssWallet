@@ -82,6 +82,14 @@ fun AccountsViewScreen(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsState()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
@@ -143,19 +151,19 @@ fun AccountsViewScreen(
                     nonArchivedAccounts = nonArchivedAccounts,
                     starredTemplates = starredTemplates,
                     selectedDestination = "accounts_view",
-                    onDashboardClick = onDashboardClick,
+                    onDashboardClick = { navigate(onDashboardClick) },
                     onAccountsViewClick = { scope.launch { drawerState.close() } },
-                    onRecordsClick = onRecordsClick,
-                    onAnalyticsClick = onAnalyticsClick,
-                    onBudgetsClick = onBudgetsClick,
-                    onLoansClick = onLoansClick,
-                    onExchangeRatesClick = onExchangeRatesClick,
-                    onTemplatesClick = onTemplatesClick,
-                    onManageAccountsClick = onManageAccountsClick,
-                    onSettingsClick = onSettingsClick,
-                    onAccountClick = onAccountClick,
+                    onRecordsClick = { navigate(onRecordsClick) },
+                    onAnalyticsClick = { navigate(onAnalyticsClick) },
+                    onBudgetsClick = { navigate(onBudgetsClick) },
+                    onLoansClick = { navigate(onLoansClick) },
+                    onExchangeRatesClick = { navigate(onExchangeRatesClick) },
+                    onTemplatesClick = { navigate(onTemplatesClick) },
+                    onManageAccountsClick = { navigate(onManageAccountsClick) },
+                    onSettingsClick = { navigate(onSettingsClick) },
+                    onAccountClick = { id -> navigate { onAccountClick(id) } },
                     onTemplateClick = { template ->
-                        onAddClick(template.transactionType, template.name)
+                        navigate { onAddClick(template.transactionType, template.name) }
                     },
                     onCloseDrawer = { scope.launch { drawerState.close() } }
                 )
@@ -257,8 +265,8 @@ fun AccountsViewScreen(
                                 }
                                 AccountsViewSection.ACCOUNTS_LIST -> {
                                     AeonAccountsSection(
-                                        onManageClick = onManageAccountsClick,
-                                        onAccountClick = onAccountClick,
+                                        onManageClick = { navigate(onManageAccountsClick) },
+                                        onAccountClick = { id -> navigate { onAccountClick(id) } },
                                         onGridColumnsChange = { accountsViewViewModel.updateGridColumns(it) },
                                         accounts = state.accounts,
                                         accountStats = state.accountStats,
@@ -337,7 +345,7 @@ fun AccountsViewScreen(
                                 shadowElevation = 4.dp,
                                 onClick = { 
                                     isFabExpanded = false
-                                    onAddClick(type, name)
+                                    navigate { onAddClick(type, name) }
                                 }
                             ) {
                                 Text(
@@ -349,7 +357,7 @@ fun AccountsViewScreen(
                             AeonFloatingActionButton(
                                 onClick = { 
                                     isFabExpanded = false
-                                    onAddClick(type, name)
+                                    navigate { onAddClick(type, name) }
                                 },
                                 modifier = Modifier.size(40.dp),
                                 icon = icon,
@@ -376,7 +384,7 @@ fun AccountsViewScreen(
                             shadowElevation = 4.dp,
                             onClick = { 
                                 isFabExpanded = false
-                                onAddAccountClick()
+                                navigate(onAddAccountClick)
                             }
                         ) {
                             Text(
@@ -388,7 +396,7 @@ fun AccountsViewScreen(
                         AeonFloatingActionButton(
                             onClick = { 
                                 isFabExpanded = false
-                                onAddAccountClick()
+                                navigate(onAddAccountClick)
                             },
                             modifier = Modifier.size(40.dp),
                             icon = Icons.Default.AccountBalance,
@@ -414,7 +422,7 @@ fun AccountsViewScreen(
                             shadowElevation = 4.dp,
                             onClick = { 
                                 isFabExpanded = false
-                                onAddClick(2, null)
+                                navigate { onAddClick(2, null) }
                             }
                         ) {
                             Text(
@@ -426,7 +434,7 @@ fun AccountsViewScreen(
                         AeonFloatingActionButton(
                             onClick = { 
                                 isFabExpanded = false
-                                onAddClick(2, null)
+                                navigate { onAddClick(2, null) }
                             },
                             modifier = Modifier.size(40.dp),
                             icon = Icons.Default.SyncAlt,
@@ -452,7 +460,7 @@ fun AccountsViewScreen(
                             shadowElevation = 4.dp,
                             onClick = { 
                                 isFabExpanded = false
-                                onAddClick(0, null)
+                                navigate { onAddClick(0, null) }
                             }
                         ) {
                             Text(
@@ -464,7 +472,7 @@ fun AccountsViewScreen(
                         AeonFloatingActionButton(
                             onClick = { 
                                 isFabExpanded = false
-                                onAddClick(0, null)
+                                navigate { onAddClick(0, null) }
                             },
                             modifier = Modifier.size(40.dp),
                             icon = Icons.Default.Add,

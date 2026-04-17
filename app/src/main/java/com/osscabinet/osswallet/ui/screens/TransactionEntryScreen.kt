@@ -69,6 +69,14 @@ fun TransactionEntryScreen(
     val dbTemplates by templateViewModel.templates.collectAsState()
     val allTags by tagViewModel.tags.collectAsState()
 
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigateBack = {
+        if (!navTriggered) {
+            navTriggered = true
+            onBackClick()
+        }
+    }
+
     TransactionEntryContent(
         transactionId = transactionId,
         accountId = accountId,
@@ -262,14 +270,15 @@ fun TransactionEntryScreen(
                     )
                 }
             }
-            onBackClick()
+            navigateBack()
         },
         onDelete = { id ->
             viewModel.deleteTransaction(id)
-            onBackClick()
+            navigateBack()
         },
-        onBackClick = onBackClick
+        onBackClick = navigateBack
     )
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1491,7 +1500,7 @@ fun TransactionEntryWithLongLinkPreview() {
 
     val sampleTransactions = listOf(
         Transaction(
-            id = 100L,
+            id = 1000L,
             title = "Very long title for the linked transaction that might push the close button off screen",
             amount = BigDecimal("1234.56"),
             category = "Extremely Long Category Name For Testing Purposes",

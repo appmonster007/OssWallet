@@ -184,7 +184,7 @@ fun AeonWeeklyHeader(
     var isExpanded by remember { mutableStateOf(false) }
     val positiveColor = Color(0xFF4CAF50)
     val negativeColor = MaterialTheme.colorScheme.error
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
     val outlineColor = MaterialTheme.colorScheme.outline
     val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 

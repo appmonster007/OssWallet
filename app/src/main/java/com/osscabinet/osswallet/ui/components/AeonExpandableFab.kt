@@ -45,14 +45,12 @@ fun AeonExpandableFab(
             emptyList()
         }
 
-        if (!finalTemplates.isEmpty()) {
-            finalTemplates.map {
-                Triple(it.name, when(it.transactionType) {
-                    1 -> Icons.Rounded.Payments
-                    2 -> Icons.Rounded.SwapHoriz
-                    else -> Icons.Rounded.ShoppingCart
-                }, it.transactionType)
-            }
+        finalTemplates.map {
+            Triple(it.name, when(it.transactionType) {
+                1 -> Icons.Rounded.Payments
+                2 -> Icons.Rounded.SwapHoriz
+                else -> Icons.Rounded.ShoppingCart
+            }, it.transactionType)
         }
     }
 

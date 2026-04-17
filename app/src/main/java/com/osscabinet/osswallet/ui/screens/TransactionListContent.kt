@@ -57,7 +57,7 @@ fun TransactionListContent(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 90.dp,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         sheetDragHandle = null,

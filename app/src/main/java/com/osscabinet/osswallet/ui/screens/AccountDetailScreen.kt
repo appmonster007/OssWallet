@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
@@ -271,7 +272,10 @@ fun AccountDetailScreen(
                             val filter by transactionViewModel.filter.collectAsState()
                             val savedFilters by transactionViewModel.savedFilters.collectAsState()
                             val accounts by accountViewModel.accounts.collectAsState()
+                            val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
+                            val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
                             val categoriesList by transactionViewModel.categories.collectAsState()
+                            val analyticsState by analyticsViewModel.uiState.collectAsState()
                             val scope = rememberCoroutineScope()
                             val scaffoldState = rememberBottomSheetScaffoldState(
                                 bottomSheetState = rememberStandardBottomSheetState(
@@ -355,21 +359,27 @@ fun AccountDetailScreen(
                                         }
                                     }
 
+                                if (filteredTransactions.isEmpty()) {
+                                    TransactionListEmptyState()
+                                } else {
                                     AeonTransactionList(
                                         transactions = filteredTransactions,
-                                        accountMap = mapOf(account.id to account.name),
+                                        accountMap = accountNamesMap,
                                         categoryMap = categoryMap,
-                                        onTransactionClick = { onEditTransactionClick(it.id) },
+                                        onTransactionClick = { tx -> onEditTransactionClick(tx.id) },
                                         contentPadding = PaddingValues(
                                             bottom = sheetPadding.calculateBottomPadding() + screenPadding.calculateBottomPadding() + 16.dp
                                         ),
                                         precision = state.decimalPrecision,
                                         useNoteAsHeader = state.useNoteAsHeader,
-                                        baseCurrency = account.currencyCode,
+                                        showOpeningBalance = true, // Force show balances for account details
+                                        showClosingBalance = true,
+                                        baseCurrency = analyticsState.selectedCurrency,
                                         exchangeRates = state.exchangeRates,
-                                        accountCurrencyMap = mapOf(account.id to account.currencyCode),
+                                        accountCurrencyMap = accountCurrencyMap,
                                         filterAccountId = accountId
                                     )
+                                }
                                 }
                             }
                         }

@@ -116,7 +116,7 @@ fun TransactionListContent(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        sheetPeekHeight = 100.dp,
+        sheetPeekHeight = 110.dp,
         sheetContainerColor = backgroundColor,
         sheetContentColor = Color.White,
         sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -191,7 +191,7 @@ fun TransactionListContent(
                             }
                         }
                     },
-                    isExpanded = scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded,
+                    isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
                     showArcTab = true,
                     backgroundColor = backgroundColor
                 )

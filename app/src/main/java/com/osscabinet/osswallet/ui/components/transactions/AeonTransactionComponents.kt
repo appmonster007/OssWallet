@@ -438,11 +438,11 @@ fun AeonTransactionItem(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(40.dp),
                     shape = CircleShape,
                     color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
                 ) {
@@ -451,27 +451,32 @@ fun AeonTransactionItem(
                             icon ?: Icons.Rounded.Category,
                             contentDescription = null,
                             tint = iconBg ?: MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Row(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             headerText,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            ),
                             maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             subHeaderText,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp
+                            ),
                             color = MaterialTheme.colorScheme.outline,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -479,9 +484,11 @@ fun AeonTransactionItem(
                         if (!bottomText.isNullOrBlank()) {
                             Text(
                                 bottomText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp),
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                modifier = Modifier.padding(top = 2.dp),
                                 maxLines = if (!isNoteHeader) Int.MAX_VALUE else 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -491,8 +498,9 @@ fun AeonTransactionItem(
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             (if (type == CashFlowType.INCOME) "+" else "-") + amount,
-                            style = MaterialTheme.typography.titleMedium.copy(
+                            style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Black,
+                                fontSize = 15.sp,
                                 color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
                             )
                         )
@@ -500,7 +508,10 @@ fun AeonTransactionItem(
                         if (convertedAmount != null) {
                             Text(
                                 (if (type == CashFlowType.INCOME) "+" else "-") + convertedAmount,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                ),
                                 color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.7f)
                             )
                         }
@@ -513,30 +524,30 @@ fun AeonTransactionItem(
                             }
                             Text(
                                 balanceText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                             )
                         }
 
                         if (tags.isNotEmpty()) {
                             FlowRow(
-                                modifier = Modifier.padding(top = 8.dp),
+                                modifier = Modifier.padding(top = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 tags.forEach { tag ->
                                     Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
                                     ) {
                                         Text(
                                             text = tag,
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.sp,
+                                                fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                                             ),
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                                         )
                                     }
                                 }
@@ -545,9 +556,9 @@ fun AeonTransactionItem(
 
                         Text(
                             timestamp,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(top = 4.dp)
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                            modifier = Modifier.padding(top = 2.dp)
                         )
                     }
                 }

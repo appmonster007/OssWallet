@@ -3,9 +3,6 @@ package com.osscabinet.ossWallet.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
@@ -15,27 +12,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
-import com.osscabinet.ossWallet.ui.util.convertAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.isDark
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.text.SimpleDateFormat
-import java.util.*
-
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,18 +48,6 @@ fun AccountDetailScreen(
     
     val categories by transactionViewModel.categories.collectAsState()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
-
-    val transactionsWithBalance by transactionViewModel.transactionsWithBalance.collectAsState()
-    val accountTransactionsWithBalance = remember(transactionsWithBalance, accountId, uiState) {
-        val filtered = transactionsWithBalance.filter { it.transaction.accountId == accountId }
-        val state = uiState as? AccountDetailUiState.Success
-        if (state != null && !state.showPlannedPayments) {
-            val now = System.currentTimeMillis()
-            filtered.filter { it.transaction.timestamp <= now }
-        } else {
-            filtered
-        }
-    }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
@@ -181,7 +160,7 @@ fun AccountDetailScreen(
                 text = "Transaction"
             )
         }
-    ) { innerPadding ->
+    ) { screenPadding ->
         when (val state = uiState) {
             is AccountDetailUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -198,7 +177,6 @@ fun AccountDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     if (selectedTabIndex == 0) {
@@ -207,7 +185,10 @@ fun AccountDetailScreen(
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(24.dp),
-                            contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp) // Extra padding for FAB
+                            contentPadding = PaddingValues(
+                                top = screenPadding.calculateTopPadding() + 24.dp,
+                                bottom = screenPadding.calculateBottomPadding() + 96.dp
+                            )
                         ) {
                             item {
                                 AeonSectionHeader(title = "Account Summary")
@@ -255,7 +236,17 @@ fun AccountDetailScreen(
                             }
                         }
                     } else {
-                        if (accountTransactionsWithBalance.isEmpty()) {
+                        val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.initialBalance) {
+                            var currentBalance = state.account.initialBalance
+                            state.cashFlowTransactions.sortedBy { it.timestamp }.map { tx ->
+                                val balanceBefore = currentBalance
+                                val balanceAfter = if (tx.isIncome) currentBalance.add(tx.amount) else currentBalance.subtract(tx.amount)
+                                currentBalance = balanceAfter
+                                TransactionWithBalance(tx, balanceBefore, balanceAfter)
+                            }.sortedByDescending { it.transaction.timestamp }
+                        }
+
+                        if (transactionsWithBalanceList.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize(),
@@ -277,19 +268,110 @@ fun AccountDetailScreen(
                                 }
                             }
                         } else {
-                            AeonTransactionList(
-                                transactions = accountTransactionsWithBalance,
-                                accountMap = mapOf(account.id to account.name),
-                                categoryMap = categoryMap,
-                                onTransactionClick = { onEditTransactionClick(it.id) },
-                                contentPadding = PaddingValues(top = 24.dp, bottom = 96.dp),
-                                precision = state.decimalPrecision,
-                                useNoteAsHeader = state.useNoteAsHeader,
-                                baseCurrency = account.currencyCode,
-                                exchangeRates = state.exchangeRates,
-                                accountCurrencyMap = mapOf(account.id to account.currencyCode),
-                                filterAccountId = accountId
+                            val filter by transactionViewModel.filter.collectAsState()
+                            val savedFilters by transactionViewModel.savedFilters.collectAsState()
+                            val accounts by accountViewModel.accounts.collectAsState()
+                            val categoriesList by transactionViewModel.categories.collectAsState()
+                            val scope = rememberCoroutineScope()
+                            val scaffoldState = rememberBottomSheetScaffoldState(
+                                bottomSheetState = rememberStandardBottomSheetState(
+                                    initialValue = SheetValue.PartiallyExpanded,
+                                    skipHiddenState = true
+                                )
                             )
+
+                            // Apply account filter automatically if not already set specifically for this account
+                            LaunchedEffect(accountId) {
+                                if (!filter.accountIds.contains(accountId)) {
+                                    transactionViewModel.updateFilter(filter.copy(accountIds = listOf(accountId)))
+                                }
+                            }
+
+                            BottomSheetScaffold(
+                                scaffoldState = scaffoldState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(top = screenPadding.calculateTopPadding())
+                                    .background(Color.Transparent),
+                                sheetPeekHeight = 90.dp,
+                                sheetContainerColor = Color.Transparent,
+                                sheetContentColor = MaterialTheme.colorScheme.onSurface,
+                                sheetTonalElevation = 0.dp,
+                                sheetShadowElevation = 0.dp,
+                                sheetShape = RectangleShape,
+                                sheetDragHandle = null,
+                                sheetSwipeEnabled = true,
+                                sheetContent = {
+                                    TransactionFilterSheet(
+                                        filter = filter,
+                                        accounts = accounts,
+                                        categories = categoriesList,
+                                        savedFilters = savedFilters,
+                                        onSetDateRange = { start, end -> transactionViewModel.setDateRangeFilter(start, end) },
+                                        onUpdateFilter = { updatedFilter ->
+                                            // Ensure we always stay filtered by this account
+                                            transactionViewModel.updateFilter(updatedFilter.copy(accountIds = listOf(accountId)))
+                                        },
+                                        onToggleExpand = {
+                                            scope.launch {
+                                                if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+                                                    scaffoldState.bottomSheetState.expand()
+                                                } else {
+                                                    scaffoldState.bottomSheetState.partialExpand()
+                                                }
+                                            }
+                                        },
+                                        onClose = {
+                                            scope.launch { scaffoldState.bottomSheetState.partialExpand() }
+                                        },
+                                        isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+                                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                                        showAccountFilter = false
+                                    )
+                                }
+                            ) { sheetPadding ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(top = sheetPadding.calculateTopPadding())
+                                ) {
+                                    val filteredTransactions = remember(transactionsWithBalanceList, filter) {
+                                        transactionsWithBalanceList.filter { item ->
+                                            val tx = item.transaction
+                                            
+                                            // Since we are in account detail, we only care about filters OTHER than accountId 
+                                            // (though the list is already scoped to this account in ViewModel)
+                                            val matchesNote = filter.queryNote == null || 
+                                                (if (filter.isNoteRegex) tx.note.contains(filter.queryNote!!.toRegex()) else tx.note.contains(filter.queryNote!!, ignoreCase = true))
+                                            val matchesPayee = filter.queryPayee == null || 
+                                                (if (filter.isPayeeRegex) tx.title.contains(filter.queryPayee!!.toRegex()) else tx.title.contains(filter.queryPayee!!, ignoreCase = true))
+                                            val matchesCategory = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
+                                            val matchesDate = (filter.startDate == null || tx.timestamp >= filter.startDate!!) &&
+                                                              (filter.endDate == null || tx.timestamp <= filter.endDate!!)
+                                            val matchesCurrency = filter.currencies.isEmpty() || tx.currency in filter.currencies
+                                            val matchesIncome = filter.isIncome == null || tx.isIncome == filter.isIncome
+                                            
+                                            matchesNote && matchesPayee && matchesCategory && matchesDate && matchesCurrency && matchesIncome
+                                        }
+                                    }
+
+                                    AeonTransactionList(
+                                        transactions = filteredTransactions,
+                                        accountMap = mapOf(account.id to account.name),
+                                        categoryMap = categoryMap,
+                                        onTransactionClick = { onEditTransactionClick(it.id) },
+                                        contentPadding = PaddingValues(
+                                            bottom = sheetPadding.calculateBottomPadding() + screenPadding.calculateBottomPadding() + 16.dp
+                                        ),
+                                        precision = state.decimalPrecision,
+                                        useNoteAsHeader = state.useNoteAsHeader,
+                                        baseCurrency = account.currencyCode,
+                                        exchangeRates = state.exchangeRates,
+                                        accountCurrencyMap = mapOf(account.id to account.currencyCode),
+                                        filterAccountId = accountId
+                                    )
+                                }
+                            }
                         }
                     }
                 }

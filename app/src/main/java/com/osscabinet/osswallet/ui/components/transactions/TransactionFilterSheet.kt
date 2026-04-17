@@ -40,7 +40,8 @@ fun TransactionFilterSheet(
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     isExpanded: Boolean,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    showAccountFilter: Boolean = true
 ) {
     Box(
         modifier = Modifier.wrapContentHeight()
@@ -55,7 +56,8 @@ fun TransactionFilterSheet(
             onToggleExpand = onToggleExpand,
             onClose = onClose,
             isExpanded = isExpanded,
-            backgroundColor = backgroundColor
+            backgroundColor = backgroundColor,
+            showAccountFilter = showAccountFilter
         )
     }
 }

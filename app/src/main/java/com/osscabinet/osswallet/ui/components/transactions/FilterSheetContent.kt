@@ -1,27 +1,31 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +41,44 @@ fun FilterSheetContent(
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
     var localFilter by remember { mutableStateOf(filter) }
+    var showWarrantyStartPicker by remember { mutableStateOf(false) }
+    var showWarrantyEndPicker by remember { mutableStateOf(false) }
+
+    if (showWarrantyStartPicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = localFilter.warrantyExpirationStart)
+        DatePickerDialog(
+            onDismissRequest = { showWarrantyStartPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    localFilter = localFilter.copy(warrantyExpirationStart = datePickerState.selectedDateMillis)
+                    showWarrantyStartPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWarrantyStartPicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showWarrantyEndPicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = localFilter.warrantyExpirationEnd)
+        DatePickerDialog(
+            onDismissRequest = { showWarrantyEndPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    localFilter = localFilter.copy(warrantyExpirationEnd = datePickerState.selectedDateMillis)
+                    showWarrantyEndPicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWarrantyEndPicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -106,8 +148,11 @@ fun FilterSheetContent(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "TYPE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier.fillMaxWidth()
@@ -132,13 +177,13 @@ fun FilterSheetContent(
                             },
                             icon = {
                                 when (index) {
-                                    1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(16.dp))
-                                    2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(16.dp))
-                                    else -> SegmentedButtonDefaults.Icon(active = localFilter.isIncome == null)
+                                    0 -> if (localFilter.isIncome == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                    1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
+                                    2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
                                 }
                             }
                         ) {
-                            Text(label)
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -194,33 +239,111 @@ fun FilterSheetContent(
                 }
             }
 
-            // Amount Range (Min/Max)
+            // Payment Method
+            val paymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "Other")
+            MultiSelectDropdown(
+                label = "Payment Methods",
+                selectedCount = localFilter.paymentMethods.size,
+                modifier = Modifier.fillMaxWidth(),
+                onClear = { localFilter = localFilter.copy(paymentMethods = emptyList()) }
+            ) {
+                paymentMethods.forEach { method ->
+                    val isSelected = method in localFilter.paymentMethods
+                    DropdownMenuItem(
+                        text = { Text(method) },
+                        onClick = {
+                            val current = localFilter.paymentMethods.toMutableList()
+                            if (isSelected) current.remove(method) else current.add(method)
+                            localFilter = localFilter.copy(paymentMethods = current)
+                        },
+                        leadingIcon = {
+                            Checkbox(checked = isSelected, onCheckedChange = null)
+                        }
+                    )
+                }
+            }
+
+            // Amount Range
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "AMOUNT RANGE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CompactTextField(
                         value = localFilter.minAmount?.toString() ?: "",
-                        onValueChange = { localFilter = localFilter.copy(minAmount = it.toBigDecimalOrNull()) },
+                        onValueChange = { localFilter = localFilter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull()) },
                         placeholder = "Min",
                         modifier = Modifier.weight(1f),
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
                     )
-                    Text("-", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "-",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     CompactTextField(
                         value = localFilter.maxAmount?.toString() ?: "",
-                        onValueChange = { localFilter = localFilter.copy(maxAmount = it.toBigDecimalOrNull()) },
+                        onValueChange = { localFilter = localFilter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull()) },
                         placeholder = "Max",
                         modifier = Modifier.weight(1f),
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
                     )
+                }
+            }
+
+            // Warranty Expiry Range
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "WARRANTY EXPIRY",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f).clickable { showWarrantyStartPicker = true }) {
+                        CompactTextField(
+                            value = localFilter.warrantyExpirationStart?.let {
+                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                            } ?: "",
+                            onValueChange = { },
+                            placeholder = "Start Date",
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = Icons.Default.CalendarMonth,
+                            enabled = false
+                        )
+                    }
+                    Text(
+                        "-",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Box(modifier = Modifier.weight(1f).clickable { showWarrantyEndPicker = true }) {
+                        CompactTextField(
+                            value = localFilter.warrantyExpirationEnd?.let {
+                                SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                            } ?: "",
+                            onValueChange = { },
+                            placeholder = "End Date",
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = Icons.Default.CalendarMonth,
+                            enabled = false
+                        )
+                    }
                 }
             }
 
@@ -232,10 +355,15 @@ fun FilterSheetContent(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(20.dp)
+                    .height(72.dp)
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4A5D88), // Match the dark blue in the image
+                    contentColor = Color.White
+                )
             ) {
-                Text("Apply Filters", style = MaterialTheme.typography.titleMedium)
+                Text("Apply Filters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
     }
@@ -320,7 +448,8 @@ fun CompactTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     leadingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text
+    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
+    enabled: Boolean = true
 ) {
     Surface(
         modifier = modifier.height(48.dp),
@@ -344,6 +473,7 @@ fun CompactTextField(
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
+                enabled = enabled,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
@@ -358,7 +488,7 @@ fun CompactTextField(
                     innerTextField()
                 }
             )
-            if (value.isNotEmpty()) {
+            if (value.isNotEmpty() && enabled) {
                 IconButton(
                     onClick = { onValueChange("") },
                     modifier = Modifier.size(24.dp)

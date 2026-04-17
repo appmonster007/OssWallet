@@ -25,5 +25,6 @@ data class Transaction(
 
 data class TransactionWithBalance(
     val transaction: Transaction,
+    val balanceBefore: BigDecimal,
     val balanceAfter: BigDecimal
 )

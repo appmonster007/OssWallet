@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.domain.usecase.InsertTransactionUseCase
 import com.osscabinet.ossWallet.domain.usecase.UpdateTransactionUseCase
 import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -70,40 +71,65 @@ class TransactionViewModel(
                 val range = filterState.range
 
                 // Running balance calculation with multi-currency support
-                val allWithBalance = allTransactions.sortedBy { it.timestamp }
-                    .groupBy { it.accountId }
-                    .flatMap { (accId, accountTransactions) ->
-                        val account = accountMap[accId]
-                        val accountCurrency = account?.currencyCode ?: "USD"
-                        val initialBalance = account?.initialBalance ?: BigDecimal.ZERO
-                        
-                        var currentBalance = initialBalance
-                        accountTransactions.map { transaction ->
+                val baseCurrency = analyticsState.selectedCurrency
+                val allWithBalance = if (accountId != null) {
+                    // Filtered by account: use account-specific running balance
+                    val account = accountMap[accountId]
+                    val accountCurrency = account?.currencyCode ?: "USD"
+                    val initialBalance = account?.initialBalance ?: BigDecimal.ZERO
+                    
+                    var currentBalance = initialBalance
+                    allTransactions.filter { it.accountId == accountId }
+                        .sortedBy { it.timestamp }
+                        .map { transaction ->
                             val txAmountInAccountCurrency = convertAmount(
                                 amount = transaction.amount,
                                 fromCurrency = transaction.currency,
                                 toCurrency = accountCurrency,
                                 exchangeRates = rates,
-                                precision = precision + 4 // High intermediate precision
+                                precision = precision + 4
                             )
-                            
-                            currentBalance = if (transaction.isIncome) {
-                                currentBalance.add(txAmountInAccountCurrency)
-                            } else {
-                                currentBalance.subtract(txAmountInAccountCurrency)
-                            }
-                            TransactionWithBalance(transaction, currentBalance.setScale(precision, RoundingMode.HALF_UP))
+                            val balanceBefore = currentBalance
+                            currentBalance = if (transaction.isIncome) currentBalance.add(txAmountInAccountCurrency) else currentBalance.subtract(txAmountInAccountCurrency)
+                            TransactionWithBalance(
+                                transaction = transaction,
+                                balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
+                                balanceAfter = currentBalance.setScale(precision, RoundingMode.HALF_UP)
+                            )
                         }
+                } else {
+                    // Not filtered: opening and closing should be sum aggregate for all accounts in base currency
+                    val accountInitialBalances = accounts.associate { acc ->
+                        acc.id to convertAmount(acc.initialBalance, acc.currencyCode, baseCurrency, rates, precision + 4)
                     }
+                    val totalInitialBalance = accountInitialBalances.values.fold(BigDecimal.ZERO) { acc, bal -> acc.add(bal) }
+                    
+                    var currentTotalBalance = totalInitialBalance
+                    allTransactions.sortedBy { it.timestamp }.map { transaction ->
+                        val txAmountInBase = convertAmount(
+                            amount = transaction.amount,
+                            fromCurrency = transaction.currency,
+                            toCurrency = baseCurrency,
+                            exchangeRates = rates,
+                            precision = precision + 4
+                        )
+                        val balanceBefore = currentTotalBalance
+                        currentTotalBalance = if (transaction.isIncome) currentTotalBalance.add(txAmountInBase) else currentTotalBalance.subtract(txAmountInBase)
+                        TransactionWithBalance(
+                            transaction = transaction,
+                            balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
+                            balanceAfter = currentTotalBalance.setScale(precision, RoundingMode.HALF_UP)
+                        )
+                    }
+                }
 
-                // Apply filters
+                // Apply remaining filters (category, range)
                 allWithBalance.filter { item ->
                     val transaction = item.transaction
                     val matchesCategory = category == null || transaction.category.equals(category, ignoreCase = true)
-                    val matchesAccount = accountId == null || transaction.accountId == accountId
                     val matchesDate = (range.first == null || transaction.timestamp >= range.first!!) &&
                             (range.second == null || transaction.timestamp <= range.second!!)
-                    matchesCategory && matchesAccount && matchesDate
+                    matchesCategory && matchesDate
                 }.sortedByDescending { it.transaction.timestamp }
             }
         }.stateIn(

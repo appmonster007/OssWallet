@@ -342,7 +342,6 @@ private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
     
     val start = filter.startDate!!
     val end = filter.endDate!!
-    val actualDuration = end - start
 
     // Check ThisPeriod
     for (type in ThisPeriodType.entries) {
@@ -353,13 +352,14 @@ private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
     // Check LastPeriod
     for (type in LastPeriodType.entries) {
         val range = FilterUtils.getRangeForLast(type)
-        val expectedDuration = range.second - range.first
+        val expectedStart = range.first
+        val expectedEnd = range.second
         
         if (type == LastPeriodType.LAST_24H) {
-            // For Last 24h, the duration is variable but always within a specific range since end is fixed at end-of-day
-            if (Math.abs(expectedDuration - actualDuration) < 5000) return TimelineRange.LastPeriod(type)
+            // For Last 24h, we check both start and end with a bit more tolerance
+            if (Math.abs(expectedStart - start) < 10000 && Math.abs(expectedEnd - end) < 10000) return TimelineRange.LastPeriod(type)
         } else {
-            if (Math.abs(expectedDuration - actualDuration) < 2000) return TimelineRange.LastPeriod(type)
+            if (Math.abs(expectedStart - start) < 5000 && Math.abs(expectedEnd - end) < 5000) return TimelineRange.LastPeriod(type)
         }
     }
 

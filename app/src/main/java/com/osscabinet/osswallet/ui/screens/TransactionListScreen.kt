@@ -42,6 +42,7 @@ fun TransactionListScreen(
     val analyticsState by analyticsViewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
     val recordsSettings by viewModel.recordsSettings.collectAsState()
+    val savedFilters by viewModel.savedFilters.collectAsState()
 
     TransactionListContent(
         transactionsWithBalance = transactionsWithBalance,
@@ -54,6 +55,7 @@ fun TransactionListScreen(
         analyticsState = analyticsState,
         filter = filter,
         recordsSettings = recordsSettings,
+        savedFilters = savedFilters,
         onAddTransactionClick = onAddTransactionClick,
         onEditTransactionClick = onEditTransactionClick,
         onBackClick = onBackClick,

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.local.dao.FilterDao
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
@@ -24,8 +26,27 @@ class SettingsViewModel(
     private val settingsDataStore: SettingsDataStore,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository,
+    private val filterDao: FilterDao
 ) : ViewModel() {
+
+    val allFilters: Flow<List<FilterEntity>> = filterDao.getAllFilters()
+
+    fun saveFilter(filter: FilterEntity) {
+        viewModelScope.launch {
+            if (filter.id == 0L) {
+                filterDao.insertFilter(filter)
+            } else {
+                filterDao.updateFilter(filter)
+            }
+        }
+    }
+
+    fun deleteFilter(filter: FilterEntity) {
+        viewModelScope.launch {
+            filterDao.deleteFilter(filter)
+        }
+    }
 
     val currency: StateFlow<String> = settingsDataStore.currency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
@@ -198,9 +219,10 @@ class SettingsViewModelFactory(
     private val settingsDataStore: SettingsDataStore,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository,
+    private val filterDao: FilterDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return SettingsViewModel(settingsDataStore, profileRepository, backupRepository, currencyRepository) as T
+        return SettingsViewModel(settingsDataStore, profileRepository, backupRepository, currencyRepository, filterDao) as T
     }
 }

@@ -29,11 +29,15 @@ class TransactionViewModel(
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
+    private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(TransactionFilter())
     val filter = _filter.asStateFlow()
+
+    val savedFilters = filterDao.getAllFilters()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val categories = categoryDao.getAllCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -251,10 +255,21 @@ class TransactionViewModelFactory(
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
+    private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
     private val analyticsViewModel: AnalyticsViewModel
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return TransactionViewModel(getTransactionsUseCase, insertTransactionUseCase, deleteTransactionUseCase, updateTransactionUseCase, settingsDataStore, categoryDao, accountRepository, analyticsViewModel) as T
+        return TransactionViewModel(
+            getTransactionsUseCase,
+            insertTransactionUseCase,
+            deleteTransactionUseCase,
+            updateTransactionUseCase,
+            settingsDataStore,
+            categoryDao,
+            accountRepository,
+            filterDao,
+            analyticsViewModel
+        ) as T
     }
 }

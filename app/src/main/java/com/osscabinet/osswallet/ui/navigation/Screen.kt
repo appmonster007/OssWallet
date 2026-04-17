@@ -44,4 +44,8 @@ sealed class Screen(val route: String) {
 
     object ManageLabels : Screen("manage_labels")
     object ManageCategories : Screen("manage_categories")
+    object ManageFilters : Screen("manage_filters")
+    object EditFilter : Screen("edit_filter?filterId={filterId}") {
+        fun createRoute(filterId: Long? = null) = if (filterId != null) "edit_filter?filterId=$filterId" else "edit_filter"
+    }
 }

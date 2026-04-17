@@ -231,7 +231,7 @@ private fun getPeriodText(filter: TransactionFilter): String {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = false)
 @Composable
 fun AeonPeriodSelectorPreview() {
     val filter = TransactionFilter()
@@ -246,15 +246,17 @@ fun AeonPeriodSelectorPreview() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = false)
 @Composable
 fun AeonPeriodSelectorExpandedPreview() {
     val filter = TransactionFilter()
-    AeonPeriodSelector(
-        filter = filter,
-        onSetDateRange = { _, _ -> },
-        onClick = { },
-        isExpanded = true,
-        showArcTab = true
-    )
+    Box(modifier = Modifier.padding(top = 16.dp)) {
+        AeonPeriodSelector(
+            filter = filter,
+            onSetDateRange = { _, _ -> },
+            onClick = { },
+            isExpanded = true,
+            showArcTab = true
+        )
+    }
 }

@@ -1,8 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,7 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,42 +38,28 @@ fun AeonPeriodSelector(
     modifier: Modifier = Modifier
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
+    val rotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "tab_rotation"
+    )
     
     Box(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // The "Arc" Tab
-        if (showArcTab) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (-12).dp)
-                    .size(width = 64.dp, height = 32.dp)
-                    .background(backgroundColor, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                    contentDescription = null,
-                    modifier = Modifier.padding(top = 4.dp).size(20.dp),
-                    tint = Color.Gray.copy(alpha = 0.8f)
-                )
-            }
-        }
-
         // Main Bar
         Surface(
             color = backgroundColor,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onClick() }
-                    .padding(top = 8.dp, bottom = 12.dp),
+                    .padding(top = 12.dp, bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Period Navigation Row
@@ -151,6 +140,44 @@ fun AeonPeriodSelector(
                                 )
                         )
                     }
+                }
+            }
+        }
+
+        // The "Arc" Tab
+        if (showArcTab) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-16.dp))
+                    .size(width = 64.dp, height = 32.dp)
+                    .background(backgroundColor, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick
+                    ),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(3.dp)
+                            .background(Color.Gray.copy(alpha = 0.3f), CircleShape)
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowUp,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .graphicsLayer { rotationZ = rotation },
+                        tint = Color.Gray.copy(alpha = 0.8f)
+                    )
                 }
             }
         }

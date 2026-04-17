@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -34,10 +36,10 @@ fun AeonPeriodSelector(
     onClick: () -> Unit,
     isExpanded: Boolean = false,
     showArcTab: Boolean = true,
-    backgroundColor: Color = Color(0xFF1E1E1E),
+    backgroundColor: Color = Color(0xFF2C2C2C), // Matches the dark grey in the image
     modifier: Modifier = Modifier
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
+    val accentColor = Color(0xFF5B89D8) // Vibrant Blue
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -49,109 +51,17 @@ fun AeonPeriodSelector(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // Main Bar
-        Surface(
-            color = backgroundColor,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onClick() }
-                    .padding(top = 12.dp, bottom = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Period Navigation Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Previous Button
-                    Surface(
-                        onClick = { navigateMonth(filter, -1, onSetDateRange) },
-                        color = Color.White.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(width = 48.dp, height = 36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = "Previous", tint = Color.Gray)
-                        }
-                    }
-
-                    // Main Period Pill
-                    Surface(
-                        onClick = onClick,
-                        color = primaryColor.copy(alpha = 0.8f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f).height(36.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Text(
-                                getPeriodText(filter),
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                ),
-                                color = Color.White
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                Icons.Default.KeyboardArrowDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = Color.White
-                            )
-                        }
-                    }
-
-                    // Next Button
-                    Surface(
-                        onClick = { navigateMonth(filter, 1, onSetDateRange) },
-                        color = Color.White.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(width = 48.dp, height = 36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = "Next", tint = Color.Gray)
-                        }
-                    }
-                }
-                
-                // Page Indicators
-                Row(
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    repeat(3) { index ->
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(
-                                    if (index == 1) primaryColor else Color.Gray.copy(alpha = 0.3f),
-                                    CircleShape
-                                )
-                        )
-                    }
-                }
-            }
-        }
-
-        // The "Arc" Tab
+        // The Pull Tab "Hump"
         if (showArcTab) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = (-16.dp))
-                    .size(width = 64.dp, height = 32.dp)
-                    .background(backgroundColor, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .offset(y = (-12.dp))
+                    .size(width = 90.dp, height = 24.dp)
+                    .background(
+                        backgroundColor, 
+                        RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -159,28 +69,117 @@ fun AeonPeriodSelector(
                     ),
                 contentAlignment = Alignment.TopCenter
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(top = 6.dp)
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .size(16.dp)
+                        .graphicsLayer { rotationZ = rotation },
+                    tint = accentColor
+                )
+            }
+        }
+
+        // Main Bar
+        Surface(
+            color = backgroundColor,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Navigation Row (Integrated Segmented Pill)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .height(30.dp)
+                        .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1A1A1A)),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Left Arrow
                     Box(
                         modifier = Modifier
-                            .width(24.dp)
-                            .height(3.dp)
-                            .background(Color.Gray.copy(alpha = 0.3f), CircleShape)
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = null,
+                            .weight(0.18f)
+                            .fillMaxHeight()
+                            .clickable { navigateMonth(filter, -1, onSetDateRange) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.ChevronLeft,
+                            contentDescription = "Previous",
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    // Center Period (Blue Block)
+                    Box(
                         modifier = Modifier
-                            .size(20.dp)
-                            .graphicsLayer { rotationZ = rotation },
-                        tint = Color.Gray.copy(alpha = 0.8f)
-                    )
+                            .weight(0.64f)
+                            .fillMaxHeight()
+                            .background(accentColor)
+                            .clickable { onClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                getPeriodText(filter),
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                ),
+                                color = Color.Black.copy(alpha = 0.9f)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = Color.Black.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+
+                    // Right Arrow
+                    Box(
+                        modifier = Modifier
+                            .weight(0.18f)
+                            .fillMaxHeight()
+                            .clickable { navigateMonth(filter, 1, onSetDateRange) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Next",
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                
+                // Indicators (Dots)
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(4.dp).background(Color.White.copy(alpha = 0.2f), CircleShape))
+                    Box(modifier = Modifier.size(6.dp).background(accentColor, CircleShape))
+                    Box(modifier = Modifier.size(4.dp).background(Color.White.copy(alpha = 0.2f), CircleShape))
                 }
             }
         }
+
     }
 }
 
@@ -215,12 +214,19 @@ private fun getPeriodText(filter: com.osscabinet.ossWallet.domain.model.Transact
             startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
             startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
             endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)) {
-            SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate)).uppercase()
+            
+            val currentCal = Calendar.getInstance()
+            if (startCal.get(Calendar.MONTH) == currentCal.get(Calendar.MONTH) &&
+                startCal.get(Calendar.YEAR) == currentCal.get(Calendar.YEAR)) {
+                "This month"
+            } else {
+                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate))
+            }
         } else {
-            val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
             "${dateFormat.format(Date(filter.startDate))} - ${dateFormat.format(Date(filter.endDate))}"
         }
     } else {
-        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date()).uppercase()
+        "This month"
     }
 }

@@ -116,7 +116,7 @@ fun TransactionListContent(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        sheetPeekHeight = 110.dp,
+        sheetPeekHeight = 90.dp,
         sheetContainerColor = backgroundColor,
         sheetContentColor = Color.White,
         sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),

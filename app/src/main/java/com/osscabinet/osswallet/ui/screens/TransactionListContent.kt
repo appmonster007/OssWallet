@@ -63,13 +63,10 @@ fun TransactionListContent(
         scaffoldState = scaffoldState,
         modifier = Modifier.background(Color.Transparent),
         sheetPeekHeight = 90.dp,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-//        sheetContainerColor = Color.Transparent,
-//        containerColor = Color.Transparent,
+        sheetContainerColor = Color.Transparent,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
-//        Remove elevation to avoid "ghost" tinting
-        sheetTonalElevation = 0.dp,sheetShadowElevation = 0.dp,
-//        sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        sheetTonalElevation = 0.dp,
+        sheetShadowElevation = 0.dp,
         sheetShape = RectangleShape,
         sheetDragHandle = null,
         topBar = {

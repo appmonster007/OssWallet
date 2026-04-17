@@ -37,7 +37,7 @@ fun AeonPeriodSelector(
     onClick: () -> Unit,
     isExpanded: Boolean = false,
     showArcTab: Boolean = true,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     modifier: Modifier = Modifier
 ) {
     val accentColor = MaterialTheme.colorScheme.primary
@@ -51,6 +51,7 @@ fun AeonPeriodSelector(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
+            .padding(top = 12.dp)
     ) {
         // Main Bar
         Surface(

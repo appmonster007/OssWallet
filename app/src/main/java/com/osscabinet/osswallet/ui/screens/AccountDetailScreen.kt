@@ -20,13 +20,14 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
-import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,10 +39,11 @@ fun AccountDetailScreen(
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     accountDetailViewModel: AccountDetailViewModel,
+    templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
-    onAddTransactionClick: (String) -> Unit
+    onAddTransactionClick: (String, Int?, String?) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
     
@@ -49,6 +51,7 @@ fun AccountDetailScreen(
     
     val categories by transactionViewModel.categories.collectAsState()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
+    val allTemplates by templateViewModel.templates.collectAsState()
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Overview", "Transactions")
@@ -153,13 +156,6 @@ fun AccountDetailScreen(
                     }
                 }
             }
-        },
-        floatingActionButton = {
-            AeonExtendedFloatingActionButton(
-                onClick = { onAddTransactionClick(accountId) },
-                icon = Icons.Rounded.Add,
-                text = "Transaction"
-            )
         }
     ) { screenPadding ->
         when (val state = uiState) {
@@ -412,5 +408,11 @@ fun AccountDetailScreen(
                 }
             }
         }
+
+        AeonExpandableFab(
+            onAddClick = { type, name -> onAddTransactionClick(accountId, type, name) },
+            templates = allTemplates,
+            fabPaddingBottom = if (selectedTabIndex == 1) 100.dp else 16.dp
+        )
     }
 }

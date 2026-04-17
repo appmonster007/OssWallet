@@ -40,9 +40,16 @@ fun TransactionListScreen(
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
-    val filter by viewModel.filter.collectAsState()
+    val filter by viewModel.recordsFilter.collectAsState()
     val recordsSettings by viewModel.recordsSettings.collectAsState()
     val savedFilters by viewModel.savedFilters.collectAsState()
+
+    // Reset filters when entering or leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearRecordsFilters()
+        }
+    }
 
     TransactionListContent(
         transactionsWithBalance = transactionsWithBalance,
@@ -60,8 +67,8 @@ fun TransactionListScreen(
         onEditTransactionClick = onEditTransactionClick,
         onBackClick = onBackClick,
         onAccountDetailClick = onAccountDetailClick,
-        onUpdateFilter = { viewModel.updateFilter(it) },
-        onSetDateRange = { start, end -> viewModel.setDateRangeFilter(start, end) },
+        onUpdateFilter = { viewModel.updateRecordsFilter(it) },
+        onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } }
     )
 }

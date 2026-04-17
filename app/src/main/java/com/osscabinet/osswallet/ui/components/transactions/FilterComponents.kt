@@ -201,50 +201,86 @@ fun FilterFields(
             }
         }
 
-        // Accounts & Categories
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (showAccountFilter) {
-                MultiSelectDropdown(
-                    label = "Accounts",
-                    selectedCount = filter.accountIds.size,
-                    modifier = Modifier.weight(1f),
-                    onClick = { activeDialog = "Accounts" },
-                    onClear = { onFilterChange(filter.copy(accountIds = emptyList())) }
+        // Collection Filters
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "FILTERS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+            MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val totalButtons = if (showAccountFilter) 4 else 3
+                var currentIndex = 0
+
+                if (showAccountFilter) {
+                    SegmentedButton(
+                        checked = filter.accountIds.isNotEmpty(),
+                        onCheckedChange = { activeDialog = "Accounts" },
+                        shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
+                        icon = {},
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AccountBalance, null, modifier = Modifier.size(18.dp))
+                                if (filter.accountIds.isNotEmpty()) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("${filter.accountIds.size}", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                    )
+                }
+
+                SegmentedButton(
+                    checked = filter.categoryIds.isNotEmpty(),
+                    onCheckedChange = { activeDialog = "Categories" },
+                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
+                    icon = {},
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Category, null, modifier = Modifier.size(18.dp))
+                            if (filter.categoryIds.isNotEmpty()) {
+                                Spacer(Modifier.width(4.dp))
+                                Text("${filter.categoryIds.size}", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                )
+
+                SegmentedButton(
+                    checked = filter.currencies.isNotEmpty(),
+                    onCheckedChange = { activeDialog = "Currencies" },
+                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
+                    icon = {},
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.MonetizationOn, null, modifier = Modifier.size(18.dp))
+                            if (filter.currencies.isNotEmpty()) {
+                                Spacer(Modifier.width(4.dp))
+                                Text("${filter.currencies.size}", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                )
+
+                SegmentedButton(
+                    checked = filter.paymentMethods.isNotEmpty(),
+                    onCheckedChange = { activeDialog = "PaymentMethods" },
+                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
+                    icon = {},
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Payments, null, modifier = Modifier.size(18.dp))
+                            if (filter.paymentMethods.isNotEmpty()) {
+                                Spacer(Modifier.width(4.dp))
+                                Text("${filter.paymentMethods.size}", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                 )
             }
-
-            MultiSelectDropdown(
-                label = "Categories",
-                selectedCount = filter.categoryIds.size,
-                modifier = Modifier.weight(if (showAccountFilter) 1f else 2f),
-                onClick = { activeDialog = "Categories" },
-                onClear = { onFilterChange(filter.copy(categoryIds = emptyList())) }
-            )
-        }
-
-        // Payment Method & Currency
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            MultiSelectDropdown(
-                label = "Currencies",
-                selectedCount = filter.currencies.size,
-                modifier = Modifier.weight(0.4f),
-                onClick = { activeDialog = "Currencies" },
-                onClear = { onFilterChange(filter.copy(currencies = emptyList())) }
-            )
-
-            MultiSelectDropdown(
-                label = "Payment Methods",
-                selectedCount = filter.paymentMethods.size,
-                modifier = Modifier.weight(0.6f),
-                onClick = { activeDialog = "PaymentMethods" },
-                onClear = { onFilterChange(filter.copy(paymentMethods = emptyList())) }
-            )
         }
 
         // Amount Range
@@ -328,57 +364,6 @@ fun FilterFields(
                         enabled = false
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun MultiSelectDropdown(
-    label: String,
-    selectedCount: Int,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    onClear: () -> Unit
-) {
-    Surface(
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-        ),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = if (selectedCount == 0) label else "$label ($selectedCount)",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (selectedCount > 0) {
-                    IconButton(
-                        onClick = { 
-                            onClear()
-                        },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.Close, null, Modifier.size(16.dp))
-                    }
-                }
-                Icon(
-                    Icons.Default.ArrowDropDown,
-                    null,
-                    Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

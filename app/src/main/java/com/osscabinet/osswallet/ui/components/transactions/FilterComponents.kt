@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -16,6 +18,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -33,6 +37,7 @@ fun FilterFields(
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
+    var activeDialog by remember { mutableStateOf<String?>(null) }
 
     if (showWarrantyStartPicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = filter.warrantyExpirationStart)
@@ -67,6 +72,64 @@ fun FilterFields(
             }
         ) {
             DatePicker(state = datePickerState)
+        }
+    }
+
+    // Dialogs for multi-selection
+    when (activeDialog) {
+        "Accounts" -> {
+            MultiSelectionDialog(
+                title = "Select Accounts",
+                items = accounts,
+                selectedItems = accounts.filter { it.id in filter.accountIds },
+                onDismissRequest = { activeDialog = null },
+                onConfirm = { selected ->
+                    onFilterChange(filter.copy(accountIds = selected.map { it.id }))
+                    activeDialog = null
+                },
+                itemLabel = { it.name }
+            )
+        }
+        "Categories" -> {
+            MultiSelectionDialog(
+                title = "Select Categories",
+                items = allCategories,
+                selectedItems = allCategories.filter { it.id in filter.categoryIds },
+                onDismissRequest = { activeDialog = null },
+                onConfirm = { selected ->
+                    onFilterChange(filter.copy(categoryIds = selected.map { it.id }))
+                    activeDialog = null
+                },
+                itemLabel = { it.name }
+            )
+        }
+        "Currencies" -> {
+            val availableCurrencies = accounts.map { it.currencyCode }.distinct().sorted()
+            MultiSelectionDialog(
+                title = "Select Currencies",
+                items = availableCurrencies,
+                selectedItems = filter.currencies,
+                onDismissRequest = { activeDialog = null },
+                onConfirm = { selected ->
+                    onFilterChange(filter.copy(currencies = selected))
+                    activeDialog = null
+                },
+                itemLabel = { it }
+            )
+        }
+        "PaymentMethods" -> {
+            val paymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "Other")
+            MultiSelectionDialog(
+                title = "Select Payment Methods",
+                items = paymentMethods,
+                selectedItems = filter.paymentMethods,
+                onDismissRequest = { activeDialog = null },
+                onConfirm = { selected ->
+                    onFilterChange(filter.copy(paymentMethods = selected))
+                    activeDialog = null
+                },
+                itemLabel = { it }
+            )
         }
     }
 
@@ -146,47 +209,20 @@ fun FilterFields(
                 label = "Accounts",
                 selectedCount = filter.accountIds.size,
                 modifier = Modifier.weight(1f),
+                onClick = { activeDialog = "Accounts" },
                 onClear = { onFilterChange(filter.copy(accountIds = emptyList())) }
-            ) {
-                accounts.forEach { account ->
-                    val isSelected = account.id in filter.accountIds
-                    DropdownMenuItem(
-                        text = { Text(account.name) },
-                        onClick = {
-                            val current = filter.accountIds.toMutableList()
-                            if (isSelected) current.remove(account.id) else current.add(account.id)
-                            onFilterChange(filter.copy(accountIds = current))
-                        },
-                        leadingIcon = { Checkbox(checked = isSelected, onCheckedChange = null) }
-                    )
-                }
-            }
+            )
 
             MultiSelectDropdown(
                 label = "Categories",
                 selectedCount = filter.categoryIds.size,
                 modifier = Modifier.weight(1f),
+                onClick = { activeDialog = "Categories" },
                 onClear = { onFilterChange(filter.copy(categoryIds = emptyList())) }
-            ) {
-                allCategories.forEach { category ->
-                    val isSelected = category.id in filter.categoryIds
-                    DropdownMenuItem(
-                        text = { Text(category.name) },
-                        onClick = {
-                            val current = filter.categoryIds.toMutableList()
-                            if (isSelected) current.remove(category.id) else current.add(category.id)
-                            onFilterChange(filter.copy(categoryIds = current))
-                        },
-                        leadingIcon = { Checkbox(checked = isSelected, onCheckedChange = null) }
-                    )
-                }
-            }
+            )
         }
 
         // Payment Method & Currency
-        val paymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "Other")
-        val availableCurrencies = accounts.map { it.currencyCode }.distinct().sorted()
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -195,41 +231,17 @@ fun FilterFields(
                 label = "Currencies",
                 selectedCount = filter.currencies.size,
                 modifier = Modifier.weight(0.4f),
+                onClick = { activeDialog = "Currencies" },
                 onClear = { onFilterChange(filter.copy(currencies = emptyList())) }
-            ) {
-                availableCurrencies.forEach { currency ->
-                    val isSelected = currency in filter.currencies
-                    DropdownMenuItem(
-                        text = { Text(currency) },
-                        onClick = {
-                            val current = filter.currencies.toMutableList()
-                            if (isSelected) current.remove(currency) else current.add(currency)
-                            onFilterChange(filter.copy(currencies = current))
-                        },
-                        leadingIcon = { Checkbox(checked = isSelected, onCheckedChange = null) }
-                    )
-                }
-            }
+            )
 
             MultiSelectDropdown(
                 label = "Payment Methods",
                 selectedCount = filter.paymentMethods.size,
                 modifier = Modifier.weight(0.6f),
+                onClick = { activeDialog = "PaymentMethods" },
                 onClear = { onFilterChange(filter.copy(paymentMethods = emptyList())) }
-            ) {
-                paymentMethods.forEach { method ->
-                    val isSelected = method in filter.paymentMethods
-                    DropdownMenuItem(
-                        text = { Text(method) },
-                        onClick = {
-                            val current = filter.paymentMethods.toMutableList()
-                            if (isSelected) current.remove(method) else current.add(method)
-                            onFilterChange(filter.copy(paymentMethods = current))
-                        },
-                        leadingIcon = { Checkbox(checked = isSelected, onCheckedChange = null) }
-                    )
-                }
-            }
+            )
         }
 
         // Amount Range
@@ -318,75 +330,284 @@ fun FilterFields(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MultiSelectDropdown(
     label: String,
     selectedCount: Int,
     modifier: Modifier = Modifier,
-    onClear: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
+    onClick: () -> Unit,
+    onClear: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = modifier
+    Surface(
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        ),
+        onClick = onClick
     ) {
-        Surface(
-            modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-            ),
-            onClick = { expanded = !expanded }
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = if (selectedCount == 0) label else "$label ($selectedCount)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (selectedCount > 0) {
-                        IconButton(
-                            onClick = { 
-                                onClear()
-                                expanded = false
-                            },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Default.Close, null, Modifier.size(16.dp))
-                        }
+            Text(
+                text = if (selectedCount == 0) label else "$label ($selectedCount)",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (selectedCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (selectedCount > 0) {
+                    IconButton(
+                        onClick = { 
+                            onClear()
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.Close, null, Modifier.size(16.dp))
                     }
-                    Icon(
-                        Icons.Default.ArrowDropDown,
-                        null,
-                        Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    null,
+                    Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
+    }
+}
 
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        ) {
-            content()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> MultiSelectionDialog(
+    title: String,
+    items: List<T>,
+    selectedItems: List<T>,
+    onDismissRequest: () -> Unit,
+    onConfirm: (List<T>) -> Unit,
+    itemLabel: (T) -> String
+) {
+    var currentSelection by remember { mutableStateOf(selectedItems.toSet()) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredItems = remember(items, searchQuery) {
+        if (searchQuery.isBlank()) items
+        else items.filter { itemLabel(it).contains(searchQuery, ignoreCase = true) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 32.sp
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val allSelected = items.isNotEmpty() && currentSelection.size == items.size
+
+                    FilterChip(
+                        selected = allSelected,
+                        onClick = {
+                            currentSelection = if (allSelected) emptySet() else items.toSet()
+                        },
+                        label = { Text(if (allSelected) "Deselect All" else "Select All") },
+                        leadingIcon = if (allSelected) {
+                            { Icon(Icons.Default.Close, null, Modifier.size(18.dp)) }
+                        } else {
+                            { Icon(Icons.Default.SelectAll, null, Modifier.size(18.dp)) }
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    AssistChip(
+                        onClick = {
+                            val allItemsSet = items.toSet()
+                            currentSelection = allItemsSet.subtract(currentSelection)
+                        },
+                        label = { Text("Invert") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Flip,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    Badge(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.sizeIn(minWidth = 24.dp, minHeight = 24.dp)
+                    ) {
+                        Text(
+                            text = "${currentSelection.size}",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (items.size > 5) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search items...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = if (searchQuery.isNotEmpty()) {
+                            {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, null)
+                                }
+                            }
+                        } else null,
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                if (filteredItems.isEmpty() && searchQuery.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
+                        Text(
+                            "No results for \"$searchQuery\"",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 450.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
+                    items(filteredItems) { item ->
+                        val isSelected = item in currentSelection
+                        Surface(
+                            onClick = {
+                                currentSelection = if (isSelected) {
+                                    currentSelection - item
+                                } else {
+                                    currentSelection + item
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            else androidx.compose.ui.graphics.Color.Transparent,
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            ) else null
+                        ) {
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        itemLabel(item),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        ),
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingContent = {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = null,
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    )
+                                },
+                                colors = ListItemDefaults.colors(
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(currentSelection.toList()) },
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Confirm Selection", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismissRequest,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+            }
         }
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MultiSelectionDialogPreview() {
+    MaterialTheme {
+        MultiSelectionDialog(
+            title = "Select Categories with a very long title that should wrap nicely in this expressive layout",
+            items = listOf("Food & Dining", "Transportation", "Shopping", "Entertainment", "Health & Fitness", "Education", "Gifts & Donations", "Investments", "Long Category Name That Might Wrap To Multiple Lines To Test UI Robustness"),
+            selectedItems = listOf("Food & Dining", "Shopping"),
+            onDismissRequest = {},
+            onConfirm = {},
+            itemLabel = { it }
+        )
     }
 }
 

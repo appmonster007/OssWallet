@@ -1,10 +1,10 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -30,7 +30,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonDateRangePicker
-import com.osscabinet.ossWallet.ui.components.AeonDropdown
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import java.text.SimpleDateFormat
 import java.util.*
@@ -89,9 +88,9 @@ fun AeonPeriodSelector(
         }
     }
 
-    // Sync Filter -> Pager (on external change like Reset)
+    // Sync Filter -> Pager (on external change)
     LaunchedEffect(currentModePage) {
-        if (pagerState.currentPage != currentModePage) {
+        if (pagerState.currentPage != currentModePage && !pagerState.isScrollInProgress) {
             pagerState.animateScrollToPage(currentModePage)
         }
     }
@@ -112,143 +111,29 @@ fun AeonPeriodSelector(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 8.dp)
-                    .padding(horizontal = 20.dp),
+                    .padding(top = 16.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Label
-                Text(
-                    "TIMELINE",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                )
-
-                // Swipeable Modes Pager
+                // Swipeable Navigation Row (Integrated Segmented Pill)
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth()
                 ) { page ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(76.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (page) {
-                            0 -> { // All Time
-                                OutlinedCard(
-                                    onClick = { /* No action needed, already selected */ },
-                                    shape = RoundedCornerShape(20.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.outlinedCardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column {
-                                            Text(
-                                                "FILTER MODE",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    letterSpacing = 1.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                            Text(
-                                                "All Time Transactions",
-                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                            )
-                                        }
-                                        Icon(Icons.Default.History, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            }
-                            1 -> { // This Mode
-                                val current = initialTimelineRange as? TimelineRange.ThisPeriod ?: TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-                                AeonDropdown(
-                                    label = "This Period",
-                                    options = ThisPeriodType.entries.toList(),
-                                    selectedOption = current.period,
-                                    onOptionSelected = { applyTimelineRange(TimelineRange.ThisPeriod(it), onSetDateRange) },
-                                    labelProvider = { it.label }
-                                )
-                            }
-                            2 -> { // Last Mode
-                                val current = initialTimelineRange as? TimelineRange.LastPeriod ?: TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-                                AeonDropdown(
-                                    label = "Last Duration",
-                                    options = LastPeriodType.entries.toList(),
-                                    selectedOption = current.period,
-                                    onOptionSelected = { applyTimelineRange(TimelineRange.LastPeriod(it), onSetDateRange) },
-                                    labelProvider = { it.label }
-                                )
-                            }
-                            3 -> { // Custom Mode
-                                var showDatePicker by remember { mutableStateOf(false) }
-                                val current = initialTimelineRange as? TimelineRange.CustomRange
-                                val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                
-                                OutlinedCard(
-                                    onClick = { showDatePicker = true },
-                                    shape = RoundedCornerShape(20.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.outlinedCardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                                    )
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column {
-                                            Text(
-                                                "CUSTOM RANGE",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    letterSpacing = 1.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                            Text(
-                                                if (current != null) "${formatter.format(Date(current.start))} - ${formatter.format(Date(current.end))}" else "Select Dates",
-                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                            )
-                                        }
-                                        Icon(Icons.Default.Edit, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-
-                                if (showDatePicker) {
-                                    AeonDateRangePicker(
-                                        initialStart = current?.start,
-                                        initialEnd = current?.end,
-                                        onDismiss = { showDatePicker = false },
-                                        onConfirmed = { start, end ->
-                                            applyTimelineRange(TimelineRange.CustomRange(start, end), onSetDateRange)
-                                            showDatePicker = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        PillNavigationRow(
+                            page = page,
+                            filter = filter,
+                            accentColor = accentColor,
+                            initialTimelineRange = initialTimelineRange,
+                            onSetDateRange = onSetDateRange,
+                            onToggleExpand = onClick
+                        )
                     }
                 }
                 
                 // Indicators (Dots)
                 Row(
-                    modifier = Modifier.padding(top = 12.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -267,7 +152,7 @@ fun AeonPeriodSelector(
             }
         }
 
-        // The Pull Tab "Hump" - Moved here to draw on top of Surface
+        // The Pull Tab "Hump"
         if (showArcTab) {
             Box(
                 modifier = Modifier
@@ -298,6 +183,145 @@ fun AeonPeriodSelector(
     }
 }
 
+@Composable
+private fun PillNavigationRow(
+    page: Int,
+    filter: TransactionFilter,
+    accentColor: Color,
+    initialTimelineRange: TimelineRange,
+    onSetDateRange: (Long?, Long?) -> Unit,
+    onToggleExpand: () -> Unit
+) {
+    var showDropdown by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .height(30.dp)
+            .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left Arrow
+        Box(
+            modifier = Modifier
+                .weight(0.18f)
+                .fillMaxHeight()
+                .clickable(enabled = page == 1) { navigateMonth(filter, -1, onSetDateRange) },
+            contentAlignment = Alignment.Center
+        ) {
+            if (page == 1) {
+                Icon(
+                    Icons.Default.ChevronLeft,
+                    contentDescription = "Previous",
+                    tint = accentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        // Center Period (Blue Block)
+        Box(
+            modifier = Modifier
+                .weight(0.64f)
+                .fillMaxHeight()
+                .background(accentColor)
+                .clickable { 
+                    when (page) {
+                        0 -> onToggleExpand()
+                        3 -> showDatePicker = true
+                        else -> showDropdown = true
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (page == 0) "All Time" else getPeriodText(filter),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 13.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                if (page > 0) {
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        if (page == 3) Icons.Default.DateRange else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+            if (showDropdown) {
+                DropdownMenu(
+                    expanded = showDropdown,
+                    onDismissRequest = { showDropdown = false }
+                ) {
+                    if (page == 1) {
+                        ThisPeriodType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.label) },
+                                onClick = {
+                                    applyTimelineRange(TimelineRange.ThisPeriod(type), onSetDateRange)
+                                    showDropdown = false
+                                }
+                            )
+                        }
+                    } else if (page == 2) {
+                        LastPeriodType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.label) },
+                                onClick = {
+                                    applyTimelineRange(TimelineRange.LastPeriod(type), onSetDateRange)
+                                    showDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Right Arrow
+        Box(
+            modifier = Modifier
+                .weight(0.18f)
+                .fillMaxHeight()
+                .clickable(enabled = page == 1) { navigateMonth(filter, 1, onSetDateRange) },
+            contentAlignment = Alignment.Center
+        ) {
+            if (page == 1) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "Next",
+                    tint = accentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        AeonDateRangePicker(
+            initialStart = (initialTimelineRange as? TimelineRange.CustomRange)?.start,
+            initialEnd = (initialTimelineRange as? TimelineRange.CustomRange)?.end,
+            onDismiss = { showDatePicker = false },
+            onConfirmed = { start, end ->
+                onSetDateRange(start, end)
+                showDatePicker = false
+            }
+        )
+    }
+}
+
 private fun applyTimelineRange(range: TimelineRange, onSetDateRange: (Long?, Long?) -> Unit) {
     when (range) {
         is TimelineRange.AllTime -> onSetDateRange(null, null)
@@ -314,22 +338,80 @@ private fun applyTimelineRange(range: TimelineRange, onSetDateRange: (Long?, Lon
 }
 
 private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
-    val start = filter.startDate ?: return TimelineRange.AllTime
-    val end = filter.endDate ?: return TimelineRange.AllTime
+    if (filter.startDate == null && filter.endDate == null) return TimelineRange.AllTime
+    
+    val start = filter.startDate!!
+    val end = filter.endDate!!
+    val actualDuration = end - start
 
     // Check ThisPeriod
-    ThisPeriodType.entries.forEach { type ->
+    for (type in ThisPeriodType.entries) {
         val range = FilterUtils.getRangeForThis(type)
-        if (range.first == start && range.second == end) return TimelineRange.ThisPeriod(type)
+        if (Math.abs(range.first - start) < 2000 && Math.abs(range.second - end) < 2000) return TimelineRange.ThisPeriod(type)
     }
 
     // Check LastPeriod
-    LastPeriodType.entries.forEach { type ->
+    for (type in LastPeriodType.entries) {
         val range = FilterUtils.getRangeForLast(type)
-        if (range.first == start && range.second == end) return TimelineRange.LastPeriod(type)
+        val expectedDuration = range.second - range.first
+        
+        if (type == LastPeriodType.LAST_24H) {
+            // For Last 24h, the duration is variable but always within a specific range since end is fixed at end-of-day
+            if (Math.abs(expectedDuration - actualDuration) < 5000) return TimelineRange.LastPeriod(type)
+        } else {
+            if (Math.abs(expectedDuration - actualDuration) < 2000) return TimelineRange.LastPeriod(type)
+        }
     }
 
     return TimelineRange.CustomRange(start, end)
+}
+
+private fun navigateMonth(filter: TransactionFilter, delta: Int, onSetDateRange: (Long?, Long?) -> Unit) {
+    val calendar = Calendar.getInstance()
+    filter.startDate?.let {
+        calendar.timeInMillis = it
+        calendar.add(Calendar.MONTH, delta)
+    } ?: run {
+        calendar.add(Calendar.MONTH, delta)
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+    }
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    val start = calendar.timeInMillis
+    calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+    calendar.set(Calendar.HOUR_OF_DAY, 23)
+    calendar.set(Calendar.MINUTE, 59)
+    calendar.set(Calendar.SECOND, 59)
+    val end = calendar.timeInMillis
+    onSetDateRange(start, end)
+}
+
+private fun getPeriodText(filter: TransactionFilter): String {
+    return if (filter.startDate != null && filter.endDate != null) {
+        val startCal = Calendar.getInstance().apply { timeInMillis = filter.startDate }
+        val endCal = Calendar.getInstance().apply { timeInMillis = filter.endDate }
+        
+        if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) && 
+            startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
+            startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
+            endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)) {
+            
+            val currentCal = Calendar.getInstance()
+            if (startCal.get(Calendar.MONTH) == currentCal.get(Calendar.MONTH) &&
+                startCal.get(Calendar.YEAR) == currentCal.get(Calendar.YEAR)) {
+                "This month"
+            } else {
+                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate))
+            }
+        } else {
+            val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
+            "${dateFormat.format(Date(filter.startDate))} - ${dateFormat.format(Date(filter.endDate))}"
+        }
+    } else {
+        "This month"
+    }
 }
 
 @Preview(showBackground = false)

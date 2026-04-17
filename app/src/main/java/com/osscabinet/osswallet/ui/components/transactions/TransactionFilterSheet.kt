@@ -4,12 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,7 +41,7 @@ fun TransactionFilterSheet(
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
     Box(
-        modifier = Modifier.fillMaxHeight(0.9f)
+        modifier = Modifier.wrapContentHeight()
     ) {
         FilterSheetContent(
             filter = filter,

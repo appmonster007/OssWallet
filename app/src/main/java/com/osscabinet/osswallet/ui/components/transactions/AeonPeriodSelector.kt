@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -51,36 +52,6 @@ fun AeonPeriodSelector(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // The Pull Tab "Hump"
-        if (showArcTab) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (-12.dp))
-                    .size(width = 90.dp, height = 24.dp)
-                    .background(
-                        backgroundColor, 
-                        RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onClick
-                    ),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .size(16.dp)
-                        .graphicsLayer { rotationZ = rotation },
-                    tint = accentColor
-                )
-            }
-        }
-
         // Main Bar
         Surface(
             color = backgroundColor,
@@ -90,7 +61,7 @@ fun AeonPeriodSelector(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 8.dp),
+                    .padding(top = 16.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Navigation Row (Integrated Segmented Pill)
@@ -180,10 +151,39 @@ fun AeonPeriodSelector(
             }
         }
 
+        // The Pull Tab "Hump" - Moved here to draw on top of Surface
+        if (showArcTab) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-12.dp))
+                    .size(width = 90.dp, height = 24.dp)
+                    .background(
+                        backgroundColor, 
+                        RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick
+                    ),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(top = 1.dp)
+                        .size(18.dp)
+                        .graphicsLayer { rotationZ = rotation },
+                    tint = accentColor
+                )
+            }
+        }
     }
 }
 
-private fun navigateMonth(filter: com.osscabinet.ossWallet.domain.model.TransactionFilter, delta: Int, onSetDateRange: (Long?, Long?) -> Unit) {
+private fun navigateMonth(filter: TransactionFilter, delta: Int, onSetDateRange: (Long?, Long?) -> Unit) {
     val calendar = Calendar.getInstance()
     filter.startDate?.let {
         calendar.timeInMillis = it
@@ -205,7 +205,7 @@ private fun navigateMonth(filter: com.osscabinet.ossWallet.domain.model.Transact
     onSetDateRange(start, end)
 }
 
-private fun getPeriodText(filter: com.osscabinet.ossWallet.domain.model.TransactionFilter): String {
+private fun getPeriodText(filter: TransactionFilter): String {
     return if (filter.startDate != null && filter.endDate != null) {
         val startCal = Calendar.getInstance().apply { timeInMillis = filter.startDate }
         val endCal = Calendar.getInstance().apply { timeInMillis = filter.endDate }
@@ -229,4 +229,34 @@ private fun getPeriodText(filter: com.osscabinet.ossWallet.domain.model.Transact
     } else {
         "This month"
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
+@Composable
+fun AeonPeriodSelectorPreview() {
+    val filter = TransactionFilter()
+    Box(modifier = Modifier.padding(top = 16.dp)) {
+        AeonPeriodSelector(
+            filter = filter,
+            onSetDateRange = { _, _ -> },
+            onClick = { },
+            isExpanded = false,
+            showArcTab = true,
+            backgroundColor = Color(0xFF1E1E1E)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
+@Composable
+fun AeonPeriodSelectorExpandedPreview() {
+    val filter = TransactionFilter()
+    AeonPeriodSelector(
+        filter = filter,
+        onSetDateRange = { _, _ -> },
+        onClick = { },
+        isExpanded = true,
+        showArcTab = true,
+        backgroundColor = Color(0xFF1E1E1E)
+    )
 }

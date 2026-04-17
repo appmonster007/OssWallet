@@ -38,9 +38,13 @@ fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
 fun getCurrencySymbol(currencyCode: String?): String {
     if (currencyCode.isNullOrBlank()) return ""
     return try {
-        // Handle cases where currencyCode might be a non-ISO 4217 string
-        // java.util.Currency.getInstance(String) throws IllegalArgumentException for invalid codes
-        Currency.getInstance(currencyCode.uppercase().trim()).symbol
+        val code = currencyCode.uppercase().trim()
+        // Check if it's a valid 3-letter ISO code to avoid unnecessary exceptions
+        if (code.length == 3 && code.all { it.isLetter() }) {
+            Currency.getInstance(code).symbol
+        } else {
+            currencyCode
+        }
     } catch (e: Exception) {
         currencyCode
     }
@@ -49,7 +53,12 @@ fun getCurrencySymbol(currencyCode: String?): String {
 fun getCurrencyName(currencyCode: String?): String {
     if (currencyCode.isNullOrBlank()) return ""
     return try {
-        Currency.getInstance(currencyCode.uppercase().trim()).getDisplayName(Locale.getDefault())
+        val code = currencyCode.uppercase().trim()
+        if (code.length == 3 && code.all { it.isLetter() }) {
+            Currency.getInstance(code).getDisplayName(Locale.getDefault())
+        } else {
+            currencyCode
+        }
     } catch (e: Exception) {
         currencyCode
     }

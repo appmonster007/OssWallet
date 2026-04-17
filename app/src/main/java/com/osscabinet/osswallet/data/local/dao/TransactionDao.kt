@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.local.dao
 
 import androidx.room.*
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -9,6 +10,9 @@ import java.math.BigDecimal
 abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
     abstract fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
+
+    @RawQuery(observedEntities = [TransactionEntity::class])
+    abstract fun getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun _insertTransaction(transaction: TransactionEntity): Long

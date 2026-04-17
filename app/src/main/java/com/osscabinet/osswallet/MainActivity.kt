@@ -8,11 +8,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
+import kotlinx.coroutines.launch
 
 /**
  * Main Activity of the OssWallet application.
@@ -31,6 +33,13 @@ class MainActivity : FragmentActivity() {
         
         // Initialize dependency container
         appContainer = AppContainer(this)
+
+//        // Seed database in debug mode
+//        if (BuildConfig.DEBUG) {
+//            lifecycleScope.launch {
+//                appContainer.databaseSeeder.seed()
+//            }
+//        }
 
         setContent {
             OssWalletApp(appContainer, splashScreen)

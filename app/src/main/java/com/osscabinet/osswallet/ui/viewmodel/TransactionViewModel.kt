@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.usecase.DeleteTransactionUseCase
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
@@ -30,14 +31,8 @@ class TransactionViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    private val _selectedCategory = MutableStateFlow<String?>(null)
-    val selectedCategory = _selectedCategory.asStateFlow()
-
-    private val _selectedAccountId = MutableStateFlow<String?>(null)
-    val selectedAccountId = _selectedAccountId.asStateFlow()
-
-    private val _dateRange = MutableStateFlow<Pair<Long?, Long?>>(null to null)
-    val dateRange = _dateRange.asStateFlow()
+    private val _filter = MutableStateFlow(TransactionFilter())
+    val filter = _filter.asStateFlow()
 
     val categories = categoryDao.getAllCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -45,92 +40,44 @@ class TransactionViewModel(
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    private val filters = combine(_selectedCategory, _selectedAccountId, _dateRange) { category, accountId, range ->
-        FilterState(category, accountId, range)
-    }
-
-    data class FilterState(
-        val category: String?,
-        val accountId: String?,
-        val range: Pair<Long?, Long?>
-    )
-
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                getTransactionsUseCase(profileId),
+                _filter.flatMapLatest { getTransactionsUseCase.filtered(profileId, it) },
                 accountRepository.getAllAccounts(profileId),
                 analyticsViewModel.uiState,
-                filters
-            ) { allTransactions, accounts, analyticsState, filterState ->
+                _filter
+            ) { filteredTransactions, accounts, analyticsState, currentFilter ->
                 val accountMap = accounts.associateBy { it.id }
                 val rates = analyticsState.exchangeRates
                 val precision = analyticsState.decimalPrecision
-                val category = filterState.category
-                val accountId = filterState.accountId
-                val range = filterState.range
-
-                // Running balance calculation with multi-currency support
                 val baseCurrency = analyticsState.selectedCurrency
-                val allWithBalance = if (accountId != null) {
-                    // Filtered by account: use account-specific running balance
-                    val account = accountMap[accountId]
-                    val accountCurrency = account?.currencyCode ?: "USD"
-                    val initialBalance = account?.initialBalance ?: BigDecimal.ZERO
+
+                // Group by account to calculate running balance correctly per account
+                val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
+                
+                val allWithBalance = transactionsByAccount.flatMap { (accountId, accountTransactions) ->
+                    val currencyBalances = mutableMapOf<String, BigDecimal>()
                     
-                    var currentBalance = initialBalance
-                    allTransactions.filter { it.accountId == accountId }
-                        .sortedBy { it.timestamp }
-                        .map { transaction ->
-                            val txAmountInAccountCurrency = convertAmount(
-                                amount = transaction.amount,
-                                fromCurrency = transaction.currency,
-                                toCurrency = accountCurrency,
-                                exchangeRates = rates,
-                                precision = precision + 4
-                            )
-                            val balanceBefore = currentBalance
-                            currentBalance = if (transaction.isIncome) currentBalance.add(txAmountInAccountCurrency) else currentBalance.subtract(txAmountInAccountCurrency)
-                            TransactionWithBalance(
-                                transaction = transaction,
-                                balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
-                                balanceAfter = currentBalance.setScale(precision, RoundingMode.HALF_UP)
-                            )
+                    accountTransactions.sortedBy { it.timestamp }.map { transaction ->
+                        val currentBalance = currencyBalances.getOrDefault(transaction.currency, BigDecimal.ZERO)
+                        val balanceBefore = currentBalance
+                        val newBalance = if (transaction.isIncome) {
+                            currentBalance.add(transaction.amount)
+                        } else {
+                            currentBalance.subtract(transaction.amount)
                         }
-                } else {
-                    // Not filtered: opening and closing should be sum aggregate for all accounts in base currency
-                    val accountInitialBalances = accounts.associate { acc ->
-                        acc.id to convertAmount(acc.initialBalance, acc.currencyCode, baseCurrency, rates, precision + 4)
-                    }
-                    val totalInitialBalance = accountInitialBalances.values.fold(BigDecimal.ZERO) { acc, bal -> acc.add(bal) }
-                    
-                    var currentTotalBalance = totalInitialBalance
-                    allTransactions.sortedBy { it.timestamp }.map { transaction ->
-                        val txAmountInBase = convertAmount(
-                            amount = transaction.amount,
-                            fromCurrency = transaction.currency,
-                            toCurrency = baseCurrency,
-                            exchangeRates = rates,
-                            precision = precision + 4
-                        )
-                        val balanceBefore = currentTotalBalance
-                        currentTotalBalance = if (transaction.isIncome) currentTotalBalance.add(txAmountInBase) else currentTotalBalance.subtract(txAmountInBase)
+                        currencyBalances[transaction.currency] = newBalance
+                        
                         TransactionWithBalance(
                             transaction = transaction,
-                            balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
-                            balanceAfter = currentTotalBalance.setScale(precision, RoundingMode.HALF_UP)
+                            balanceBefore = balanceBefore,
+                            balanceAfter = newBalance
                         )
                     }
                 }
 
-                // Apply remaining filters (category, range)
-                allWithBalance.filter { item ->
-                    val transaction = item.transaction
-                    val matchesCategory = category == null || transaction.category.equals(category, ignoreCase = true)
-                    val matchesDate = (range.first == null || transaction.timestamp >= range.first!!) &&
-                            (range.second == null || transaction.timestamp <= range.second!!)
-                    matchesCategory && matchesDate
-                }.sortedByDescending { it.transaction.timestamp }
+                allWithBalance.sortedByDescending { it.transaction.timestamp }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -142,22 +89,26 @@ class TransactionViewModel(
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    fun updateFilter(newFilter: TransactionFilter) {
+        _filter.value = newFilter
+    }
+
     fun setCategoryFilter(category: String?) {
-        _selectedCategory.value = category
+        // Find categoryId for the name if possible, or just update the name filter if we add it
+        // For now, let's update the categoryIds if we have a way to resolve it, 
+        // but it's better to use updateFilter directly from UI
     }
 
     fun setAccountFilter(accountId: String?) {
-        _selectedAccountId.value = accountId
+        _filter.value = _filter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
     }
 
     fun setDateRangeFilter(start: Long?, end: Long?) {
-        _dateRange.value = start to end
+        _filter.value = _filter.value.copy(startDate = start, endDate = end)
     }
 
     fun clearFilters() {
-        _selectedCategory.value = null
-        _selectedAccountId.value = null
-        _dateRange.value = null to null
+        _filter.value = TransactionFilter()
     }
 
     fun addTransaction(

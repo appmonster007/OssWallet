@@ -265,7 +265,8 @@ fun AeonCashFlowSummaryPreview() {
             timestamp = System.currentTimeMillis(),
             currency = "USD",
             isIncome = true,
-            accountId = "1"
+            accountId = "1",
+            note = "Monthly salary"
         ),
         Transaction(
             id = 2L,
@@ -275,7 +276,8 @@ fun AeonCashFlowSummaryPreview() {
             timestamp = System.currentTimeMillis(),
             currency = "USD",
             isIncome = false,
-            accountId = "1"
+            accountId = "1",
+            note = "Apartment rent"
         )
     )
 

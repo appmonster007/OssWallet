@@ -23,6 +23,10 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,6 +121,86 @@ fun TransactionListContent(
                     filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionListContentPreview() {
+    val sampleAccount = Account(
+        id = "1",
+        name = "Checking",
+        balance = BigDecimal("1500.00"),
+        currencyCode = "USD",
+        structureType = "Personal",
+        colorHex = "#FF0000",
+        icon = "account_balance"
+    )
+
+    val sampleCategory = CategoryEntity(
+        id = 1L,
+        name = "Groceries",
+        iconName = "shopping_cart",
+        colorHex = 0xFFFF0000.toInt()
+    )
+
+    val sampleTransaction = Transaction(
+        id = 1L,
+        title = "Weekly Groceries",
+        note = "Weekly groceries from supermarket",
+        amount = BigDecimal("85.50"),
+        category = "Groceries",
+        timestamp = System.currentTimeMillis(),
+        currency = "USD",
+        isIncome = false,
+        accountId = "1",
+        categoryId = 1L
+    )
+
+    val transactions = List(20) { i ->
+        TransactionWithBalance(
+            transaction = sampleTransaction.copy(
+                id = i.toLong(),
+                title = "Transaction $i",
+                note = "Weekly expense \nNote $i",
+                timestamp = System.currentTimeMillis() - (i * 86400000L) // One day apart
+            ),
+            balanceBefore = BigDecimal("1500.00"),
+            balanceAfter = BigDecimal("1414.50")
+        )
+    }
+
+    Column {
+        var theme by remember { mutableStateOf("System") }
+        Row(
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(onClick = { theme = "Light" }) { Text("Light") }
+            Button(onClick = { theme = "Dark" }) { Text("Dark") }
+            Button(onClick = { theme = "Amoled" }) { Text("Amoled") }
+        }
+        OssWalletTheme(theme = theme) {
+            TransactionListContent(
+                transactionsWithBalance = transactions,
+                accounts = listOf(sampleAccount),
+                accountMap = mapOf("1" to "Checking"),
+                accountCurrencyMap = mapOf("1" to "USD"),
+                categories = listOf(sampleCategory),
+                categoryMap = mapOf(1L to sampleCategory),
+                decimalPrecision = 2,
+                analyticsState = AnalyticsUiState(),
+                filter = TransactionFilter(),
+                recordsSettings = TransactionSectionSettings(),
+                onAddTransactionClick = {},
+                onEditTransactionClick = {},
+                onBackClick = {},
+                onAccountDetailClick = {},
+                onUpdateFilter = {},
+                onSetDateRange = { _, _ -> },
+                onUpdateRecordsSettings = {}
+            )
         }
     }
 }

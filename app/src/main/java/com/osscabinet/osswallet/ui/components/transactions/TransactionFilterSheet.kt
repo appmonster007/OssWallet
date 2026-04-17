@@ -42,26 +42,18 @@ fun TransactionFilterSheet(
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 //    backgroundColor: Color = MaterialTheme.colorScheme.primaryContainer
 ) {
-    Column(
+    Box(
         modifier = Modifier.fillMaxHeight(0.9f)
     ) {
-        AeonPeriodSelector(
-            filter = filter,
-            onSetDateRange = onSetDateRange,
-            onClick = onToggleExpand,
-            isExpanded = isExpanded,
-            showArcTab = true,
-            backgroundColor = backgroundColor
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-
         FilterSheetContent(
+            filter = filter,
             accounts = accounts,
             allCategories = categories,
-            currentFilter = filter,
+            onSetDateRange = onSetDateRange,
             onApplyFilter = onUpdateFilter,
+            onToggleExpand = onToggleExpand,
             onClose = onClose,
+            isExpanded = isExpanded,
             backgroundColor = backgroundColor
         )
     }

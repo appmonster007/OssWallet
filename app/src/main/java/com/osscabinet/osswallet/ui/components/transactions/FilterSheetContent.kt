@@ -26,14 +26,17 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterSheetContent(
+    filter: TransactionFilter,
     accounts: List<Account>,
     allCategories: List<CategoryEntity>,
-    currentFilter: TransactionFilter,
+    onSetDateRange: (Long?, Long?) -> Unit,
     onApplyFilter: (TransactionFilter) -> Unit,
+    onToggleExpand: () -> Unit,
     onClose: () -> Unit,
+    isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
-    var localFilter by remember { mutableStateOf(currentFilter) }
+    var localFilter by remember { mutableStateOf(filter) }
 
     Column(
         modifier = Modifier
@@ -43,15 +46,33 @@ fun FilterSheetContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        AeonPeriodSelector(
+            filter = localFilter,
+            onSetDateRange = { start, end ->
+                localFilter = localFilter.copy(startDate = start, endDate = end)
+                onSetDateRange(start, end)
+            },
+            onClick = onToggleExpand,
+            isExpanded = isExpanded,
+            showArcTab = true,
+            backgroundColor = backgroundColor
+        )
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text("Filter Records", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            TextButton(onClick = { localFilter = TransactionFilter() }) {
-                Text("Clear All", color = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Filter Records", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                TextButton(onClick = { localFilter = TransactionFilter() }) {
+                    Text("Clear All", color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
 

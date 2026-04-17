@@ -44,7 +44,9 @@ data class AccountsViewSettings(
 @Serializable
 data class TransactionSectionSettings(
     val showPlannedPayments: Boolean = false,
-    val useNoteAsHeader: Boolean = false
+    val useNoteAsHeader: Boolean = false,
+    val showOpeningBalance: Boolean = false,
+    val showClosingBalance: Boolean = true
 )
 
 @Serializable
@@ -67,6 +69,7 @@ class SettingsDataStore(private val context: Context) {
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
         val ACCOUNT_DETAIL_SETTINGS_KEY = stringPreferencesKey("account_detail_settings")
+        val RECORDS_SETTINGS_KEY = stringPreferencesKey("records_settings")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -121,6 +124,16 @@ class SettingsDataStore(private val context: Context) {
                 AccountDetailSettings()
             }
         } ?: AccountDetailSettings()
+    }
+
+    val recordsSettings: Flow<TransactionSectionSettings> = context.dataStore.data.map { preferences ->
+        preferences[RECORDS_SETTINGS_KEY]?.let {
+            try {
+                Json.decodeFromString<TransactionSectionSettings>(it)
+            } catch (e: Exception) {
+                TransactionSectionSettings()
+            }
+        } ?: TransactionSectionSettings()
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -195,6 +208,19 @@ class SettingsDataStore(private val context: Context) {
                 }
             } ?: AccountDetailSettings()
             preferences[ACCOUNT_DETAIL_SETTINGS_KEY] = Json.encodeToString(update(current))
+        }
+    }
+
+    suspend fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[RECORDS_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<TransactionSectionSettings>(it)
+                } catch (e: Exception) {
+                    TransactionSectionSettings()
+                }
+            } ?: TransactionSectionSettings()
+            preferences[RECORDS_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 }

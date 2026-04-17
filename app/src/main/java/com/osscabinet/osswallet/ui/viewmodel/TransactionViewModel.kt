@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -39,6 +40,9 @@ class TransactionViewModel(
 
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
+
+    val recordsSettings: StateFlow<TransactionSectionSettings> = settingsDataStore.recordsSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
@@ -229,6 +233,12 @@ class TransactionViewModel(
     fun deleteCategory(category: com.osscabinet.ossWallet.data.local.entity.CategoryEntity) {
         viewModelScope.launch {
             categoryDao.deleteCategory(category)
+        }
+    }
+
+    fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) {
+        viewModelScope.launch {
+            settingsDataStore.updateRecordsSettings(update)
         }
     }
 }

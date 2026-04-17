@@ -56,6 +56,7 @@ fun TransactionListScreen(
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
     val filter by viewModel.filter.collectAsState()
+    val recordsSettings by viewModel.recordsSettings.collectAsState()
 
     TransactionListContent(
         transactionsWithBalance = transactionsWithBalance,
@@ -67,12 +68,14 @@ fun TransactionListScreen(
         decimalPrecision = decimalPrecision,
         analyticsState = analyticsState,
         filter = filter,
+        recordsSettings = recordsSettings,
         onAddTransactionClick = onAddTransactionClick,
         onEditTransactionClick = onEditTransactionClick,
         onBackClick = onBackClick,
         onAccountDetailClick = onAccountDetailClick,
         onUpdateFilter = { viewModel.updateFilter(it) },
-        onSetDateRange = { start, end -> viewModel.setDateRangeFilter(start, end) }
+        onSetDateRange = { start, end -> viewModel.setDateRangeFilter(start, end) },
+        onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } }
     )
 }
 
@@ -88,14 +91,17 @@ fun TransactionListContent(
     decimalPrecision: Int,
     analyticsState: AnalyticsUiState,
     filter: TransactionFilter,
+    recordsSettings: com.osscabinet.ossWallet.data.local.TransactionSectionSettings,
     onAddTransactionClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
-    onSetDateRange: (Long?, Long?) -> Unit
+    onSetDateRange: (Long?, Long?) -> Unit,
+    onUpdateRecordsSettings: (com.osscabinet.ossWallet.data.local.TransactionSectionSettings) -> Unit
 ) {
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -123,8 +129,39 @@ fun TransactionListContent(
                             tint = if (isFiltered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         ) 
                     }
-                    IconButton(onClick = { /* More options */ }) {
-                        Icon(Icons.Default.MoreHoriz, contentDescription = "More")
+                    Box {
+                        IconButton(onClick = { showMoreMenu = true }) {
+                            Icon(Icons.Default.MoreHoriz, contentDescription = "More")
+                        }
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Use Note as Header") },
+                                leadingIcon = { Checkbox(checked = recordsSettings.useNoteAsHeader, onCheckedChange = null) },
+                                onClick = { 
+                                    onUpdateRecordsSettings(recordsSettings.copy(useNoteAsHeader = !recordsSettings.useNoteAsHeader))
+                                    showMoreMenu = false 
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Show Opening Balance") },
+                                leadingIcon = { Checkbox(checked = recordsSettings.showOpeningBalance, onCheckedChange = null) },
+                                onClick = { 
+                                    onUpdateRecordsSettings(recordsSettings.copy(showOpeningBalance = !recordsSettings.showOpeningBalance))
+                                    showMoreMenu = false 
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Show Closing Balance") },
+                                leadingIcon = { Checkbox(checked = recordsSettings.showClosingBalance, onCheckedChange = null) },
+                                onClick = { 
+                                    onUpdateRecordsSettings(recordsSettings.copy(showClosingBalance = !recordsSettings.showClosingBalance))
+                                    showMoreMenu = false 
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -242,19 +279,22 @@ fun TransactionListContent(
                     Text("No records found", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
                 }
             } else {
-                AeonTransactionList(
-                    transactions = transactionsWithBalance,
-                    accountMap = accountMap,
-                    categoryMap = categoryMap,
-                    onTransactionClick = { onEditTransactionClick(it.id) },
-                    contentPadding = PaddingValues(bottom = 16.dp),
-                    precision = decimalPrecision,
-                    baseCurrency = analyticsState.selectedCurrency,
-                    exchangeRates = analyticsState.exchangeRates,
-                    accountCurrencyMap = accountCurrencyMap,
-                    filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
-                )
-            }
+                    AeonTransactionList(
+                        transactions = transactionsWithBalance,
+                        accountMap = accountMap,
+                        categoryMap = categoryMap,
+                        onTransactionClick = { onEditTransactionClick(it.id) },
+                        contentPadding = PaddingValues(bottom = 16.dp),
+                        precision = decimalPrecision,
+                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                        showOpeningBalance = recordsSettings.showOpeningBalance,
+                        showClosingBalance = recordsSettings.showClosingBalance,
+                        baseCurrency = analyticsState.selectedCurrency,
+                        exchangeRates = analyticsState.exchangeRates,
+                        accountCurrencyMap = accountCurrencyMap,
+                        filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
+                    )
+                }
         }
     }
 }

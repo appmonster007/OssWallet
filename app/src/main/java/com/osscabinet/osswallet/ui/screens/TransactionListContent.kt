@@ -105,7 +105,7 @@ fun TransactionListContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (transactionsWithBalance.isEmpty()) {
@@ -116,7 +116,9 @@ fun TransactionListContent(
                     accountMap = accountMap,
                     categoryMap = categoryMap,
                     onTransactionClick = { onEditTransactionClick(it.id) },
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(
+                        bottom = innerPadding.calculateBottomPadding() + 16.dp
+                    ),
                     precision = decimalPrecision,
                     useNoteAsHeader = recordsSettings.useNoteAsHeader,
                     showOpeningBalance = recordsSettings.showOpeningBalance,

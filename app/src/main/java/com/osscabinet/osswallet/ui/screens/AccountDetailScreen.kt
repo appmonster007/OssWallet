@@ -291,6 +291,13 @@ fun AccountDetailScreen(
                                 }
                             }
 
+                            // Reset filters when leaving the transactions tab or the screen
+                            DisposableEffect(Unit) {
+                                onDispose {
+                                    transactionViewModel.clearAccountDetailFilters()
+                                }
+                            }
+
                             BottomSheetScaffold(
                                 scaffoldState = scaffoldState,
                                 modifier = Modifier

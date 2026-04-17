@@ -198,18 +198,34 @@ fun AeonWeeklyHeader(
     ) {
         Column {
             HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                 // Row 1: Week Info
-                Text(
-                    text = "WEEK $week ($weekRange)".uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color = outlineColor,
-                        letterSpacing = 1.sp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "WEEK $week".uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = outlineColor,
+                            letterSpacing = 1.sp,
+                            fontSize = 9.sp
+                        )
                     )
-                )
+                    Text(
+                        text = weekRange.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = outlineColor.copy(alpha = 0.6f),
+                            letterSpacing = 0.5.sp,
+                            fontSize = 8.sp
+                        )
+                    )
+                }
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 // Row 2: Headers
                 Row(
@@ -225,7 +241,7 @@ fun AeonWeeklyHeader(
                             Text(
                                 label,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 8.sp,
+                                    fontSize = 7.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = 0.5.sp
                                 ),
@@ -237,7 +253,7 @@ fun AeonWeeklyHeader(
                     Text(
                         "BALANCE",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 8.sp,
+                            fontSize = 7.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.5.sp
                         ),
@@ -247,15 +263,13 @@ fun AeonWeeklyHeader(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
-
                 // Row 3: Aggregate (Clickable)
                 val canExpand = allWeekCurrencies.isNotEmpty()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(if (canExpand) Modifier.clickable { isExpanded = !isExpanded } else Modifier)
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
@@ -266,7 +280,7 @@ fun AeonWeeklyHeader(
                             text = "TOTAL",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Black,
-                                fontSize = 9.sp
+                                fontSize = 8.5.sp
                             ),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -274,7 +288,7 @@ fun AeonWeeklyHeader(
                             Icon(
                                 if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                                 contentDescription = null,
-                                modifier = Modifier.size(12.dp),
+                                modifier = Modifier.size(10.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                             )
                         }
@@ -285,27 +299,27 @@ fun AeonWeeklyHeader(
                     ) {
                         Text(
                             formatCurrencyRight(weekIncomeBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                             color = positiveColor,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
                             formatCurrencyRight(weekExpenseBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                             color = negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                         val netSign = if (weekNetBase >= BigDecimal.ZERO) "+ " else "- "
                         Text(
                             netSign + formatCurrencyRight(weekNetBase.abs(), baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                             color = if (weekNetBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                     }
                     Text(
                         formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                         modifier = Modifier.width(80.dp),
                         textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.onSurface

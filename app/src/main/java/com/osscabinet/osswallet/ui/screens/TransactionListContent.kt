@@ -53,13 +53,12 @@ fun TransactionListContent(
         )
     )
     val scope = rememberCoroutineScope()
-    val backgroundColor = Color(0xFF1E1E1E)
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 90.dp,
-        sheetContainerColor = backgroundColor,
-        sheetContentColor = Color.White,
+        sheetContainerColor = MaterialTheme.colorScheme.surface,
+        sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         sheetDragHandle = null,
         topBar = {
@@ -89,8 +88,7 @@ fun TransactionListContent(
                 onClose = {
                     scope.launch { scaffoldState.bottomSheetState.partialExpand() }
                 },
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
-                backgroundColor = backgroundColor
+                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
             )
         }
     ) { innerPadding ->

@@ -37,10 +37,10 @@ fun AeonPeriodSelector(
     onClick: () -> Unit,
     isExpanded: Boolean = false,
     showArcTab: Boolean = true,
-    backgroundColor: Color = Color(0xFF2C2C2C), // Matches the dark grey in the image
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     modifier: Modifier = Modifier
 ) {
-    val accentColor = Color(0xFF5B89D8) // Vibrant Blue
+    val accentColor = MaterialTheme.colorScheme.primary
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -71,7 +71,7 @@ fun AeonPeriodSelector(
                         .height(30.dp)
                         .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1A1A1A)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Left Arrow
@@ -109,14 +109,14 @@ fun AeonPeriodSelector(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 13.sp
                                 ),
-                                color = Color.Black.copy(alpha = 0.9f)
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                             Spacer(Modifier.width(4.dp))
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
-                                tint = Color.Black.copy(alpha = 0.9f)
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -144,9 +144,9 @@ fun AeonPeriodSelector(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(4.dp).background(Color.White.copy(alpha = 0.2f), CircleShape))
+                    Box(modifier = Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape))
                     Box(modifier = Modifier.size(6.dp).background(accentColor, CircleShape))
-                    Box(modifier = Modifier.size(4.dp).background(Color.White.copy(alpha = 0.2f), CircleShape))
+                    Box(modifier = Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape))
                 }
             }
         }
@@ -231,7 +231,7 @@ private fun getPeriodText(filter: TransactionFilter): String {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
+@Preview(showBackground = true)
 @Composable
 fun AeonPeriodSelectorPreview() {
     val filter = TransactionFilter()
@@ -241,13 +241,12 @@ fun AeonPeriodSelectorPreview() {
             onSetDateRange = { _, _ -> },
             onClick = { },
             isExpanded = false,
-            showArcTab = true,
-            backgroundColor = Color(0xFF1E1E1E)
+            showArcTab = true
         )
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF1E1E1E)
+@Preview(showBackground = true)
 @Composable
 fun AeonPeriodSelectorExpandedPreview() {
     val filter = TransactionFilter()
@@ -256,7 +255,6 @@ fun AeonPeriodSelectorExpandedPreview() {
         onSetDateRange = { _, _ -> },
         onClick = { },
         isExpanded = true,
-        showArcTab = true,
-        backgroundColor = Color(0xFF1E1E1E)
+        showArcTab = true
     )
 }

@@ -169,12 +169,12 @@ fun AeonTransactionList(
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
 
                 val accountCurrency = accountCurrencyMap[item.transaction.accountId] ?: baseCurrency
-                val txAmountInAccountCurrency = convertAmount(item.transaction.amount, item.transaction.currency, accountCurrency, exchangeRates, precision + 4)
-                val balanceBeforeAccount = if (item.transaction.isIncome) item.balanceAfter.subtract(txAmountInAccountCurrency) else item.balanceAfter.add(txAmountInAccountCurrency)
-
+                val isFilteredToAccount = filterAccountId != null
+                
+                // Determine the display currency for balances
+                val balanceCurrency = if (isFilteredToAccount) accountCurrency else baseCurrency
+                
                 val amountInBase = convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
-                val balanceBeforeInBase = convertAmount(balanceBeforeAccount, accountCurrency, baseCurrency, exchangeRates, precision)
-                val balanceAfterInBase = convertAmount(item.balanceAfter, accountCurrency, baseCurrency, exchangeRates, precision)
 
                 AeonTransactionItem(
                     category = category?.name ?: "Uncategorized",
@@ -183,8 +183,8 @@ fun AeonTransactionList(
                     convertedAmount = if (item.transaction.currency != baseCurrency) {
                         formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
                     } else null,
-                    balanceBefore = formatCurrencyRight(balanceBeforeInBase, baseCurrency, precision),
-                    balanceAfter = formatCurrencyRight(balanceAfterInBase, baseCurrency, precision),
+                    balanceBefore = formatCurrencyRight(item.balanceBefore, balanceCurrency, precision),
+                    balanceAfter = formatCurrencyRight(item.balanceAfter, balanceCurrency, precision),
                     type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                     note = item.transaction.note,

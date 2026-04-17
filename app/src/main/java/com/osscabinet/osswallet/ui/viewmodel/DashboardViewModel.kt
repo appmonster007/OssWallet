@@ -281,12 +281,17 @@ class DashboardViewModel(
                                 precision = precision + 4
                             )
                             
+                            val balanceBefore = runningBalance
                             runningBalance = if (transaction.isIncome) {
                                 runningBalance.add(txAmountInAccountCurrency)
                             } else {
                                 runningBalance.subtract(txAmountInAccountCurrency)
                             }
-                            TransactionWithBalance(transaction, runningBalance.setScale(precision, RoundingMode.HALF_UP))
+                            TransactionWithBalance(
+                                transaction = transaction,
+                                balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
+                                balanceAfter = runningBalance.setScale(precision, RoundingMode.HALF_UP)
+                            )
                         }
                     }
                     .filter { it.transaction.accountId in nonArchivedAccountIds }

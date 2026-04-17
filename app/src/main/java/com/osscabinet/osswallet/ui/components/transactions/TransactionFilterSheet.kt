@@ -39,7 +39,8 @@ fun TransactionFilterSheet(
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     isExpanded: Boolean,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
+//    backgroundColor: Color = MaterialTheme.colorScheme.primaryContainer
 ) {
     Column(
         modifier = Modifier.fillMaxHeight(0.9f)
@@ -60,12 +61,13 @@ fun TransactionFilterSheet(
             allCategories = categories,
             currentFilter = filter,
             onApplyFilter = onUpdateFilter,
-            onClose = onClose
+            onClose = onClose,
+            backgroundColor = backgroundColor
         )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = false)
 @Composable
 fun TransactionFilterSheetPreview() {
     var theme by remember { mutableStateOf("Light") }

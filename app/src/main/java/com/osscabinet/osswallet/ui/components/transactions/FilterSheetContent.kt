@@ -30,13 +30,15 @@ fun FilterSheetContent(
     allCategories: List<CategoryEntity>,
     currentFilter: TransactionFilter,
     onApplyFilter: (TransactionFilter) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
     var localFilter by remember { mutableStateOf(currentFilter) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(backgroundColor)
             .padding(horizontal = 24.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)

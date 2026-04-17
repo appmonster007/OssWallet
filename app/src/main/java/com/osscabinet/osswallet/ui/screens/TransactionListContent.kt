@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
@@ -60,10 +61,16 @@ fun TransactionListContent(
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
+        modifier = Modifier.background(Color.Transparent),
         sheetPeekHeight = 90.dp,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+//        sheetContainerColor = Color.Transparent,
+//        containerColor = Color.Transparent,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
-        sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+//        Remove elevation to avoid "ghost" tinting
+        sheetTonalElevation = 0.dp,sheetShadowElevation = 0.dp,
+//        sheetShape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        sheetShape = RectangleShape,
         sheetDragHandle = null,
         topBar = {
             TransactionListTopAppBar(
@@ -92,7 +99,9 @@ fun TransactionListContent(
                 onClose = {
                     scope.launch { scaffoldState.bottomSheetState.partialExpand() }
                 },
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded
+                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+//                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                backgroundColor = MaterialTheme.colorScheme.primaryContainer
             )
         }
     ) { innerPadding ->

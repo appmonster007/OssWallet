@@ -625,10 +625,17 @@ fun TransactionEntryContent(
                                         else -> "-"
                                     }
                                     val displayAmount = amount.ifEmpty { "0.00" }
+                                    val fullText = "$prefix$displayAmount"
+                                    var resizedFontSize by remember { mutableStateOf(72.sp) }
+
+                                    LaunchedEffect(fullText) {
+                                        resizedFontSize = 72.sp
+                                    }
+
                                     Text(
-                                        text = "$prefix$displayAmount",
+                                        text = fullText,
                                         style = TextStyle(
-                                            fontSize = 72.sp,
+                                            fontSize = resizedFontSize,
                                             fontWeight = FontWeight.Bold,
                                             textAlign = TextAlign.Center,
                                             color = when {
@@ -637,7 +644,14 @@ fun TransactionEntryContent(
                                                 else -> lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.5f)
                                             }
                                         ),
-                                        modifier = Modifier.weight(1f, fill = false)
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        onTextLayout = { textLayoutResult ->
+                                            if (textLayoutResult.hasVisualOverflow && resizedFontSize > 24.sp) {
+                                                resizedFontSize = (resizedFontSize.value * 0.95f).sp
+                                            }
+                                        }
                                     )
 
                                     Spacer(modifier = Modifier.width(16.dp))
@@ -671,13 +685,27 @@ fun TransactionEntryContent(
                                             modifier = Modifier.padding(start = 8.dp)
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
+                                        val convertedText = "+${convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()}"
+                                        var resizedSecondaryFontSize by remember { mutableStateOf(32.sp) }
+
+                                        LaunchedEffect(convertedText) {
+                                            resizedSecondaryFontSize = 32.sp
+                                        }
+
                                         Text(
-                                            text = "+${convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()}",
+                                            text = convertedText,
                                             style = TextStyle(
-                                                fontSize = 32.sp,
+                                                fontSize = resizedSecondaryFontSize,
                                                 fontWeight = FontWeight.Bold,
                                                 color = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
-                                            )
+                                            ),
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            onTextLayout = { textLayoutResult ->
+                                                if (textLayoutResult.hasVisualOverflow && resizedSecondaryFontSize > 14.sp) {
+                                                    resizedSecondaryFontSize = (resizedSecondaryFontSize.value * 0.95f).sp
+                                                }
+                                            }
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         CurrencySelector(

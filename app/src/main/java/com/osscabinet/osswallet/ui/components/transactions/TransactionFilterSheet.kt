@@ -21,7 +21,7 @@ fun TransactionFilterSheet(
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     isExpanded: Boolean,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh
 ) {
     Column(
         modifier = Modifier.fillMaxHeight(0.9f)

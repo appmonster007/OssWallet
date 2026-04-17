@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,7 +21,7 @@ fun TransactionFilterSheet(
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
     isExpanded: Boolean,
-    backgroundColor: Color = Color(0xFF1E1E1E)
+    backgroundColor: Color = MaterialTheme.colorScheme.surface
 ) {
     Column(
         modifier = Modifier.fillMaxHeight(0.9f)
@@ -34,7 +35,7 @@ fun TransactionFilterSheet(
             backgroundColor = backgroundColor
         )
 
-        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
         FilterSheetContent(
             accounts = accounts,

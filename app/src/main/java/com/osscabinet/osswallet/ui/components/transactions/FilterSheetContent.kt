@@ -55,7 +55,7 @@ fun FilterSheetContent(
 
         // Text Search: Note & Payee
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("SEARCH", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("SEARCH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             
             OutlinedTextField(
                 value = localFilter.queryNote ?: "",
@@ -64,14 +64,14 @@ fun FilterSheetContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 ),
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Checkbox(
                             checked = localFilter.isNoteRegex,
                             onCheckedChange = { localFilter = localFilter.copy(isNoteRegex = it) }
@@ -87,14 +87,14 @@ fun FilterSheetContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 ),
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
-                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("Regex", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Checkbox(
                             checked = localFilter.isPayeeRegex,
                             onCheckedChange = { localFilter = localFilter.copy(isPayeeRegex = it) }
@@ -106,7 +106,7 @@ fun FilterSheetContent(
 
         // Type (Income/Expense)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("TRANSACTION TYPE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("TRANSACTION TYPE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = localFilter.isIncome == null,
@@ -133,7 +133,7 @@ fun FilterSheetContent(
 
         // Date Range
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("DATE RANGE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("DATE RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 var showStartDatePicker by remember { mutableStateOf(false) }
                 var showEndDatePicker by remember { mutableStateOf(false) }
@@ -142,18 +142,18 @@ fun FilterSheetContent(
                     onClick = { showStartDatePicker = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 ) {
-                    Text(localFilter.startDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Start Date", color = Color.White)
+                    Text(localFilter.startDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Start Date", color = MaterialTheme.colorScheme.onSurface)
                 }
-                Text("to", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text("to", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(
                     onClick = { showEndDatePicker = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 ) {
-                    Text(localFilter.endDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "End Date", color = Color.White)
+                    Text(localFilter.endDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "End Date", color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 if (showStartDatePicker) {
@@ -175,7 +175,7 @@ fun FilterSheetContent(
 
         // Amount Range
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("AMOUNT RANGE", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("AMOUNT RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = localFilter.minAmount?.toString() ?: "",
@@ -184,8 +184,10 @@ fun FilterSheetContent(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     ),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
                 )
@@ -196,8 +198,10 @@ fun FilterSheetContent(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     ),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
                 )
@@ -206,7 +210,7 @@ fun FilterSheetContent(
 
         // Categories (Multi-select)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -228,7 +232,7 @@ fun FilterSheetContent(
 
         // Accounts (Multi-select)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -257,9 +261,9 @@ fun FilterSheetContent(
                 onClick = onClose,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             ) {
-                Text("Cancel", color = Color.White)
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
             }
             Button(
                 onClick = {

@@ -20,7 +20,6 @@ fun TransactionListTopAppBar(
     recordsSettings: TransactionSectionSettings,
     onBackClick: () -> Unit,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
-    onSearchClick: () -> Unit = {}
 ) {
     var showMoreMenu by remember { mutableStateOf(false) }
 
@@ -45,9 +44,6 @@ fun TransactionListTopAppBar(
             }
         },
         actions = {
-            IconButton(onClick = onSearchClick) {
-                Icon(Icons.Default.Search, contentDescription = "Search")
-            }
             Box {
                 IconButton(onClick = { showMoreMenu = true }) {
                     Icon(Icons.Default.MoreHoriz, contentDescription = "More")

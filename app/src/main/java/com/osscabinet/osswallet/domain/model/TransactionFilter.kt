@@ -15,5 +15,6 @@ data class TransactionFilter(
     val warrantyExpirationEnd: Long? = null,
     val minAmount: java.math.BigDecimal? = null,
     val maxAmount: java.math.BigDecimal? = null,
-    val isIncome: Boolean? = null // null = both, true = income only, false = expense only
+    val isIncome: Boolean? = null, // null = both, true = income only, false = expense only
+    val currencies: List<String> = emptyList()
 )

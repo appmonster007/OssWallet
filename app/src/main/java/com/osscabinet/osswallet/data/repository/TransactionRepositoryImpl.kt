@@ -90,6 +90,13 @@ class TransactionRepositoryImpl @Inject constructor(
             args.add(filter.warrantyExpirationEnd)
         }
 
+        // Currency Filter
+        if (filter.currencies.isNotEmpty()) {
+            val placeholders = filter.currencies.joinToString(",") { "?" }
+            queryBuilder.append(" AND currency IN ($placeholders)")
+            args.addAll(filter.currencies)
+        }
+
         // Text Search (Non-Regex)
         if (!filter.queryNote.isNullOrBlank() && !filter.isNoteRegex) {
             queryBuilder.append(" AND note LIKE ?")

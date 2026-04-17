@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,6 +44,7 @@ fun TransactionListContent(
     analyticsState: AnalyticsUiState,
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
+    savedFilters: List<FilterEntity> = emptyList(),
     onAddTransactionClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
@@ -82,6 +84,7 @@ fun TransactionListContent(
                 filter = filter,
                 accounts = accounts,
                 categories = categories,
+                savedFilters = savedFilters,
                 onSetDateRange = onSetDateRange,
                 onUpdateFilter = onUpdateFilter,
                 onToggleExpand = {

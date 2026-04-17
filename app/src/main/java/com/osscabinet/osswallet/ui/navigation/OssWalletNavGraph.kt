@@ -28,7 +28,8 @@ fun OssWalletNavGraph(
             appContainer.settingsDataStore,
             appContainer.profileRepository,
             appContainer.backupRepository,
-            appContainer.currencyRepository
+            appContainer.currencyRepository,
+            appContainer.db.filterDao()
         )
     )
 
@@ -51,6 +52,7 @@ fun OssWalletNavGraph(
             appContainer.settingsDataStore,
             appContainer.db.categoryDao(),
             appContainer.accountRepository,
+            appContainer.db.filterDao(),
             analyticsViewModel
         )
     )
@@ -233,6 +235,46 @@ fun OssWalletNavGraph(
                 onManageLabelsClick = { navController.navigate(Screen.ManageLabels.route) },
                 onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ManageFilters.route) {
+            FiltersSettingsScreen(
+                viewModel = settingsViewModel,
+                onBackClick = { navController.popBackStack() },
+                onAddFilterClick = { navController.navigate(Screen.EditFilter.route) },
+                onEditFilterClick = { filter -> 
+                    navController.navigate(Screen.EditFilter.createRoute(filter.id))
+                }
+            )
+        }
+
+        composable(
+            Screen.EditFilter.route,
+            arguments = listOf(
+                navArgument("filterId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { backStackEntry ->
+            val filterId = backStackEntry.arguments?.getLong("filterId").takeIf { it != -1L }
+            val filters by settingsViewModel.allFilters.collectAsState(initial = emptyList())
+            val filterEntity = filters.find { it.id == filterId }
+            
+            val accounts by accountViewModel.accounts.collectAsState()
+            val allCategories by transactionViewModel.categories.collectAsState()
+
+            EditFilterScreen(
+                filterEntity = filterEntity,
+                accounts = accounts,
+                allCategories = allCategories,
+                onSaveFilter = { 
+                    settingsViewModel.saveFilter(it)
+                    navController.popBackStack()
+                },
                 onBackClick = { navController.popBackStack() }
             )
         }

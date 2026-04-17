@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -33,6 +34,7 @@ fun TransactionFilterSheet(
     filter: TransactionFilter,
     accounts: List<Account>,
     categories: List<CategoryEntity>,
+    savedFilters: List<FilterEntity> = emptyList(),
     onSetDateRange: (Long?, Long?) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
@@ -47,6 +49,7 @@ fun TransactionFilterSheet(
             filter = filter,
             accounts = accounts,
             allCategories = categories,
+            savedFilters = savedFilters,
             onSetDateRange = onSetDateRange,
             onApplyFilter = onUpdateFilter,
             onToggleExpand = onToggleExpand,

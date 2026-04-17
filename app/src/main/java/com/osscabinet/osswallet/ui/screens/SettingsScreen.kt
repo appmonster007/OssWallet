@@ -37,6 +37,7 @@ fun SettingsScreen(
     onManageLabelsClick: () -> Unit,
     onManageCategoriesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
+    onManageFiltersClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val currencyCode by viewModel.currency.collectAsState()
@@ -351,6 +352,13 @@ fun SettingsScreen(
                     subtitle = "Quick shortcuts for frequent entries",
                     icon = Icons.Rounded.AutoAwesome,
                     onClick = onTemplatesClick
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Saved Filters",
+                    subtitle = "Templates for quick transaction searching",
+                    icon = Icons.Rounded.FilterList,
+                    onClick = onManageFiltersClick
                 )
             }
 

@@ -269,7 +269,7 @@ fun AccountDetailScreen(
                                 }
                             }
                         } else {
-                            val filter by transactionViewModel.filter.collectAsState()
+                            val filter by transactionViewModel.accountDetailFilter.collectAsState()
                             val savedFilters by transactionViewModel.savedFilters.collectAsState()
                             val accounts by accountViewModel.accounts.collectAsState()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -287,7 +287,7 @@ fun AccountDetailScreen(
                             // Apply account filter automatically if not already set specifically for this account
                             LaunchedEffect(accountId) {
                                 if (!filter.accountIds.contains(accountId)) {
-                                    transactionViewModel.updateFilter(filter.copy(accountIds = listOf(accountId)))
+                                    transactionViewModel.updateAccountDetailFilter(filter.copy(accountIds = listOf(accountId)))
                                 }
                             }
 
@@ -311,10 +311,10 @@ fun AccountDetailScreen(
                                         accounts = accounts,
                                         categories = categoriesList,
                                         savedFilters = savedFilters,
-                                        onSetDateRange = { start, end -> transactionViewModel.setDateRangeFilter(start, end) },
+                                        onSetDateRange = { start, end -> transactionViewModel.setAccountDetailDateRangeFilter(start, end) },
                                         onUpdateFilter = { updatedFilter ->
                                             // Ensure we always stay filtered by this account
-                                            transactionViewModel.updateFilter(updatedFilter.copy(accountIds = listOf(accountId)))
+                                            transactionViewModel.updateAccountDetailFilter(updatedFilter.copy(accountIds = listOf(accountId)))
                                         },
                                         onToggleExpand = {
                                             scope.launch {
@@ -329,7 +329,7 @@ fun AccountDetailScreen(
                                             scope.launch { scaffoldState.bottomSheetState.partialExpand() }
                                         },
                                         isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
-                                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                                        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                         showAccountFilter = false
                                     )
                                 }
@@ -343,19 +343,37 @@ fun AccountDetailScreen(
                                         transactionsWithBalanceList.filter { item ->
                                             val tx = item.transaction
                                             
-                                            // Since we are in account detail, we only care about filters OTHER than accountId 
-                                            // (though the list is already scoped to this account in ViewModel)
-                                            val matchesNote = filter.queryNote == null || 
-                                                (if (filter.isNoteRegex) tx.note.contains(filter.queryNote!!.toRegex()) else tx.note.contains(filter.queryNote!!, ignoreCase = true))
-                                            val matchesPayee = filter.queryPayee == null || 
-                                                (if (filter.isPayeeRegex) tx.title.contains(filter.queryPayee!!.toRegex()) else tx.title.contains(filter.queryPayee!!, ignoreCase = true))
-                                            val matchesCategory = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
-                                            val matchesDate = (filter.startDate == null || tx.timestamp >= filter.startDate!!) &&
-                                                              (filter.endDate == null || tx.timestamp <= filter.endDate!!)
-                                            val matchesCurrency = filter.currencies.isEmpty() || tx.currency in filter.currencies
-                                            val matchesIncome = filter.isIncome == null || tx.isIncome == filter.isIncome
+                                            // Manual in-memory filtering for account detail screen
+                                            val queryNote = filter.queryNote
+                                            val matchesNote = queryNote == null || 
+                                                (if (filter.isNoteRegex) {
+                                                    try { Regex(queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch(e: Exception) { false }
+                                                } else tx.note.contains(queryNote, ignoreCase = true))
                                             
-                                            matchesNote && matchesPayee && matchesCategory && matchesDate && matchesCurrency && matchesIncome
+                                            val queryPayee = filter.queryPayee
+                                            val matchesPayee = queryPayee == null || 
+                                                (if (filter.isPayeeRegex) {
+                                                    try { Regex(queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch(e: Exception) { false }
+                                                } else tx.payee.contains(queryPayee, ignoreCase = true))
+                                            
+                                            val categoryIds = filter.categoryIds
+                                            val matchesCategory = categoryIds.isEmpty() || tx.categoryId in categoryIds
+                                            
+                                            val startDate = filter.startDate
+                                            val endDate = filter.endDate
+                                            val matchesDate = (startDate == null || tx.timestamp >= startDate) &&
+                                                              (endDate == null || tx.timestamp <= endDate)
+                                            
+                                            val currencies = filter.currencies
+                                            val matchesCurrency = currencies.isEmpty() || tx.currency in currencies
+                                            
+                                            val isIncome = filter.isIncome
+                                            val matchesIncome = isIncome == null || tx.isIncome == isIncome
+                                            
+                                            val paymentMethods = filter.paymentMethods
+                                            val matchesPaymentMethod = paymentMethods.isEmpty() || tx.paymentMethod in paymentMethods
+                                            
+                                            matchesNote && matchesPayee && matchesCategory && matchesDate && matchesCurrency && matchesIncome && matchesPaymentMethod
                                         }
                                     }
 

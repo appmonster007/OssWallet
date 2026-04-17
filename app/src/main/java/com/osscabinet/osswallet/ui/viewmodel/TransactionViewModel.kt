@@ -33,8 +33,11 @@ class TransactionViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    private val _filter = MutableStateFlow(TransactionFilter())
-    val filter = _filter.asStateFlow()
+    private val _recordsFilter = MutableStateFlow(TransactionFilter())
+    val recordsFilter = _recordsFilter.asStateFlow()
+
+    private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
+    val accountDetailFilter = _accountDetailFilter.asStateFlow()
 
     val savedFilters = filterDao.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -51,10 +54,10 @@ class TransactionViewModel(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                _filter.flatMapLatest { getTransactionsUseCase.filtered(profileId, it) },
+                _recordsFilter.flatMapLatest { getTransactionsUseCase.filtered(profileId, it) },
                 accountRepository.getAllAccounts(profileId),
                 analyticsViewModel.uiState,
-                _filter
+                _recordsFilter
             ) { filteredTransactions, accounts, analyticsState, currentFilter ->
                 val accountMap = accounts.associateBy { it.id }
                 val rates = analyticsState.exchangeRates
@@ -97,26 +100,36 @@ class TransactionViewModel(
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun updateFilter(newFilter: TransactionFilter) {
-        _filter.value = newFilter
+    fun updateRecordsFilter(newFilter: TransactionFilter) {
+        _recordsFilter.value = newFilter
     }
 
-    fun setCategoryFilter(category: String?) {
-        // Find categoryId for the name if possible, or just update the name filter if we add it
-        // For now, let's update the categoryIds if we have a way to resolve it, 
-        // but it's better to use updateFilter directly from UI
+    fun updateAccountDetailFilter(newFilter: TransactionFilter) {
+        _accountDetailFilter.value = newFilter
     }
 
-    fun setAccountFilter(accountId: String?) {
-        _filter.value = _filter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
+    fun setRecordsCategoryFilter(category: String?) {
+        // ...
     }
 
-    fun setDateRangeFilter(start: Long?, end: Long?) {
-        _filter.value = _filter.value.copy(startDate = start, endDate = end)
+    fun setRecordsAccountFilter(accountId: String?) {
+        _recordsFilter.value = _recordsFilter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
     }
 
-    fun clearFilters() {
-        _filter.value = TransactionFilter()
+    fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
+        _recordsFilter.value = _recordsFilter.value.copy(startDate = start, endDate = end)
+    }
+
+    fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
+        _accountDetailFilter.value = _accountDetailFilter.value.copy(startDate = start, endDate = end)
+    }
+
+    fun clearRecordsFilters() {
+        _recordsFilter.value = TransactionFilter()
+    }
+
+    fun clearAccountDetailFilters() {
+        _accountDetailFilter.value = TransactionFilter()
     }
 
     fun addTransaction(

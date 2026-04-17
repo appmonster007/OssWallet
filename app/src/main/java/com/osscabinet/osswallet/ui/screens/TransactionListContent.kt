@@ -101,7 +101,8 @@ fun TransactionListContent(
                 },
                 isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
 //                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
-                backgroundColor = MaterialTheme.colorScheme.primaryContainer
+//                backgroundColor = MaterialTheme.colorScheme.primaryContainer
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         }
     ) { innerPadding ->

@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
+import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,10 +28,11 @@ fun TransactionListScreen(
     viewModel: TransactionViewModel,
     accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    onAddTransactionClick: () -> Unit,
+    onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
-    onAccountDetailClick: (String) -> Unit
+    onAccountDetailClick: (String) -> Unit,
+    templateViewModel: TemplateViewModel
 ) {
     val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
@@ -43,6 +45,7 @@ fun TransactionListScreen(
     val filter by viewModel.recordsFilter.collectAsState()
     val recordsSettings by viewModel.recordsSettings.collectAsState()
     val savedFilters by viewModel.savedFilters.collectAsState()
+    val allTemplates by templateViewModel.templates.collectAsState()
 
     // Reset filters when entering or leaving the screen
     DisposableEffect(Unit) {
@@ -63,6 +66,7 @@ fun TransactionListScreen(
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
+        templates = allTemplates,
         onAddTransactionClick = onAddTransactionClick,
         onEditTransactionClick = onEditTransactionClick,
         onBackClick = onBackClick,

@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
@@ -45,7 +47,8 @@ fun TransactionListContent(
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     savedFilters: List<FilterEntity> = emptyList(),
-    onAddTransactionClick: () -> Unit,
+    templates: List<TemplateEntity> = emptyList(),
+    onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit,
@@ -61,79 +64,87 @@ fun TransactionListContent(
     )
     val scope = rememberCoroutineScope()
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        modifier = Modifier.background(Color.Transparent),
-        sheetPeekHeight = 90.dp,
-        sheetContainerColor = Color.Transparent,
-        sheetContentColor = MaterialTheme.colorScheme.onSurface,
-        sheetTonalElevation = 0.dp,
-        sheetShadowElevation = 0.dp,
-        sheetShape = RectangleShape,
-        sheetDragHandle = null,
-        topBar = {
-            TransactionListTopAppBar(
-                filter = filter,
-                recordsSettings = recordsSettings,
-                onBackClick = onBackClick,
-                onUpdateRecordsSettings = onUpdateRecordsSettings
-            )
-        },
-        sheetContent = {
-            TransactionFilterSheet(
-                filter = filter,
-                accounts = accounts,
-                categories = categories,
-                savedFilters = savedFilters,
-                onSetDateRange = onSetDateRange,
-                onUpdateFilter = onUpdateFilter,
-                onToggleExpand = {
-                    scope.launch {
-                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                            scaffoldState.bottomSheetState.expand()
-                        } else {
-                            scaffoldState.bottomSheetState.partialExpand()
+    Box(modifier = Modifier.fillMaxSize()) {
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            modifier = Modifier.background(Color.Transparent),
+            sheetPeekHeight = 90.dp,
+            sheetContainerColor = Color.Transparent,
+            sheetContentColor = MaterialTheme.colorScheme.onSurface,
+            sheetTonalElevation = 0.dp,
+            sheetShadowElevation = 0.dp,
+            sheetShape = RectangleShape,
+            sheetDragHandle = null,
+            topBar = {
+                TransactionListTopAppBar(
+                    filter = filter,
+                    recordsSettings = recordsSettings,
+                    onBackClick = onBackClick,
+                    onUpdateRecordsSettings = onUpdateRecordsSettings
+                )
+            },
+            sheetContent = {
+                TransactionFilterSheet(
+                    filter = filter,
+                    accounts = accounts,
+                    categories = categories,
+                    savedFilters = savedFilters,
+                    onSetDateRange = onSetDateRange,
+                    onUpdateFilter = onUpdateFilter,
+                    onToggleExpand = {
+                        scope.launch {
+                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+                                scaffoldState.bottomSheetState.expand()
+                            } else {
+                                scaffoldState.bottomSheetState.partialExpand()
+                            }
                         }
-                    }
-                },
-                onClose = {
-                    scope.launch { scaffoldState.bottomSheetState.partialExpand() }
-                },
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+                    },
+                    onClose = {
+                        scope.launch { scaffoldState.bottomSheetState.partialExpand() }
+                    },
+                    isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
 //                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
 //                backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            if (transactionsWithBalance.isEmpty()) {
-                TransactionListEmptyState()
-            } else {
-                AeonTransactionList(
-                    transactions = transactionsWithBalance,
-                    accountMap = accountMap,
-                    categoryMap = categoryMap,
-                    onTransactionClick = { onEditTransactionClick(it.id) },
-                    contentPadding = PaddingValues(
-                        bottom = innerPadding.calculateBottomPadding() + 16.dp
-                    ),
-                    precision = decimalPrecision,
-                    useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                    showOpeningBalance = recordsSettings.showOpeningBalance,
-                    showClosingBalance = recordsSettings.showClosingBalance,
-                    baseCurrency = analyticsState.selectedCurrency,
-                    exchangeRates = analyticsState.exchangeRates,
-                    accountCurrencyMap = accountCurrencyMap,
-                    filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
             }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding())
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                if (transactionsWithBalance.isEmpty()) {
+                    TransactionListEmptyState()
+                } else {
+                    AeonTransactionList(
+                        transactions = transactionsWithBalance,
+                        accountMap = accountMap,
+                        categoryMap = categoryMap,
+                        onTransactionClick = { onEditTransactionClick(it.id) },
+                        contentPadding = PaddingValues(
+                            bottom = innerPadding.calculateBottomPadding() + 16.dp
+                        ),
+                        precision = decimalPrecision,
+                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                        showOpeningBalance = recordsSettings.showOpeningBalance,
+                        showClosingBalance = recordsSettings.showClosingBalance,
+                        baseCurrency = analyticsState.selectedCurrency,
+                        exchangeRates = analyticsState.exchangeRates,
+                        accountCurrencyMap = accountCurrencyMap,
+                        filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
+                    )
+                }
+            }
         }
+
+        AeonExpandableFab(
+            onAddClick = onAddTransactionClick,
+            templates = templates,
+            fabPaddingBottom = 100.dp
+        )
     }
 }
 
@@ -205,7 +216,7 @@ fun TransactionListContentPreview() {
                 analyticsState = AnalyticsUiState(),
                 filter = TransactionFilter(),
                 recordsSettings = TransactionSectionSettings(),
-                onAddTransactionClick = {},
+                onAddTransactionClick = { _, _ -> },
                 onEditTransactionClick = {},
                 onBackClick = {},
                 onAccountDetailClick = {},

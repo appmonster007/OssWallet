@@ -56,7 +56,9 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.dashboard.*
@@ -113,32 +115,7 @@ fun DashboardScreen(
     val dbTemplates by templateViewModel.templates.collectAsState()
     val starredTemplates by templateViewModel.starredTemplates.collectAsState()
     
-    val templates = remember(dbTemplates, starredTemplates) {
-        val displayTemplates = if (starredTemplates.isNotEmpty()) {
-            starredTemplates
-        } else if (dbTemplates.isNotEmpty()) {
-            dbTemplates.take(5)
-        } else {
-            emptyList()
-        }
-
-        if (displayTemplates.isEmpty()) {
-            listOf(
-                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
-                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
-                Triple("Rent Payment", Icons.Rounded.Home, 0),
-                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
-            )
-        } else {
-            displayTemplates.map {
-                Triple(it.name, when(it.transactionType) {
-                    1 -> Icons.Rounded.Payments
-                    2 -> Icons.Rounded.SwapHoriz
-                    else -> Icons.Rounded.ShoppingCart
-                }, it.transactionType)
-            }
-        }
-    }
+    val allTemplates by templateViewModel.templates.collectAsState()
 
     // We no longer need this LaunchedEffect because AnalyticsViewModel 
     // now observes settingsDataStore.currency directly in its init block.
@@ -254,167 +231,10 @@ fun DashboardScreen(
             }
         }
 
-        // Background dimming - outside the drawer/scaffold to cover everything
-        AnimatedVisibility(
-            visible = isFabExpanded,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.fillMaxSize().zIndex(1f)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { isFabExpanded = false }
-            )
-        }
-
-        // Expandable FAB Menu - Moved to root Box for better z-index control
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .zIndex(2f),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(bottom = 72.dp, end = 4.dp)
-            ) {
-                templates.forEach { (name, icon, type) ->
-                    AnimatedVisibility(
-                        visible = isFabExpanded,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(8.dp),
-                                shadowElevation = 4.dp,
-                                onClick = { 
-                                    isFabExpanded = false
-                                    onAddClick(type, name)
-                                }
-                            ) {
-                                Text(
-                                    "Template: $name",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-                            AeonFloatingActionButton(
-                                onClick = { 
-                                    isFabExpanded = false
-                                    onAddClick(type, name)
-                                },
-                                icon = icon,
-                                modifier = Modifier.size(40.dp),
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
-                }
-
-                // Transfer
-                AnimatedVisibility(
-                    visible = isFabExpanded,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 4.dp,
-                            onClick = { 
-                                isFabExpanded = false
-                                onAddClick(2, null)
-                            }
-                        ) {
-                            Text(
-                                "Transfer",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        AeonFloatingActionButton(
-                            onClick = { 
-                                isFabExpanded = false
-                                onAddClick(2, null)
-                            },
-                            modifier = Modifier.size(40.dp),
-                            icon = Icons.Default.SyncAlt,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-
-                // New Transaction
-                AnimatedVisibility(
-                    visible = isFabExpanded,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 4.dp,
-                            onClick = { 
-                                isFabExpanded = false
-                                onAddClick(0, null)
-                            }
-                        ) {
-                            Text(
-                                "New Transaction",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        AeonFloatingActionButton(
-                            onClick = { 
-                                isFabExpanded = false
-                                onAddClick(0, null)
-                            },
-                            modifier = Modifier.size(40.dp),
-                            icon = Icons.Default.Add,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-            }
-
-            val rotation by animateFloatAsState(
-                targetValue = if (isFabExpanded) 45f else 0f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-            )
-
-            AeonFloatingActionButton(
-                onClick = { isFabExpanded = !isFabExpanded },
-                modifier = Modifier
-                    .zIndex(3f)
-                    .graphicsLayer { rotationZ = rotation },
-                icon = Icons.Default.Add,
-                contentDescription = if (isFabExpanded) "Close" else "Add"
-            )
-        }
+        AeonExpandableFab(
+            onAddClick = onAddClick,
+            templates = allTemplates
+        )
     }
 }
 

@@ -112,7 +112,7 @@ fun FilterSheetContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Refine Transactions",
+                    "Filter Transactions",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 TextButton(

@@ -51,13 +51,21 @@ fun TemplatesScreen(
     }
 
     var isReorderMode by remember { mutableStateOf(false) }
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
                 navigationIcon = {
-                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else onBackClick) {
+                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { { navigate(onBackClick) } }) {
                         Icon(
                             if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = if (isReorderMode) "Cancel" else "Back"
@@ -79,7 +87,7 @@ fun TemplatesScreen(
         floatingActionButton = {
             if (!isReorderMode) {
                 AeonFloatingActionButton(
-                    onClick = { onAddTemplateClick(null) },
+                    onClick = { navigate { onAddTemplateClick(null) } },
                     icon = Icons.Rounded.Add,
                     contentDescription = "Add Template"
                 )
@@ -117,7 +125,7 @@ fun TemplatesScreen(
                 items(templates, key = { it.id }) { template ->
                     TemplateItem(
                         template = template,
-                        onEdit = { onAddTemplateClick(template.id) },
+                        onEdit = { navigate { onAddTemplateClick(template.id) } },
                         onDelete = { viewModel.deleteTemplate(template) },
                         onToggleStar = { viewModel.toggleStar(template) }
                     )

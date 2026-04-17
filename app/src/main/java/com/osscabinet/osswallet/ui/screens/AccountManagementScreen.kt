@@ -39,6 +39,14 @@ fun AccountManagementScreen(
     val accounts by viewModel.accounts.collectAsState()
     var editList by remember { mutableStateOf(emptyList<Account>()) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     LaunchedEffect(accounts) {
         if (editList.isEmpty() || editList.size != accounts.size || editList.map { it.id }.toSet() != accounts.map { it.id }.toSet()) {
             editList = accounts
@@ -105,7 +113,7 @@ fun AccountManagementScreen(
                     ) 
                 },
                 navigationIcon = {
-                    IconButton(onClick = if (isSelectionMode) { { isSelectionMode = false; selectedAccountIds = emptySet() } } else onBackClick) {
+                    IconButton(onClick = if (isSelectionMode) { { isSelectionMode = false; selectedAccountIds = emptySet() } } else { { navigate(onBackClick) } }) {
                         Icon(
                             if (isSelectionMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack, 
                             contentDescription = if (isSelectionMode) "Exit Selection" else "Back"
@@ -149,7 +157,7 @@ fun AccountManagementScreen(
                 }
             } else {
                 AeonFloatingActionButton(
-                    onClick = onAddAccountClick,
+                    onClick = { navigate(onAddAccountClick) },
                     icon = Icons.Rounded.Add,
                     contentDescription = "Add New Account"
                 )
@@ -211,7 +219,7 @@ fun AccountManagementScreen(
                     }
                 },
                 onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                onAccountClick = { onAccountClick(account.id) }
+                onAccountClick = { navigate { onAccountClick(account.id) } }
             )
         }
     }

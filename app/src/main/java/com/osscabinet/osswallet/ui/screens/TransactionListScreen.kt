@@ -47,6 +47,15 @@ fun TransactionListScreen(
     val savedFilters by viewModel.savedFilters.collectAsState()
     val allTemplates by templateViewModel.templates.collectAsState()
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     // Reset filters when entering or leaving the screen
     DisposableEffect(Unit) {
         onDispose {
@@ -67,10 +76,10 @@ fun TransactionListScreen(
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
         templates = allTemplates,
-        onAddTransactionClick = onAddTransactionClick,
-        onEditTransactionClick = onEditTransactionClick,
-        onBackClick = onBackClick,
-        onAccountDetailClick = onAccountDetailClick,
+        onAddTransactionClick = { type, template -> navigate { onAddTransactionClick(type, template) } },
+        onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
+        onBackClick = { navigate { onBackClick() } },
+        onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } }

@@ -29,12 +29,21 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate { onBackClick() } }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

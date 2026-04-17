@@ -35,12 +35,21 @@ fun BudgetsScreen(
     val baseCurrency by settingsViewModel.currency.collectAsState()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Budgets & Goals", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate { onBackClick() } }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -74,7 +83,7 @@ fun BudgetsScreen(
                 }
             } else {
                 items(budgets) { budget ->
-                    BudgetGoalCard(budget, baseCurrency, decimalPrecision, onClick = { onEditBudgetClick(budget.category) })
+                    BudgetGoalCard(budget, baseCurrency, decimalPrecision, onClick = { navigate { onEditBudgetClick(budget.category) } })
                 }
             }
 

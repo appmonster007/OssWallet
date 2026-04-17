@@ -46,12 +46,20 @@ fun LoansScreen(
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Debt & Credit", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

@@ -40,6 +40,14 @@ fun ExchangeRatesScreen(
     val scope = rememberCoroutineScope()
     val tabs = listOf("Rates", "Converter")
 
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigateBack = {
+        if (!navTriggered) {
+            navTriggered = true
+            onBackClick()
+        }
+    }
+
     if (uiState.pendingResponse != null) {
         AlertDialog(
             onDismissRequest = { viewModel.cancelSaveRates() },
@@ -115,7 +123,7 @@ fun ExchangeRatesScreen(
                 TopAppBar(
                     title = { Text("Exchange Rates") },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(onClick = navigateBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },

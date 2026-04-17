@@ -96,6 +96,14 @@ fun DashboardScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    var navTriggered by remember { mutableStateOf(false) }
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     val dashboardUiState by dashboardViewModel.uiState.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -136,17 +144,17 @@ fun DashboardScreen(
                     starredTemplates = starredTemplates,
                     selectedDestination = "dashboard",
                     onDashboardClick = { scope.launch { drawerState.close() } },
-                    onAccountsViewClick = onAccountsViewClick,
-                    onRecordsClick = onRecordsClick,
-                    onAnalyticsClick = onAnalyticsClick,
-                    onBudgetsClick = onBudgetsClick,
-                    onLoansClick = onLoansClick,
-                    onExchangeRatesClick = onExchangeRatesClick,
-                    onTemplatesClick = onTemplatesClick,
-                    onManageAccountsClick = onManageAccountsClick,
-                    onSettingsClick = onSettingsClick,
-                    onAccountClick = onAccountClick,
-                    onTemplateClick = { template -> onAddClick(template.transactionType, template.name) },
+                    onAccountsViewClick = { navigate(onAccountsViewClick) },
+                    onRecordsClick = { navigate(onRecordsClick) },
+                    onAnalyticsClick = { navigate(onAnalyticsClick) },
+                    onBudgetsClick = { navigate(onBudgetsClick) },
+                    onLoansClick = { navigate(onLoansClick) },
+                    onExchangeRatesClick = { navigate(onExchangeRatesClick) },
+                    onTemplatesClick = { navigate(onTemplatesClick) },
+                    onManageAccountsClick = { navigate(onManageAccountsClick) },
+                    onSettingsClick = { navigate(onSettingsClick) },
+                    onAccountClick = { id -> navigate { onAccountClick(id) } },
+                    onTemplateClick = { template -> navigate { onAddClick(template.transactionType, template.name) } },
                     onCloseDrawer = { scope.launch { drawerState.close() } }
                 )
             }
@@ -161,7 +169,7 @@ fun DashboardScreen(
                                 }
                             },
                             title = {
-                                Column {
+                                Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
                                     Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
                                     Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                                 }
@@ -211,11 +219,11 @@ fun DashboardScreen(
                                 currentTheme = currentTheme,
                                 gridColumns = state.gridColumns,
                                 decimalPrecision = state.decimalPrecision,
-                                onManageAccountsClick = onManageAccountsClick,
-                                onAccountsViewClick = onAccountsViewClick,
-                                onAccountClick = onAccountClick,
-                                onRecordsClick = onRecordsClick,
-                                onBudgetsClick = onBudgetsClick,
+                                onManageAccountsClick = { navigate(onManageAccountsClick) },
+                                onAccountsViewClick = { navigate(onAccountsViewClick) },
+                                onAccountClick = { id -> navigate { onAccountClick(id) } },
+                                onRecordsClick = { navigate(onRecordsClick) },
+                                onBudgetsClick = { navigate(onBudgetsClick) },
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
                                 dashboardViewModel = dashboardViewModel,
@@ -232,7 +240,7 @@ fun DashboardScreen(
         }
 
         AeonExpandableFab(
-            onAddClick = onAddClick,
+            onAddClick = { type, name -> navigate { onAddClick(type, name) } },
             templates = allTemplates
         )
     }

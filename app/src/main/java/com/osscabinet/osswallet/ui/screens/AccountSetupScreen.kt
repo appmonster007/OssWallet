@@ -49,6 +49,15 @@ fun AccountSetupScreen(
     var selectedIconName by remember { mutableStateOf("AccountBalance") }
     var accentColorHex by remember { mutableStateOf("#004D5F") }
 
+    var navTriggered by remember { mutableStateOf(false) }
+
+    val navigate: (() -> Unit) -> Unit = { action ->
+        if (!navTriggered) {
+            navTriggered = true
+            action()
+        }
+    }
+
     Scaffold(
         topBar = {
             val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
@@ -59,7 +68,7 @@ fun AccountSetupScreen(
                     Text("New Account", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -67,16 +76,18 @@ fun AccountSetupScreen(
                     AeonFormHeader(
                         title = "", // Not used in top bar actions directly but for consistency
                         onSaveClick = {
-                            viewModel.addAccount(
-                                name = accountName,
-                                balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                                currency = primaryCurrency,
-                                structureType = structureType,
-                                colorHex = accentColorHex,
-                                icon = selectedIconName,
-                                allowedCurrencies = allowedCurrencies.toList()
-                            )
-                            onAccountCreated()
+                            navigate {
+                                viewModel.addAccount(
+                                    name = accountName,
+                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                    currency = primaryCurrency,
+                                    structureType = structureType,
+                                    colorHex = accentColorHex,
+                                    icon = selectedIconName,
+                                    allowedCurrencies = allowedCurrencies.toList()
+                                )
+                                onAccountCreated()
+                            }
                         },
                         saveButtonEnabled = canCreate,
                         accentColorHex = accentColorHex,

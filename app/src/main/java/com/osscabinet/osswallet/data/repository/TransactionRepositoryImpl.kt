@@ -1,11 +1,14 @@
 package com.osscabinet.ossWallet.data.repository
 
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -17,6 +20,117 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions(profileId).map { entities ->
             entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
+        val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ?")
+        val args = mutableListOf<Any>(profileId)
+
+        // Date Range
+        if (filter.startDate != null) {
+            queryBuilder.append(" AND timestamp >= ?")
+            args.add(filter.startDate)
+        }
+        if (filter.endDate != null) {
+            queryBuilder.append(" AND timestamp <= ?")
+            args.add(filter.endDate)
+        }
+
+        // Account Filter
+        if (filter.accountIds.isNotEmpty()) {
+            val placeholders = filter.accountIds.joinToString(",") { "?" }
+            queryBuilder.append(" AND accountId IN ($placeholders)")
+            args.addAll(filter.accountIds)
+        }
+
+        // Category Filter
+        if (filter.categoryIds.isNotEmpty()) {
+            val placeholders = filter.categoryIds.joinToString(",") { "?" }
+            queryBuilder.append(" AND categoryId IN ($placeholders)")
+            args.addAll(filter.categoryIds)
+        }
+
+        // Type Filter
+        if (filter.isIncome != null) {
+            queryBuilder.append(" AND isIncome = ?")
+            args.add(if (filter.isIncome) 1 else 0)
+        }
+
+        // Amount Filter
+        if (filter.minAmount != null) {
+            queryBuilder.append(" AND amount >= ?")
+            args.add(filter.minAmount)
+        }
+        if (filter.maxAmount != null) {
+            queryBuilder.append(" AND amount <= ?")
+            args.add(filter.maxAmount)
+        }
+
+        // Payment Method Filter
+        if (filter.paymentMethods.isNotEmpty()) {
+            val placeholders = filter.paymentMethods.joinToString(",") { "?" }
+            queryBuilder.append(" AND paymentMethod IN ($placeholders)")
+            args.addAll(filter.paymentMethods)
+        }
+
+        // Warranty Filter
+        if (filter.hasWarranty == true) {
+            queryBuilder.append(" AND warrantyExpiration IS NOT NULL")
+        } else if (filter.hasWarranty == false) {
+            queryBuilder.append(" AND warrantyExpiration IS NULL")
+        }
+
+        if (filter.warrantyExpirationStart != null) {
+            queryBuilder.append(" AND warrantyExpiration >= ?")
+            args.add(filter.warrantyExpirationStart)
+        }
+        if (filter.warrantyExpirationEnd != null) {
+            queryBuilder.append(" AND warrantyExpiration <= ?")
+            args.add(filter.warrantyExpirationEnd)
+        }
+
+        // Text Search (Non-Regex)
+        if (!filter.queryNote.isNullOrBlank() && !filter.isNoteRegex) {
+            queryBuilder.append(" AND note LIKE ?")
+            args.add("%${filter.queryNote}%")
+        }
+        if (!filter.queryPayee.isNullOrBlank() && !filter.isPayeeRegex) {
+            queryBuilder.append(" AND payee LIKE ?")
+            args.add("%${filter.queryPayee}%")
+        }
+
+        queryBuilder.append(" ORDER BY timestamp DESC")
+
+        val sqliteQuery = SimpleSQLiteQuery(queryBuilder.toString(), args.toTypedArray())
+        
+        return transactionDao.getFilteredTransactions(sqliteQuery).map { entities ->
+            val domainTransactions = entities.map { it.toDomain() }
+            
+            // Secondary in-memory filtering for Regex
+            if (filter.isNoteRegex || filter.isPayeeRegex) {
+                domainTransactions.filter { transaction ->
+                    val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
+                        try {
+                            Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(transaction.note)
+                        } catch (e: Exception) {
+                            false
+                        }
+                    } else true
+
+                    val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
+                        try {
+                            Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(transaction.payee)
+                        } catch (e: Exception) {
+                            false
+                        }
+                    } else true
+
+                    matchesNote && matchesPayee
+                }
+            } else {
+                domainTransactions
+            }
         }
     }
 

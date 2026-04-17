@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,13 +11,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,93 +76,57 @@ fun AeonTransactionList(
             val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
 
             // Aggregation using CurrencyUtils (CurrencyUtilkit)
-            val incomeTotals = weekTransactions.filter { it.transaction.isIncome }
+            val incomeByCurrency = weekTransactions.filter { it.transaction.isIncome }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekIncome = calculateTotalInCurrency(incomeTotals, baseCurrency, exchangeRates, precision)
+            val weekIncomeBase = calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
 
-            val expenseTotals = weekTransactions.filter { !it.transaction.isIncome }
+            val expenseByCurrency = weekTransactions.filter { !it.transaction.isIncome }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekExpense = calculateTotalInCurrency(expenseTotals, baseCurrency, exchangeRates, precision)
+            val weekExpenseBase = calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
 
-            val weekNet = weekIncome.subtract(weekExpense)
+            val weekNetBase = weekIncomeBase.subtract(weekExpenseBase)
+
+            val weekEndTimestamp = weekEnd.time
+            // Calculate cumulative closing balances for all accounts in the filtered list up to this week's end
+            val finalClosingBalancesByCurrency = transactions
+                .filter { it.transaction.timestamp <= weekEndTimestamp }
+                .groupBy { it.transaction.accountId }
+                .mapValues { (_, accountTxs) -> accountTxs.maxBy { it.transaction.timestamp } }
+                .values
+                .groupBy { it.transaction.currency }
+                .mapValues { (_, latestTxs) -> 
+                    latestTxs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } 
+                }
             
-            // Determine if we should show closing balance: 
-            // 1. If we are filtering by a specific account
-            // 2. Or if all transactions in this week belong to the same account
-            val uniqueAccountIds = weekTransactions.map { it.transaction.accountId }.distinct()
-            val showBalanceColumn = filterAccountId != null || uniqueAccountIds.size == 1
-            
-            val closingBalance = if (showBalanceColumn) {
-                val targetAccId = filterAccountId ?: uniqueAccountIds.firstOrNull()
-                weekTransactions.filter { it.transaction.accountId == targetAccId }
-                    .maxByOrNull { it.transaction.timestamp }?.let { lastItem ->
-                        val accountCurrency = accountCurrencyMap[lastItem.transaction.accountId] ?: baseCurrency
-                        convertAmount(lastItem.balanceAfter, accountCurrency, baseCurrency, exchangeRates, precision)
-                    } ?: BigDecimal.ZERO
-            } else {
-                BigDecimal.ZERO
-            }
+            val totalClosingBalanceBase = calculateTotalInCurrency(
+                finalClosingBalancesByCurrency, 
+                baseCurrency, 
+                exchangeRates, 
+                precision
+            )
+
+            // Combined currencies involved in this week (only those with active transactions)
+            val allWeekCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys)
+                .distinct()
+                .sorted()
 
             stickyHeader {
-                val positiveColor = Color(0xFF4CAF50)
-                val negativeColor = MaterialTheme.colorScheme.error
-                val netColor = if (weekNet >= BigDecimal.ZERO) positiveColor else negativeColor
-                val surfaceColor = MaterialTheme.colorScheme.surface
-                val outlineColor = MaterialTheme.colorScheme.outline
-                val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = surfaceColor
-                ) {
-                    Column {
-                        HorizontalDivider(
-                            thickness = 0.5.dp,
-                            color = dividerColor
-                        )
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            Text(
-                                text = "WEEK $week ($weekRange)".uppercase(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = outlineColor,
-                                    letterSpacing = 1.sp
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Column {
-                                        Text("INCOME", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
-                                        Text(formatCurrencyRight(weekIncome, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50)))
-                                    }
-                                    Column {
-                                        Text("EXPENSE", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
-                                        Text(formatCurrencyRight(weekExpense, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = negativeColor))
-                                    }
-                                    Column {
-                                        Text("TOTAL", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
-                                        Text(
-                                            (if (weekNet > BigDecimal.ZERO) "+ " else "") + formatCurrencyRight(weekNet, baseCurrency, precision),
-                                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = netColor)
-                                        )
-                                    }
-                                }
-                                if (showBalanceColumn) {
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("Balance", style = MaterialTheme.typography.labelSmall, color = outlineColor.copy(alpha = 0.6f))
-                                        Text(formatCurrencyRight(closingBalance, baseCurrency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                AeonWeeklyHeader(
+                    week = week,
+                    weekRange = weekRange,
+                    incomeByCurrency = incomeByCurrency,
+                    expenseByCurrency = expenseByCurrency,
+                    closingBalancesByCurrency = finalClosingBalancesByCurrency,
+                    allWeekCurrencies = allWeekCurrencies,
+                    weekIncomeBase = weekIncomeBase,
+                    weekExpenseBase = weekExpenseBase,
+                    weekNetBase = weekNetBase,
+                    totalClosingBalanceBase = totalClosingBalanceBase,
+                    baseCurrency = baseCurrency,
+                    precision = precision
+                )
             }
 
             items(weekTransactions, key = { it.transaction.id }) { item ->
@@ -168,12 +134,6 @@ fun AeonTransactionList(
                 val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
 
-                val accountCurrency = accountCurrencyMap[item.transaction.accountId] ?: baseCurrency
-                val isFilteredToAccount = filterAccountId != null
-                
-                // Determine the display currency for balances
-                val balanceCurrency = if (isFilteredToAccount) accountCurrency else baseCurrency
-                
                 val amountInBase = convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
 
                 AeonTransactionItem(
@@ -183,8 +143,8 @@ fun AeonTransactionList(
                     convertedAmount = if (item.transaction.currency != baseCurrency) {
                         formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
                     } else null,
-                    balanceBefore = formatCurrencyRight(item.balanceBefore, balanceCurrency, precision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, balanceCurrency, precision),
+                    balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
+                    balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
                     type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                     note = item.transaction.note,
@@ -202,6 +162,220 @@ fun AeonTransactionList(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
+        }
+    }
+}
+
+@Composable
+fun AeonWeeklyHeader(
+    week: Int,
+    weekRange: String,
+    incomeByCurrency: Map<String, BigDecimal>,
+    expenseByCurrency: Map<String, BigDecimal>,
+    closingBalancesByCurrency: Map<String, BigDecimal>,
+    allWeekCurrencies: List<String>,
+    weekIncomeBase: BigDecimal,
+    weekExpenseBase: BigDecimal,
+    weekNetBase: BigDecimal,
+    totalClosingBalanceBase: BigDecimal,
+    baseCurrency: String,
+    precision: Int
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val positiveColor = Color(0xFF4CAF50)
+    val negativeColor = MaterialTheme.colorScheme.error
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val outlineColor = MaterialTheme.colorScheme.outline
+    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = surfaceColor
+    ) {
+        Column {
+            HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                // Row 1: Week Info
+                Text(
+                    text = "WEEK $week ($weekRange)".uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = outlineColor,
+                        letterSpacing = 1.sp
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Row 2: Headers
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.width(44.dp))
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("INCOME", "EXPENSE", "NET").forEach { label ->
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = outlineColor.copy(alpha = 0.5f),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    Text(
+                        "BALANCE",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = outlineColor.copy(alpha = 0.5f),
+                        modifier = Modifier.width(80.dp),
+                        textAlign = TextAlign.End
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Row 3: Aggregate (Clickable)
+                val canExpand = allWeekCurrencies.isNotEmpty()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (canExpand) Modifier.clickable { isExpanded = !isExpanded } else Modifier)
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.width(44.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "TOTAL",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 9.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        if (canExpand) {
+                            Icon(
+                                if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            formatCurrencyRight(weekIncomeBase, baseCurrency, precision),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = positiveColor,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            formatCurrencyRight(weekExpenseBase, baseCurrency, precision),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = negativeColor,
+                            modifier = Modifier.weight(1f)
+                        )
+                        val netSign = if (weekNetBase >= BigDecimal.ZERO) "+ " else "- "
+                        Text(
+                            netSign + formatCurrencyRight(weekNetBase.abs(), baseCurrency, precision),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = if (weekNetBase >= BigDecimal.ZERO) positiveColor else negativeColor,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Text(
+                        formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.width(80.dp),
+                        textAlign = TextAlign.End,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // Row 4+: Breakdown (Expandable)
+                AnimatedVisibility(visible = isExpanded) {
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        allWeekCurrencies.forEach { curr ->
+                            val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
+                            val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
+                            val net = inc.subtract(exp)
+                            val bal = closingBalancesByCurrency[curr]
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 1.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = curr,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.width(44.dp),
+                                    color = outlineColor.copy(alpha = 0.8f)
+                                )
+
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        formatCurrencyRight(inc, curr, precision),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        color = positiveColor.copy(alpha = 0.7f),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        formatCurrencyRight(exp, curr, precision),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        color = negativeColor.copy(alpha = 0.7f),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
+                                    Text(
+                                        netSign + formatCurrencyRight(net.abs(), curr, precision),
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.sp
+                                        ),
+                                        color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+
+                                Text(
+                                    if (bal != null) formatCurrencyRight(bal, curr, precision) else "0.00 $curr",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    modifier = Modifier.width(80.dp),
+                                    textAlign = TextAlign.End,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

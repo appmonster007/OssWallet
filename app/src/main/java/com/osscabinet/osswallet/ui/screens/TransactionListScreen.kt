@@ -4,14 +4,17 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,7 +29,10 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -49,8 +55,46 @@ fun TransactionListScreen(
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsState()
     val analyticsState by analyticsViewModel.uiState.collectAsState()
-    val selectedAccountId by viewModel.selectedAccountId.collectAsState()
+    val filter by viewModel.filter.collectAsState()
 
+    TransactionListContent(
+        transactionsWithBalance = transactionsWithBalance,
+        accounts = accounts,
+        accountMap = accountMap,
+        accountCurrencyMap = accountCurrencyMap,
+        categories = categories,
+        categoryMap = categoryMap,
+        decimalPrecision = decimalPrecision,
+        analyticsState = analyticsState,
+        filter = filter,
+        onAddTransactionClick = onAddTransactionClick,
+        onEditTransactionClick = onEditTransactionClick,
+        onBackClick = onBackClick,
+        onAccountDetailClick = onAccountDetailClick,
+        onUpdateFilter = { viewModel.updateFilter(it) },
+        onSetDateRange = { start, end -> viewModel.setDateRangeFilter(start, end) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun TransactionListContent(
+    transactionsWithBalance: List<TransactionWithBalance>,
+    accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+    accountMap: Map<String, String>,
+    accountCurrencyMap: Map<String, String>,
+    categories: List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
+    categoryMap: Map<Long, com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
+    decimalPrecision: Int,
+    analyticsState: AnalyticsUiState,
+    filter: TransactionFilter,
+    onAddTransactionClick: () -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
+    onBackClick: () -> Unit,
+    onAccountDetailClick: (String) -> Unit,
+    onUpdateFilter: (TransactionFilter) -> Unit,
+    onSetDateRange: (Long?, Long?) -> Unit
+) {
     var showFilterSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -59,7 +103,7 @@ fun TransactionListScreen(
                 title = { 
                     Column {
                         Text("Records", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Showing all transactions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        Text(if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                     }
                 },
                 navigationIcon = {
@@ -72,13 +116,11 @@ fun TransactionListScreen(
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                     IconButton(onClick = { showFilterSheet = true }) { 
+                        val isFiltered = filter != TransactionFilter()
                         Icon(
                             Icons.Default.FilterList, 
                             contentDescription = "Filter",
-                            tint = if (viewModel.selectedCategory.collectAsState().value != null || 
-                                      viewModel.selectedAccountId.collectAsState().value != null ||
-                                      viewModel.dateRange.collectAsState().value.first != null) 
-                                      MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isFiltered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         ) 
                     }
                     IconButton(onClick = { /* More options */ }) {
@@ -87,17 +129,8 @@ fun TransactionListScreen(
                 }
             )
         },
-        floatingActionButton = {
-            AeonFloatingActionButton(
-                onClick = onAddTransactionClick,
-                icon = Icons.Rounded.Add,
-                containerColor = Color(0xFF2E7D32),
-                contentColor = Color.White,
-                contentDescription = "Add"
-            )
-        },
+
         bottomBar = {
-            // Period selector seen in screenshot
             Surface(
                 tonalElevation = 3.dp,
                 shadowElevation = 8.dp,
@@ -111,14 +144,43 @@ fun TransactionListScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* Previous period */ }) {
+                    IconButton(onClick = {
+                        val calendar = Calendar.getInstance()
+                        filter.startDate?.let {
+                            calendar.timeInMillis = it
+                            calendar.add(Calendar.MONTH, -1)
+                        } ?: run {
+                            calendar.add(Calendar.MONTH, -1)
+                            calendar.set(Calendar.DAY_OF_MONTH, 1)
+                        }
+                        calendar.set(Calendar.HOUR_OF_DAY, 0)
+                        calendar.set(Calendar.MINUTE, 0)
+                        calendar.set(Calendar.SECOND, 0)
+                        calendar.set(Calendar.MILLISECOND, 0)
+                        val start = calendar.timeInMillis
+                        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+                        calendar.set(Calendar.HOUR_OF_DAY, 23)
+                        calendar.set(Calendar.MINUTE, 59)
+                        calendar.set(Calendar.SECOND, 59)
+                        val end = calendar.timeInMillis
+                        onSetDateRange(start, end)
+                    }) {
                         Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
                     }
                     
-                    val dateRange by viewModel.dateRange.collectAsState()
-                    val periodText = if (dateRange.first != null && dateRange.second != null) {
-                        val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-                        "${dateFormat.format(Date(dateRange.first!!))} - ${dateFormat.format(Date(dateRange.second!!))}"
+                    val periodText = if (filter.startDate != null && filter.endDate != null) {
+                        val startCal = Calendar.getInstance().apply { timeInMillis = filter.startDate }
+                        val endCal = Calendar.getInstance().apply { timeInMillis = filter.endDate }
+                        
+                        if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) && 
+                            startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
+                            startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
+                            endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)) {
+                            SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate)).uppercase()
+                        } else {
+                            val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                            "${dateFormat.format(Date(filter.startDate))} - ${dateFormat.format(Date(filter.endDate))}"
+                        }
                     } else {
                         SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date()).uppercase()
                     }
@@ -129,7 +191,27 @@ fun TransactionListScreen(
                         fontWeight = FontWeight.Bold
                     )
                     
-                    IconButton(onClick = { /* Next period */ }) {
+                    IconButton(onClick = {
+                        val calendar = Calendar.getInstance()
+                        filter.startDate?.let {
+                            calendar.timeInMillis = it
+                            calendar.add(Calendar.MONTH, 1)
+                        } ?: run {
+                            calendar.add(Calendar.MONTH, 1)
+                            calendar.set(Calendar.DAY_OF_MONTH, 1)
+                        }
+                        calendar.set(Calendar.HOUR_OF_DAY, 0)
+                        calendar.set(Calendar.MINUTE, 0)
+                        calendar.set(Calendar.SECOND, 0)
+                        calendar.set(Calendar.MILLISECOND, 0)
+                        val start = calendar.timeInMillis
+                        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+                        calendar.set(Calendar.HOUR_OF_DAY, 23)
+                        calendar.set(Calendar.MINUTE, 59)
+                        calendar.set(Calendar.SECOND, 59)
+                        val end = calendar.timeInMillis
+                        onSetDateRange(start, end)
+                    }) {
                         Icon(Icons.Default.ChevronRight, contentDescription = "Next")
                     }
                 }
@@ -138,9 +220,11 @@ fun TransactionListScreen(
     ) { innerPadding ->
         if (showFilterSheet) {
             FilterBottomSheet(
-                viewModel = viewModel,
-                accountViewModel = accountViewModel,
-                onDismiss = { showFilterSheet = false }
+                accounts = accounts,
+                allCategories = categories,
+                currentFilter = filter,
+                onDismiss = { showFilterSheet = false },
+                onApplyFilter = onUpdateFilter
             )
         }
 
@@ -168,25 +252,24 @@ fun TransactionListScreen(
                     baseCurrency = analyticsState.selectedCurrency,
                     exchangeRates = analyticsState.exchangeRates,
                     accountCurrencyMap = accountCurrencyMap,
-                    filterAccountId = selectedAccountId
+                    filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterBottomSheet(
-    viewModel: TransactionViewModel,
-    accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
-    onDismiss: () -> Unit
+    accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+    allCategories: List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>,
+    currentFilter: TransactionFilter,
+    onDismiss: () -> Unit,
+    onApplyFilter: (TransactionFilter) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val accounts by accountViewModel.accounts.collectAsState()
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
-    val selectedAccountId by viewModel.selectedAccountId.collectAsState()
-    val dateRange by viewModel.dateRange.collectAsState()
+    var localFilter by remember { mutableStateOf(currentFilter) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -198,85 +281,269 @@ fun FilterBottomSheet(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxHeight(0.9f)
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 48.dp),
+                .padding(bottom = 24.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text("Filter Records", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Filter Records", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                TextButton(onClick = { localFilter = TransactionFilter() }) {
+                    Text("Clear All")
+                }
+            }
+
+            // Text Search: Note & Payee
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("SEARCH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                
+                OutlinedTextField(
+                    value = localFilter.queryNote ?: "",
+                    onValueChange = { localFilter = localFilter.copy(queryNote = it.ifBlank { null }) },
+                    label = { Text("Note") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                            Text("Regex", style = MaterialTheme.typography.labelSmall)
+                            Checkbox(
+                                checked = localFilter.isNoteRegex,
+                                onCheckedChange = { localFilter = localFilter.copy(isNoteRegex = it) }
+                            )
+                        }
+                    }
+                )
+
+                OutlinedTextField(
+                    value = localFilter.queryPayee ?: "",
+                    onValueChange = { localFilter = localFilter.copy(queryPayee = it.ifBlank { null }) },
+                    label = { Text("Payee") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                            Text("Regex", style = MaterialTheme.typography.labelSmall)
+                            Checkbox(
+                                checked = localFilter.isPayeeRegex,
+                                onCheckedChange = { localFilter = localFilter.copy(isPayeeRegex = it) }
+                            )
+                        }
+                    }
+                )
+            }
+
+            // Type (Income/Expense)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("TRANSACTION TYPE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = localFilter.isIncome == null,
+                        onClick = { localFilter = localFilter.copy(isIncome = null) },
+                        label = { Text("All") },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.isIncome == true,
+                        onClick = { localFilter = localFilter.copy(isIncome = true) },
+                        label = { Text("Income") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(16.dp)) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.isIncome == false,
+                        onClick = { localFilter = localFilter.copy(isIncome = false) },
+                        label = { Text("Expense") },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(16.dp)) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
 
             // Date Range
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("DATE RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FilterChip(
-                        selected = dateRange.first == null,
-                        onClick = { viewModel.setDateRangeFilter(null, null) },
-                        label = { Text("All Time") }
-                    )
-                    FilterChip(
-                        selected = dateRange.first != null,
-                        onClick = { 
-                            val now = System.currentTimeMillis()
-                            viewModel.setDateRangeFilter(now - 30 * 24 * 60 * 60 * 1000L, now)
-                        },
-                        label = { Text("Last 30 Days") }
-                    )
-                }
-            }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    var showStartDatePicker by remember { mutableStateOf(false) }
+                    var showEndDatePicker by remember { mutableStateOf(false) }
 
-            // Category Grid
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("CATEGORY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                val categories = listOf("Food", "Shopping", "Transport", "Salary", "Entertainment", "Health")
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    categories.forEach { category ->
-                        FilterChip(
-                            selected = selectedCategory == category,
-                            onClick = { viewModel.setCategoryFilter(if (selectedCategory == category) null else category) },
-                            label = { Text(category) },
-                            leadingIcon = {
-                                val icon = when(category) {
-                                    "Food" -> Icons.Default.Restaurant
-                                    "Shopping" -> Icons.Default.ShoppingBag
-                                    "Transport" -> Icons.Default.DirectionsCar
-                                    "Salary" -> Icons.Default.Payments
-                                    else -> Icons.Default.Category
-                                }
-                                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                            }
+                    OutlinedButton(
+                        onClick = { showStartDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(localFilter.startDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "Start Date")
+                    }
+                    Text("to", style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = { showEndDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(localFilter.endDate?.let { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(it)) } ?: "End Date")
+                    }
+
+                    if (showStartDatePicker) {
+                        AeonDateTimePicker(
+                            initialDateTime = localFilter.startDate ?: System.currentTimeMillis(),
+                            onDateTimeSelected = { localFilter = localFilter.copy(startDate = it) },
+                            onDismiss = { showStartDatePicker = false }
+                        )
+                    }
+                    if (showEndDatePicker) {
+                        AeonDateTimePicker(
+                            initialDateTime = localFilter.endDate ?: System.currentTimeMillis(),
+                            onDateTimeSelected = { localFilter = localFilter.copy(endDate = it) },
+                            onDismiss = { showEndDatePicker = false }
                         )
                     }
                 }
             }
 
-            // Account Selection
+            // Amount Range
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                androidx.compose.foundation.lazy.LazyRow(
+                Text("AMOUNT RANGE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = localFilter.minAmount?.toString() ?: "",
+                        onValueChange = { localFilter = localFilter.copy(minAmount = it.toBigDecimalOrNull()) },
+                        label = { Text("Min") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+                    )
+                    OutlinedTextField(
+                        value = localFilter.maxAmount?.toString() ?: "",
+                        onValueChange = { localFilter = localFilter.copy(maxAmount = it.toBigDecimalOrNull()) },
+                        label = { Text("Max") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal)
+                    )
+                }
+            }
+
+            // Categories (Multi-select)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(accounts) { account ->
+                    allCategories.forEach { category ->
                         FilterChip(
-                            selected = selectedAccountId == account.id,
-                            onClick = { viewModel.setAccountFilter(if (selectedAccountId == account.id) null else account.id) },
-                            label = { Text(account.name) }
+                            selected = category.id in localFilter.categoryIds,
+                            onClick = {
+                                val current = localFilter.categoryIds.toMutableList()
+                                if (category.id in current) current.remove(category.id) else current.add(category.id)
+                                localFilter = localFilter.copy(categoryIds = current)
+                            },
+                            label = { Text(category.name) },
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onDismiss,
+            // Accounts (Multi-select)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    accounts.forEach { account ->
+                        FilterChip(
+                            selected = account.id in localFilter.accountIds,
+                            onClick = {
+                                val current = localFilter.accountIds.toMutableList()
+                                if (account.id in current) current.remove(account.id) else current.add(account.id)
+                                localFilter = localFilter.copy(accountIds = current)
+                            },
+                            label = { Text(account.name) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+
+            // Payment Methods (Multi-select)
+            val availablePaymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card", "Mobile Payment", "Others")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("PAYMENT METHODS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    availablePaymentMethods.forEach { method ->
+                        FilterChip(
+                            selected = method in localFilter.paymentMethods,
+                            onClick = {
+                                val current = localFilter.paymentMethods.toMutableList()
+                                if (method in current) current.remove(method) else current.add(method)
+                                localFilter = localFilter.copy(paymentMethods = current)
+                            },
+                            label = { Text(method) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+
+            // Warranty Filter
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("WARRANTY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = localFilter.hasWarranty == null,
+                        onClick = { localFilter = localFilter.copy(hasWarranty = null) },
+                        label = { Text("Any") },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.hasWarranty == true,
+                        onClick = { localFilter = localFilter.copy(hasWarranty = true) },
+                        label = { Text("Has Warranty") },
+                        leadingIcon = { Icon(Icons.Default.Shield, null, Modifier.size(16.dp)) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilterChip(
+                        selected = localFilter.hasWarranty == false,
+                        onClick = { localFilter = localFilter.copy(hasWarranty = false) },
+                        label = { Text("No Warranty") },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
+            // Actions
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("Show Results")
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Cancel")
+                }
+                Button(
+                    onClick = {
+                        onApplyFilter(localFilter)
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Apply Filter")
+                }
             }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
-

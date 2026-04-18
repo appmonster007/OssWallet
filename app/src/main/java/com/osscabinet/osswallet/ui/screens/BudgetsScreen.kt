@@ -36,6 +36,11 @@ fun BudgetsScreen(
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
 
     var navTriggered by remember { mutableStateOf(false) }
+    
+    // Reset navTriggered when returning to this screen
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        navTriggered = false
+    }
 
     val navigate: (() -> Unit) -> Unit = { action ->
         if (!navTriggered) {

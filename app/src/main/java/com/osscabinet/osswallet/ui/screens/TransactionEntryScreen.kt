@@ -70,6 +70,12 @@ fun TransactionEntryScreen(
     val allTags by tagViewModel.tags.collectAsState()
 
     var navTriggered by remember { mutableStateOf(false) }
+    
+    // Reset navTriggered when returning to this screen
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        navTriggered = false
+    }
+
     val navigateBack = {
         if (!navTriggered) {
             navTriggered = true

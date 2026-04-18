@@ -135,17 +135,18 @@ fun OssWalletNavGraph(
 
     val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
 
-    // Keep splash screen on until we know if onboarding is needed
-    // AND if not onboarding, until Dashboard is loaded
-    splashScreen?.setKeepOnScreenCondition {
-        when (isOnboardingCompleted) {
-            null -> true
-            false -> false 
-            true -> dashboardViewModel.uiState.value is DashboardUiState.Loading
+    // Safe popBackStack wrapper
+    val safePopBackStack: () -> Unit = {
+        if (navController.previousBackStackEntry != null) {
+            navController.popBackStack()
         }
     }
 
     if (isOnboardingCompleted == null) {
+        // Show a loading screen or keep splash screen instead of returning nothing
+        Box(modifier = androidx.compose.ui.Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            CircularProgressIndicator()
+        }
         return
     }
 
@@ -224,7 +225,7 @@ fun OssWalletNavGraph(
         composable(Screen.ExchangeRates.route) {
             ExchangeRatesScreen(
                 viewModel = currencyViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -236,14 +237,14 @@ fun OssWalletNavGraph(
                 onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
         composable(Screen.ManageFilters.route) {
             FiltersSettingsScreen(
                 viewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
                 onAddFilterClick = { navController.navigate(Screen.EditFilter.route) },
                 onEditFilterClick = { filter -> 
                     navController.navigate(Screen.EditFilter.createRoute(filter.id))
@@ -273,23 +274,23 @@ fun OssWalletNavGraph(
                 allCategories = allCategories,
                 onSaveFilter = { 
                     settingsViewModel.saveFilter(it)
-                    navController.popBackStack()
+                    safePopBackStack()
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
         composable(Screen.ManageLabels.route) {
             ManageLabelsScreen(
                 viewModel = tagViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
         composable(Screen.ManageCategories.route) {
             CategoryManagementScreen(
                 viewModel = transactionViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -300,7 +301,7 @@ fun OssWalletNavGraph(
                 onAddTemplateClick = { templateId -> 
                     navController.navigate(Screen.AddTemplate.createRoute(templateId))
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -321,7 +322,7 @@ fun OssWalletNavGraph(
                 transactionViewModel = transactionViewModel,
                 tagViewModel = tagViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -329,7 +330,7 @@ fun OssWalletNavGraph(
             LoansScreen(
                 viewModel = loanViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -337,7 +338,7 @@ fun OssWalletNavGraph(
             BudgetsScreen(
                 viewModel = budgetViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
                 onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) }
             )
         }
@@ -348,7 +349,7 @@ fun OssWalletNavGraph(
                 category = category,
                 viewModel = budgetViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -362,7 +363,7 @@ fun OssWalletNavGraph(
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
                 },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
-                onBackClick = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
                 onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) }
             )
         }
@@ -399,7 +400,7 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 tagViewModel = tagViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -413,7 +414,7 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 tagViewModel = tagViewModel,
                 settingsViewModel = settingsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
@@ -439,7 +440,7 @@ fun OssWalletNavGraph(
                 analyticsViewModel = analyticsViewModel,
                 accountDetailViewModel = accountDetailViewModel,
                 templateViewModel = templateViewModel,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                 onAddTransactionClick = { accId, type, name -> 
@@ -454,21 +455,21 @@ fun OssWalletNavGraph(
                 accountId = accountId,
                 viewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
         composable(Screen.AccountSetup.route) {
             AccountSetupScreen(
-                onBackClick = { navController.popBackStack() },
-                onAccountCreated = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
+                onAccountCreated = safePopBackStack,
                 viewModel = accountViewModel
             )
         }
 
         composable(Screen.AccountManagement.route) {
             AccountManagementScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = safePopBackStack,
                 onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
                 onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                 viewModel = accountViewModel
@@ -478,14 +479,14 @@ fun OssWalletNavGraph(
         composable(Screen.Analytics.route) {
             AnalyticsScreen(
                 viewModel = analyticsViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
 
         composable(Screen.SharedWallet.route) {
             SharedWalletScreen(
                 viewModel = sharedWalletViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = safePopBackStack
             )
         }
     }

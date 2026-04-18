@@ -75,4 +75,11 @@ class AppContainer(private val context: Context) {
     val upsertBudgetUseCase get() = UpsertBudgetUseCase(budgetRepository)
     
     val getExchangeRatesUseCase get() = GetExchangeRatesUseCase(currencyRepository)
+
+    val calculateNetWorthUseCase get() = CalculateNetWorthUseCase()
+    val getCurrencyAggregationUseCase get() = GetCurrencyAggregationUseCase()
+    val getAccountSummariesUseCase get() = GetAccountSummariesUseCase()
+    val getTotalBalancesUseCase get() = GetTotalBalancesUseCase()
+    val getRecentTransactionsUseCase get() = GetRecentTransactionsUseCase()
+    val calculateCashFlowUseCase get() = CalculateCashFlowUseCase()
 }

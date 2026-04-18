@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -43,9 +44,8 @@ data class CashFlowSettings(
 
 @Composable
 fun AeonCashFlowSummary(
-    transactions: List<Transaction>,
+    cashFlowResult: CashFlowResult?,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -70,39 +70,8 @@ fun AeonCashFlowSummary(
         }
     }
 
-    val allSupportedCurrencies = remember(transactions) {
-        transactions.map { it.currency }.distinct().sorted()
-    }
-
-    val flowData by remember(
-        allSupportedCurrencies,
-        transactions,
-        exchangeRates,
-        baseCurrency,
-        precision
-    ) {
-        derivedStateOf {
-            allSupportedCurrencies.sorted().mapNotNull { curr ->
-                val txsForCurr = transactions.filter { it.currency == curr }
-                val income = txsForCurr.filter { it.isIncome }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
-                val expense = txsForCurr.filter { !it.isIncome }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
-
-                if (income.signum() == 0 && expense.signum() == 0) null
-                else {
-                    val incomeInBase = convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
-                    val expenseInBase = convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
-                    Triple(curr, Pair(income, incomeInBase), Pair(expense, expenseInBase))
-                }
-            }
-        }
-    }
-
-    val totalIncomeInBase =
-        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.second.second) }.setScale(precision, RoundingMode.HALF_UP)
-    val totalExpenseInBase =
-        flowData.fold(BigDecimal.ZERO) { acc, data -> acc.add(data.third.second) }.setScale(precision, RoundingMode.HALF_UP)
+    val totalIncomeInBase = cashFlowResult?.totalIncomeInBase ?: BigDecimal.ZERO
+    val totalExpenseInBase = cashFlowResult?.totalExpensesInBase ?: BigDecimal.ZERO
 
     Card(
         modifier = modifier,
@@ -158,11 +127,11 @@ fun AeonCashFlowSummary(
                     modifier = Modifier.weight(1f)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, income, _) ->
+                        cashFlowResult?.breakdown?.forEach { item ->
                             AeonFlowBreakdownItem(
-                                curr = curr,
-                                amount = income.first,
-                                inBase = income.second,
+                                curr = item.currency,
+                                amount = item.income,
+                                inBase = item.incomeInBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision,
                                 showBaseConversion = showBaseConversion
@@ -181,11 +150,11 @@ fun AeonCashFlowSummary(
                     modifier = Modifier.weight(1f)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        flowData.forEach { (curr, _, expense) ->
+                        cashFlowResult?.breakdown?.forEach { item ->
                             AeonFlowBreakdownItem(
-                                curr = curr,
-                                amount = expense.first,
-                                inBase = expense.second,
+                                curr = item.currency,
+                                amount = item.expense,
+                                inBase = item.expenseInBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision,
                                 showBaseConversion = showBaseConversion
@@ -284,9 +253,8 @@ fun AeonCashFlowSummaryPreview() {
     OssWalletTheme {
         Surface {
             AeonCashFlowSummary(
-                transactions = sampleTransactions,
+                cashFlowResult = null,
                 baseCurrency = "USD",
-                exchangeRates = emptyMap(),
                 currentTheme = "Light",
                 modifier = Modifier.padding(16.dp)
             )

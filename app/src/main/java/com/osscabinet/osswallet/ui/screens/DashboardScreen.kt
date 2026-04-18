@@ -44,7 +44,6 @@ import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
-import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -324,7 +323,6 @@ fun DashboardContent(
                             CurrencyAggregationSection(
                                 currencyTotals = state.currencyTotals,
                                 baseCurrency = state.baseCurrency,
-                                exchangeRates = state.exchangeRates,
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,
                                 precision = decimalPrecision,
@@ -337,26 +335,9 @@ fun DashboardContent(
                             )
                         }
                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {
-                            val cashFlowTransactions = remember(state.allTransactions, state.cashFlowTimelineRange) {
-                                when (val range = state.cashFlowTimelineRange) {
-                                    is TimelineRange.AllTime -> state.allTransactions
-                                    is TimelineRange.ThisPeriod -> {
-                                        val (start, end) = FilterUtils.getRangeForThis(range.period)
-                                        state.allTransactions.filter { it.timestamp in start..end }
-                                    }
-                                    is TimelineRange.LastPeriod -> {
-                                        val (start, end) = FilterUtils.getRangeForLast(range.period)
-                                        state.allTransactions.filter { it.timestamp in start..end }
-                                    }
-                                    is TimelineRange.CustomRange -> {
-                                        state.allTransactions.filter { it.timestamp in range.start..range.end }
-                                    }
-                                }
-                            }
                             AeonCashFlowSummary(
-                                transactions = cashFlowTransactions,
+                                cashFlowResult = state.cashFlowResult,
                                 baseCurrency = state.baseCurrency,
-                                exchangeRates = state.exchangeRates,
                                 currentTheme = currentTheme,
                                 modifier = Modifier.fillMaxWidth(),
                                 headerModifier = dragModifier,
@@ -377,7 +358,6 @@ fun DashboardContent(
                                 accounts = state.accounts,
                                 accountStats = state.accountStats,
                                 baseCurrency = state.baseCurrency,
-                                exchangeRates = state.exchangeRates,
                                 currentTheme = currentTheme,
                                 modifier = Modifier.fillMaxWidth(),
                                 gridColumns = gridColumns,

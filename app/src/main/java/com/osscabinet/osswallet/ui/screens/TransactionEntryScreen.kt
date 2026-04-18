@@ -20,16 +20,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
@@ -641,32 +648,18 @@ fun TransactionEntryContent(
                                     }
                                     val displayAmount = amount.ifEmpty { "0.00" }
                                     val fullText = "$prefix$displayAmount"
-                                    var resizedFontSize by remember { mutableStateOf(72.sp) }
-
-                                    LaunchedEffect(fullText) {
-                                        resizedFontSize = 72.sp
-                                    }
-
-                                    Text(
+                                    AdaptiveAmountText(
                                         text = fullText,
-                                        style = TextStyle(
-                                            fontSize = resizedFontSize,
-                                            fontWeight = FontWeight.Bold,
-                                            textAlign = TextAlign.Center,
-                                            color = when {
-                                                isIncome -> lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
-                                                isTransfer -> MaterialTheme.colorScheme.onSurface
-                                                else -> lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.5f)
-                                            }
-                                        ),
-                                        modifier = Modifier.weight(1f, fill = false),
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        onTextLayout = { textLayoutResult ->
-                                            if (textLayoutResult.hasVisualOverflow && resizedFontSize > 24.sp) {
-                                                resizedFontSize = (resizedFontSize.value * 0.95f).sp
-                                            }
-                                        }
+                                        color = when {
+                                            isIncome -> lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
+                                            isTransfer -> MaterialTheme.colorScheme.onSurface
+                                            else -> lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.5f)
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(horizontal = 4.dp),
+                                        maxFontSize = 72.sp,
+                                        minFontSize = 24.sp
                                     )
 
                                     Spacer(modifier = Modifier.width(16.dp))
@@ -690,37 +683,24 @@ fun TransactionEntryContent(
                                     )
 
                                     Row(
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            " (1:${exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()})",
+                                            text = "1:${exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(start = 8.dp)
+                                            maxLines = 1
                                         )
-                                        Spacer(modifier = Modifier.width(12.dp))
                                         val convertedText = "+${convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()}"
-                                        var resizedSecondaryFontSize by remember { mutableStateOf(32.sp) }
-
-                                        LaunchedEffect(convertedText) {
-                                            resizedSecondaryFontSize = 32.sp
-                                        }
-
-                                        Text(
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        AdaptiveAmountText(
                                             text = convertedText,
-                                            style = TextStyle(
-                                                fontSize = resizedSecondaryFontSize,
-                                                fontWeight = FontWeight.Bold,
-                                                color = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f)
-                                            ),
-                                            maxLines = 1,
-                                            softWrap = false,
-                                            onTextLayout = { textLayoutResult ->
-                                                if (textLayoutResult.hasVisualOverflow && resizedSecondaryFontSize > 14.sp) {
-                                                    resizedSecondaryFontSize = (resizedSecondaryFontSize.value * 0.95f).sp
-                                                }
-                                            }
+                                            color = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f),
+                                            modifier = Modifier.weight(1f),
+                                            maxFontSize = 32.sp,
+                                            minFontSize = 14.sp
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         CurrencySelector(
@@ -1285,6 +1265,145 @@ fun TransactionEntryContent(
     }
 }
 
+private data class AdaptiveAmountTextMetrics(
+    val fontSize: TextUnit,
+    val scaleX: Float
+)
+
+@Composable
+private fun AdaptiveAmountText(
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    maxFontSize: TextUnit,
+    minFontSize: TextUnit
+) {
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        val density = LocalDensity.current
+        val textMeasurer = rememberTextMeasurer()
+        val baseStyle = remember(color) {
+            TextStyle(
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = color
+            )
+        }
+        val maxWidthPx = remember(maxWidth, density) {
+            with(density) { maxWidth.roundToPx().coerceAtLeast(1) }
+        }
+        val textMetrics = remember(text, baseStyle, maxWidthPx, maxFontSize, minFontSize) {
+            resolveAdaptiveAmountTextMetrics(
+                textMeasurer = textMeasurer,
+                text = text,
+                maxWidthPx = maxWidthPx,
+                baseStyle = baseStyle,
+                maxFontSize = maxFontSize,
+                minFontSize = minFontSize
+            )
+        }
+
+        Text(
+            text = text,
+            style = baseStyle.copy(fontSize = textMetrics.fontSize),
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = textMetrics.scaleX
+                    transformOrigin = TransformOrigin.Center
+                },
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip
+        )
+    }
+}
+
+private fun resolveAdaptiveAmountTextMetrics(
+    textMeasurer: TextMeasurer,
+    text: String,
+    maxWidthPx: Int,
+    baseStyle: TextStyle,
+    maxFontSize: TextUnit,
+    minFontSize: TextUnit
+): AdaptiveAmountTextMetrics {
+    if (text.isBlank()) {
+        return AdaptiveAmountTextMetrics(fontSize = maxFontSize, scaleX = 1f)
+    }
+
+    fun measure(fontSize: TextUnit) = textMeasurer.measure(
+        text = AnnotatedString(text),
+        style = baseStyle.copy(fontSize = fontSize),
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Clip,
+        constraints = Constraints(maxWidth = maxWidthPx)
+    )
+
+    val preferredFontSize = preferredAmountFontSize(
+        textLength = text.length,
+        maxFontSize = maxFontSize,
+        minFontSize = minFontSize
+    )
+    val preferredLayout = measure(preferredFontSize)
+
+    if (!preferredLayout.hasVisualOverflow) {
+        return AdaptiveAmountTextMetrics(fontSize = preferredFontSize, scaleX = 1f)
+    }
+
+    var low = minFontSize.value
+    var high = preferredFontSize.value
+    var best = minFontSize.value
+
+    while (high - low > 0.5f) {
+        val mid = (low + high) / 2f
+        val fits = !measure(mid.sp).hasVisualOverflow
+        if (fits) {
+            best = mid
+            low = mid
+        } else {
+            high = mid
+        }
+    }
+
+    val resolvedFontSize = best.sp
+    val resolvedLayout = measure(resolvedFontSize)
+
+    if (!resolvedLayout.hasVisualOverflow) {
+        return AdaptiveAmountTextMetrics(fontSize = resolvedFontSize, scaleX = 1f)
+    }
+
+    val compressedScale = (maxWidthPx / resolvedLayout.size.width.toFloat())
+        .coerceIn(0.72f, 1f)
+
+    return AdaptiveAmountTextMetrics(
+        fontSize = resolvedFontSize,
+        scaleX = compressedScale
+    )
+}
+
+private fun preferredAmountFontSize(
+    textLength: Int,
+    maxFontSize: TextUnit,
+    minFontSize: TextUnit
+): TextUnit {
+    val shrinkStart = 7
+    val fullShrink = 18
+    val progress = ((textLength - shrinkStart).toFloat() / (fullShrink - shrinkStart))
+        .coerceIn(0f, 1f)
+    val easedProgress = FastOutSlowInEasing.transform(progress)
+
+    return lerpSp(maxFontSize, minFontSize, easedProgress)
+}
+
+private fun lerpSp(
+    start: TextUnit,
+    stop: TextUnit,
+    fraction: Float
+): TextUnit = (start.value + (stop.value - start.value) * fraction).sp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LocationPickerSheet(
@@ -1489,6 +1608,126 @@ fun TransactionMetadataPreview() {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TransactionAmountPreviewCard(
+    primaryText: String,
+    primaryColor: Color,
+    primaryCurrency: String,
+    convertedText: String? = null,
+    convertedCurrency: String? = null,
+    exchangeRateLabel: String? = null
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(240.dp),
+        shape = RoundedCornerShape(48.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AdaptiveAmountText(
+                    text = primaryText,
+                    color = primaryColor,
+                    modifier = Modifier.weight(1f),
+                    maxFontSize = 72.sp,
+                    minFontSize = 24.sp
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                CurrencySelector(
+                    selectedCurrency = primaryCurrency,
+                    onCurrencySelected = {},
+                    supportedCurrencies = listOf(primaryCurrency)
+                )
+            }
+
+            if (convertedText != null && convertedCurrency != null && exchangeRateLabel != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Icon(
+                    Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.outline
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = exchangeRateLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AdaptiveAmountText(
+                        text = convertedText,
+                        color = lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.5f),
+                        modifier = Modifier.weight(1f),
+                        maxFontSize = 32.sp,
+                        minFontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    CurrencySelector(
+                        selectedCurrency = convertedCurrency,
+                        onCurrencySelected = {},
+                        supportedCurrencies = listOf(convertedCurrency)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 390, name = "Amount Overflow Expense")
+@Composable
+private fun TransactionAmountOverflowPreview() {
+    OssWalletTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            TransactionAmountPreviewCard(
+                primaryText = "-123456789012345.6789",
+                primaryColor = lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.5f),
+                primaryCurrency = "USD"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 390, name = "Amount Overflow Transfer")
+@Composable
+private fun TransactionTransferAmountOverflowPreview() {
+    OssWalletTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            TransactionAmountPreviewCard(
+                primaryText = "98765432109876.54321",
+                primaryColor = MaterialTheme.colorScheme.onSurface,
+                primaryCurrency = "JPY",
+                convertedText = "+12345678901234567.89",
+                convertedCurrency = "INR",
+                exchangeRateLabel = "1:124.875"
+            )
         }
     }
 }

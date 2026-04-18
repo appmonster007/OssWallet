@@ -84,12 +84,19 @@ fun AccountsViewScreen(
     val scope = rememberCoroutineScope()
 
     var navTriggered by remember { mutableStateOf(false) }
+
+    // Reset navTriggered when returning to this screen
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        navTriggered = false
+    }
+
     val navigate: (() -> Unit) -> Unit = { action ->
         if (!navTriggered) {
             navTriggered = true
             action()
         }
     }
+
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsState()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()

@@ -1,0 +1,1504 @@
+Subject: [PATCH] feat: enhance `NetWorthSection` header with timeline label and layout adjustments
+feat: decouple NetWorthSection state and settings between Dashboard and Accounts views
+refactor: relocate timeline domain models and extract filter components
+feat: enhance filter components with improved "Aeon" styling and better date navigation
+feat: enhance `AeonDateRangePicker` with extended year range and jump-to-today functionality
+feat: redesign timeline filter components with modern UI and improved range picker
+feat: implement timeline filtering for Net Worth section
+feat: refactor Net Worth section into a dedicated ViewModel-driven component
+feat: implement transaction-aware net worth calculation and timeline filter components
+---
+Index: app/src/main/java/com/osscabinet/osswallet/ui/components/AeonFilterComponents.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonFilterComponents.kt b/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonFilterComponents.kt
+new file mode 100644
+--- /dev/null	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonFilterComponents.kt	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
+@@ -0,0 +1,156 @@
++package com.osscabinet.ossWallet.ui.components
++
++import androidx.compose.animation.animateColorAsState
++import androidx.compose.foundation.background
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.*
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.*
++import androidx.compose.runtime.*
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++
++data class AeonTimelineOption(val label: String, val icon: ImageVector)
++
++@Composable
++fun AeonSegmentedControl(
++    options: List<AeonTimelineOption>,
++    selectedOption: Int,
++    onOptionSelected: (Int) -> Unit,
++    modifier: Modifier = Modifier
++) {
++    Surface(
++        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
++        shape = RoundedCornerShape(20.dp),
++        modifier = modifier.fillMaxWidth().height(60.dp)
++    ) {
++        Row(
++            modifier = Modifier.fillMaxSize().padding(4.dp),
++            verticalAlignment = Alignment.CenterVertically
++        ) {
++            options.forEachIndexed { index, option ->
++                val isSelected = selectedOption == index
++                val backgroundColor by animateColorAsState(
++                    if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
++                    label = "bgColor"
++                )
++                val contentColor by animateColorAsState(
++                    if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
++                    label = "contentColor"
++                )
++                
++                Box(
++                    modifier = Modifier
++                        .weight(1f)
++                        .fillMaxHeight()
++                        .clip(RoundedCornerShape(16.dp))
++                        .background(backgroundColor)
++                        .clickable { onOptionSelected(index) },
++                    contentAlignment = Alignment.Center
++                ) {
++                    Column(
++                        horizontalAlignment = Alignment.CenterHorizontally,
++                        verticalArrangement = Arrangement.Center
++                    ) {
++                        Icon(
++                            imageVector = option.icon,
++                            contentDescription = null,
++                            modifier = Modifier.size(20.dp),
++                            tint = contentColor
++                        )
++                        Text(
++                            text = option.label,
++                            style = MaterialTheme.typography.labelSmall.copy(
++                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
++                                fontSize = 11.sp
++                            ),
++                            color = contentColor,
++                            maxLines = 1,
++                            overflow = TextOverflow.Ellipsis
++                        )
++                    }
++                }
++            }
++        }
++    }
++}
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun <T> AeonDropdown(
++    label: String,
++    options: List<T>,
++    selectedOption: T,
++    onOptionSelected: (T) -> Unit,
++    labelProvider: (T) -> String,
++    modifier: Modifier = Modifier
++) {
++    var expanded by remember { mutableStateOf(false) }
++
++    ExposedDropdownMenuBox(
++        expanded = expanded,
++        onExpandedChange = { expanded = !expanded },
++        modifier = modifier.fillMaxWidth()
++    ) {
++        OutlinedTextField(
++            value = labelProvider(selectedOption),
++            onValueChange = {},
++            readOnly = true,
++            label = { 
++                Text(
++                    label.uppercase(),
++                    style = MaterialTheme.typography.labelSmall.copy(
++                        fontWeight = FontWeight.ExtraBold,
++                        letterSpacing = 1.sp
++                    )
++                ) 
++            },
++            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
++            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
++            shape = RoundedCornerShape(20.dp),
++            colors = OutlinedTextFieldDefaults.colors(
++                focusedBorderColor = MaterialTheme.colorScheme.primary,
++                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
++                focusedLabelColor = MaterialTheme.colorScheme.primary,
++                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
++                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
++            ),
++            textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
++        )
++
++        ExposedDropdownMenu(
++            expanded = expanded,
++            onDismissRequest = { expanded = false },
++            modifier = Modifier
++                .background(MaterialTheme.colorScheme.surface)
++                .clip(RoundedCornerShape(16.dp))
++        ) {
++            options.forEach { option ->
++                val isSelected = option == selectedOption
++                DropdownMenuItem(
++                    text = { 
++                        Text(
++                            labelProvider(option),
++                            style = MaterialTheme.typography.bodyLarge.copy(
++                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
++                            ),
++                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
++                        ) 
++                    },
++                    onClick = {
++                        onOptionSelected(option)
++                        expanded = false
++                    },
++                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
++                )
++            }
++        }
++    }
++}
+Index: app/src/main/java/com/osscabinet/osswallet/ui/components/dashboard/NetWorthSection.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/components/dashboard/NetWorthSection.kt b/app/src/main/java/com/osscabinet/osswallet/ui/components/dashboard/NetWorthSection.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/components/dashboard/NetWorthSection.kt	(revision 672cf7841cacc08fb7610cab92a65637abd06bb0)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/components/dashboard/NetWorthSection.kt	(revision ce51a191440d892a84eb3e18f10e154d9751cf92)
+@@ -12,41 +12,87 @@
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+-import com.osscabinet.ossWallet.domain.model.Account
+ import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
++import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
++import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
++import java.time.Instant
++import java.time.ZoneId
++import java.time.format.DateTimeFormatter
++import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
++import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
+ import kotlinx.serialization.Serializable
+-import java.math.BigDecimal
+ 
+ @Serializable
+ data class NetWorthSettings(
+-    val fontSize: String = "Medium" // "Small", "Medium", "Large"
++    val fontSize: String = "Medium", // "Small", "Medium", "Large"
++    val timelineRange: TimelineRange = TimelineRange.AllTime
+ )
+ 
+ @Composable
+ fun NetWorthSection(
+-    accounts: List<Account>,
++    uiState: NetWorthUiState,
++    onFontSizeChange: (String) -> Unit,
++    onTimelineRangeChange: (TimelineRange) -> Unit,
++    modifier: Modifier = Modifier,
++    headerModifier: Modifier = Modifier
++) {
++    when (val state = uiState) {
++        is NetWorthUiState.Loading -> {
++            // Shimmer or placeholder
++            Box(modifier = modifier.height(100.dp), contentAlignment = Alignment.Center) {
++                CircularProgressIndicator()
++            }
++        }
++        is NetWorthUiState.Success -> {
++            NetWorthContent(
++                netWorth = state.netWorth,
++                baseCurrency = state.baseCurrency,
++                precision = state.precision,
++                fontSize = state.fontSize,
++                timelineRange = state.timelineRange,
++                onFontSizeChange = onFontSizeChange,
++                onTimelineRangeChange = onTimelineRangeChange,
++                modifier = modifier,
++                headerModifier = headerModifier
++            )
++        }
++        is NetWorthUiState.Error -> {
++            Text("Error: ${state.message}")
++        }
++    }
++}
++
++@Composable
++private fun NetWorthContent(
++    netWorth: java.math.BigDecimal,
+     baseCurrency: String,
++    precision: Int,
++    fontSize: String,
++    timelineRange: TimelineRange,
++    onFontSizeChange: (String) -> Unit,
++    onTimelineRangeChange: (TimelineRange) -> Unit,
+     modifier: Modifier = Modifier,
+-    headerModifier: Modifier = Modifier,
+-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+-    precision: Int = 2,
+-    fontSize: String = "Medium",
+-    onFontSizeChange: (String) -> Unit = {}
++    headerModifier: Modifier = Modifier
+ ) {
+     var showSettings by remember { mutableStateOf(false) }
+ 
+-    val totalInBase = remember(accounts, exchangeRates, baseCurrency, precision) {
+-        val totals = accounts.groupBy { it.currencyCode }
+-            .mapValues { (_, accs) -> accs.sumOf { it.balance } }
+-        calculateTotalInCurrency(totals, baseCurrency, exchangeRates, precision)
++    val textStyle = when (fontSize) {
++        "Small" -> MaterialTheme.typography.displaySmall
++        "Large" -> MaterialTheme.typography.displayLarge
++        else -> MaterialTheme.typography.displayMedium
+     }
+ 
+-    val (textStyle, labelStyle) = when (fontSize) {
+-        "Small" -> MaterialTheme.typography.displaySmall to MaterialTheme.typography.labelSmall
+-        "Large" -> MaterialTheme.typography.displayLarge to MaterialTheme.typography.labelSmall
+-        else -> MaterialTheme.typography.displayMedium to MaterialTheme.typography.labelSmall
++    val timelineLabel = when (timelineRange) {
++        is TimelineRange.AllTime -> "All Time"
++        is TimelineRange.ThisPeriod -> timelineRange.period.label
++        is TimelineRange.LastPeriod -> timelineRange.period.label
++        is TimelineRange.CustomRange -> {
++            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
++            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
++            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
++            "$start - $end"
++        }
+     }
+ 
+     Card(
+@@ -63,15 +109,29 @@
+                 title = "NET WORTH",
+                 modifier = headerModifier,
+                 trailing = {
+-                    IconButton(
+-                        onClick = { showSettings = true },
+-                        modifier = Modifier.size(24.dp)
+-                    ) {
+-                        Icon(
+-                            Icons.Default.MoreHoriz,
+-                            contentDescription = "Settings",
+-                            tint = MaterialTheme.colorScheme.primary
+-                        )
++                    Row(
++                        verticalAlignment = Alignment.CenterVertically,
++                        horizontalArrangement = Arrangement.spacedBy(8.dp)
++                    ) {
++                        Text(
++                            text = timelineLabel.uppercase(),
++                            style = MaterialTheme.typography.labelSmall.copy(
++                                fontWeight = FontWeight.Bold,
++                                letterSpacing = 0.5.sp,
++                                fontSize = 10.sp
++                            ),
++                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
++                        )
++                        IconButton(
++                            onClick = { showSettings = true },
++                            modifier = Modifier.size(24.dp)
++                        ) {
++                            Icon(
++                                Icons.Default.MoreHoriz,
++                                contentDescription = "Settings",
++                                tint = MaterialTheme.colorScheme.primary
++                            )
++                        }
+                     }
+                 }
+             )
+@@ -81,87 +141,123 @@
+                 horizontalAlignment = Alignment.CenterHorizontally
+             ) {
+                 Text(
+-                    text = formatCurrencyRight(totalInBase, baseCurrency, precision),
++                    text = formatCurrencyRight(netWorth, baseCurrency, precision),
+                     style = textStyle.copy(
+                         fontWeight = FontWeight.Black,
+                         letterSpacing = (-1).sp
+                     ),
+                     color = MaterialTheme.colorScheme.onSurface
+                 )
+-                Text(
+-                    text = "TOTAL BALANCE ACROSS ALL ACCOUNTS",
+-                    style = labelStyle.copy(
+-                        fontWeight = FontWeight.Bold,
+-                        letterSpacing = 1.sp,
+-                        fontSize = 9.sp
+-                    ),
+-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+-                )
+             }
+         }
+     }
+ 
+     if (showSettings) {
+-        AlertDialog(
+-            onDismissRequest = { showSettings = false },
+-            confirmButton = {
+-                TextButton(onClick = { showSettings = false }) {
+-                    Text("Done")
+-                }
+-            },
+-            title = {
+-                Text(
+-                    "Net Worth Settings",
+-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+-                )
+-            },
+-            text = {
+-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+-                    Surface(
+-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+-                        shape = RoundedCornerShape(20.dp),
+-                        modifier = Modifier.fillMaxWidth()
+-                    ) {
+-                        Column(
+-                            modifier = Modifier.padding(16.dp),
+-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+-                        ) {
+-                            Text(
+-                                "FONT SIZE",
+-                                style = MaterialTheme.typography.labelSmall.copy(
+-                                    fontWeight = FontWeight.Bold,
+-                                    letterSpacing = 1.sp
+-                                ),
+-                                color = MaterialTheme.colorScheme.primary
+-                            )
++        NetWorthSettingsDialog(
++            fontSize = fontSize,
++            timelineRange = timelineRange,
++            onFontSizeChange = onFontSizeChange,
++            onTimelineRangeChange = onTimelineRangeChange,
++            onDismiss = { showSettings = false }
++        )
++    }
++}
++
++@Composable
++private fun NetWorthSettingsDialog(
++    fontSize: String,
++    timelineRange: TimelineRange,
++    onFontSizeChange: (String) -> Unit,
++    onTimelineRangeChange: (TimelineRange) -> Unit,
++    onDismiss: () -> Unit
++) {
++    AlertDialog(
++        onDismissRequest = onDismiss,
++        confirmButton = {
++            TextButton(onClick = onDismiss) {
++                Text("Done")
++            }
++        },
++        title = {
++            Text(
++                "Net Worth Settings",
++                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
++            )
++        },
++        text = {
++            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
++                // Timeline Range Selection
++                Surface(
++                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
++                    shape = RoundedCornerShape(20.dp),
++                    modifier = Modifier.fillMaxWidth()
++                ) {
++                    Column(
++                        modifier = Modifier.padding(16.dp),
++                        verticalArrangement = Arrangement.spacedBy(12.dp)
++                    ) {
++                        Text(
++                            "TIMELINE",
++                            style = MaterialTheme.typography.labelSmall.copy(
++                                fontWeight = FontWeight.Bold,
++                                letterSpacing = 1.sp
++                            ),
++                            color = MaterialTheme.colorScheme.primary
++                        )
++
++                        TimelineFilterBar(
++                            currentRange = timelineRange,
++                            onRangeSelected = onTimelineRangeChange,
++                            modifier = Modifier.fillMaxWidth()
++                        )
++                    }
++                }
++
++                // Font Size Selection
++                Surface(
++                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
++                    shape = RoundedCornerShape(20.dp),
++                    modifier = Modifier.fillMaxWidth()
++                ) {
++                    Column(
++                        modifier = Modifier.padding(16.dp),
++                        verticalArrangement = Arrangement.spacedBy(12.dp)
++                    ) {
++                        Text(
++                            "FONT SIZE",
++                            style = MaterialTheme.typography.labelSmall.copy(
++                                fontWeight = FontWeight.Bold,
++                                letterSpacing = 1.sp
++                            ),
++                            color = MaterialTheme.colorScheme.primary
++                        )
+ 
+-                            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+-                                listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
+-                                    SegmentedButton(
+-                                        selected = fontSize == size,
+-                                        onClick = { onFontSizeChange(size) },
+-                                        shape = SegmentedButtonDefaults.itemShape(
+-                                            index = index,
+-                                            count = 3
+-                                        ),
+-                                        label = { 
+-                                            Text(
+-                                                when(size) {
+-                                                    "Small" -> "S"
+-                                                    "Medium" -> "M"
+-                                                    else -> "L"
+-                                                }
+-                                            )
+-                                        }
+-                                    )
+-                                }
+-                            }
+-                        }
+-                    }
+-                }
+-            },
+-            shape = RoundedCornerShape(32.dp),
+-            containerColor = MaterialTheme.colorScheme.surface
+-        )
+-    }
++                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
++                            listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
++                                SegmentedButton(
++                                    selected = fontSize == size,
++                                    onClick = { onFontSizeChange(size) },
++                                    shape = SegmentedButtonDefaults.itemShape(
++                                        index = index,
++                                        count = 3
++                                    ),
++                                    label = { 
++                                        Text(
++                                            when(size) {
++                                                "Small" -> "S"
++                                                "Medium" -> "M"
++                                                else -> "L"
++                                            }
++                                        )
++                                    }
++                                )
++                            }
++                        }
++                    }
++                }
++            }
++        },
++        shape = RoundedCornerShape(32.dp),
++        containerColor = MaterialTheme.colorScheme.surface
++    )
+ }
+Index: app/src/main/java/com/osscabinet/osswallet/ui/screens/AccountsViewScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/screens/AccountsViewScreen.kt b/app/src/main/java/com/osscabinet/osswallet/ui/screens/AccountsViewScreen.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/screens/AccountsViewScreen.kt	(revision 672cf7841cacc08fb7610cab92a65637abd06bb0)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/screens/AccountsViewScreen.kt	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
+@@ -38,6 +38,7 @@
+ import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+ import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+ import com.osscabinet.ossWallet.ui.components.dashboard.*
++import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
+ import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+ import com.osscabinet.ossWallet.ui.util.convertAmount
+ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+@@ -48,6 +49,7 @@
+ import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
+ import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
+ import com.osscabinet.ossWallet.ui.components.*
++import kotlinx.coroutines.flow.map
+ import kotlinx.coroutines.launch
+ import java.math.BigDecimal
+ import java.math.RoundingMode
+@@ -73,13 +75,18 @@
+     settingsViewModel: SettingsViewModel,
+     analyticsViewModel: AnalyticsViewModel,
+     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
+-    accountsViewViewModel: AccountsViewViewModel
++    accountsViewViewModel: AccountsViewViewModel,
++    netWorthViewModel: NetWorthViewModel
+ ) {
+     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+     val scope = rememberCoroutineScope()
+     
+     val accountsUiState by accountsViewViewModel.uiState.collectAsState()
+     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
++    
++    val netWorthUiState by remember(netWorthViewModel, accountsViewViewModel) {
++        netWorthViewModel.getNetWorthUiState(accountsViewViewModel.settingsDataStore.accountsViewSettings.map { it.netWorthSection })
++    }.collectAsState()
+ 
+     val accounts by accountViewModel.accounts.collectAsState()
+     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
+@@ -191,14 +198,11 @@
+                             when (section) {
+                                 AccountsViewSection.NET_WORTH -> {
+                                     NetWorthSection(
+-                                        accounts = state.accounts,
+-                                        baseCurrency = state.baseCurrency,
+-                                        exchangeRates = state.exchangeRates,
+-                                        precision = state.decimalPrecision,
+-                                        fontSize = state.netWorthFontSize,
++                                        uiState = netWorthUiState,
+                                         onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
+-                                        headerModifier = dragModifier,
+-                                        modifier = Modifier.fillMaxWidth()
++                                        onTimelineRangeChange = { accountsViewViewModel.updateNetWorthTimelineRange(it) },
++                                        modifier = Modifier.fillMaxWidth(),
++                                        headerModifier = dragModifier
+                                     )
+                                 }
+                                 AccountsViewSection.CURRENCY_BALANCES -> {
+Index: app/src/main/java/com/osscabinet/osswallet/ui/screens/DashboardScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/screens/DashboardScreen.kt b/app/src/main/java/com/osscabinet/osswallet/ui/screens/DashboardScreen.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/screens/DashboardScreen.kt	(revision 672cf7841cacc08fb7610cab92a65637abd06bb0)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/screens/DashboardScreen.kt	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
+@@ -22,6 +22,7 @@
+ import androidx.compose.material3.*
+ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+ import androidx.compose.runtime.*
++import kotlinx.coroutines.flow.map
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
+@@ -57,6 +58,7 @@
+ import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+ import com.osscabinet.ossWallet.ui.components.*
+ import com.osscabinet.ossWallet.ui.components.dashboard.*
++import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
+ import java.math.BigDecimal
+ import java.math.RoundingMode
+ import kotlinx.coroutines.launch
+@@ -83,7 +85,8 @@
+     analyticsViewModel: AnalyticsViewModel,
+     templateViewModel: TemplateViewModel,
+     dashboardViewModel: DashboardViewModel,
+-    budgetViewModel: BudgetViewModel
++    budgetViewModel: BudgetViewModel,
++    netWorthViewModel: NetWorthViewModel
+ ) {
+     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+     val scope = rememberCoroutineScope()
+@@ -235,7 +238,8 @@
+                                 onBudgetsClick = onBudgetsClick,
+                                 transactionViewModel = transactionViewModel,
+                                 budgets = budgets,
+-                                dashboardViewModel = dashboardViewModel
++                                dashboardViewModel = dashboardViewModel,
++                                netWorthViewModel = netWorthViewModel
+                             )
+                     }
+                     is DashboardUiState.Error -> {
+@@ -428,13 +432,18 @@
+     onBudgetsClick: () -> Unit,
+     transactionViewModel: TransactionViewModel,
+     budgets: List<Budget>,
+-    dashboardViewModel: DashboardViewModel
++    dashboardViewModel: DashboardViewModel,
++    netWorthViewModel: NetWorthViewModel
+ ) {
+     val activeTransactions = remember(state.recentTransactions) {
+         state.recentTransactions.map { it.transaction }
+     }
+ 
+     val sectionOrder by dashboardViewModel.sectionOrder.collectAsState()
++    
++    val netWorthUiState by remember(netWorthViewModel, dashboardViewModel) {
++        netWorthViewModel.getNetWorthUiState(dashboardViewModel.settingsDataStore.dashboardSettings.map { it.netWorthSection })
++    }.collectAsState()
+ 
+     HorizontalPager(
+         state = pagerState,
+@@ -458,14 +467,11 @@
+                     when (section) {
+                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
+                             NetWorthSection(
+-                                accounts = state.accounts,
+-                                baseCurrency = state.baseCurrency,
++                                uiState = netWorthUiState,
++                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) },
++                                onTimelineRangeChange = { dashboardViewModel.updateNetWorthTimelineRange(it) },
+                                 modifier = Modifier.fillMaxWidth(),
+-                                headerModifier = dragModifier,
+-                                exchangeRates = state.exchangeRates,
+-                                precision = decimalPrecision,
+-                                fontSize = state.netWorthFontSize,
+-                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) }
++                                headerModifier = dragModifier
+                             )
+                         }
+                         com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CURRENCY_BALANCES -> {
+Index: app/src/main/java/com/osscabinet/osswallet/ui/util/NetWorthUtils.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/util/NetWorthUtils.kt b/app/src/main/java/com/osscabinet/osswallet/ui/util/NetWorthUtils.kt
+new file mode 100644
+--- /dev/null	(revision 6e5a873182c6e044318e01e4bd76b824890d975c)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/util/NetWorthUtils.kt	(revision 6e5a873182c6e044318e01e4bd76b824890d975c)
+@@ -0,0 +1,43 @@
++package com.osscabinet.ossWallet.ui.util
++
++import com.osscabinet.ossWallet.domain.model.Account
++import com.osscabinet.ossWallet.domain.model.Transaction
++import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
++import java.math.BigDecimal
++import java.math.RoundingMode
++
++fun calculateNetWorth(
++    accounts: List<Account>,
++    allTransactions: List<Transaction>,
++    baseCurrency: String,
++    exchangeRates: Map<String, BigDecimal>,
++    precision: Int
++): BigDecimal {
++    val transactionsByAccount = allTransactions.groupBy { it.accountId }
++    
++    val accountStats = accounts.associate { account ->
++        val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
++        val breakdown = mutableMapOf<String, BigDecimal>()
++        
++        breakdown[account.currencyCode] = account.initialBalance
++        account.allowedCurrencies.forEach { curr ->
++            breakdown.getOrPut(curr) { BigDecimal.ZERO }
++        }
++        
++        accountTransactions.forEach { tx ->
++            val current = breakdown[tx.currency] ?: BigDecimal.ZERO
++            breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
++        }
++        
++        account.id to breakdown.toMap()
++    }
++
++    val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
++    accountStats.values.forEach { balances ->
++        balances.forEach { (curr, amount) ->
++            globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
++        }
++    }
++
++    return calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
++}
+Index: app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/AccountsViewViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/AccountsViewViewModel.kt b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/AccountsViewViewModel.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/AccountsViewViewModel.kt	(revision 672cf7841cacc08fb7610cab92a65637abd06bb0)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/AccountsViewViewModel.kt	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
+@@ -25,7 +25,7 @@
+ class AccountsViewViewModel(
+     private val accountRepository: AccountRepository,
+     private val getTransactionsUseCase: GetTransactionsUseCase,
+-    private val settingsDataStore: SettingsDataStore,
++    val settingsDataStore: SettingsDataStore,
+     private val analyticsViewModel: AnalyticsViewModel
+ ) : ViewModel() {
+ 
+@@ -79,6 +79,12 @@
+         }
+     }
+ 
++    fun updateNetWorthTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
++        viewModelScope.launch {
++            settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
++        }
++    }
++
+     fun updateCashFlowShowBaseConversion(show: Boolean) {
+         viewModelScope.launch {
+             settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+@@ -170,6 +176,7 @@
+ 
+                 AccountsViewUiState.Success(
+                     accounts = nonArchivedAccounts,
++                    allTransactions = allTransactions,
+                     baseCurrency = baseCurrency,
+                     exchangeRates = rates,
+                     currencyTotals = globalCurrencyTotals,
+@@ -196,6 +203,7 @@
+     object Loading : AccountsViewUiState()
+     data class Success(
+         val accounts: List<Account>,
++        val allTransactions: List<Transaction> = emptyList(),
+         val baseCurrency: String,
+         val exchangeRates: Map<String, BigDecimal>,
+         val currencyTotals: Map<String, BigDecimal> = emptyMap(),
+Index: app/src/main/java/com/osscabinet/osswallet/ui/navigation/OssWalletNavGraph.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/navigation/OssWalletNavGraph.kt b/app/src/main/java/com/osscabinet/osswallet/ui/navigation/OssWalletNavGraph.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/navigation/OssWalletNavGraph.kt	(revision 6e5a873182c6e044318e01e4bd76b824890d975c)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/navigation/OssWalletNavGraph.kt	(revision 79f3d1ef52dcbdd85fcb847a15e50528f164191e)
+@@ -114,6 +114,17 @@
+         }
+     )
+ 
++    val netWorthViewModel: NetWorthViewModel = viewModel(
++        factory = GenericViewModelFactory {
++            NetWorthViewModel(
++                appContainer.accountRepository,
++                appContainer.getTransactionsUseCase,
++                appContainer.settingsDataStore,
++                analyticsViewModel
++            )
++        }
++    )
++
+     val tagViewModel: TagViewModel = viewModel(
+         factory = GenericViewModelFactory {
+             TagViewModel(appContainer.tagRepository)
+@@ -173,7 +184,8 @@
+                 analyticsViewModel = analyticsViewModel,
+                 templateViewModel = templateViewModel,
+                 dashboardViewModel = dashboardViewModel,
+-                budgetViewModel = budgetViewModel
++                budgetViewModel = budgetViewModel,
++                netWorthViewModel = netWorthViewModel
+             )
+         }
+         
+@@ -202,7 +214,8 @@
+                 settingsViewModel = settingsViewModel,
+                 analyticsViewModel = analyticsViewModel,
+                 templateViewModel = templateViewModel,
+-                accountsViewViewModel = accountsViewViewModel
++                accountsViewViewModel = accountsViewViewModel,
++                netWorthViewModel = netWorthViewModel
+             )
+         }
+ 
+Index: app/src/main/java/com/osscabinet/osswallet/ui/util/FilterUtils.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/util/FilterUtils.kt b/app/src/main/java/com/osscabinet/osswallet/ui/util/FilterUtils.kt
+new file mode 100644
+--- /dev/null	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/util/FilterUtils.kt	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
+@@ -0,0 +1,59 @@
++package com.osscabinet.ossWallet.ui.util
++
++import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
++import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
++import java.time.*
++import java.time.temporal.TemporalAdjusters
++
++object FilterUtils {
++
++    fun getRangeForThis(period: ThisPeriodType, firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY): Pair<Long, Long> {
++        val now = ZonedDateTime.now(ZoneId.systemDefault())
++        val start: ZonedDateTime = when (period) {
++            ThisPeriodType.TODAY -> now.toLocalDate().atStartOfDay(now.zone)
++            ThisPeriodType.WEEK -> now.toLocalDate().with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(now.zone)
++            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
++            ThisPeriodType.QUARTER -> {
++                val month = now.monthValue
++                val firstMonthOfQuarter = ((month - 1) / 3) * 3 + 1
++                now.toLocalDate().withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
++            }
++            ThisPeriodType.HALF_YEAR -> {
++                val firstMonthOfHalf = if (now.monthValue <= 6) 1 else 7
++                now.toLocalDate().withMonth(firstMonthOfHalf).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
++            }
++            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.firstDayOfYear()).atStartOfDay(now.zone)
++        }
++        val end: ZonedDateTime = when (period) {
++            ThisPeriodType.TODAY -> now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
++            ThisPeriodType.WEEK -> now.toLocalDate().with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX).atZone(now.zone)
++            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
++            ThisPeriodType.QUARTER -> {
++                val month = now.monthValue
++                val lastMonthOfQuarter = ((month - 1) / 3) * 3 + 3
++                now.toLocalDate().withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
++            }
++            ThisPeriodType.HALF_YEAR -> {
++                val lastMonthOfHalf = if (now.monthValue <= 6) 6 else 12
++                now.toLocalDate().withMonth(lastMonthOfHalf).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
++            }
++            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX).atZone(now.zone)
++        }
++        return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
++    }
++
++    fun getRangeForLast(period: LastPeriodType): Pair<Long, Long> {
++        val now = ZonedDateTime.now(ZoneId.systemDefault())
++        val end = now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
++        val start: ZonedDateTime = when (period) {
++            LastPeriodType.LAST_24H -> now.minusHours(24)
++            LastPeriodType.LAST_7_DAYS -> now.minusDays(7).toLocalDate().atStartOfDay(now.zone)
++            LastPeriodType.LAST_30_DAYS -> now.minusDays(30).toLocalDate().atStartOfDay(now.zone)
++            LastPeriodType.LAST_12_WEEKS -> now.minusWeeks(12).toLocalDate().atStartOfDay(now.zone)
++            LastPeriodType.LAST_6_MONTHS -> now.minusMonths(6).toLocalDate().atStartOfDay(now.zone)
++            LastPeriodType.LAST_1_YEAR -> now.minusYears(1).toLocalDate().atStartOfDay(now.zone)
++            LastPeriodType.LAST_5_YEARS -> now.minusYears(5).toLocalDate().atStartOfDay(now.zone)
++        }
++        return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
++    }
++}
+Index: app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/NetWorthViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/NetWorthViewModel.kt b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/NetWorthViewModel.kt
+new file mode 100644
+--- /dev/null	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/NetWorthViewModel.kt	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
+@@ -0,0 +1,99 @@
++package com.osscabinet.ossWallet.ui.viewmodel
++
++import androidx.lifecycle.ViewModel
++import androidx.lifecycle.viewModelScope
++import com.osscabinet.ossWallet.data.local.SettingsDataStore
++import com.osscabinet.ossWallet.domain.repository.AccountRepository
++import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
++import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
++import com.osscabinet.ossWallet.ui.components.dashboard.NetWorthSettings
++import com.osscabinet.ossWallet.ui.util.FilterUtils
++import com.osscabinet.ossWallet.ui.util.calculateNetWorth
++import kotlinx.coroutines.ExperimentalCoroutinesApi
++import kotlinx.coroutines.flow.*
++import kotlinx.coroutines.launch
++import java.math.BigDecimal
++
++@OptIn(ExperimentalCoroutinesApi::class)
++class NetWorthViewModel(
++    private val accountRepository: AccountRepository,
++    private val getTransactionsUseCase: GetTransactionsUseCase,
++    private val settingsDataStore: SettingsDataStore,
++    private val analyticsViewModel: AnalyticsViewModel
++) : ViewModel() {
++
++    fun getNetWorthUiState(settingsFlow: Flow<NetWorthSettings>): StateFlow<NetWorthUiState> = settingsDataStore.currentProfileId
++        .flatMapLatest { profileId ->
++            combine(
++                accountRepository.getAllAccounts(profileId),
++                getTransactionsUseCase(profileId),
++                analyticsViewModel.uiState,
++                settingsDataStore.decimalPrecision,
++                settingsFlow
++            ) { accounts, transactions, analyticsState, precision, sectionSettings ->
++                val rates = analyticsState.exchangeRates
++                val baseCurrency = analyticsState.selectedCurrency
++                
++                val filteredTransactions = when (val range = sectionSettings.timelineRange) {
++                    is TimelineRange.AllTime -> transactions
++                    is TimelineRange.ThisPeriod -> {
++                        val (start, end) = FilterUtils.getRangeForThis(range.period)
++                        transactions.filter { it.timestamp in start..end }
++                    }
++                    is TimelineRange.LastPeriod -> {
++                        val (start, end) = FilterUtils.getRangeForLast(range.period)
++                        transactions.filter { it.timestamp in start..end }
++                    }
++                    is TimelineRange.CustomRange -> {
++                        transactions.filter { it.timestamp in range.start..range.end }
++                    }
++                }
++
++                val netWorth = calculateNetWorth(
++                    accounts = accounts,
++                    allTransactions = filteredTransactions,
++                    baseCurrency = baseCurrency,
++                    exchangeRates = rates,
++                    precision = precision
++                )
++
++                NetWorthUiState.Success(
++                    netWorth = netWorth,
++                    baseCurrency = baseCurrency,
++                    precision = precision,
++                    fontSize = sectionSettings.fontSize,
++                    timelineRange = sectionSettings.timelineRange
++                )
++            }
++        }
++        .stateIn(
++            scope = viewModelScope,
++            started = SharingStarted.WhileSubscribed(5000),
++            initialValue = NetWorthUiState.Loading
++        )
++
++    // These can be deprecated or removed since they are now screen-specific
++    fun updateNetWorthFontSize(fontSize: String) {
++        viewModelScope.launch {
++            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
++        }
++    }
++
++    fun updateTimelineRange(range: TimelineRange) {
++        viewModelScope.launch {
++            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
++        }
++    }
++}
++
++sealed class NetWorthUiState {
++    object Loading : NetWorthUiState()
++    data class Success(
++        val netWorth: BigDecimal,
++        val baseCurrency: String,
++        val precision: Int,
++        val fontSize: String,
++        val timelineRange: TimelineRange
++    ) : NetWorthUiState()
++    data class Error(val message: String) : NetWorthUiState()
++}
+Index: app/src/main/java/com/osscabinet/osswallet/domain/model/timeline/TimelineRange.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/domain/model/timeline/TimelineRange.kt b/app/src/main/java/com/osscabinet/osswallet/domain/model/timeline/TimelineRange.kt
+new file mode 100644
+--- /dev/null	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
++++ b/app/src/main/java/com/osscabinet/osswallet/domain/model/timeline/TimelineRange.kt	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
+@@ -0,0 +1,40 @@
++package com.osscabinet.ossWallet.domain.model.timeline
++
++import kotlinx.serialization.ExperimentalSerializationApi
++import kotlinx.serialization.Serializable
++import kotlinx.serialization.json.JsonClassDiscriminator
++
++@OptIn(ExperimentalSerializationApi::class)
++@Serializable
++@JsonClassDiscriminator("timeline_type")
++sealed class TimelineRange {
++    @Serializable
++    object AllTime : TimelineRange()
++    @Serializable
++    data class ThisPeriod(val period: ThisPeriodType) : TimelineRange()
++    @Serializable
++    data class LastPeriod(val period: LastPeriodType) : TimelineRange()
++    @Serializable
++    data class CustomRange(val start: Long, val end: Long) : TimelineRange()
++}
++
++@Serializable
++enum class ThisPeriodType(val label: String) {
++    TODAY("Today"),
++    WEEK("This Week"),
++    MONTH("This Month"),
++    QUARTER("This Quarter"),
++    HALF_YEAR("Half Year"),
++    YEAR("This Year")
++}
++
++@Serializable
++enum class LastPeriodType(val label: String) {
++    LAST_24H("24h"),
++    LAST_7_DAYS("7 Days"),
++    LAST_30_DAYS("30 Days"),
++    LAST_12_WEEKS("12 Weeks"),
++    LAST_6_MONTHS("6 Months"),
++    LAST_1_YEAR("1 Year"),
++    LAST_5_YEARS("5 Years")
++}
+Index: app/src/main/java/com/osscabinet/osswallet/ui/components/AeonTimelineFilter.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonTimelineFilter.kt b/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonTimelineFilter.kt
+new file mode 100644
+--- /dev/null	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/components/AeonTimelineFilter.kt	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
+@@ -0,0 +1,421 @@
++package com.osscabinet.ossWallet.ui.components
++
++import androidx.compose.animation.*
++import androidx.compose.foundation.background
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.*
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.*
++import androidx.compose.material3.*
++import androidx.compose.runtime.*
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
++import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
++import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
++import java.text.SimpleDateFormat
++import java.util.*
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun TimelineFilterBar(
++    currentRange: TimelineRange,
++    onRangeSelected: (TimelineRange) -> Unit,
++    modifier: Modifier = Modifier
++) {
++    var showDatePicker by remember { mutableStateOf(false) }
++
++    Column(
++        modifier = modifier
++            .fillMaxWidth()
++            .animateContentSize()
++    ) {
++        // Redesigned Primary Selection (Segmented Control)
++        AeonSegmentedControl(
++            options = listOf(
++                AeonTimelineOption("All", Icons.Default.History),
++                AeonTimelineOption("This", Icons.Default.CalendarToday),
++                AeonTimelineOption("Last", Icons.Default.Schedule),
++                AeonTimelineOption("Custom", Icons.Default.DateRange)
++            ),
++            selectedOption = when (currentRange) {
++                is TimelineRange.AllTime -> 0
++                is TimelineRange.ThisPeriod -> 1
++                is TimelineRange.LastPeriod -> 2
++                is TimelineRange.CustomRange -> 3
++            },
++            onOptionSelected = { index: Int ->
++                when (index) {
++                    0 -> onRangeSelected(TimelineRange.AllTime)
++                    1 -> onRangeSelected(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
++                    2 -> onRangeSelected(TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS))
++                    3 -> showDatePicker = true
++                }
++            },
++            modifier = Modifier.padding(vertical = 12.dp)
++        )
++
++        // Dropdown for This/Last
++        AnimatedVisibility(
++            visible = currentRange is TimelineRange.ThisPeriod || currentRange is TimelineRange.LastPeriod || currentRange is TimelineRange.CustomRange,
++            enter = expandVertically() + fadeIn(),
++            exit = shrinkVertically() + fadeOut()
++        ) {
++            Column(modifier = Modifier.padding(vertical = 4.dp)) {
++                when (currentRange) {
++                    is TimelineRange.ThisPeriod -> {
++                        AeonDropdown(
++                            label = "Select Period",
++                            options = ThisPeriodType.entries.toList(),
++                            selectedOption = currentRange.period,
++                            onOptionSelected = { period: ThisPeriodType -> onRangeSelected(TimelineRange.ThisPeriod(period)) },
++                            labelProvider = { it.label }
++                        )
++                    }
++                    is TimelineRange.LastPeriod -> {
++                        AeonDropdown(
++                            label = "Select Range",
++                            options = LastPeriodType.entries.toList(),
++                            selectedOption = currentRange.period,
++                            onOptionSelected = { period: LastPeriodType -> onRangeSelected(TimelineRange.LastPeriod(period)) },
++                            labelProvider = { it.label }
++                        )
++                    }
++                    is TimelineRange.CustomRange -> {
++                        val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
++                        OutlinedCard(
++                            onClick = { showDatePicker = true },
++                            shape = RoundedCornerShape(20.dp),
++                            modifier = Modifier.fillMaxWidth()
++                        ) {
++                            Row(
++                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
++                                horizontalArrangement = Arrangement.SpaceBetween,
++                                verticalAlignment = Alignment.CenterVertically
++                            ) {
++                                Column {
++                                    Text(
++                                        "CUSTOM RANGE",
++                                        style = MaterialTheme.typography.labelSmall.copy(
++                                            fontWeight = FontWeight.ExtraBold,
++                                            letterSpacing = 1.sp
++                                        ),
++                                        color = MaterialTheme.colorScheme.primary
++                                    )
++                                    Text(
++                                        "${formatter.format(Date(currentRange.start))} - ${formatter.format(Date(currentRange.end))}",
++                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
++                                    )
++                                }
++                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(20.dp))
++                            }
++                        }
++                    }
++                    else -> {}
++                }
++            }
++        }
++    }
++
++    if (showDatePicker) {
++        AeonDateRangePicker(
++            initialStart = (currentRange as? TimelineRange.CustomRange)?.start,
++            initialEnd = (currentRange as? TimelineRange.CustomRange)?.end,
++            onDismiss = { showDatePicker = false },
++            onConfirmed = { start: Long, end: Long ->
++                onRangeSelected(TimelineRange.CustomRange(start, end))
++                showDatePicker = false
++            }
++        )
++    }
++}
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun AeonDateRangePicker(
++    initialStart: Long?,
++    initialEnd: Long?,
++    onDismiss: () -> Unit,
++    onConfirmed: (Long, Long) -> Unit
++) {
++    val state = rememberDateRangePickerState(
++        initialSelectedStartDateMillis = initialStart,
++        initialSelectedEndDateMillis = initialEnd,
++        yearRange = 1970..2100
++    )
++
++    DatePickerDialog(
++        onDismissRequest = onDismiss,
++        confirmButton = {
++            Button(
++                onClick = {
++                    val start = state.selectedStartDateMillis
++                    val end = state.selectedEndDateMillis
++                    if (start != null && end != null) {
++                        val calendar = Calendar.getInstance().apply {
++                            timeInMillis = end
++                            set(Calendar.HOUR_OF_DAY, 23)
++                            set(Calendar.MINUTE, 59)
++                            set(Calendar.SECOND, 59)
++                            set(Calendar.MILLISECOND, 999)
++                        }
++                        onConfirmed(start, calendar.timeInMillis)
++                    }
++                },
++                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
++                shape = RoundedCornerShape(12.dp)
++            ) {
++                Text("Confirm Selection")
++            }
++        },
++        dismissButton = {
++            TextButton(onClick = onDismiss) { Text("Cancel") }
++        },
++        shape = RoundedCornerShape(28.dp),
++        colors = DatePickerDefaults.colors(
++            containerColor = MaterialTheme.colorScheme.surface
++        )
++    ) {
++        Column(modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp)) {
++            // Quick Jump Header
++            val currentMonth = remember(state.displayedMonthMillis) {
++                Calendar.getInstance().apply {
++                    timeInMillis = state.displayedMonthMillis
++                }
++            }
++            
++            Surface(
++                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
++                modifier = Modifier.fillMaxWidth()
++            ) {
++                Row(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .padding(16.dp),
++                    horizontalArrangement = Arrangement.spacedBy(12.dp),
++                    verticalAlignment = Alignment.CenterVertically
++                ) {
++                    val months = remember {
++                        (0..11).map { m ->
++                            Calendar.getInstance().apply { set(Calendar.MONTH, m) }.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: ""
++                        }
++                    }
++
++                    // Month Selector
++                    AeonJumpSelector(
++                        currentValue = currentMonth.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) ?: "",
++                        options = months,
++                        selectedIndex = currentMonth.get(Calendar.MONTH),
++                        onOptionSelected = { index: Int ->
++                            currentMonth.set(Calendar.MONTH, index)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        onPrevious = {
++                            currentMonth.add(Calendar.MONTH, -1)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        onNext = {
++                            currentMonth.add(Calendar.MONTH, 1)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        modifier = Modifier.weight(1.2f)
++                    )
++
++                    // Year Selector
++                    val currentYear = currentMonth.get(Calendar.YEAR)
++                    val years = remember { (1970..2100).map { it.toString() } }
++                    AeonJumpSelector(
++                        currentValue = currentYear.toString(),
++                        options = years,
++                        selectedIndex = (currentYear - 1970).coerceIn(0, years.size - 1),
++                        onOptionSelected = { index: Int ->
++                            val year = 1970 + index
++                            currentMonth.set(Calendar.YEAR, year)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        onPrevious = {
++                            currentMonth.add(Calendar.YEAR, -1)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        onNext = {
++                            currentMonth.add(Calendar.YEAR, 1)
++                            state.displayedMonthMillis = currentMonth.timeInMillis
++                        },
++                        modifier = Modifier.weight(1f)
++                    )
++
++                    // Today Jump Button
++                    IconButton(
++                        onClick = {
++                            state.displayedMonthMillis = System.currentTimeMillis()
++                        },
++                        modifier = Modifier
++                            .size(40.dp)
++                            .background(
++                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
++                                RoundedCornerShape(12.dp)
++                            )
++                    ) {
++                        Icon(
++                            Icons.Default.Today,
++                            contentDescription = "Jump to Today",
++                            tint = MaterialTheme.colorScheme.primary,
++                            modifier = Modifier.size(20.dp)
++                        )
++                    }
++                }
++            }
++
++            DateRangePicker(
++                state = state,
++                modifier = Modifier.weight(1f),
++                title = null,
++                headline = {
++                    val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
++                    val start = state.selectedStartDateMillis
++                    val end = state.selectedEndDateMillis
++                    
++                    Surface(
++                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
++                        modifier = Modifier.fillMaxWidth()
++                    ) {
++                        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
++                            Text(
++                                text = if (start != null && end != null) {
++                                    "${formatter.format(Date(start))} - ${formatter.format(Date(end))}"
++                                } else if (start != null) {
++                                    "${formatter.format(Date(start))} - Select End"
++                                } else {
++                                    "Select Range"
++                                },
++                                style = MaterialTheme.typography.titleMedium.copy(
++                                    fontWeight = FontWeight.ExtraBold,
++                                    color = MaterialTheme.colorScheme.primary
++                                )
++                            )
++                        }
++                    }
++                },
++                showModeToggle = false,
++                colors = DatePickerDefaults.colors(
++                    containerColor = Color.Transparent
++                )
++            )
++        }
++    }
++}
++
++@Composable
++fun AeonJumpSelector(
++    currentValue: String,
++    options: List<String>,
++    modifier: Modifier = Modifier,
++    selectedIndex: Int = -1,
++    onOptionSelected: (Int) -> Unit,
++    onPrevious: () -> Unit,
++    onNext: () -> Unit
++) {
++    var expanded by remember { mutableStateOf(false) }
++
++    Surface(
++        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
++        shape = RoundedCornerShape(16.dp),
++        modifier = modifier
++    ) {
++        Row(
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.SpaceBetween,
++            modifier = Modifier.padding(4.dp)
++        ) {
++            IconButton(onClick = onPrevious, modifier = Modifier.size(32.dp)) {
++                Icon(Icons.Default.ChevronLeft, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
++            }
++            
++            Box(
++                modifier = Modifier
++                    .weight(1f)
++                    .clip(RoundedCornerShape(8.dp))
++                    .clickable { expanded = true },
++                contentAlignment = Alignment.Center
++            ) {
++                Text(
++                    text = currentValue,
++                    style = MaterialTheme.typography.labelLarge.copy(
++                        fontWeight = FontWeight.Bold,
++                        color = MaterialTheme.colorScheme.onSecondaryContainer
++                    ),
++                    textAlign = TextAlign.Center,
++                    maxLines = 1,
++                    overflow = TextOverflow.Ellipsis,
++                    modifier = Modifier.padding(horizontal = 4.dp)
++                )
++
++                DropdownMenu(
++                    expanded = expanded,
++                    onDismissRequest = { expanded = false },
++                    modifier = Modifier
++                        .width(140.dp)
++                        .background(MaterialTheme.colorScheme.surface)
++                ) {
++                    val scrollState = rememberScrollState()
++                    val density = LocalDensity.current
++                    
++                    if (expanded) {
++                        LaunchedEffect(selectedIndex) {
++                            if (selectedIndex >= 0) {
++                                val itemHeightPx = with(density) { 48.dp.toPx() }
++                                val scrollPx = ((selectedIndex - 2).coerceAtLeast(0) * itemHeightPx).toInt()
++                                scrollState.scrollTo(scrollPx)
++                            }
++                        }
++                    }
++
++                    Box(
++                        modifier = Modifier
++                            .width(140.dp)
++                            .heightIn(max = 280.dp)
++                    ) {
++                        Column(
++                            modifier = Modifier
++                                .fillMaxWidth()
++                                .verticalScroll(scrollState)
++                        ) {
++                            options.forEachIndexed { index, option ->
++                                DropdownMenuItem(
++                                    text = { 
++                                        Text(
++                                            option, 
++                                            style = MaterialTheme.typography.bodyMedium.copy(
++                                                fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal
++                                            ),
++                                            color = if (index == selectedIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
++                                        ) 
++                                    },
++                                    onClick = {
++                                        onOptionSelected(index)
++                                        expanded = false
++                                    }
++                                )
++                            }
++                        }
++                    }
++                }
++            }
++
++            IconButton(onClick = onNext, modifier = Modifier.size(32.dp)) {
++                Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
++            }
++        }
++    }
++}
+Index: app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/DashboardViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/DashboardViewModel.kt b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/DashboardViewModel.kt
+--- a/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/DashboardViewModel.kt	(revision 076a47eecf21552fef1de768d13fa2625bbd843b)
++++ b/app/src/main/java/com/osscabinet/osswallet/ui/viewmodel/DashboardViewModel.kt	(revision 980e459c79a62e3e43eb0d4cd2ca2ef8bd910e33)
+@@ -28,7 +28,7 @@
+ class DashboardViewModel(
+     private val accountRepository: AccountRepository,
+     private val getTransactionsUseCase: GetTransactionsUseCase,
+-    private val settingsDataStore: SettingsDataStore,
++    val settingsDataStore: SettingsDataStore,
+     private val analyticsViewModel: AnalyticsViewModel
+ ) : ViewModel() {
+ 
+@@ -82,6 +82,12 @@
+         }
+     }
+ 
++    fun updateNetWorthTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
++        viewModelScope.launch {
++            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
++        }
++    }
++
+     fun updateCashFlowShowBaseConversion(show: Boolean) {
+         viewModelScope.launch {
+             settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }

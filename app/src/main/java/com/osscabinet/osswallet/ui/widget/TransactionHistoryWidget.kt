@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.MainActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.action.clickable
+import com.osscabinet.ossWallet.OssWalletApp
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -29,10 +30,15 @@ import java.math.BigDecimal
 
 class TransactionHistoryWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val db = AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
-        val repository = TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
-        val profileId = com.osscabinet.ossWallet.data.local.SettingsDataStore(context).currentProfileId.first()
-        val allTransactions = repository.getAllTransactions(profileId).first()
+        val container = (context.applicationContext as OssWalletApp).container
+        val repository = container.transactionRepository
+        val settingsDataStore = container.settingsDataStore
+
+        val profileId = settingsDataStore.currentProfileId.first()
+        val currency = settingsDataStore.currency.first()
+        val precision = settingsDataStore.decimalPrecision.first()
+
+        val allTransactions = repository.getAllTransactionsSync(profileId)
         val transactions = allTransactions
             .sortedByDescending { it.timestamp }
             .take(4)
@@ -40,12 +46,12 @@ class TransactionHistoryWidget : GlanceAppWidget() {
             .fold(BigDecimal.ZERO) { acc, tx -> if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount) }
 
         provideContent {
-            WidgetContent(totalBalance, transactions)
+            WidgetContent(totalBalance, transactions, currency, precision)
         }
     }
 
     @Composable
-    private fun WidgetContent(balance: BigDecimal, transactions: List<Transaction>) {
+    private fun WidgetContent(balance: BigDecimal, transactions: List<Transaction>, currency: String, precision: Int) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -72,7 +78,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                         )
                     )
                     Text(
-                        text = formatCurrencyRight(balance, "USD"), // Default to USD for display if currency not found
+                        text = formatCurrencyRight(balance, currency, precision),
                         style = TextStyle(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -113,7 +119,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
             } else {
                 Column(modifier = GlanceModifier.fillMaxWidth()) {
                     transactions.forEach { transaction ->
-                        TransactionRow(transaction)
+                        TransactionRow(transaction, precision)
                         Spacer(modifier = GlanceModifier.height(4.dp))
                     }
                 }
@@ -122,7 +128,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TransactionRow(transaction: Transaction) {
+    private fun TransactionRow(transaction: Transaction, precision: Int) {
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
@@ -142,7 +148,7 @@ class TransactionHistoryWidget : GlanceAppWidget() {
                 )
             }
             Text(
-                text = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency),
+                text = formatCurrencyRight(if (transaction.isIncome) transaction.amount else -transaction.amount, transaction.currency, precision),
                 style = TextStyle(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,

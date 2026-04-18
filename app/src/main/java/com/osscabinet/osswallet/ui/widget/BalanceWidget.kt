@@ -17,6 +17,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.MainActivity
 import androidx.glance.appwidget.appWidgetBackground
+import com.osscabinet.ossWallet.OssWalletApp
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -26,24 +27,26 @@ import java.math.BigDecimal
 
 class BalanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // SQLCipher requires passphrase. Since widgets run in a different process,
-        // they must have access to the same key. In a production app, this would be 
-        // retrieved from a secure KeyStore.
-        val db = AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
-        val repository = TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
-        val profileId = com.osscabinet.ossWallet.data.local.SettingsDataStore(context).currentProfileId.first()
-        val transactions = repository.getAllTransactions(profileId).first()
+        val container = (context.applicationContext as OssWalletApp).container
+        val repository = container.transactionRepository
+        val settingsDataStore = container.settingsDataStore
+        
+        val profileId = settingsDataStore.currentProfileId.first()
+        val currency = settingsDataStore.currency.first()
+        val precision = settingsDataStore.decimalPrecision.first()
+        
+        val transactions = repository.getAllTransactionsSync(profileId)
         val totalBalance = transactions.fold(BigDecimal.ZERO) { acc, tx ->
             if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
         }
 
         provideContent {
-            BalanceWidgetContent(totalBalance)
+            BalanceWidgetContent(totalBalance, currency, precision)
         }
     }
 
     @Composable
-    private fun BalanceWidgetContent(balance: BigDecimal) {
+    private fun BalanceWidgetContent(balance: BigDecimal, currency: String, precision: Int) {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -62,7 +65,7 @@ class BalanceWidget : GlanceAppWidget() {
             )
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
-                text = formatCurrencyRight(balance, "USD"), // Default to USD if currency not found, or fetch from settings
+                text = formatCurrencyRight(balance, currency, precision),
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,

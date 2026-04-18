@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.data.repository
 
 import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room.withTransaction
+import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
@@ -8,10 +10,10 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,13 +23,15 @@ import android.util.Log
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
-    private val context: Context
+    private val context: Context,
+    private val database: AppDatabase
 ) : TransactionRepository {
 
-    @OptIn(DelicateCoroutinesApi::class)
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private fun updateWidgets() {
         Log.d("TransactionRepo", "Triggering widget update")
-        GlobalScope.launch {
+        repositoryScope.launch {
             try {
                 WidgetUpdateHelper.updateAllWidgets(context)
                 Log.d("TransactionRepo", "Widget update successful")
@@ -164,6 +168,28 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun saveTransfer(
+        sourceTransaction: Transaction,
+        targetTransaction: Transaction,
+        profileId: Int
+    ): Pair<Long, Long> {
+        return database.withTransaction {
+            val sourceId = transactionDao.insertTransactionWithBalanceUpdate(sourceTransaction.toEntity(profileId), accountDao)
+            
+            // Link the target back to the source if not already set
+            val updatedTarget = targetTransaction.copy(linkedTransactionId = sourceId)
+            val targetId = transactionDao.insertTransactionWithBalanceUpdate(updatedTarget.toEntity(profileId), accountDao)
+            
+            // Link source to target as well for two-way linking
+            val finalSource = sourceTransaction.copy(id = sourceId, linkedTransactionId = targetId)
+            transactionDao.insertTransaction(finalSource.toEntity(profileId))
+            
+            Pair(sourceId, targetId)
+        }.also {
+            updateWidgets()
+        }
+    }
+
     override suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
         transactionDao.updateTransactionWithBalanceUpdate(
             oldTransaction.toEntity(profileId),
@@ -189,6 +215,10 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun getTransactionById(id: Long): Transaction? {
         return transactionDao.getTransactionById(id)?.toDomain()
+    }
+
+    override suspend fun triggerWidgetUpdate() {
+        updateWidgets()
     }
 
     private fun TransactionEntity.toDomain(): Transaction {

@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.usecase.DeleteTransactionUseCase
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.domain.usecase.InsertTransactionUseCase
+import com.osscabinet.ossWallet.domain.usecase.SaveTransferUseCase
 import com.osscabinet.ossWallet.domain.usecase.UpdateTransactionUseCase
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
@@ -26,6 +27,7 @@ class TransactionViewModel(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
+    private val saveTransferUseCase: SaveTransferUseCase,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
@@ -219,6 +221,18 @@ class TransactionViewModel(
         }
     }
 
+    fun saveTransfer(
+        sourceTransaction: Transaction,
+        targetTransaction: Transaction,
+        onComplete: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
+            saveTransferUseCase(sourceTransaction, targetTransaction, profileId)
+            onComplete?.invoke()
+        }
+    }
+
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             deleteTransactionUseCase(id)
@@ -265,6 +279,7 @@ class TransactionViewModelFactory(
     private val insertTransactionUseCase: InsertTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
+    private val saveTransferUseCase: SaveTransferUseCase,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
@@ -278,6 +293,7 @@ class TransactionViewModelFactory(
             insertTransactionUseCase,
             deleteTransactionUseCase,
             updateTransactionUseCase,
+            saveTransferUseCase,
             settingsDataStore,
             categoryDao,
             accountRepository,

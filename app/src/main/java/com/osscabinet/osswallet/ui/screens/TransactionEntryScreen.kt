@@ -90,11 +90,14 @@ fun TransactionEntryScreen(
         }
     }
 
+    val initialTimestamp = remember { System.currentTimeMillis() }
+
     TransactionEntryContent(
         transactionId = transactionId,
         accountId = accountId,
         initialType = initialType,
         initialTemplate = initialTemplate,
+        initialTimestamp = initialTimestamp,
         transactions = transactions,
         categories = categories,
         accounts = accounts,
@@ -104,7 +107,9 @@ fun TransactionEntryScreen(
         allTags = allTags,
         onAddTag = { tagViewModel.addTag(it) },
         onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp ->
-            if (transactionId != null && transactionId != -1L) {
+            val isEditMode = transactionId != null && transactionId != -1L
+            val finalTimestamp = if (!isEditMode && timestamp == initialTimestamp) System.currentTimeMillis() else timestamp
+            if (isEditMode) {
                 val existingTransaction = transactions.find { it.id == transactionId }
                 if (existingTransaction != null) {
                     val wasTransfer = existingTransaction.category == "Transfer"
@@ -125,7 +130,7 @@ fun TransactionEntryScreen(
                             currency = currency,
                             categoryId = categoryId,
                             tags = tags,
-                            timestamp = timestamp,
+                            timestamp = finalTimestamp,
                             payee = payee,
                             note = note,
                             linkedTransactionId = null,
@@ -135,61 +140,114 @@ fun TransactionEntryScreen(
                         )
                     } else if (!wasTransfer && isTransfer) {
                         // Changed from Income/Expense to Transfer
-                        // Create target transaction first to get its ID
                         targetAcc?.id?.let { targetId ->
-                            val targetAmount = amountValue.multiply(rate)
-                            viewModel.addTransaction(
+                            val sourceTx = existingTransaction.copy(
+                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                                amount = amountValue,
+                                category = "Transfer",
+                                isIncome = false,
+                                accountId = accId,
+                                currency = currency,
+                                categoryId = null,
+                                tags = tags,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp
+                            )
+                            
+                            val targetTx = Transaction(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                amount = targetAmount,
+                                amount = amountValue.multiply(rate),
                                 category = "Transfer",
                                 isIncome = true,
                                 accountId = targetId,
                                 currency = targetCurrency,
                                 tags = tags,
                                 paymentMethod = paymentMethod,
-                                timestamp = timestamp,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp
+                            )
+                            
+                            viewModel.saveTransfer(sourceTx, targetTx)
+                        }
+                    } else if (wasTransfer && isTransfer) {
+                        // Update existing transfer
+                        targetAcc?.id?.let { targetId ->
+                            val sourceTx = existingTransaction.copy(
+                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                                amount = amountValue,
+                                category = "Transfer",
+                                isIncome = false,
+                                accountId = accId,
+                                currency = currency,
+                                categoryId = null,
+                                tags = tags,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                linkedTransactionId = linkedId,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp
+                            )
+                            
+                            val existingLinkedTx = transactions.find { it.id == linkedId }
+                            val targetTx = existingLinkedTx?.copy(
+                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
+                                amount = amountValue.multiply(rate),
+                                category = "Transfer",
+                                isIncome = true,
+                                accountId = targetId,
+                                currency = targetCurrency,
+                                tags = tags,
+                                paymentMethod = paymentMethod,
+                                timestamp = finalTimestamp,
                                 payee = payee,
                                 note = note,
                                 linkedTransactionId = transactionId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                onComplete = { newLinkedId ->
-                                    // Update current transaction with link to new target transaction
-                                    viewModel.updateTransaction(
-                                        oldTransaction = existingTransaction,
-                                        title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                                        amount = amountValue,
-                                        category = "Transfer",
-                                        isIncome = false,
-                                        accountId = accId,
-                                        currency = currency,
-                                        categoryId = null,
-                                        tags = tags,
-                                        timestamp = timestamp,
-                                        payee = payee,
-                                        note = note,
-                                        linkedTransactionId = newLinkedId,
-                                        latitude = coords?.first,
-                                        longitude = coords?.second,
-                                        warrantyExpiration = warrantyExp
-                                    )
-                                }
+                                warrantyExpiration = warrantyExp
+                            ) ?: Transaction(
+                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
+                                amount = amountValue.multiply(rate),
+                                category = "Transfer",
+                                isIncome = true,
+                                accountId = targetId,
+                                currency = targetCurrency,
+                                tags = tags,
+                                paymentMethod = paymentMethod,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                linkedTransactionId = transactionId,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp
                             )
+                            
+                            viewModel.saveTransfer(sourceTx, targetTx)
                         }
                     } else {
-                        // Standard update (no type change between Transfer and others)
+                        // Standard update (not a transfer)
                         viewModel.updateTransaction(
                             oldTransaction = existingTransaction,
-                            title = title.ifBlank { if (isTransfer) "Transfer" else category },
+                            title = title.ifBlank { category },
                             amount = amountValue,
-                            category = if (isTransfer) "Transfer" else category,
+                            category = category,
                             isIncome = isIncome,
                             accountId = accId,
                             currency = currency,
-                            categoryId = if (isTransfer) null else categoryId,
+                            categoryId = categoryId,
                             tags = tags,
-                            timestamp = timestamp,
+                            timestamp = finalTimestamp,
                             payee = payee,
                             note = note,
                             linkedTransactionId = linkedId,
@@ -197,70 +255,46 @@ fun TransactionEntryScreen(
                             longitude = coords?.second,
                             warrantyExpiration = warrantyExp
                         )
-                        
-                        if (isTransfer && linkedId != null) {
-                            val linkedTx = transactions.find { it.id == linkedId }
-                            if (linkedTx != null && targetAcc != null) {
-                                val targetAmount = amountValue.multiply(rate)
-                                viewModel.updateTransaction(
-                                    oldTransaction = linkedTx,
-                                    title = linkedTx.title,
-                                    amount = targetAmount,
-                                    category = "Transfer",
-                                    isIncome = true,
-                                    accountId = targetAcc.id,
-                                    currency = targetCurrency,
-                                    tags = tags,
-                                    timestamp = timestamp,
-                                    payee = payee,
-                                    note = note,
-                                    linkedTransactionId = transactionId,
-                                    latitude = coords?.first,
-                                    longitude = coords?.second,
-                                    warrantyExpiration = warrantyExp
-                                )
-                            }
-                        }
                     }
                 }
             } else {
                 if (isTransfer) {
-                    viewModel.addTransaction(
-                        title = title.ifBlank { "Transfer to ${targetAcc?.name}" },
-                        amount = amountValue,
-                        category = "Transfer",
-                        isIncome = false,
-                        accountId = accId,
-                        currency = currency,
-                        tags = tags,
-                        paymentMethod = paymentMethod,
-                        timestamp = timestamp,
-                        payee = payee,
-                        note = note,
-                        latitude = coords?.first,
-                        longitude = coords?.second,
-                        warrantyExpiration = warrantyExp
-                    )
-
                     targetAcc?.id?.let { targetId ->
-                        val targetAmount = amountValue.multiply(rate)
-                        viewModel.addTransaction(
+                        val sourceTx = Transaction(
+                            title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                            amount = amountValue,
+                            category = "Transfer",
+                            isIncome = false,
+                            accountId = accId,
+                            currency = currency,
+                            tags = tags,
+                            paymentMethod = paymentMethod,
+                            timestamp = finalTimestamp,
+                            payee = payee,
+                            note = note,
+                            latitude = coords?.first,
+                            longitude = coords?.second,
+                            warrantyExpiration = warrantyExp
+                        )
+                        
+                        val targetTx = Transaction(
                             title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                            amount = targetAmount,
+                            amount = amountValue.multiply(rate),
                             category = "Transfer",
                             isIncome = true,
                             accountId = targetId,
                             currency = targetCurrency,
                             tags = tags,
                             paymentMethod = paymentMethod,
-                            timestamp = timestamp,
+                            timestamp = finalTimestamp,
                             payee = payee,
                             note = note,
-                            linkedTransactionId = null,
                             latitude = coords?.first,
                             longitude = coords?.second,
                             warrantyExpiration = warrantyExp
                         )
+                        
+                        viewModel.saveTransfer(sourceTx, targetTx)
                     }
                 } else {
                     viewModel.addTransaction(
@@ -273,7 +307,7 @@ fun TransactionEntryScreen(
                         currency = currency,
                         tags = tags,
                         paymentMethod = paymentMethod,
-                        timestamp = timestamp,
+                        timestamp = finalTimestamp,
                         payee = payee,
                         note = note,
                         linkedTransactionId = linkedId,
@@ -301,6 +335,7 @@ fun TransactionEntryContent(
     accountId: String? = null,
     initialType: Int = 0,
     initialTemplate: String? = null,
+    initialTimestamp: Long = System.currentTimeMillis(),
     transactions: List<Transaction> = emptyList(),
     categories: List<CategoryEntity> = emptyList(),
     accounts: List<Account> = emptyList(),
@@ -334,7 +369,7 @@ fun TransactionEntryContent(
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var paymentMethod by remember { mutableStateOf("Cash") }
     var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
-    var selectedDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var selectedDateMillis by remember { mutableLongStateOf(initialTimestamp) }
     var payee by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var isWarrantyEnabled by remember { mutableStateOf(false) }

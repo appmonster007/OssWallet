@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.BuildConfig
+import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
+import android.content.Context
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
@@ -15,7 +17,8 @@ import kotlin.random.Random
 class DatabaseSeeder @Inject constructor(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val context: Context
 ) {
     suspend fun seed() {
         if (!BuildConfig.DEBUG) return
@@ -130,5 +133,8 @@ class DatabaseSeeder @Inject constructor(
             val updateAmount = if (isIncome) amount else amount.negate()
             accountDao.updateBalance(account.id, updateAmount)
         }
+
+        // Trigger widget update after seeding
+        WidgetUpdateHelper.updateAllWidgets(context)
     }
 }

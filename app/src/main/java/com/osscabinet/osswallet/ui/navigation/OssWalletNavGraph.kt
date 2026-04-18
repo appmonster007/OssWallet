@@ -55,6 +55,7 @@ fun OssWalletNavGraph(
             appContainer.insertTransactionUseCase,
             appContainer.deleteTransactionUseCase,
             appContainer.updateTransactionUseCase,
+            appContainer.saveTransferUseCase,
             appContainer.settingsDataStore,
             appContainer.db.categoryDao(),
             appContainer.accountRepository,

@@ -25,7 +25,7 @@ class AppContainer(private val context: Context) {
 
     // Repositories
     val transactionRepository: TransactionRepositoryImpl by lazy {
-        TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), context)
+        TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), context, db)
     }
 
     val accountRepository: AccountRepositoryImpl by lazy {
@@ -53,7 +53,7 @@ class AppContainer(private val context: Context) {
     }
 
     val backupRepository: BackupRepositoryImpl by lazy {
-        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao())
+        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), context)
     }
 
     val tagRepository: TagRepositoryImpl by lazy {
@@ -61,12 +61,13 @@ class AppContainer(private val context: Context) {
     }
 
     val databaseSeeder: DatabaseSeeder by lazy {
-        DatabaseSeeder(db.accountDao(), db.categoryDao(), db.transactionDao())
+        DatabaseSeeder(db.accountDao(), db.categoryDao(), db.transactionDao(), context)
     }
 
     // Use Cases
     val getTransactionsUseCase get() = GetTransactionsUseCase(transactionRepository)
     val insertTransactionUseCase get() = InsertTransactionUseCase(transactionRepository)
+    val saveTransferUseCase get() = SaveTransferUseCase(transactionRepository)
     val deleteTransactionUseCase get() = DeleteTransactionUseCase(transactionRepository)
     val updateTransactionUseCase get() = UpdateTransactionUseCase(transactionRepository)
     

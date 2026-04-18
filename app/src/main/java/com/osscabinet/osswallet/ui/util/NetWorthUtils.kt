@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.util
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import java.math.BigDecimal
 import java.math.RoundingMode
 

@@ -39,17 +39,10 @@ import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
-import com.osscabinet.ossWallet.ui.util.convertAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.toContainerColor
-import androidx.compose.material.icons.filled.MoreHoriz
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
-import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -237,7 +230,6 @@ fun AccountsViewScreen(
                                     CurrencyAggregationSection(
                                         currencyTotals = state.currencyTotals,
                                         baseCurrency = state.baseCurrency,
-                                        exchangeRates = state.exchangeRates,
                                         precision = state.decimalPrecision,
                                         layout = state.currencyBalancesLayout,
                                         showBaseConversion = state.showBaseConversion,
@@ -250,26 +242,9 @@ fun AccountsViewScreen(
                                     )
                                 }
                                 AccountsViewSection.CASHFLOW -> {
-                                    val cashFlowTransactions = remember(state.allTransactions, state.cashFlowTimelineRange) {
-                                        when (val range = state.cashFlowTimelineRange) {
-                                            is TimelineRange.AllTime -> state.allTransactions
-                                            is TimelineRange.ThisPeriod -> {
-                                                val (start, end) = FilterUtils.getRangeForThis(range.period)
-                                                state.allTransactions.filter { it.timestamp in start..end }
-                                            }
-                                            is TimelineRange.LastPeriod -> {
-                                                val (start, end) = FilterUtils.getRangeForLast(range.period)
-                                                state.allTransactions.filter { it.timestamp in start..end }
-                                            }
-                                            is TimelineRange.CustomRange -> {
-                                                state.allTransactions.filter { it.timestamp in range.start..range.end }
-                                            }
-                                        }
-                                    }
                                     AeonCashFlowSummary(
-                                        transactions = cashFlowTransactions,
+                                        cashFlowResult = state.cashFlowResult,
                                         baseCurrency = state.baseCurrency,
-                                        exchangeRates = state.exchangeRates,
                                         currentTheme = currentTheme,
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier,
@@ -289,7 +264,6 @@ fun AccountsViewScreen(
                                         accounts = state.accounts,
                                         accountStats = state.accountStats,
                                         baseCurrency = state.baseCurrency,
-                                        exchangeRates = state.exchangeRates,
                                         currentTheme = currentTheme,
                                         gridColumns = state.gridColumns,
                                         precision = state.decimalPrecision,

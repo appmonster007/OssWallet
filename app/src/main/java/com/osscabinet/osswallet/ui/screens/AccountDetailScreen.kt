@@ -216,9 +216,8 @@ fun AccountDetailScreen(
 
                             item {
                                 AeonCashFlowSummary(
-                                    transactions = state.cashFlowTransactions,
+                                    cashFlowResult = state.cashFlowResult,
                                     baseCurrency = account.currencyCode,
-                                    exchangeRates = state.exchangeRates,
                                     currentTheme = currentTheme,
                                     modifier = Modifier.fillMaxWidth(),
                                     showTitle = true,
@@ -234,7 +233,6 @@ fun AccountDetailScreen(
                                 CurrencyAggregationSection(
                                     currencyTotals = state.currencyTotals,
                                     baseCurrency = state.baseCurrency,
-                                    exchangeRates = state.exchangeRates,
                                     modifier = Modifier.fillMaxWidth(),
                                     precision = state.decimalPrecision,
                                     layout = state.currencyBalancesLayout,

@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
@@ -21,7 +21,10 @@ class AccountDetailViewModel(
     private val accountRepository: AccountRepository,
     private val getTransactionsUseCase: GetTransactionsUseCase,
     val settingsDataStore: SettingsDataStore,
-    private val analyticsViewModel: AnalyticsViewModel
+    private val analyticsViewModel: AnalyticsViewModel,
+    private val getCurrencyAggregationUseCase: GetCurrencyAggregationUseCase,
+    private val getTotalBalancesUseCase: GetTotalBalancesUseCase,
+    private val calculateCashFlowUseCase: CalculateCashFlowUseCase
 ) : ViewModel() {
 
     fun updateCurrencyBalancesLayout(layout: String) {
@@ -79,85 +82,56 @@ class AccountDetailViewModel(
 
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
-                val currencyBalancesLayout = settings.currencyBalancesSection.layout
-                val showBaseConversion = settings.currencyBalancesSection.showBaseConversion
-                val currencyBalancesTimelineRange = settings.currencyBalancesSection.timelineRange
-                val cashFlowShowBaseConversion = settings.cashFlowSection.showBaseConversion
-                val cashFlowTimelineRange = settings.cashFlowSection.timelineRange
-                val showPlannedPayments = settings.transactionsSection.showPlannedPayments
-                val useNoteAsHeader = settings.transactionsSection.useNoteAsHeader
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
                 
-                if (!showPlannedPayments) {
+                if (!settings.transactionsSection.showPlannedPayments) {
                     val now = System.currentTimeMillis()
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
-                val filteredTransactionsForBalances = when (val range = currencyBalancesTimelineRange) {
-                    is TimelineRange.AllTime -> accountTransactions
-                    is TimelineRange.ThisPeriod -> {
-                        val (start, end) = FilterUtils.getRangeForThis(range.period)
-                        accountTransactions.filter { it.timestamp in start..end }
-                    }
-                    is TimelineRange.LastPeriod -> {
-                        val (start, end) = FilterUtils.getRangeForLast(range.period)
-                        accountTransactions.filter { it.timestamp in start..end }
-                    }
-                    is TimelineRange.CustomRange -> {
-                        accountTransactions.filter { it.timestamp in range.start..range.end }
-                    }
-                }
-
-                val filteredTransactionsForCashFlow = when (val range = cashFlowTimelineRange) {
-                    is TimelineRange.AllTime -> accountTransactions
-                    is TimelineRange.ThisPeriod -> {
-                        val (start, end) = FilterUtils.getRangeForThis(range.period)
-                        accountTransactions.filter { it.timestamp in start..end }
-                    }
-                    is TimelineRange.LastPeriod -> {
-                        val (start, end) = FilterUtils.getRangeForLast(range.period)
-                        accountTransactions.filter { it.timestamp in start..end }
-                    }
-                    is TimelineRange.CustomRange -> {
-                        accountTransactions.filter { it.timestamp in range.start..range.end }
-                    }
-                }
-
                 // Currency aggregation for this account
-                val supportedCurrencies = (setOf(account.currencyCode) + account.allowedCurrencies.toSet() + accountTransactions.map { it.currency }.toSet()).toList().sorted()
-                
-                val currencyTotals = supportedCurrencies.associateWith { curr ->
-                    val txSum = filteredTransactionsForBalances.filter { it.currency == curr }.fold(BigDecimal.ZERO) { acc, tx ->
-                        if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount)
-                    }
-                    if (curr == account.currencyCode && currencyBalancesTimelineRange is TimelineRange.AllTime) {
-                         account.initialBalance.add(txSum)
-                    } else {
-                        txSum
-                    }
-                }
+                val currencyTotals = getCurrencyAggregationUseCase(
+                    accounts = listOf(account),
+                    allTransactions = accountTransactions,
+                    timelineRange = settings.currencyBalancesSection.timelineRange,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision
+                )
+
+                // Cash flow for this account
+                val cashFlowResult = calculateCashFlowUseCase(
+                    allTransactions = accountTransactions,
+                    timelineRange = settings.cashFlowSection.timelineRange,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision
+                )
 
                 // Overall balance (always all time for accurate current balance)
-                val totalTxSumPerCurrency = accountTransactions.groupBy { it.currency }.mapValues { (_, txs) ->
-                    txs.fold(BigDecimal.ZERO) { acc, tx -> if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount) }
-                }
-                val totalBalanceInAccountCurrency = account.initialBalance.add(calculateTotalInCurrency(totalTxSumPerCurrency, account.currencyCode, rates, precision))
+                val updatedAccount = getTotalBalancesUseCase(
+                    accounts = listOf(account),
+                    allTransactions = allTransactions.filter { it.accountId == accountId },
+                    exchangeRates = rates,
+                    precision = precision
+                ).first()
 
                 AccountDetailUiState.Success(
-                    account = account.copy(balance = totalBalanceInAccountCurrency),
-                    cashFlowTransactions = filteredTransactionsForCashFlow,
+                    account = updatedAccount,
+                    cashFlowTransactions = cashFlowResult.filteredTransactions,
                     currencyTotals = currencyTotals,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     decimalPrecision = precision,
-                    currencyBalancesLayout = currencyBalancesLayout,
-                    showBaseConversion = showBaseConversion,
-                    currencyBalancesTimelineRange = currencyBalancesTimelineRange,
-                    cashFlowShowBaseConversion = cashFlowShowBaseConversion,
-                    cashFlowTimelineRange = cashFlowTimelineRange,
-                    showPlannedPayments = showPlannedPayments,
-                    useNoteAsHeader = useNoteAsHeader
+                    currencyBalancesLayout = settings.currencyBalancesSection.layout,
+                    showBaseConversion = settings.currencyBalancesSection.showBaseConversion,
+                    currencyBalancesTimelineRange = settings.currencyBalancesSection.timelineRange,
+                    cashFlowShowBaseConversion = settings.cashFlowSection.showBaseConversion,
+                    cashFlowTimelineRange = settings.cashFlowSection.timelineRange,
+                    showPlannedPayments = settings.transactionsSection.showPlannedPayments,
+                    useNoteAsHeader = settings.transactionsSection.useNoteAsHeader,
+                    cashFlowResult = cashFlowResult
                 )
             }
         }
@@ -173,7 +147,7 @@ sealed class AccountDetailUiState {
     data class Success(
         val account: Account,
         val cashFlowTransactions: List<Transaction>,
-        val currencyTotals: Map<String, BigDecimal>,
+        val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val decimalPrecision: Int,
@@ -183,7 +157,8 @@ sealed class AccountDetailUiState {
         val cashFlowShowBaseConversion: Boolean,
         val cashFlowTimelineRange: TimelineRange,
         val showPlannedPayments: Boolean = false,
-        val useNoteAsHeader: Boolean = false
+        val useNoteAsHeader: Boolean = false,
+        val cashFlowResult: CashFlowResult? = null
     ) : AccountDetailUiState()
     data class Error(val message: String) : AccountDetailUiState()
 }

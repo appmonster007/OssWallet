@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
@@ -36,9 +36,8 @@ data class CurrencyBalancesSettings(
 
 @Composable
 fun CurrencyAggregationSection(
-    currencyTotals: Map<String, BigDecimal>,
+    currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     title: String = "AGGREGATED CURRENCY BALANCES",
@@ -103,10 +102,8 @@ fun CurrencyAggregationSection(
                     }
                 )
 
-                val sortedTotals = currencyTotals.toList().sortedBy { it.first }
-
                 if (layout == "grid") {
-                    val chunks = sortedTotals.chunked(3)
+                    val chunks = currencyTotals.chunked(3)
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -116,12 +113,12 @@ fun CurrencyAggregationSection(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                rowItems.forEach { (currency, amount) ->
+                                rowItems.forEach { item ->
                                     AeonCurrencyBalanceItem(
-                                        currency = currency,
-                                        amount = amount,
+                                        currency = item.currency,
+                                        amount = item.amount,
+                                        inBase = item.amountInBase,
                                         baseCurrency = baseCurrency,
-                                        exchangeRates = exchangeRates,
                                         precision = precision,
                                         showBaseConversion = showBaseConversion,
                                         modifier = Modifier.weight(1f)
@@ -140,12 +137,12 @@ fun CurrencyAggregationSection(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(bottom = 4.dp)
                     ) {
-                        items(sortedTotals) { (currency, amount) ->
+                        items(currencyTotals) { item ->
                             AeonCurrencyBalanceItem(
-                                currency = currency,
-                                amount = amount,
+                                currency = item.currency,
+                                amount = item.amount,
+                                inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
-                                exchangeRates = exchangeRates,
                                 precision = precision,
                                 showBaseConversion = showBaseConversion
                             )
@@ -221,13 +218,12 @@ fun CurrencyAggregationSection(
 fun AeonCurrencyBalanceItem(
     currency: String,
     amount: BigDecimal,
+    inBase: BigDecimal,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val inBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
 
     Surface(
         shape = RoundedCornerShape(20.dp),
@@ -298,9 +294,8 @@ fun CurrencyAggregationSectionPreview() {
     OssWalletTheme {
         Surface {
             CurrencyAggregationSection(
-                currencyTotals = sampleCurrencyTotals,
+                currencyTotals = emptyList(),
                 baseCurrency = "USD",
-                exchangeRates = sampleExchangeRates,
                 modifier = Modifier.padding(16.dp)
             )
         }

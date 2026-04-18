@@ -107,7 +107,13 @@ fun OssWalletNavGraph(
                 appContainer.accountRepository,
                 appContainer.getTransactionsUseCase,
                 appContainer.settingsDataStore,
-                analyticsViewModel
+                analyticsViewModel,
+                appContainer.calculateNetWorthUseCase,
+                appContainer.getCurrencyAggregationUseCase,
+                appContainer.getAccountSummariesUseCase,
+                appContainer.getTotalBalancesUseCase,
+                appContainer.getRecentTransactionsUseCase,
+                appContainer.calculateCashFlowUseCase
             )
         }
     )
@@ -118,7 +124,12 @@ fun OssWalletNavGraph(
                 appContainer.accountRepository,
                 appContainer.getTransactionsUseCase,
                 appContainer.settingsDataStore,
-                analyticsViewModel
+                analyticsViewModel,
+                appContainer.calculateNetWorthUseCase,
+                appContainer.getCurrencyAggregationUseCase,
+                appContainer.getAccountSummariesUseCase,
+                appContainer.getTotalBalancesUseCase,
+                appContainer.calculateCashFlowUseCase
             )
         }
     )
@@ -433,7 +444,10 @@ fun OssWalletNavGraph(
                         accountRepository = appContainer.accountRepository,
                         getTransactionsUseCase = appContainer.getTransactionsUseCase,
                         settingsDataStore = appContainer.settingsDataStore,
-                        analyticsViewModel = analyticsViewModel
+                        analyticsViewModel = analyticsViewModel,
+                        getCurrencyAggregationUseCase = appContainer.getCurrencyAggregationUseCase,
+                        getTotalBalancesUseCase = appContainer.getTotalBalancesUseCase,
+                        calculateCashFlowUseCase = appContainer.calculateCashFlowUseCase
                     )
                 }
             )

@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
-import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
@@ -46,9 +46,8 @@ fun AeonAccountsSection(
     onAccountClick: (String) -> Unit,
     onGridColumnsChange: (Int) -> Unit,
     accounts: List<Account>,
-    accountStats: Map<String, AccountStats>,
+    accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -224,7 +223,6 @@ fun AeonAccountsSection(
                             account = account,
                             accountStats = accountStats,
                             baseCurrency = baseCurrency,
-                            exchangeRates = exchangeRates,
                             currentTheme = currentTheme,
                             gridColumns = gridColumns,
                             precision = precision,
@@ -258,7 +256,6 @@ fun AeonAccountsSection(
                             account = account,
                             accountStats = accountStats,
                             baseCurrency = baseCurrency,
-                            exchangeRates = exchangeRates,
                             currentTheme = currentTheme,
                             gridColumns = 2,
                             precision = precision,
@@ -288,9 +285,8 @@ fun AeonAccountsSection(
 @Composable
 private fun FlowRowScope.AccountItemWrapper(
     account: Account,
-    accountStats: Map<String, AccountStats>,
+    accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     gridColumns: Int,
     precision: Int,
@@ -301,7 +297,6 @@ private fun FlowRowScope.AccountItemWrapper(
         account = account,
         accountStats = accountStats,
         baseCurrency = baseCurrency,
-        exchangeRates = exchangeRates,
         currentTheme = currentTheme,
         gridColumns = gridColumns,
         precision = precision,
@@ -313,9 +308,8 @@ private fun FlowRowScope.AccountItemWrapper(
 @Composable
 private fun AccountItemWrapper(
     account: Account,
-    accountStats: Map<String, AccountStats>,
+    accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     gridColumns: Int,
     precision: Int,
@@ -326,7 +320,6 @@ private fun AccountItemWrapper(
         account = account,
         accountStats = accountStats,
         baseCurrency = baseCurrency,
-        exchangeRates = exchangeRates,
         currentTheme = currentTheme,
         gridColumns = gridColumns,
         precision = precision,
@@ -338,9 +331,8 @@ private fun AccountItemWrapper(
 @Composable
 private fun AccountItemContent(
     account: Account,
-    accountStats: Map<String, AccountStats>,
+    accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
     currentTheme: String,
     gridColumns: Int,
     precision: Int,
@@ -348,14 +340,7 @@ private fun AccountItemContent(
     modifier: Modifier = Modifier
 ) {
     val stats = accountStats[account.id]
-    val totalInBase = stats?.currencyBalances?.let { balances ->
-        com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency(
-            balances,
-            baseCurrency,
-            exchangeRates,
-            precision
-        )
-    } ?: BigDecimal.ZERO
+    val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
 
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -507,8 +492,10 @@ fun AeonAccountsSectionPreview() {
     )
 
     val sampleAccountStats = mapOf(
-        "1" to AccountStats(
+        "1" to AccountSummaryItem(
+            account = sampleAccount,
             currencyBalances = mapOf("USD" to BigDecimal("1000.00")),
+            balanceInBase = BigDecimal("1000.00"),
             incomeInAccountCurrency = BigDecimal("200.00"),
             expenseInAccountCurrency = BigDecimal("100.00")
         )
@@ -523,7 +510,6 @@ fun AeonAccountsSectionPreview() {
                 accounts = listOf(sampleAccount),
                 accountStats = sampleAccountStats,
                 baseCurrency = "USD",
-                exchangeRates = emptyMap(),
                 currentTheme = "Light",
                 modifier = Modifier.padding(16.dp)
             )

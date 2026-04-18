@@ -31,22 +31,32 @@ import java.math.BigDecimal
 class TransactionHistoryWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as OssWalletApp).container
-        val repository = container.transactionRepository
+        val transactionRepository = container.transactionRepository
+        val accountRepository = container.accountRepository
+        val currencyRepository = container.currencyRepository
         val settingsDataStore = container.settingsDataStore
 
         val profileId = settingsDataStore.currentProfileId.first()
-        val currency = settingsDataStore.currency.first()
+        val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
 
-        val allTransactions = repository.getAllTransactionsSync(profileId)
-        val transactions = allTransactions
+        val recentTransactions = transactionRepository.getAllTransactionsSync(profileId)
             .sortedByDescending { it.timestamp }
             .take(4)
-        val totalBalance = allTransactions
-            .fold(BigDecimal.ZERO) { acc, tx -> if (tx.isIncome) acc.add(tx.amount) else acc.subtract(tx.amount) }
+
+        val accounts = accountRepository.getAllAccountsSync(profileId)
+        val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
+        val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
+
+        val totalBalance = com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts(
+            accounts = accounts,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
 
         provideContent {
-            WidgetContent(totalBalance, transactions, currency, precision)
+            WidgetContent(totalBalance, recentTransactions, baseCurrency, precision)
         }
     }
 

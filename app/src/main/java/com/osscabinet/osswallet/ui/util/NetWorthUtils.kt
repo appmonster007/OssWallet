@@ -6,6 +6,21 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountStats
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+fun calculateNetWorthFromAccounts(
+    accounts: List<Account>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    precision: Int
+): BigDecimal {
+    val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
+    
+    accounts.forEach { account ->
+        globalCurrencyTotals[account.currencyCode] = (globalCurrencyTotals[account.currencyCode] ?: BigDecimal.ZERO).add(account.balance)
+    }
+
+    return calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
+}
+
 fun calculateNetWorth(
     accounts: List<Account>,
     allTransactions: List<Transaction>,

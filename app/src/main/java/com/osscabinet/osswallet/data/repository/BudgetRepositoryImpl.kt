@@ -5,22 +5,29 @@ import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import android.content.Context
+import android.util.Log
 
 class BudgetRepositoryImpl(
     private val budgetDao: BudgetDao,
     private val context: Context
 ) : BudgetRepository {
 
-    @OptIn(DelicateCoroutinesApi::class)
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private fun updateWidgets() {
-        GlobalScope.launch {
-            WidgetUpdateHelper.updateAllWidgets(context)
+        repositoryScope.launch {
+            try {
+                WidgetUpdateHelper.updateAllWidgets(context)
+            } catch (e: Exception) {
+                Log.e("BudgetRepo", "Widget update failed", e)
+            }
         }
     }
 

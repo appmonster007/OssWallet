@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
+import com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
@@ -71,32 +72,38 @@ class NetWorthWidget : GlanceAppWidget() {
         val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
         val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
         
-        val transactions = when (timelineRange) {
-            is TimelineRange.AllTime -> {
-                transactionRepository.getAllTransactionsSync(profileId)
+        val netWorth = if (timelineRange is TimelineRange.AllTime) {
+            calculateNetWorthFromAccounts(
+                accounts = accounts,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
+        } else {
+            val transactions = when (timelineRange) {
+                is TimelineRange.ThisPeriod -> {
+                    val (start, end) = FilterUtils.getRangeForThis(timelineRange.period)
+                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
+                }
+                is TimelineRange.LastPeriod -> {
+                    val (start, end) = FilterUtils.getRangeForLast(timelineRange.period)
+                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
+                }
+                is TimelineRange.CustomRange -> {
+                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = timelineRange.start, endDate = timelineRange.end))
+                }
+                else -> emptyList()
             }
-            is TimelineRange.ThisPeriod -> {
-                val (start, end) = FilterUtils.getRangeForThis(timelineRange.period)
-                transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
-            }
-            is TimelineRange.LastPeriod -> {
-                val (start, end) = FilterUtils.getRangeForLast(timelineRange.period)
-                transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
-            }
-            is TimelineRange.CustomRange -> {
-                transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = timelineRange.start, endDate = timelineRange.end))
-            }
-            else -> transactionRepository.getAllTransactionsSync(profileId)
-        }
 
-        val netWorth = calculateNetWorth(
-            accounts = accounts,
-            allTransactions = transactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision,
-            includeInitialBalance = timelineRange is TimelineRange.AllTime
-        )
+            calculateNetWorth(
+                accounts = accounts,
+                allTransactions = transactions,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision,
+                includeInitialBalance = false
+            )
+        }
 
         val timelineLabel = when (timelineRange) {
             is TimelineRange.AllTime -> "ALL TIME"

@@ -12,19 +12,28 @@ object WidgetUpdateHelper {
     suspend fun updateAllWidgets(context: Context) {
         Log.d(TAG, "Updating all widgets using updateAll()...")
         
-        try {
-            NetWorthWidget().updateAll(context)
-            BalanceWidget().updateAll(context)
-            TransactionHistoryWidget().updateAll(context)
-            BudgetWidget().updateAll(context)
-            CashFlowWidget().updateAll(context)
-            Log.d(TAG, "All updateAll() calls triggered.")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating widgets with updateAll()", e)
-            
-            // Fallback to manual update if updateAll fails for some reason
-            val manager = GlanceAppWidgetManager(context)
-            updateManual(context, manager)
+        val widgets = listOf(
+            NetWorthWidget(),
+            BalanceWidget(),
+            TransactionHistoryWidget(),
+            BudgetWidget(),
+            CashFlowWidget()
+        )
+
+        widgets.forEach { widget ->
+            try {
+                // Pre-check for GlanceId to avoid unnecessary SessionWorker overhead if widget not on home screen
+                val manager = GlanceAppWidgetManager(context)
+                val ids = manager.getGlanceIds(widget::class.java)
+                if (ids.isNotEmpty()) {
+                    widget.updateAll(context)
+                    Log.d(TAG, "${widget::class.java.simpleName} update triggered for ${ids.size} instances.")
+                } else {
+                    Log.d(TAG, "Skipping ${widget::class.java.simpleName}: No instances found.")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating ${widget::class.java.simpleName}", e)
+            }
         }
     }
 

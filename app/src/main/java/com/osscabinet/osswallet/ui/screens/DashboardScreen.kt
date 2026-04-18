@@ -63,7 +63,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.components.dashboard.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlinx.coroutines.launch
@@ -90,8 +90,7 @@ fun DashboardScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
-    budgetViewModel: BudgetViewModel,
-    netWorthViewModel: NetWorthViewModel
+    budgetViewModel: BudgetViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -232,8 +231,7 @@ fun DashboardScreen(
                                 onBudgetsClick = { navigate(onBudgetsClick) },
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
-                                dashboardViewModel = dashboardViewModel,
-                                netWorthViewModel = netWorthViewModel
+                                dashboardViewModel = dashboardViewModel
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -270,18 +268,28 @@ fun DashboardContent(
     onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
-    dashboardViewModel: DashboardViewModel,
-    netWorthViewModel: NetWorthViewModel
+    dashboardViewModel: DashboardViewModel
 ) {
     val activeTransactions = remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
     }
 
     val sectionOrder by dashboardViewModel.sectionOrder.collectAsState()
-    
-    val netWorthUiState by remember(netWorthViewModel, dashboardViewModel) {
-        netWorthViewModel.getNetWorthUiState(dashboardViewModel.settingsDataStore.dashboardSettings.map { it.netWorthSection })
-    }.collectAsState()
+    val netWorthUiState = remember(
+        state.netWorth,
+        state.baseCurrency,
+        state.decimalPrecision,
+        state.netWorthFontSize,
+        state.netWorthTimelineRange
+    ) {
+        NetWorthUiState.Success(
+            netWorth = state.netWorth,
+            baseCurrency = state.baseCurrency,
+            precision = state.decimalPrecision,
+            fontSize = state.netWorthFontSize,
+            timelineRange = state.netWorthTimelineRange
+        )
+    }
 
     HorizontalPager(
         state = pagerState,
@@ -461,7 +469,6 @@ fun DashboardContent(
         }
     }
 }
-
 
 
 

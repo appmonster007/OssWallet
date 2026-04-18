@@ -63,12 +63,13 @@ class AnalyticsViewModel(
         }
         ratesJob?.cancel()
         ratesJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, hasLoadedExchangeRates = false) }
             val rates = getExchangeRatesUseCase(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
             _uiState.update { it.copy(
                 selectedCurrency = currencyCode,
                 exchangeRates = rates,
-                isLoading = false
+                isLoading = false,
+                hasLoadedExchangeRates = true
             ) }
             calculateAnalytics()
         }
@@ -191,5 +192,6 @@ data class AnalyticsUiState(
     val selectedCurrency: String = "USD",
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val decimalPrecision: Int = 2,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val hasLoadedExchangeRates: Boolean = false
 )

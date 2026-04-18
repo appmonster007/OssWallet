@@ -20,7 +20,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
 import kotlinx.serialization.Serializable
 
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,10 +42,7 @@ fun NetWorthSection(
 ) {
     when (val state = uiState) {
         is NetWorthUiState.Loading -> {
-            // Shimmer or placeholder
-            Box(modifier = modifier.height(100.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            Spacer(modifier = modifier)
         }
         is NetWorthUiState.Success -> {
             NetWorthContent(

@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
+import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -141,6 +142,10 @@ class DashboardViewModel(
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.dashboardSettings
             ) { accounts, allTransactions, analyticsState, precision, dashboardSettings ->
+                if (!analyticsState.hasLoadedExchangeRates) {
+                    return@combine DashboardUiState.Loading
+                }
+
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
                 val gridColumns = dashboardSettings.accountsSection.gridColumns
@@ -154,6 +159,22 @@ class DashboardViewModel(
                 val cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange
                 val budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels
                 val netWorthFontSize = dashboardSettings.netWorthSection.fontSize
+                val netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange
+
+                val filteredTransactionsForNetWorth = when (val range = netWorthTimelineRange) {
+                    is TimelineRange.AllTime -> allTransactions
+                    is TimelineRange.ThisPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForThis(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.LastPeriod -> {
+                        val (start, end) = FilterUtils.getRangeForLast(range.period)
+                        allTransactions.filter { it.timestamp in start..end }
+                    }
+                    is TimelineRange.CustomRange -> {
+                        allTransactions.filter { it.timestamp in range.start..range.end }
+                    }
+                }
                 
                 val filteredTransactionsForBalances = when (val range = currencyBalancesTimelineRange) {
                     is TimelineRange.AllTime -> allTransactions
@@ -261,6 +282,14 @@ class DashboardViewModel(
 
                 val nonArchivedAccounts = updatedAccounts.filter { !it.isArchived }
                 val nonArchivedAccountIds = nonArchivedAccounts.map { it.id }.toSet()
+                val netWorth = calculateNetWorth(
+                    accounts = accounts,
+                    allTransactions = filteredTransactionsForNetWorth,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision,
+                    includeInitialBalance = netWorthTimelineRange is TimelineRange.AllTime
+                )
                 
                 val accountMapForTransactions = updatedAccounts.associateBy { it.id }
 
@@ -317,7 +346,9 @@ class DashboardViewModel(
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
                     cashFlowTimelineRange = cashFlowTimelineRange,
                     budgetShowProgressLabels = budgetShowProgressLabels,
-                    netWorthFontSize = netWorthFontSize
+                    netWorth = netWorth,
+                    netWorthFontSize = netWorthFontSize,
+                    netWorthTimelineRange = netWorthTimelineRange
                 )
             }
         }
@@ -349,7 +380,9 @@ sealed class DashboardUiState {
         val cashFlowShowBaseConversion: Boolean = true,
         val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
         val budgetShowProgressLabels: Boolean = true,
-        val netWorthFontSize: String = "Medium"
+        val netWorth: BigDecimal = BigDecimal.ZERO,
+        val netWorthFontSize: String = "Medium",
+        val netWorthTimelineRange: TimelineRange = TimelineRange.AllTime
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }

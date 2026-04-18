@@ -8,13 +8,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
-import kotlinx.coroutines.launch
 
 /**
  * Main Activity of the OssWallet application.
@@ -23,11 +20,12 @@ import kotlinx.coroutines.launch
  * and navigation to [OssWalletNavGraph].
  */
 class MainActivity : FragmentActivity() {
-    
+    private var keepSplashOnScreen = true
     private lateinit var appContainer: AppContainer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
@@ -42,21 +40,27 @@ class MainActivity : FragmentActivity() {
 //        }
 
         setContent {
-            OssWalletApp(appContainer, splashScreen)
+            OssWalletApp(
+                appContainer = appContainer,
+                onSplashConditionChanged = { keepSplashOnScreen = it }
+            )
         }
     }
 }
 
 @Composable
-fun OssWalletApp(appContainer: AppContainer, splashScreen: androidx.core.splashscreen.SplashScreen? = null) {
+fun OssWalletApp(
+    appContainer: AppContainer,
+    onSplashConditionChanged: (Boolean) -> Unit = {}
+) {
     val theme by appContainer.settingsDataStore.theme.collectAsState(initial = "System")
-    
+
     OssWalletTheme(theme = theme) {
         val navController = rememberNavController()
         OssWalletNavGraph(
             navController = navController,
             appContainer = appContainer,
-            splashScreen = splashScreen
+            onSplashConditionChanged = onSplashConditionChanged
         )
     }
 }

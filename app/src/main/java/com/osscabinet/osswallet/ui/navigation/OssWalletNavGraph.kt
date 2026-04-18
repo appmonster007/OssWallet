@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,7 +24,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.*
 fun OssWalletNavGraph(
     navController: NavHostController,
     appContainer: AppContainer,
-    splashScreen: androidx.core.splashscreen.SplashScreen? = null
+    onSplashConditionChanged: (Boolean) -> Unit = {}
 ) {
     // Shared ViewModels or persistent ones can be initialized here or at activity level
     // For SOLID, we use Factories that use the container
@@ -121,17 +122,6 @@ fun OssWalletNavGraph(
         }
     )
 
-    val netWorthViewModel: NetWorthViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            NetWorthViewModel(
-                appContainer.accountRepository,
-                appContainer.getTransactionsUseCase,
-                appContainer.settingsDataStore,
-                analyticsViewModel
-            )
-        }
-    )
-
     val tagViewModel: TagViewModel = viewModel(
         factory = GenericViewModelFactory {
             TagViewModel(appContainer.tagRepository)
@@ -139,6 +129,17 @@ fun OssWalletNavGraph(
     )
 
     val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
+    val dashboardUiState by dashboardViewModel.uiState.collectAsState()
+
+    val keepSplashOnScreen = when (isOnboardingCompleted) {
+        null -> true
+        false -> false
+        true -> dashboardUiState is DashboardUiState.Loading
+    }
+
+    SideEffect {
+        onSplashConditionChanged(keepSplashOnScreen)
+    }
 
     // Safe popBackStack wrapper
     val safePopBackStack: () -> Unit = {
@@ -192,8 +193,7 @@ fun OssWalletNavGraph(
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
                 dashboardViewModel = dashboardViewModel,
-                budgetViewModel = budgetViewModel,
-                netWorthViewModel = netWorthViewModel
+                budgetViewModel = budgetViewModel
             )
         }
         
@@ -222,8 +222,7 @@ fun OssWalletNavGraph(
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
-                accountsViewViewModel = accountsViewViewModel,
-                netWorthViewModel = netWorthViewModel
+                accountsViewViewModel = accountsViewViewModel
             )
         }
 

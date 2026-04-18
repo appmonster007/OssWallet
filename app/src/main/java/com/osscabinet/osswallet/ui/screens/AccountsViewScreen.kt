@@ -38,7 +38,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.dashboard.*
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -77,8 +77,7 @@ fun AccountsViewScreen(
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
-    accountsViewViewModel: AccountsViewViewModel,
-    netWorthViewModel: NetWorthViewModel
+    accountsViewViewModel: AccountsViewViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -101,10 +100,6 @@ fun AccountsViewScreen(
     val accountsUiState by accountsViewViewModel.uiState.collectAsState()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
     
-    val netWorthUiState by remember(netWorthViewModel, accountsViewViewModel) {
-        netWorthViewModel.getNetWorthUiState(accountsViewViewModel.settingsDataStore.accountsViewSettings.map { it.netWorthSection })
-    }.collectAsState()
-
     val accounts by accountViewModel.accounts.collectAsState()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     
@@ -201,6 +196,22 @@ fun AccountsViewScreen(
                         )
                     }
                     is AccountsViewUiState.Success -> {
+                        val netWorthUiState = remember(
+                            state.netWorth,
+                            state.baseCurrency,
+                            state.decimalPrecision,
+                            state.netWorthFontSize,
+                            state.netWorthTimelineRange
+                        ) {
+                            NetWorthUiState.Success(
+                                netWorth = state.netWorth,
+                                baseCurrency = state.baseCurrency,
+                                precision = state.decimalPrecision,
+                                fontSize = state.netWorthFontSize,
+                                timelineRange = state.netWorthTimelineRange
+                            )
+                        }
+
                         CardReorderableList(
                             items = sectionOrder,
                             key = { it.ordinal },
@@ -506,7 +517,6 @@ fun AccountsViewScreen(
         }
     }
 }
-
 
 
 

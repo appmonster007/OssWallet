@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.data.local.*
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
+import android.content.Context
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
@@ -18,7 +20,8 @@ class BackupRepositoryImpl(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val tagDao: TagDao,
-    private val templateDao: TemplateDao
+    private val templateDao: TemplateDao,
+    private val context: Context
 ) : BackupRepository {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -169,5 +172,8 @@ class BackupRepositoryImpl(
                 )
             )
         }
+        
+        // Trigger widget update after import
+        WidgetUpdateHelper.updateAllWidgets(context)
     }
 }

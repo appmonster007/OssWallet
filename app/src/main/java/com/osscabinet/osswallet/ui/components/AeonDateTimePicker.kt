@@ -26,7 +26,15 @@ fun AeonDateTimePicker(
             onDismissRequest = onDismiss,
             confirmButton = {
                 TextButton(onClick = {
-                    selectedDateMillis = datePickerState.selectedDateMillis ?: initialDateTime
+                    val dateMillis = datePickerState.selectedDateMillis ?: initialDateTime
+                    val dateCal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = dateMillis }
+                    val resultCal = Calendar.getInstance().apply {
+                        timeInMillis = selectedDateMillis
+                        set(Calendar.YEAR, dateCal.get(Calendar.YEAR))
+                        set(Calendar.MONTH, dateCal.get(Calendar.MONTH))
+                        set(Calendar.DAY_OF_MONTH, dateCal.get(Calendar.DAY_OF_MONTH))
+                    }
+                    selectedDateMillis = resultCal.timeInMillis
                     showDatePicker = false
                 }) { Text("NEXT") }
             },

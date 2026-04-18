@@ -7,7 +7,9 @@ import java.math.BigDecimal
 
 interface TransactionRepository {
     fun getAllTransactions(profileId: Int): Flow<List<Transaction>>
+    suspend fun getAllTransactionsSync(profileId: Int): List<Transaction>
     fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>>
+    suspend fun getFilteredTransactionsSync(profileId: Int, filter: TransactionFilter): List<Transaction>
     suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long
     suspend fun deleteTransaction(id: Long)
     suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int)

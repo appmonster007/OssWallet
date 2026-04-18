@@ -30,7 +30,7 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         
         // Initialize dependency container
-        appContainer = AppContainer(this)
+        appContainer = (application as OssWalletApp).container
 
 //        // Seed database in debug mode
 //        if (BuildConfig.DEBUG) {

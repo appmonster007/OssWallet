@@ -14,6 +14,9 @@ abstract class TransactionDao {
     @RawQuery(observedEntities = [TransactionEntity::class])
     abstract fun getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>
 
+    @RawQuery
+    abstract suspend fun getFilteredTransactionsSync(query: SupportSQLiteQuery): List<TransactionEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun _insertTransaction(transaction: TransactionEntity): Long
 

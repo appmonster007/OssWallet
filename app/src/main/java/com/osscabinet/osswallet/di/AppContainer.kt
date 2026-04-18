@@ -25,15 +25,15 @@ class AppContainer(private val context: Context) {
 
     // Repositories
     val transactionRepository: TransactionRepositoryImpl by lazy {
-        TransactionRepositoryImpl(db.transactionDao(), db.accountDao())
+        TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), context)
     }
 
     val accountRepository: AccountRepositoryImpl by lazy {
-        AccountRepositoryImpl(db.accountDao())
+        AccountRepositoryImpl(db.accountDao(), context)
     }
 
     val budgetRepository: BudgetRepositoryImpl by lazy {
-        BudgetRepositoryImpl(db.budgetDao())
+        BudgetRepositoryImpl(db.budgetDao(), context)
     }
 
     val currencyRepository: CurrencyRepositoryImpl by lazy {

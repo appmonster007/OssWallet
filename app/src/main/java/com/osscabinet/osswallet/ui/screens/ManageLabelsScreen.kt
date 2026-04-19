@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,7 +26,7 @@ fun ManageLabelsScreen(
     viewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
-    val tags by viewModel.tags.collectAsState()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var newTagName by remember { mutableStateOf("") }
 

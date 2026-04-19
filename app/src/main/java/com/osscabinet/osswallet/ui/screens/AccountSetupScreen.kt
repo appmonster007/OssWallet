@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,7 +40,7 @@ fun AccountSetupScreen(
     var structureType by remember { mutableStateOf("Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
 
-    val defaultCurrency by viewModel.defaultCurrency.collectAsState()
+    val defaultCurrency by viewModel.defaultCurrency.collectAsStateWithLifecycle()
 
     // Currency logic
     var primaryCurrency by remember(defaultCurrency) { mutableStateOf(defaultCurrency) }

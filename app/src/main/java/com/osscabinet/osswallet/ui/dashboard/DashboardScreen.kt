@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.map
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -112,31 +113,31 @@ fun DashboardScreen(
         }
     }
 
-    val dashboardUiState by dashboardViewModel.uiState.collectAsState()
-    val accounts by accountViewModel.accounts.collectAsState()
+    val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    
-    val currentProfile by settingsViewModel.currentProfile.collectAsState()
-    val analyticsUiState by analyticsViewModel.uiState.collectAsState()
-    val budgets by budgetViewModel.budgets.collectAsState()
-    val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
-    val gridColumns by settingsViewModel.dashboardGridColumns.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+
+    val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
+    val analyticsUiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
+    val budgets by budgetViewModel.budgets.collectAsStateWithLifecycle()
+    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    val gridColumns by settingsViewModel.dashboardGridColumns.collectAsStateWithLifecycle()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
 
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val dbTemplates by templateViewModel.templates.collectAsState()
-    val starredTemplates by templateViewModel.starredTemplates.collectAsState()
-    
-    val allTemplates by templateViewModel.templates.collectAsState()
+    val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
 
-    // We no longer need this LaunchedEffect because AnalyticsViewModel 
+    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+
+    // We no longer need this LaunchedEffect because AnalyticsViewModel
     // now observes settingsDataStore.currency directly in its init block.
-    // However, we might still want to ensure it\'s synced if it was overridden by other screens.
-    val settingsCurrency by settingsViewModel.currency.collectAsState()
+    // However, we might still want to ensure it's synced if it was overridden by other screens.
+    val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
     LaunchedEffect(settingsCurrency) {
         analyticsViewModel.onCurrencySelected(settingsCurrency)
     }
@@ -277,7 +278,7 @@ fun DashboardContent(
         state.recentTransactions.map { it.transaction }
     }
 
-    val sectionOrder by dashboardViewModel.sectionOrder.collectAsState()
+    val sectionOrder by dashboardViewModel.sectionOrder.collectAsStateWithLifecycle()
     val netWorthUiState = remember(
         state.netWorth,
         state.netIncome,
@@ -401,7 +402,7 @@ fun DashboardContent(
             }
             1 -> {
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
-                val categories by transactionViewModel.categories.collectAsState()
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
                 RecentActivitiesCard(

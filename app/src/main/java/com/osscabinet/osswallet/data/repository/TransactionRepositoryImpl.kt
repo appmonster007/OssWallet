@@ -9,24 +9,14 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import javax.inject.Inject
-import android.content.Context
-import android.util.Log
 
-class TransactionRepositoryImpl @Inject constructor(
+class TransactionRepositoryImpl(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
-    private val context: Context,
     private val database: AppDatabase
 ) : TransactionRepository {
-
-    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions(profileId).map { entities ->

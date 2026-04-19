@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,18 +35,18 @@ fun TransactionListScreen(
     onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel
 ) {
-    val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsState()
-    val accounts by accountViewModel.accounts.collectAsState()
+    val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val accountMap = accounts.associate { it.id to it.name }
     val accountCurrencyMap = accounts.associate { it.id to it.currencyCode }
-    val categories by viewModel.categories.collectAsState()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
-    val decimalPrecision by viewModel.decimalPrecision.collectAsState()
-    val analyticsState by analyticsViewModel.uiState.collectAsState()
-    val filter by viewModel.recordsFilter.collectAsState()
-    val recordsSettings by viewModel.recordsSettings.collectAsState()
-    val savedFilters by viewModel.savedFilters.collectAsState()
-    val allTemplates by templateViewModel.templates.collectAsState()
+    val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
+    val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
+    val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
+    val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
+    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
     

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,13 +69,13 @@ fun TransactionEntryScreen(
     settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val transactions by viewModel.transactions.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val accounts by accountViewModel.accounts.collectAsState()
-    val exchangeRates by analyticsViewModel.exchangeRates.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
-    val dbTemplates by templateViewModel.templates.collectAsState()
-    val allTags by tagViewModel.tags.collectAsState()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val exchangeRates by analyticsViewModel.exchangeRates.collectAsStateWithLifecycle()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
     

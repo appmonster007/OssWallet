@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,13 +49,13 @@ fun AccountDetailScreen(
     onEditTransactionClick: (Long) -> Unit,
     onAddTransactionClick: (String, Int?, String?) -> Unit
 ) {
-    val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
-    
-    val uiState by accountDetailViewModel.uiState.collectAsState()
-    
-    val categories by transactionViewModel.categories.collectAsState()
+    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+
+    val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
+
+    val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
-    val allTemplates by templateViewModel.templates.collectAsState()
+    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
     
@@ -280,13 +281,13 @@ fun AccountDetailScreen(
                                 }
                             }
                         } else {
-                            val filter by transactionViewModel.accountDetailFilter.collectAsState()
-                            val savedFilters by transactionViewModel.savedFilters.collectAsState()
-                            val accounts by accountViewModel.accounts.collectAsState()
+                            val filter by transactionViewModel.accountDetailFilter.collectAsStateWithLifecycle()
+                            val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
+                            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
                             val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
-                            val categoriesList by transactionViewModel.categories.collectAsState()
-                            val analyticsState by analyticsViewModel.uiState.collectAsState()
+                            val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+                            val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
                             val scope = rememberCoroutineScope()
                             val scaffoldState = rememberBottomSheetScaffoldState(
                                 bottomSheetState = rememberStandardBottomSheetState(

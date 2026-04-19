@@ -11,10 +11,12 @@ import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.OssWalletApp
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 /**
  * High-performance Widget Update Manager inspired by Microsoft To-Do architecture.
@@ -58,6 +60,10 @@ object WidgetUpdateManager {
         }
     }
 
+    fun manualRefresh() {
+        refreshRequests.tryEmit(Unit)
+    }
+
     private suspend fun performUpdate(context: Context) {
         withContext(Dispatchers.IO) {
             Log.d(TAG, "Performing debounced widget update via RemoteViews...")
@@ -70,8 +76,19 @@ object WidgetUpdateManager {
             val precision = container.settingsDataStore.decimalPrecision.first()
 
             val allAccounts = container.accountRepository.getAllAccountsSync(profileId)
+            val summaries = container.transactionRepository.getCurrencySummaries(profileId)
             val exchangeRatesRaw = container.currencyRepository.getExchangeRates(baseCurrency)
             val exchangeRates = exchangeRatesRaw.mapValues { BigDecimal.valueOf(it.value) }
+
+            // Pre-calculate global metrics
+            var totalIncome = BigDecimal.ZERO
+            var totalExpense = BigDecimal.ZERO
+            summaries.forEach { s ->
+                totalIncome = totalIncome.add(convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4))
+                totalExpense = totalExpense.add(convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4))
+            }
+            val netIncome = totalIncome.setScale(precision, RoundingMode.HALF_UP)
+            val netExpense = totalExpense.setScale(precision, RoundingMode.HALF_UP)
 
             // 1. Update NetWorthWidgets
             updateWidget(
@@ -83,6 +100,10 @@ object WidgetUpdateManager {
                 val nw = calculateNetWorthFromAccounts(allAccounts, baseCurrency, exchangeRates, precision)
                 views.setTextViewText(R.id.text_amount, formatCurrencyRight(nw, baseCurrency, precision))
                 
+                // Update income/expense badges
+                views.setTextViewText(R.id.badge_income, "INCOME: ${formatCurrencyRight(netIncome, baseCurrency, precision)}")
+                views.setTextViewText(R.id.badge_expense, "EXPENSE: ${formatCurrencyRight(netExpense, baseCurrency, precision)}")
+
                 val intent = Intent(context, MainActivity::class.java)
                 val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
                 views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
@@ -102,8 +123,6 @@ object WidgetUpdateManager {
                 val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
                 views.setOnClickPendingIntent(R.id.button_quick_add, pendingIntent)
             }
-            
-            // Add other widgets (History, Budget, Cashflow) similarly...
             
             Log.d(TAG, "Widget update completed.")
         }

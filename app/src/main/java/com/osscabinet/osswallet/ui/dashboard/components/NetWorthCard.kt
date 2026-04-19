@@ -4,11 +4,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +47,8 @@ fun NetWorthCard(
         is NetWorthUiState.Success -> {
             NetWorthContent(
                 netWorth = state.netWorth,
+                netIncome = state.netIncome,
+                netExpense = state.netExpense,
                 baseCurrency = state.baseCurrency,
                 precision = state.precision,
                 fontSize = state.fontSize,
@@ -63,6 +68,8 @@ fun NetWorthCard(
 @Composable
 private fun NetWorthContent(
     netWorth: BigDecimal,
+    netIncome: BigDecimal,
+    netExpense: BigDecimal,
     baseCurrency: String,
     precision: Int,
     fontSize: String,
@@ -138,6 +145,28 @@ private fun NetWorthContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    FlowBadge(
+                        label = "INCOME",
+                        amount = netIncome,
+                        currency = baseCurrency,
+                        precision = precision,
+                        color = Color(0xFF4CAF50),
+                        isIncome = true
+                    )
+                    FlowBadge(
+                        label = "EXPENSE",
+                        amount = netExpense,
+                        currency = baseCurrency,
+                        precision = precision,
+                        color = Color(0xFFF44336),
+                        isIncome = false
+                    )
+                }
+
                 Text(
                     text = formatCurrencyRight(netWorth, baseCurrency, precision),
                     style = textStyle.copy(
@@ -158,6 +187,44 @@ private fun NetWorthContent(
             onTimelineRangeChange = onTimelineRangeChange,
             onDismiss = { showSettings = false }
         )
+    }
+}
+
+@Composable
+private fun FlowBadge(
+    label: String,
+    amount: BigDecimal,
+    currency: String,
+    precision: Int,
+    color: Color,
+    isIncome: Boolean
+) {
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                contentDescription = null,
+                modifier = Modifier.size(10.dp),
+                tint = color
+            )
+            Text(
+                text = "${label}: ${formatCurrencyRight(amount, currency, precision)}",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp
+                ),
+                color = color
+            )
+        }
     }
 }
 

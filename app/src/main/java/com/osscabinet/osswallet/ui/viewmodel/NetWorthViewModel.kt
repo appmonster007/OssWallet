@@ -7,6 +7,8 @@ sealed class NetWorthUiState {
     data object Loading : NetWorthUiState()
     data class Success(
         val netWorth: BigDecimal,
+        val netIncome: BigDecimal,
+        val netExpense: BigDecimal,
         val baseCurrency: String,
         val precision: Int,
         val fontSize: String,

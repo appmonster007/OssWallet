@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -429,7 +430,8 @@ fun AeonTransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surface
+        color = MaterialTheme.colorScheme.surface,
+        shape = RectangleShape
     ) {
         Column {
             HorizontalDivider(
@@ -437,132 +439,140 @@ fun AeonTransactionItem(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(40.dp),
-                    shape = CircleShape,
-                    color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
+            
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            icon ?: Icons.Rounded.Category,
-                            contentDescription = null,
-                            tint = iconBg ?: MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                icon ?: Icons.Rounded.Category,
+                                contentDescription = null,
+                                tint = iconBg ?: MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                headerText,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                ),
+                                maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                subHeaderText,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 11.sp
+                                ),
+                                color = MaterialTheme.colorScheme.outline,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (!bottomText.isNullOrBlank()) {
+                                Text(
+                                    bottomText,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontSize = 12.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    maxLines = if (!isNoteHeader) Int.MAX_VALUE else 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                (if (type == CashFlowType.INCOME) "+" else "-") + amount,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 15.sp,
+                                    color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                                )
+                            )
+                            
+                            if (convertedAmount != null) {
+                                Text(
+                                    (if (type == CashFlowType.INCOME) "+" else "-") + convertedAmount,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.7f)
+                                )
+                            }
+
+                            if (showOpeningBalance || showClosingBalance) {
+                                val balanceText = when {
+                                    showOpeningBalance && showClosingBalance -> "$balanceBefore → $balanceAfter"
+                                    showOpeningBalance -> balanceBefore
+                                    else -> balanceAfter
+                                }
+                                Text(
+                                    balanceText,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                )
+                            }
+
+                            Text(
+                                timestamp,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            headerText,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            ),
-                            maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            subHeaderText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp
-                            ),
-                            color = MaterialTheme.colorScheme.outline,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!bottomText.isNullOrBlank()) {
-                            Text(
-                                bottomText,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontSize = 12.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                                modifier = Modifier.padding(top = 2.dp),
-                                maxLines = if (!isNoteHeader) Int.MAX_VALUE else 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            (if (type == CashFlowType.INCOME) "+" else "-") + amount,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 15.sp,
-                                color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
-                            )
-                        )
-                        
-                        if (convertedAmount != null) {
-                            Text(
-                                (if (type == CashFlowType.INCOME) "+" else "-") + convertedAmount,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                ),
-                                color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.7f)
-                            )
-                        }
-
-                        if (showOpeningBalance || showClosingBalance) {
-                            val balanceText = when {
-                                showOpeningBalance && showClosingBalance -> "$balanceBefore → $balanceAfter"
-                                showOpeningBalance -> balanceBefore
-                                else -> balanceAfter
-                            }
-                            Text(
-                                balanceText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                            )
-                        }
-
-                        if (tags.isNotEmpty()) {
-                            FlowRow(
-                                modifier = Modifier.padding(top = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                if (tags.isNotEmpty()) {
+                    FlowRow(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        tags.forEach { tag ->
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
                             ) {
-                                tags.forEach { tag ->
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                                    ) {
-                                        Text(
-                                            text = tag,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                        )
-                                    }
-                                }
+                                Text(
+                                    text = tag,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
                         }
-
-                        Text(
-                            timestamp,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
                     }
                 }
             }
+
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
         }
     }
 }

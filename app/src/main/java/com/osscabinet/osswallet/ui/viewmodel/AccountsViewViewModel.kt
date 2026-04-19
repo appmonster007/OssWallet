@@ -192,6 +192,14 @@ class AccountsViewViewModel(
                     timelineRange = netWorthTimelineRange
                 )
 
+                val netWorthFlow = calculateCashFlowUseCase(
+                    allTransactions = allTransactions,
+                    timelineRange = netWorthTimelineRange,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision
+                )
+
                 val cashFlowResult = calculateCashFlowUseCase(
                     allTransactions = allTransactions,
                     timelineRange = cashFlowTimelineRange,
@@ -220,6 +228,8 @@ class AccountsViewViewModel(
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
                     cashFlowTimelineRange = cashFlowTimelineRange,
                     netWorth = netWorth,
+                    netIncome = netWorthFlow.totalIncomeInBase,
+                    netExpense = netWorthFlow.totalExpensesInBase,
                     netWorthFontSize = netWorthFontSize,
                     netWorthTimelineRange = netWorthTimelineRange,
                     cashFlowResult = cashFlowResult
@@ -253,6 +263,8 @@ sealed class AccountsViewUiState {
         val cashFlowShowBaseConversion: Boolean = true,
         val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
         val netWorth: BigDecimal = BigDecimal.ZERO,
+        val netIncome: BigDecimal = BigDecimal.ZERO,
+        val netExpense: BigDecimal = BigDecimal.ZERO,
         val netWorthFontSize: String = "Medium",
         val netWorthTimelineRange: TimelineRange = TimelineRange.AllTime,
         val cashFlowResult: CashFlowResult? = null

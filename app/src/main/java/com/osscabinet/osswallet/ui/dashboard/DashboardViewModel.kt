@@ -185,13 +185,31 @@ class DashboardViewModel(
                     timelineRange = dashboardSettings.netWorthSection.timelineRange
                 )
 
-                val netWorthCashFlow = financialUseCases.calculateCashFlow(
+                // Calculate cash flow for Net Worth section (used for income/expense badges)
+                val netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange
+                val cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange
+
+                // Calculate cash flow for both sections - reuse result if timeline ranges match
+                val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
-                    timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                    timelineRange = cashFlowTimelineRange,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     precision = precision
                 )
+
+                // Use cashFlowResult for Net Worth card if timeline ranges match, otherwise calculate separately
+                val netWorthCashFlow = if (netWorthTimelineRange == cashFlowTimelineRange) {
+                    cashFlowResult
+                } else {
+                    financialUseCases.calculateCashFlow(
+                        allTransactions = allTransactions,
+                        timelineRange = netWorthTimelineRange,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = rates,
+                        precision = precision
+                    )
+                }
 
                 val transactionsWithBalance = transactionUseCases.getRecentTransactions(
                     allTransactions = allTransactions,
@@ -217,20 +235,14 @@ class DashboardViewModel(
                     showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion,
                     currencyBalancesTimelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
                     cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion,
-                    cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange,
+                    cashFlowTimelineRange = cashFlowTimelineRange,
                     budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels,
                     netWorth = netWorth,
                     netIncome = netWorthCashFlow.totalIncomeInBase,
                     netExpense = netWorthCashFlow.totalExpensesInBase,
                     netWorthFontSize = dashboardSettings.netWorthSection.fontSize,
-                    netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange,
-                    cashFlowResult = financialUseCases.calculateCashFlow(
-                        allTransactions = allTransactions,
-                        timelineRange = dashboardSettings.cashFlowSection.timelineRange,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = rates,
-                        precision = precision
-                    )
+                    netWorthTimelineRange = netWorthTimelineRange,
+                    cashFlowResult = cashFlowResult
                 )
             }.flowOn(Dispatchers.Default)
         }

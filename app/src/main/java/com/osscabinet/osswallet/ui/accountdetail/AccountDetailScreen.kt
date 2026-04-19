@@ -28,8 +28,9 @@ import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
-
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +41,7 @@ fun AccountDetailScreen(
     transactionViewModel: TransactionViewModel,
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    accountDetailViewModel: AccountDetailViewModel,
+    accountDetailViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,

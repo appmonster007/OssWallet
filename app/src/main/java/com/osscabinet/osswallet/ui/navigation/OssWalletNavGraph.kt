@@ -21,8 +21,8 @@ import com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.dashboard.DashboardUiState
 import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
 import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen
-import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel
-import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import com.osscabinet.ossWallet.ui.screens.OnboardingScreen
 import com.osscabinet.ossWallet.ui.screens.AccountsViewScreen
 import com.osscabinet.ossWallet.ui.screens.ExchangeRatesScreen
@@ -458,10 +458,10 @@ fun OssWalletNavGraph(
 
         composable(Screen.AccountDetail.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            val accountDetailViewModel: com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel = viewModel(
+            val accountDetailViewModel: AccountDetailViewModel = viewModel(
                 key = "AccountDetailViewModel_$accountId",
                 factory = GenericViewModelFactory {
-                    com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel(
+                    AccountDetailViewModel(
                         accountId = accountId,
                         accountRepository = appContainer.accountRepository,
                         transactionUseCases = appContainer.transactionUseCases,
@@ -471,7 +471,7 @@ fun OssWalletNavGraph(
                     )
                 }
             )
-            com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen(
+            AccountDetailScreen(
                 accountId = accountId,
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,

@@ -128,3 +128,5 @@ val AccountIconMap = mapOf(
     "Event" to Icons.Rounded.Event,
     "CalendarMonth" to Icons.Rounded.CalendarMonth
 )
+
+val categoryIcons = AccountIconMap

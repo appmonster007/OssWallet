@@ -1278,7 +1278,7 @@ fun TransactionEntryContent(
                                 timestamp = formatDateTime(tx.timestamp),
                                 note = tx.note,
                                 tags = tx.tags,
-                                icon = categoryIcons[tx.category] ?: Icons.Rounded.Category,
+                                icon = AccountIconMap[tx.category] ?: Icons.Rounded.Category,
                                 precision = decimalPrecision,
                                 onClick = {
                                     linkedTransactionId = tx.id

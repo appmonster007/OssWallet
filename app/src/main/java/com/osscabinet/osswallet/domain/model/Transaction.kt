@@ -2,12 +2,16 @@ package com.osscabinet.ossWallet.domain.model
 
 import java.math.BigDecimal
 
+interface Timestamped {
+    val timestamp: Long
+}
+
 data class Transaction(
     val id: Long = 0,
     val title: String,
     val amount: BigDecimal,
     val category: String,
-    val timestamp: Long,
+    override val timestamp: Long,
     val currency: String,
     val isIncome: Boolean,
     val accountId: String,
@@ -21,7 +25,7 @@ data class Transaction(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null
-)
+) : Timestamped
 
 data class TransactionWithBalance(
     val transaction: Transaction,

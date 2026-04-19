@@ -2,10 +2,10 @@ package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 
-class DeleteAccountUseCase(
+class AccountUseCases(
     private val repository: AccountRepository
 ) {
-    suspend operator fun invoke(accountId: String) {
+    suspend fun deleteAccount(accountId: String) {
         repository.deleteAccount(accountId)
     }
 }

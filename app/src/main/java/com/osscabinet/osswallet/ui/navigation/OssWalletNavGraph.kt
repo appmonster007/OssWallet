@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,9 +67,6 @@ fun OssWalletNavGraph(
     appContainer: AppContainer,
     onSplashConditionChanged: (Boolean) -> Unit = {}
 ) {
-    // Shared ViewModels or persistent ones can be initialized here or at activity level
-    // For SOLID, we use Factories that use the container
-    
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(
             appContainer.settingsDataStore,
@@ -84,8 +80,8 @@ fun OssWalletNavGraph(
     val analyticsViewModel: AnalyticsViewModel = viewModel(
         factory = GenericViewModelFactory {
             AnalyticsViewModel(
-                appContainer.getTransactionsUseCase,
-                appContainer.getExchangeRatesUseCase,
+                appContainer.transactionUseCases,
+                appContainer.financialUseCases,
                 appContainer.settingsDataStore
             )
         }
@@ -93,11 +89,7 @@ fun OssWalletNavGraph(
     
     val transactionViewModel: TransactionViewModel = viewModel(
         factory = TransactionViewModelFactory(
-            appContainer.getTransactionsUseCase,
-            appContainer.insertTransactionUseCase,
-            appContainer.deleteTransactionUseCase,
-            appContainer.updateTransactionUseCase,
-            appContainer.saveTransferUseCase,
+            appContainer.transactionUseCases,
             appContainer.settingsDataStore,
             appContainer.db.categoryDao(),
             appContainer.accountRepository,
@@ -116,8 +108,7 @@ fun OssWalletNavGraph(
 
     val budgetViewModel: BudgetViewModel = viewModel(
         factory = BudgetViewModelFactory(
-            appContainer.syncBudgetSpentUseCase,
-            appContainer.upsertBudgetUseCase
+            appContainer.budgetUseCases
         )
     )
 
@@ -147,15 +138,10 @@ fun OssWalletNavGraph(
         factory = GenericViewModelFactory {
             com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel(
                 appContainer.accountRepository,
-                appContainer.getTransactionsUseCase,
+                appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
                 analyticsViewModel,
-                appContainer.calculateNetWorthUseCase,
-                appContainer.getCurrencyAggregationUseCase,
-                appContainer.getAccountSummariesUseCase,
-                appContainer.getTotalBalancesUseCase,
-                appContainer.getRecentTransactionsUseCase,
-                appContainer.calculateCashFlowUseCase
+                appContainer.financialUseCases
             )
         }
     )
@@ -164,14 +150,10 @@ fun OssWalletNavGraph(
         factory = GenericViewModelFactory {
             AccountsViewViewModel(
                 appContainer.accountRepository,
-                appContainer.getTransactionsUseCase,
+                appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
                 analyticsViewModel,
-                appContainer.calculateNetWorthUseCase,
-                appContainer.getCurrencyAggregationUseCase,
-                appContainer.getAccountSummariesUseCase,
-                appContainer.getTotalBalancesUseCase,
-                appContainer.calculateCashFlowUseCase
+                appContainer.financialUseCases
             )
         }
     )
@@ -195,7 +177,6 @@ fun OssWalletNavGraph(
         onSplashConditionChanged(keepSplashOnScreen)
     }
 
-    // Safe popBackStack wrapper
     val safePopBackStack: () -> Unit = {
         if (navController.previousBackStackEntry != null) {
             navController.popBackStack()
@@ -203,7 +184,6 @@ fun OssWalletNavGraph(
     }
 
     if (isOnboardingCompleted == null) {
-        // Show a loading screen or keep splash screen instead of returning nothing
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -484,12 +464,10 @@ fun OssWalletNavGraph(
                     com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel(
                         accountId = accountId,
                         accountRepository = appContainer.accountRepository,
-                        getTransactionsUseCase = appContainer.getTransactionsUseCase,
+                        transactionUseCases = appContainer.transactionUseCases,
                         settingsDataStore = appContainer.settingsDataStore,
                         analyticsViewModel = analyticsViewModel,
-                        getCurrencyAggregationUseCase = appContainer.getCurrencyAggregationUseCase,
-                        getTotalBalancesUseCase = appContainer.getTotalBalancesUseCase,
-                        calculateCashFlowUseCase = appContainer.calculateCashFlowUseCase
+                        financialUseCases = appContainer.financialUseCases
                     )
                 }
             )

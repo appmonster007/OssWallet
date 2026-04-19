@@ -31,15 +31,10 @@ enum class DashboardSection {
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel(
     private val accountRepository: AccountRepository,
-    private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    private val calculateNetWorthUseCase: CalculateNetWorthUseCase,
-    private val getCurrencyAggregationUseCase: GetCurrencyAggregationUseCase,
-    private val getAccountSummariesUseCase: GetAccountSummariesUseCase,
-    private val getTotalBalancesUseCase: GetTotalBalancesUseCase,
-    private val getRecentTransactionsUseCase: GetRecentTransactionsUseCase,
-    private val calculateCashFlowUseCase: CalculateCashFlowUseCase
+    private val financialUseCases: FinancialUseCases
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
@@ -144,7 +139,7 @@ class DashboardViewModel(
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
-                getTransactionsUseCase(profileId),
+                transactionUseCases.getTransactions(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.dashboardSettings
@@ -156,7 +151,7 @@ class DashboardViewModel(
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
 
-                val globalCurrencyTotals = getCurrencyAggregationUseCase(
+                val globalCurrencyTotals = financialUseCases.getCurrencyAggregation(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
@@ -165,7 +160,7 @@ class DashboardViewModel(
                     precision = precision
                 )
 
-                val accountStats = getAccountSummariesUseCase(
+                val accountStats = financialUseCases.getAccountSummaries(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = dashboardSettings.accountsSection.timelineRange,
@@ -174,14 +169,14 @@ class DashboardViewModel(
                     precision = precision
                 )
 
-                val updatedAccounts = getTotalBalancesUseCase(
+                val updatedAccounts = financialUseCases.getTotalBalances(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     exchangeRates = rates,
                     precision = precision
                 )
 
-                val netWorth = calculateNetWorthUseCase(
+                val netWorth = financialUseCases.calculateNetWorth(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     baseCurrency = baseCurrency,
@@ -190,7 +185,7 @@ class DashboardViewModel(
                     timelineRange = dashboardSettings.netWorthSection.timelineRange
                 )
 
-                val netWorthCashFlow = calculateCashFlowUseCase(
+                val netWorthCashFlow = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = dashboardSettings.netWorthSection.timelineRange,
                     baseCurrency = baseCurrency,
@@ -198,7 +193,7 @@ class DashboardViewModel(
                     precision = precision
                 )
 
-                val transactionsWithBalance = getRecentTransactionsUseCase(
+                val transactionsWithBalance = transactionUseCases.getRecentTransactions(
                     allTransactions = allTransactions,
                     accounts = updatedAccounts,
                     exchangeRates = rates,
@@ -229,7 +224,7 @@ class DashboardViewModel(
                     netExpense = netWorthCashFlow.totalExpensesInBase,
                     netWorthFontSize = dashboardSettings.netWorthSection.fontSize,
                     netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange,
-                    cashFlowResult = calculateCashFlowUseCase(
+                    cashFlowResult = financialUseCases.calculateCashFlow(
                         allTransactions = allTransactions,
                         timelineRange = dashboardSettings.cashFlowSection.timelineRange,
                         baseCurrency = baseCurrency,

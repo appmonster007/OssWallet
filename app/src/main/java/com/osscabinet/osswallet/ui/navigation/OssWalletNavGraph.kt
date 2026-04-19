@@ -21,7 +21,7 @@ import com.osscabinet.ossWallet.ui.dashboard.DashboardScreen
 import com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.dashboard.DashboardUiState
 import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
-import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen
+import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreenRefactored
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import com.osscabinet.ossWallet.ui.screens.OnboardingScreen
@@ -59,6 +59,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CurrencyViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
@@ -147,6 +148,14 @@ fun OssWalletNavGraph(
         }
     )
 
+    val cardManagerViewModel: CardManagerViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            CardManagerViewModel(
+                appContainer.settingsDataStore
+            )
+        }
+    )
+
     val accountsViewViewModel: AccountsViewViewModel = viewModel(
         factory = GenericViewModelFactory {
             AccountsViewViewModel(
@@ -228,7 +237,8 @@ fun OssWalletNavGraph(
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
                 dashboardViewModel = dashboardViewModel,
-                budgetViewModel = budgetViewModel
+                budgetViewModel = budgetViewModel,
+                cardManagerViewModel = cardManagerViewModel
             )
         }
         
@@ -472,13 +482,14 @@ fun OssWalletNavGraph(
                     )
                 }
             )
-            AccountDetailScreen(
+            AccountDetailScreenRefactored(
                 accountId = accountId,
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel,
                 accountDetailViewModel = accountDetailViewModel,
+                cardManagerViewModel = cardManagerViewModel,
                 templateViewModel = templateViewModel,
                 onBackClick = safePopBackStack,
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },

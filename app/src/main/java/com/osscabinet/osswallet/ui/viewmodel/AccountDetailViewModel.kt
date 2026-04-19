@@ -111,7 +111,8 @@ class AccountDetailViewModel(
                     accounts = listOf(account),
                     allTransactions = allTransactions.filter { it.accountId == accountId },
                     exchangeRates = rates,
-                    precision = precision
+                    precision = precision,
+                    timelineRange = settings.currencyBalancesSection.timelineRange
                 ).first()
 
                 AccountDetailUiState.Success(

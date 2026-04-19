@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterShee
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,7 @@ fun AccountDetailScreen(
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     accountDetailViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel,
+    cardManagerViewModel: CardManagerViewModel,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,

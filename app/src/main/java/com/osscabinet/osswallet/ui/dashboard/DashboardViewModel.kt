@@ -173,7 +173,8 @@ class DashboardViewModel(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     exchangeRates = rates,
-                    precision = precision
+                    precision = precision,
+                    timelineRange = dashboardSettings.accountsSection.timelineRange
                 )
 
                 val netWorth = financialUseCases.calculateNetWorth(

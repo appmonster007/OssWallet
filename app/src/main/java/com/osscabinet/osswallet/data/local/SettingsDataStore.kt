@@ -70,6 +70,8 @@ class SettingsDataStore(private val context: Context) {
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
         val ACCOUNT_DETAIL_SETTINGS_KEY = stringPreferencesKey("account_detail_settings")
         val RECORDS_SETTINGS_KEY = stringPreferencesKey("records_settings")
+        val DASHBOARD_CARDS_CONFIG_KEY = stringPreferencesKey("dashboard_cards_config")
+        val ACCOUNT_DETAIL_CARDS_CONFIG_KEY = stringPreferencesKey("account_detail_cards_config")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -134,6 +136,14 @@ class SettingsDataStore(private val context: Context) {
                 TransactionSectionSettings()
             }
         } ?: TransactionSectionSettings()
+    }
+
+    val dashboardCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[DASHBOARD_CARDS_CONFIG_KEY] ?: ""
+    }
+
+    val accountDetailCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNT_DETAIL_CARDS_CONFIG_KEY] ?: ""
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -221,6 +231,18 @@ class SettingsDataStore(private val context: Context) {
                 }
             } ?: TransactionSectionSettings()
             preferences[RECORDS_SETTINGS_KEY] = Json.encodeToString(update(current))
+        }
+    }
+
+    suspend fun saveDashboardCardsConfig(config: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DASHBOARD_CARDS_CONFIG_KEY] = config
+        }
+    }
+
+    suspend fun saveAccountDetailCardsConfig(config: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCOUNT_DETAIL_CARDS_CONFIG_KEY] = config
         }
     }
 }

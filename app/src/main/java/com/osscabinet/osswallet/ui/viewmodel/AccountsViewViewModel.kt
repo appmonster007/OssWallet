@@ -171,7 +171,8 @@ class AccountsViewViewModel(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     exchangeRates = rates,
-                    precision = precision
+                    precision = precision,
+                    timelineRange = accountsTimelineRange
                 )
 
                 val netWorth = financialUseCases.calculateNetWorth(

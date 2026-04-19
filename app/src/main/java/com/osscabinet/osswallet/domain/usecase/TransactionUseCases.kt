@@ -2,13 +2,52 @@ package com.osscabinet.ossWallet.domain.usecase
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.ui.util.convertAmount
+import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-class GetRecentTransactionsUseCase {
-    operator fun invoke(
+class TransactionUseCases(
+    private val repository: TransactionRepository,
+    private val sharedWalletRepository: SharedWalletRepository
+) {
+    fun getTransactions(profileId: Int = 1): Flow<List<Transaction>> {
+        return repository.getAllTransactions(profileId)
+    }
+
+    fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
+        return repository.getFilteredTransactions(profileId, filter)
+    }
+
+    suspend fun insertTransaction(transaction: Transaction, profileId: Int = 1): Long {
+        return repository.insertTransaction(transaction, profileId)
+    }
+
+    suspend fun deleteTransaction(id: Long) {
+        repository.deleteTransaction(id)
+    }
+
+    suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
+        repository.updateTransaction(oldTransaction, newTransaction, profileId)
+    }
+
+    suspend fun saveTransfer(
+        sourceTransaction: Transaction,
+        targetTransaction: Transaction,
+        profileId: Int
+    ): Pair<Long, Long> {
+        return repository.saveTransfer(sourceTransaction, targetTransaction, profileId)
+    }
+
+    suspend fun syncTransactions(walletId: String) {
+        sharedWalletRepository.syncTransactions(walletId)
+    }
+
+    fun getRecentTransactions(
         allTransactions: List<Transaction>,
         accounts: List<Account>,
         exchangeRates: Map<String, BigDecimal>,

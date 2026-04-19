@@ -56,4 +56,24 @@ object FilterUtils {
         }
         return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
     }
+
+    fun <T : com.osscabinet.ossWallet.domain.model.Timestamped> filterByTimelineRange(
+        items: List<T>,
+        timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+    ): List<T> {
+        return when (timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime -> items
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod -> {
+                val (start, end) = getRangeForThis(timelineRange.period)
+                items.filter { it.timestamp in start..end }
+            }
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                val (start, end) = getRangeForLast(timelineRange.period)
+                items.filter { it.timestamp in start..end }
+            }
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange -> {
+                items.filter { it.timestamp in timelineRange.start..timelineRange.end }
+            }
+        }
+    }
 }

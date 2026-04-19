@@ -64,22 +64,20 @@ class AppContainer(private val context: Context) {
         DatabaseSeeder(db.accountDao(), db.categoryDao(), db.transactionDao(), context)
     }
 
-    // Use Cases
-    val getTransactionsUseCase get() = GetTransactionsUseCase(transactionRepository)
-    val insertTransactionUseCase get() = InsertTransactionUseCase(transactionRepository)
-    val saveTransferUseCase get() = SaveTransferUseCase(transactionRepository)
-    val deleteTransactionUseCase get() = DeleteTransactionUseCase(transactionRepository)
-    val updateTransactionUseCase get() = UpdateTransactionUseCase(transactionRepository)
+    // Consolidated Use Cases
+    val transactionUseCases by lazy { 
+        TransactionUseCases(transactionRepository, sharedWalletRepository) 
+    }
     
-    val syncBudgetSpentUseCase get() = SyncBudgetSpentUseCase(budgetRepository, transactionRepository)
-    val upsertBudgetUseCase get() = UpsertBudgetUseCase(budgetRepository)
+    val financialUseCases by lazy { 
+        FinancialUseCases(transactionRepository, currencyRepository) 
+    }
     
-    val getExchangeRatesUseCase get() = GetExchangeRatesUseCase(currencyRepository)
-
-    val calculateNetWorthUseCase get() = CalculateNetWorthUseCase()
-    val getCurrencyAggregationUseCase get() = GetCurrencyAggregationUseCase()
-    val getAccountSummariesUseCase get() = GetAccountSummariesUseCase()
-    val getTotalBalancesUseCase get() = GetTotalBalancesUseCase()
-    val getRecentTransactionsUseCase get() = GetRecentTransactionsUseCase()
-    val calculateCashFlowUseCase get() = CalculateCashFlowUseCase()
+    val budgetUseCases by lazy { 
+        BudgetUseCases(budgetRepository, transactionRepository) 
+    }
+    
+    val accountUseCases by lazy { 
+        AccountUseCases(accountRepository) 
+    }
 }

@@ -8,9 +8,6 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.dashboard.components.*
-import com.osscabinet.ossWallet.ui.util.FilterUtils
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,12 +17,10 @@ import java.math.BigDecimal
 class AccountDetailViewModel(
     private val accountId: String,
     private val accountRepository: AccountRepository,
-    private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    private val getCurrencyAggregationUseCase: GetCurrencyAggregationUseCase,
-    private val getTotalBalancesUseCase: GetTotalBalancesUseCase,
-    private val calculateCashFlowUseCase: CalculateCashFlowUseCase
+    private val financialUseCases: FinancialUseCases
 ) : ViewModel() {
 
     fun updateCurrencyBalancesLayout(layout: String) {
@@ -74,7 +69,7 @@ class AccountDetailViewModel(
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
-                getTransactionsUseCase(profileId),
+                transactionUseCases.getTransactions(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.accountDetailSettings
@@ -95,8 +90,7 @@ class AccountDetailViewModel(
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
-                // Currency aggregation for this account
-                val currencyTotals = getCurrencyAggregationUseCase(
+                val currencyTotals = financialUseCases.getCurrencyAggregation(
                     accounts = listOf(account),
                     allTransactions = accountTransactions,
                     timelineRange = settings.currencyBalancesSection.timelineRange,
@@ -105,8 +99,7 @@ class AccountDetailViewModel(
                     precision = precision
                 )
 
-                // Cash flow for this account
-                val cashFlowResult = calculateCashFlowUseCase(
+                val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = accountTransactions,
                     timelineRange = settings.cashFlowSection.timelineRange,
                     baseCurrency = baseCurrency,
@@ -114,8 +107,7 @@ class AccountDetailViewModel(
                     precision = precision
                 )
 
-                // Overall balance (always all time for accurate current balance)
-                val updatedAccount = getTotalBalancesUseCase(
+                val updatedAccount = financialUseCases.getTotalBalances(
                     accounts = listOf(account),
                     allTransactions = allTransactions.filter { it.accountId == accountId },
                     exchangeRates = rates,

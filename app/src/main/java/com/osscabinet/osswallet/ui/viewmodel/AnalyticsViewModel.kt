@@ -3,8 +3,8 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.usecase.GetExchangeRatesUseCase
-import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.Job
@@ -15,8 +15,8 @@ import java.math.RoundingMode
 import java.util.*
 
 class AnalyticsViewModel(
-    private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val getExchangeRatesUseCase: GetExchangeRatesUseCase,
+    private val transactionUseCases: TransactionUseCases,
+    private val financialUseCases: FinancialUseCases,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
@@ -35,9 +35,7 @@ class AnalyticsViewModel(
 
     init {
         viewModelScope.launch {
-            // Observe currency from settings to load initial rates and react to changes
             settingsDataStore.currency.collect { currencyCode ->
-                // This ensures we start with the correct currency and update if it changes in settings
                 onCurrencySelected(currencyCode)
             }
         }
@@ -50,7 +48,7 @@ class AnalyticsViewModel(
         }
 
         viewModelScope.launch {
-            getTransactionsUseCase().collect { transactions ->
+            transactionUseCases.getTransactions().collect { transactions ->
                 allTransactions = transactions
                 calculateAnalytics()
             }
@@ -64,7 +62,7 @@ class AnalyticsViewModel(
         ratesJob?.cancel()
         ratesJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, hasLoadedExchangeRates = false) }
-            val rates = getExchangeRatesUseCase(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
+            val rates = financialUseCases.getExchangeRates(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
             _uiState.update { it.copy(
                 selectedCurrency = currencyCode,
                 exchangeRates = rates,
@@ -79,14 +77,13 @@ class AnalyticsViewModel(
         val selectedCurrency = _uiState.value.selectedCurrency
         val currentRates = _uiState.value.exchangeRates
         
-        // Convert all transactions to selected currency
         val convertedTransactions = allTransactions.map { tx ->
             val convertedAmount = convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
                 toCurrency = selectedCurrency,
                 exchangeRates = currentRates,
-                precision = _currentPrecision + 4 // Use higher internal precision
+                precision = _currentPrecision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -95,7 +92,6 @@ class AnalyticsViewModel(
         val totalExpense = convertedTransactions.filter { !it.isIncome }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
         val currentBalance = totalIncome.subtract(totalExpense).setScale(_currentPrecision, RoundingMode.HALF_UP)
         
-        // Month-over-month analysis
         val calendar = Calendar.getInstance()
         val currentMonth = calendar.get(Calendar.MONTH)
         val currentYear = calendar.get(Calendar.YEAR)
@@ -126,7 +122,6 @@ class AnalyticsViewModel(
             lastMonthIncome.subtract(lastMonthExpense).divide(lastMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
         } else 0.0
         
-        // Burn Rate = Monthly Expense Average
         val firstTx = convertedTransactions.minByOrNull { it.timestamp }
         val daysActive = if (firstTx != null) {
             val diff = System.currentTimeMillis() - firstTx.timestamp
@@ -135,7 +130,6 @@ class AnalyticsViewModel(
         val dailyExpenseAvg = totalExpense.divide(BigDecimal.valueOf(daysActive), _currentPrecision, RoundingMode.HALF_UP)
         val monthlyBurnRate = dailyExpenseAvg.multiply(BigDecimal.valueOf(30))
 
-        // Group by day for cash flow (last 7 days)
         val dailyNetFlow = convertedTransactions
             .filter { it.timestamp > System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L }
             .groupBy { 
@@ -156,7 +150,6 @@ class AnalyticsViewModel(
                 .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), _currentPrecision, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
 
-        // Forecast for next 30 days
         val forecast = (1..30).map { day ->
             val timestamp = System.currentTimeMillis() + day * 24 * 60 * 60 * 1000L
             val projectedBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(day.toLong())))

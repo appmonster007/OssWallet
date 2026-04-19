@@ -8,18 +8,11 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
-import com.osscabinet.ossWallet.ui.dashboard.components.*
-import com.osscabinet.ossWallet.ui.util.FilterUtils
-import com.osscabinet.ossWallet.ui.util.calculateNetWorth
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
-import com.osscabinet.ossWallet.ui.util.convertAmount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 enum class AccountsViewSection {
     NET_WORTH,
@@ -31,14 +24,10 @@ enum class AccountsViewSection {
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountsViewViewModel(
     private val accountRepository: AccountRepository,
-    private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    private val calculateNetWorthUseCase: CalculateNetWorthUseCase,
-    private val getCurrencyAggregationUseCase: GetCurrencyAggregationUseCase,
-    private val getAccountSummariesUseCase: GetAccountSummariesUseCase,
-    private val getTotalBalancesUseCase: GetTotalBalancesUseCase,
-    private val calculateCashFlowUseCase: CalculateCashFlowUseCase
+    private val financialUseCases: FinancialUseCases
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
@@ -137,7 +126,7 @@ class AccountsViewViewModel(
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
-                getTransactionsUseCase(profileId),
+                transactionUseCases.getTransactions(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.accountsViewSettings
@@ -160,7 +149,7 @@ class AccountsViewViewModel(
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 val netWorthTimelineRange = accountsViewSettings.netWorthSection.timelineRange
 
-                val globalCurrencyTotals = getCurrencyAggregationUseCase(
+                val globalCurrencyTotals = financialUseCases.getCurrencyAggregation(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = currencyBalancesTimelineRange,
@@ -169,7 +158,7 @@ class AccountsViewViewModel(
                     precision = precision
                 )
 
-                val accountStats = getAccountSummariesUseCase(
+                val accountStats = financialUseCases.getAccountSummaries(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = accountsTimelineRange,
@@ -178,14 +167,14 @@ class AccountsViewViewModel(
                     precision = precision
                 )
 
-                val updatedAccounts = getTotalBalancesUseCase(
+                val updatedAccounts = financialUseCases.getTotalBalances(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     exchangeRates = rates,
                     precision = precision
                 )
 
-                val netWorth = calculateNetWorthUseCase(
+                val netWorth = financialUseCases.calculateNetWorth(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     baseCurrency = baseCurrency,
@@ -194,7 +183,7 @@ class AccountsViewViewModel(
                     timelineRange = netWorthTimelineRange
                 )
 
-                val netWorthFlow = calculateCashFlowUseCase(
+                val netWorthFlow = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = netWorthTimelineRange,
                     baseCurrency = baseCurrency,
@@ -202,7 +191,7 @@ class AccountsViewViewModel(
                     precision = precision
                 )
 
-                val cashFlowResult = calculateCashFlowUseCase(
+                val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = cashFlowTimelineRange,
                     baseCurrency = baseCurrency,

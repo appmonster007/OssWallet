@@ -4,30 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.usecase.DeleteTransactionUseCase
-import com.osscabinet.ossWallet.domain.usecase.GetTransactionsUseCase
-import com.osscabinet.ossWallet.domain.usecase.InsertTransactionUseCase
-import com.osscabinet.ossWallet.domain.usecase.SaveTransferUseCase
-import com.osscabinet.ossWallet.domain.usecase.UpdateTransactionUseCase
-import com.osscabinet.ossWallet.ui.util.convertAmount
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
-    private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val insertTransactionUseCase: InsertTransactionUseCase,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase,
-    private val updateTransactionUseCase: UpdateTransactionUseCase,
-    private val saveTransferUseCase: SaveTransferUseCase,
+    private val transactionUseCases: TransactionUseCases,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
@@ -56,41 +44,21 @@ class TransactionViewModel(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                _recordsFilter.flatMapLatest { getTransactionsUseCase.filtered(profileId, it) },
+                _recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
                 accountRepository.getAllAccounts(profileId),
                 analyticsViewModel.uiState,
                 _recordsFilter
             ) { filteredTransactions, accounts, analyticsState, currentFilter ->
-                val accountMap = accounts.associateBy { it.id }
                 val rates = analyticsState.exchangeRates
                 val precision = analyticsState.decimalPrecision
-                val baseCurrency = analyticsState.selectedCurrency
 
-                // Group by account to calculate running balance correctly per account
-                val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
-                
-                val allWithBalance = transactionsByAccount.flatMap { (accountId, accountTransactions) ->
-                    val currencyBalances = mutableMapOf<String, BigDecimal>()
-                    
-                    accountTransactions.sortedBy { it.timestamp }.map { transaction ->
-                        val currentBalance = currencyBalances.getOrDefault(transaction.currency, BigDecimal.ZERO)
-                        val balanceBefore = currentBalance
-                        val newBalance = if (transaction.isIncome) {
-                            currentBalance.add(transaction.amount)
-                        } else {
-                            currentBalance.subtract(transaction.amount)
-                        }
-                        currencyBalances[transaction.currency] = newBalance
-                        
-                        TransactionWithBalance(
-                            transaction = transaction,
-                            balanceBefore = balanceBefore,
-                            balanceAfter = newBalance
-                        )
-                    }
-                }
-
-                allWithBalance.sortedByDescending { it.transaction.timestamp }
+                transactionUseCases.getRecentTransactions(
+                    allTransactions = filteredTransactions,
+                    accounts = accounts,
+                    exchangeRates = rates,
+                    precision = precision,
+                    limit = Int.MAX_VALUE // Use MAX_VALUE for the full list with balances
+                )
             }
         }.stateIn(
             scope = viewModelScope,
@@ -108,10 +76,6 @@ class TransactionViewModel(
 
     fun updateAccountDetailFilter(newFilter: TransactionFilter) {
         _accountDetailFilter.value = newFilter
-    }
-
-    fun setRecordsCategoryFilter(category: String?) {
-        // ...
     }
 
     fun setRecordsAccountFilter(accountId: String?) {
@@ -173,7 +137,7 @@ class TransactionViewModel(
                 longitude = longitude,
                 warrantyExpiration = warrantyExpiration
             )
-            val id = insertTransactionUseCase(transaction, profileId)
+            val id = transactionUseCases.insertTransaction(transaction, profileId)
             onComplete?.invoke(id)
         }
     }
@@ -217,7 +181,7 @@ class TransactionViewModel(
                 longitude = longitude,
                 warrantyExpiration = warrantyExpiration
             )
-            updateTransactionUseCase(oldTransaction, newTransaction, profileId)
+            transactionUseCases.updateTransaction(oldTransaction, newTransaction, profileId)
         }
     }
 
@@ -228,14 +192,14 @@ class TransactionViewModel(
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
-            saveTransferUseCase(sourceTransaction, targetTransaction, profileId)
+            transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
             onComplete?.invoke()
         }
     }
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
-            deleteTransactionUseCase(id)
+            transactionUseCases.deleteTransaction(id)
         }
     }
 
@@ -275,11 +239,7 @@ class TransactionViewModel(
 }
 
 class TransactionViewModelFactory(
-    private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val insertTransactionUseCase: InsertTransactionUseCase,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase,
-    private val updateTransactionUseCase: UpdateTransactionUseCase,
-    private val saveTransferUseCase: SaveTransferUseCase,
+    private val transactionUseCases: TransactionUseCases,
     private val settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
@@ -289,11 +249,7 @@ class TransactionViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return TransactionViewModel(
-            getTransactionsUseCase,
-            insertTransactionUseCase,
-            deleteTransactionUseCase,
-            updateTransactionUseCase,
-            saveTransferUseCase,
+            transactionUseCases,
             settingsDataStore,
             categoryDao,
             accountRepository,

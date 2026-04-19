@@ -16,8 +16,7 @@ interface TransactionRepository {
     suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int)
     suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>>
     suspend fun getTransactionById(id: Long): Transaction?
-    suspend fun triggerWidgetUpdate()
-    
+        
     suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
     suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
 }

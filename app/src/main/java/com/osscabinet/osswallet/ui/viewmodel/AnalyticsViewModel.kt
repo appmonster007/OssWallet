@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -78,7 +78,7 @@ class AnalyticsViewModel(
         val currentRates = _uiState.value.exchangeRates
         
         val convertedTransactions = allTransactions.map { tx ->
-            val convertedAmount = convertAmount(
+            val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
                 toCurrency = selectedCurrency,

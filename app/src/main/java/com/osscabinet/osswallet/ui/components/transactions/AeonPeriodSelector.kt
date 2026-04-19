@@ -30,7 +30,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonDateRangePicker
-import com.osscabinet.ossWallet.ui.util.FilterUtils
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -326,11 +326,11 @@ private fun applyTimelineRange(range: TimelineRange, onSetDateRange: (Long?, Lon
     when (range) {
         is TimelineRange.AllTime -> onSetDateRange(null, null)
         is TimelineRange.ThisPeriod -> {
-            val (start, end) = FilterUtils.getRangeForThis(range.period)
+            val (start, end) = TimelineService.getRangeForThis(range.period)
             onSetDateRange(start, end)
         }
         is TimelineRange.LastPeriod -> {
-            val (start, end) = FilterUtils.getRangeForLast(range.period)
+            val (start, end) = TimelineService.getRangeForLast(range.period)
             onSetDateRange(start, end)
         }
         is TimelineRange.CustomRange -> onSetDateRange(range.start, range.end)
@@ -345,13 +345,13 @@ private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
 
     // Check ThisPeriod
     for (type in ThisPeriodType.entries) {
-        val range = FilterUtils.getRangeForThis(type)
+        val range = TimelineService.getRangeForThis(type)
         if (Math.abs(range.first - start) < 2000 && Math.abs(range.second - end) < 2000) return TimelineRange.ThisPeriod(type)
     }
 
     // Check LastPeriod
     for (type in LastPeriodType.entries) {
-        val range = FilterUtils.getRangeForLast(type)
+        val range = TimelineService.getRangeForLast(type)
         val expectedStart = range.first
         val expectedEnd = range.second
         

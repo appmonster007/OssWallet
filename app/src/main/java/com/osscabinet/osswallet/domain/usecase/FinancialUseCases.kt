@@ -6,9 +6,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.ui.util.FilterUtils
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
-import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
@@ -58,7 +57,7 @@ class FinancialUseCases(
         precision: Int,
         timelineRange: TimelineRange
     ): BigDecimal {
-        val filteredTransactions = FilterUtils.filterByTimelineRange(allTransactions, timelineRange)
+        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
 
         val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
         val includeInitialBalance = timelineRange is TimelineRange.AllTime
@@ -83,7 +82,7 @@ class FinancialUseCases(
             }
         }
 
-        return calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
+        return CurrencyService.calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
     }
 
     fun calculateCashFlow(
@@ -93,7 +92,7 @@ class FinancialUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): CashFlowResult {
-        val filteredTransactions = FilterUtils.filterByTimelineRange(allTransactions, timelineRange)
+        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
 
         val currencies = filteredTransactions.map { it.currency }.distinct().sorted()
         
@@ -106,8 +105,8 @@ class FinancialUseCases(
 
             if (income.signum() == 0 && expense.signum() == 0) null
             else {
-                val incomeInBase = convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
-                val expenseInBase = convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
+                val incomeInBase = CurrencyService.convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
+                val expenseInBase = CurrencyService.convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
                 CashFlowBreakdownItem(
                     currency = curr,
                     income = income,
@@ -143,7 +142,7 @@ class FinancialUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Map<String, AccountSummaryItem> {
-        val filteredTransactions = FilterUtils.filterByTimelineRange(allTransactions, timelineRange)
+        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
 
         val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
         val includeInitial = timelineRange is TimelineRange.AllTime
@@ -170,9 +169,9 @@ class FinancialUseCases(
                 }
             }
             
-            val incomeInAccountCurrency = calculateTotalInCurrency(incomeBreakdown, account.currencyCode, exchangeRates, precision)
-            val expenseInAccountCurrency = calculateTotalInCurrency(expenseBreakdown, account.currencyCode, exchangeRates, precision)
-            val balanceInBase = calculateTotalInCurrency(breakdown, baseCurrency, exchangeRates, precision)
+            val incomeInAccountCurrency = CurrencyService.calculateTotalInCurrency(incomeBreakdown, account.currencyCode, exchangeRates, precision)
+            val expenseInAccountCurrency = CurrencyService.calculateTotalInCurrency(expenseBreakdown, account.currencyCode, exchangeRates, precision)
+            val balanceInBase = CurrencyService.calculateTotalInCurrency(breakdown, baseCurrency, exchangeRates, precision)
             
             account.id to AccountSummaryItem(
                 account = account,
@@ -192,7 +191,7 @@ class FinancialUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CurrencyAggregationItem> {
-        val filteredTransactions = FilterUtils.filterByTimelineRange(allTransactions, timelineRange)
+        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
 
         val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
         val includeInitial = timelineRange is TimelineRange.AllTime
@@ -220,7 +219,7 @@ class FinancialUseCases(
             CurrencyAggregationItem(
                 currency = currency,
                 amount = amount,
-                amountInBase = convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
+                amountInBase = CurrencyService.convertAmount(amount, currency, baseCurrency, exchangeRates, precision)
             )
         }.sortedBy { it.currency }
     }
@@ -243,7 +242,7 @@ class FinancialUseCases(
                 breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
             }
             
-            val totalInAccountCurrency = calculateTotalInCurrency(
+            val totalInAccountCurrency = CurrencyService.calculateTotalInCurrency(
                 currencyTotals = breakdown,
                 targetCurrency = account.currencyCode,
                 exchangeRates = exchangeRates,

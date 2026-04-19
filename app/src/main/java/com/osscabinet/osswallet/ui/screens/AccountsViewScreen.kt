@@ -37,7 +37,10 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
-import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
+import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
+import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
@@ -218,7 +221,7 @@ fun AccountsViewScreen(
                         ) { section, isDragging, dragModifier ->
                             when (section) {
                                 AccountsViewSection.NET_WORTH -> {
-                                    NetWorthSection(
+                                    NetWorthCard(
                                         uiState = netWorthUiState,
                                         onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
                                         onTimelineRangeChange = { accountsViewViewModel.updateNetWorthTimelineRange(it) },
@@ -227,7 +230,7 @@ fun AccountsViewScreen(
                                     )
                                 }
                                 AccountsViewSection.CURRENCY_BALANCES -> {
-                                    CurrencyAggregationSection(
+                                    CurrencyBalancesCard(
                                         currencyTotals = state.currencyTotals,
                                         baseCurrency = state.baseCurrency,
                                         precision = state.decimalPrecision,
@@ -242,7 +245,7 @@ fun AccountsViewScreen(
                                     )
                                 }
                                 AccountsViewSection.CASHFLOW -> {
-                                    AeonCashFlowSummary(
+                                    CashFlowCard(
                                         cashFlowResult = state.cashFlowResult,
                                         baseCurrency = state.baseCurrency,
                                         currentTheme = currentTheme,
@@ -257,7 +260,7 @@ fun AccountsViewScreen(
                                     )
                                 }
                                 AccountsViewSection.ACCOUNTS_LIST -> {
-                                    AeonAccountsSection(
+                                    AccountsCard(
                                         onManageClick = { navigate(onManageAccountsClick) },
                                         onAccountClick = { id -> navigate { onAccountClick(id) } },
                                         onGridColumnsChange = { accountsViewViewModel.updateGridColumns(it) },

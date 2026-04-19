@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components
+package com.osscabinet.ossWallet.ui.accountdetail.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,20 +16,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
-
 import androidx.core.graphics.toColorInt
 
 @Composable
-fun AeonAccountHeroCard(
+fun AccountHeroCard(
     account: Account,
     balance: BigDecimal,
     netBalance: BigDecimal,

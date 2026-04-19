@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 
@@ -70,7 +71,7 @@ fun AnalyticsScreen(
             // Cash Flow Chart
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("CASH FLOW", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                    AeonFlowSectionHeader(title = "CASH FLOW")
                     EditorialChartCard(MaterialTheme.colorScheme.primaryContainer) {
                         SimpleBarChart(uiState.dailyNetFlow, MaterialTheme.colorScheme.onPrimaryContainer)
                     }
@@ -80,7 +81,7 @@ fun AnalyticsScreen(
             // Balance Outlook Chart
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("BALANCE OUTLOOK", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                    AeonFlowSectionHeader(title = "BALANCE OUTLOOK")
                     EditorialChartCard(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
                         SimpleLineChart(uiState.forecast, MaterialTheme.colorScheme.primary)
                     }
@@ -151,7 +152,7 @@ fun SimpleLineChart(data: Map<Long, BigDecimal>, lineColor: Color) {
 @Composable
 fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int = 2) {
     Column {
-        Text("PROJECTED BALANCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        AeonFlowSectionHeader(title = "PROJECTED BALANCE")
         Text(
             formatCurrencyRight(balance, currency, precision),
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)

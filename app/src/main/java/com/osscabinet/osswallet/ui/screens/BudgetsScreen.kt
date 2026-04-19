@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
@@ -74,12 +75,7 @@ fun BudgetsScreen(
             contentPadding = PaddingValues(top = 24.dp, bottom = 80.dp)
         ) {
             item {
-                Text(
-                    "FINANCIAL TARGETS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    letterSpacing = 1.sp
-                )
+                AeonFlowSectionHeader(title = "FINANCIAL TARGETS")
             }
             
             if (budgets.isEmpty()) {

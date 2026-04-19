@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.Numpad
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
@@ -112,9 +113,8 @@ fun EditBudgetScreen(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        "Target Details",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    AeonFlowSectionHeader(
+                        title = "TARGET DETAILS",
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                     )
 

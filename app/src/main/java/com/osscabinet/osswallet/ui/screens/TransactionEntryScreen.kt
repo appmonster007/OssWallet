@@ -1201,7 +1201,7 @@ fun TransactionEntryContent(
             ) {
                 Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        AeonSectionHeader(title = "Quick Templates")
+                        AeonFlowSectionHeader(title = "QUICK TEMPLATES")
                         IconButton(onClick = { /* Navigate to Create Template */ }) {
                             Icon(Icons.Rounded.Add, contentDescription = "Add Template", tint = MaterialTheme.colorScheme.primary)
                         }
@@ -1261,8 +1261,8 @@ fun TransactionEntryContent(
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
                 Column(modifier = Modifier.padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
-                    AeonSectionHeader(
-                        title = "Select Transaction To Link",
+                    AeonFlowSectionHeader(
+                        title = "SELECT TRANSACTION TO LINK",
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                     )
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {

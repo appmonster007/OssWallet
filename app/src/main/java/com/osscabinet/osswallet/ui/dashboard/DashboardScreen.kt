@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens
+package com.osscabinet.ossWallet.ui.dashboard
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -42,8 +42,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.domain.model.Budget
-import com.osscabinet.ossWallet.ui.viewmodel.DashboardViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.DashboardUiState
+
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -60,7 +59,12 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.FilterUtils
-import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
+import com.osscabinet.ossWallet.ui.dashboard.components.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
+import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import java.math.BigDecimal
@@ -131,7 +135,7 @@ fun DashboardScreen(
 
     // We no longer need this LaunchedEffect because AnalyticsViewModel 
     // now observes settingsDataStore.currency directly in its init block.
-    // However, we might still want to ensure it's synced if it was overridden by other screens.
+    // However, we might still want to ensure it\'s synced if it was overridden by other screens.
     val settingsCurrency by settingsViewModel.currency.collectAsState()
     LaunchedEffect(settingsCurrency) {
         analyticsViewModel.onCurrencySelected(settingsCurrency)
@@ -310,8 +314,8 @@ fun DashboardContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) { section, isDragging, dragModifier ->
                     when (section) {
-                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.NET_WORTH -> {
-                            NetWorthSection(
+                        DashboardSection.NET_WORTH -> {
+                            NetWorthCard(
                                 uiState = netWorthUiState,
                                 onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) },
                                 onTimelineRangeChange = { dashboardViewModel.updateNetWorthTimelineRange(it) },
@@ -319,8 +323,8 @@ fun DashboardContent(
                                 headerModifier = dragModifier
                             )
                         }
-                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CURRENCY_BALANCES -> {
-                            CurrencyAggregationSection(
+                        DashboardSection.CURRENCY_BALANCES -> {
+                            CurrencyBalancesCard(
                                 currencyTotals = state.currencyTotals,
                                 baseCurrency = state.baseCurrency,
                                 modifier = Modifier.fillMaxWidth(),
@@ -334,8 +338,8 @@ fun DashboardContent(
                                 onTimelineRangeChange = { dashboardViewModel.updateCurrencyBalancesTimelineRange(it) }
                             )
                         }
-                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.CASHFLOW -> {
-                            AeonCashFlowSummary(
+                        DashboardSection.CASHFLOW -> {
+                            CashFlowCard(
                                 cashFlowResult = state.cashFlowResult,
                                 baseCurrency = state.baseCurrency,
                                 currentTheme = currentTheme,
@@ -349,8 +353,8 @@ fun DashboardContent(
                                 onTimelineRangeChange = { dashboardViewModel.updateCashFlowTimelineRange(it) }
                             )
                         }
-                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.ACCOUNTS -> {
-                            AeonAccountsSection(
+                        DashboardSection.ACCOUNTS -> {
+                            AccountsCard(
                                 onManageClick = onManageAccountsClick,
                                 onHeaderClick = onAccountsViewClick,
                                 onAccountClick = onAccountClick,
@@ -372,9 +376,9 @@ fun DashboardContent(
                                 settingsTitle = "Dashboard Settings"
                             )
                         }
-                        com.osscabinet.ossWallet.ui.viewmodel.DashboardSection.BUDGETS -> {
+                        DashboardSection.BUDGETS -> {
                             if (budgets.isNotEmpty()) {
-                                BudgetTrackingSection(
+                                BudgetsCard(
                                     onManageClick = onBudgetsClick,
                                     budgets = budgets,
                                     baseCurrency = state.baseCurrency,
@@ -392,63 +396,19 @@ fun DashboardContent(
                 }
             }
             1 -> {
-
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
                 val categories by transactionViewModel.categories.collectAsState()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    item {
-                        AeonSectionHeader(
-                            title = "Recent Activities",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            trailing = {
-                                TextButton(onClick = onRecordsClick) {
-                                    Text("View all", color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                        )
-                    }
-
-                    items(state.recentTransactions) { item ->
-                        val transaction = item.transaction
-                        val categoryEntity = categoryMap[transaction.categoryId]
-                        val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
-
-                        AeonTransactionItem(
-                            category = transaction.category,
-                            account = accountMap[transaction.accountId] ?: "Unknown",
-                            amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
-                            balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
-                            balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
-                            type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                            timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
-                            note = transaction.note,
-                            tags = transaction.tags,
-                            icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
-                            iconBg = categoryEntity?.let { Color(it.colorHex) },
-                            precision = decimalPrecision,
-                            onClick = { /* Navigate to edit? */ }
-                        )
-                    }
-                    
-                    item {
-                        HorizontalDivider(
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                    }
-                }
+                RecentActivitiesCard(
+                    recentTransactions = state.recentTransactions,
+                    accountNamesMap = accountMap,
+                    categoryMap = categoryMap,
+                    decimalPrecision = state.decimalPrecision,
+                    onRecordsClick = onRecordsClick,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
 }
-
-
-

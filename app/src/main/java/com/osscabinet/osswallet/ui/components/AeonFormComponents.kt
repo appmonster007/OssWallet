@@ -540,10 +540,10 @@ fun VisualIdentitySection(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(32.dp)) {
-            Text("Visual Identity", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            AeonFlowSectionHeader(title = "VISUAL IDENTITY")
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Identifier Icon", style = MaterialTheme.typography.titleSmall)
+                AeonFlowSectionHeader(title = "IDENTIFIER ICON")
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     AeonTextField(
                         value = iconSearchQuery,
@@ -599,7 +599,7 @@ fun VisualIdentitySection(
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Accent Brand Color", style = MaterialTheme.typography.titleSmall)
+                    AeonFlowSectionHeader(title = "ACCENT BRAND COLOR")
                     if (isColorLocked) {
                         Icon(
                             Icons.Rounded.Lock,

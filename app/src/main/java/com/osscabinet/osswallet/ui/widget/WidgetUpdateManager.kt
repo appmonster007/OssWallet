@@ -97,12 +97,12 @@ object WidgetUpdateManager {
                 NetWorthWidgetProvider::class.java, 
                 R.layout.widget_net_worth
             ) { views ->
-                val nw = calculateNetWorthFromAccounts(allAccounts, baseCurrency, exchangeRates, precision)
-                views.setTextViewText(R.id.text_amount, formatCurrencyRight(nw, baseCurrency, precision))
-                
                 // Update income/expense badges
+
                 views.setTextViewText(R.id.badge_income, "INCOME: ${formatCurrencyRight(netIncome, baseCurrency, precision)}")
                 views.setTextViewText(R.id.badge_expense, "EXPENSE: ${formatCurrencyRight(netExpense, baseCurrency, precision)}")
+
+                views.setTextViewText(R.id.text_amount, formatCurrencyRight(netIncome-netExpense, baseCurrency, precision))
 
                 val intent = Intent(context, MainActivity::class.java)
                 val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

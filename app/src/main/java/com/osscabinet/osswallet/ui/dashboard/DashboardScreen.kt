@@ -56,6 +56,7 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
@@ -118,20 +119,15 @@ fun DashboardScreen(
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
+    val cardsConfig by cardManagerViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val analyticsUiState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
     val budgets by budgetViewModel.budgets.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
-    val gridColumns by settingsViewModel.dashboardGridColumns.collectAsStateWithLifecycle()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
 
-    var isFabExpanded by remember { mutableStateOf(false) }
-
-    val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
 
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
@@ -237,7 +233,9 @@ fun DashboardScreen(
                                 onBudgetsClick = { navigate(onBudgetsClick) },
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
-                                dashboardViewModel = dashboardViewModel
+                                dashboardViewModel = dashboardViewModel,
+                                cardManagerViewModel = cardManagerViewModel,
+                                cardsConfig = cardsConfig
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -274,13 +272,14 @@ fun DashboardContent(
     onBudgetsClick: () -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
-    dashboardViewModel: DashboardViewModel
+    dashboardViewModel: DashboardViewModel,
+    cardManagerViewModel: CardManagerViewModel,
+    cardsConfig: DashboardCardsConfig
 ) {
-    val activeTransactions = remember(state.recentTransactions) {
+    remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
     }
 
-    val sectionOrder by dashboardViewModel.sectionOrder.collectAsStateWithLifecycle()
     val netWorthUiState = remember(
         state.netWorth,
         state.netIncome,
@@ -311,17 +310,19 @@ fun DashboardContent(
         when (page) {
             0 -> {
                 CardReorderableList(
-                    items = sectionOrder,
-                    key = { it.ordinal },
-                    onReorder = { dashboardViewModel.updateSectionOrder(it) },
+                    items = cardsConfig.cards.sortedBy { it.order },
+                    key = { it.cardId },
+                    onReorder = { reorderedCards ->
+                        cardManagerViewModel.reorderDashboardCards(reorderedCards)
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) { section, isDragging, dragModifier ->
-                    when (section) {
-                        DashboardSection.NET_WORTH -> {
+                ) { cardConfig, isDragging, dragModifier ->
+                    when (cardConfig) {
+                        is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> {
                             NetWorthCard(
                                 uiState = netWorthUiState,
                                 onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) },
@@ -330,7 +331,7 @@ fun DashboardContent(
                                 headerModifier = dragModifier
                             )
                         }
-                        DashboardSection.CURRENCY_BALANCES -> {
+                        is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
                             CurrencyBalancesCard(
                                 currencyTotals = state.currencyTotals,
                                 baseCurrency = state.baseCurrency,
@@ -345,7 +346,7 @@ fun DashboardContent(
                                 onTimelineRangeChange = { dashboardViewModel.updateCurrencyBalancesTimelineRange(it) }
                             )
                         }
-                        DashboardSection.CASHFLOW -> {
+                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
                             CashFlowCard(
                                 cashFlowResult = state.cashFlowResult,
                                 baseCurrency = state.baseCurrency,
@@ -360,7 +361,7 @@ fun DashboardContent(
                                 onTimelineRangeChange = { dashboardViewModel.updateCashFlowTimelineRange(it) }
                             )
                         }
-                        DashboardSection.ACCOUNTS -> {
+                        is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> {
                             AccountsCard(
                                 onManageClick = onManageAccountsClick,
                                 onHeaderClick = onAccountsViewClick,
@@ -383,7 +384,7 @@ fun DashboardContent(
                                 settingsTitle = "Dashboard Settings"
                             )
                         }
-                        DashboardSection.BUDGETS -> {
+                        is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> {
                             if (budgets.isNotEmpty()) {
                                 BudgetsCard(
                                     onManageClick = onBudgetsClick,

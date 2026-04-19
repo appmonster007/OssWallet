@@ -167,6 +167,21 @@ class CardManagerViewModel(
         saveDashboardCards()
     }
 
+    fun reorderDashboardCards(reorderedCards: List<CardConfig>) {
+        _cardsConfig.value = _cardsConfig.value.copy(
+            cards = reorderedCards.mapIndexed { index, card ->
+                when (card) {
+                    is NetWorthCardConfig -> card.copy(order = index)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index)
+                    is CashFlowCardConfig -> card.copy(order = index)
+                    is AccountsCardConfig -> card.copy(order = index)
+                    is BudgetsCardConfig -> card.copy(order = index)
+                }
+            }
+        )
+        saveDashboardCards()
+    }
+
     // Account Detail Card Management
     fun addAccountDetailCard(cardType: String) {
         val newCard = when (cardType) {
@@ -207,6 +222,19 @@ class CardManagerViewModel(
         saveAccountDetailCards()
     }
 
+    fun reorderAccountDetailCards(reorderedCards: List<AccountDetailCardConfig>) {
+        _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
+            cards = reorderedCards.mapIndexed { index, card ->
+                when (card) {
+                    is AccountHeroCardConfig -> card.copy(order = index)
+                    is AccountCashFlowCardConfig -> card.copy(order = index)
+                    is AccountCurrencyBalancesCardConfig -> card.copy(order = index)
+                }
+            }
+        )
+        saveAccountDetailCards()
+    }
+
     // Serialization for persistence
     fun serializeDashboardCards(): String {
         return json.encodeToString(_cardsConfig.value)
@@ -232,13 +260,3 @@ class CardManagerViewModel(
         }
     }
 }
-
-@kotlinx.serialization.Serializable
-data class DashboardCardsConfig(
-    val cards: List<CardConfig> = emptyList()
-)
-
-@kotlinx.serialization.Serializable
-data class AccountDetailCardsConfig(
-    val cards: List<AccountDetailCardConfig> = emptyList()
-)

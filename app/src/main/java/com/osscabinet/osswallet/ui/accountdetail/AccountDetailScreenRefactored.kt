@@ -56,7 +56,6 @@ fun AccountDetailScreenRefactored(
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
 
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
-    val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -80,8 +79,6 @@ fun AccountDetailScreenRefactored(
     val tabs = listOf("Overview", "Transactions")
 
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var showAddCardDialog by remember { mutableStateOf(false) }
-    var showDeleteCardsDialog by remember { mutableStateOf(false) }
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -195,7 +192,7 @@ fun AccountDetailScreenRefactored(
                 }
             }
             is AccountDetailUiState.Success -> {
-                val account = state.account
+                state.account
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -418,16 +415,8 @@ fun DynamicAccountDetailCards(
             items = accountDetailCardsConfig.cards.sortedBy { it.order },
             key = { it.cardId },
             onReorder = { reorderedCards ->
-                // Update order property based on new position
-                reorderedCards.forEachIndexed { index, card ->
-                    cardManagerViewModel.updateAccountDetailCard(card.cardId) {
-                        when (it) {
-                            is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> it.copy(order = index)
-                            is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> it.copy(order = index)
-                            is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> it.copy(order = index)
-                        }
-                    }
-                }
+                // Update order property based on new position and save atomically
+                cardManagerViewModel.reorderAccountDetailCards(reorderedCards)
             },
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 0.dp, end = 0.dp, top = 24.dp, bottom = 8.dp),

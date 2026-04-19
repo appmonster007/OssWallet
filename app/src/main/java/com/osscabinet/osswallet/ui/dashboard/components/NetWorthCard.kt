@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import kotlinx.serialization.Serializable
@@ -25,12 +26,6 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-@Serializable
-data class NetWorthSettings(
-    val fontSize: String = "Medium", // "Small", "Medium", "Large"
-    val timelineRange: TimelineRange = TimelineRange.AllTime
-)
 
 @Composable
 fun NetWorthCard(

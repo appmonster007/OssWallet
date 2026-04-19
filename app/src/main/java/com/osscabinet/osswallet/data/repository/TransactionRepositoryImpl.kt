@@ -30,8 +30,8 @@ class TransactionRepositoryImpl @Inject constructor(
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun updateWidgets() {
-        Log.d("TransactionRepo", "Triggering widget update")
-        WidgetUpdateHelper.triggerUpdate(context)
+        // Log.d("TransactionRepo", "Triggering widget update")
+        // WidgetUpdateHelper.triggerUpdate(context)
     }
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {

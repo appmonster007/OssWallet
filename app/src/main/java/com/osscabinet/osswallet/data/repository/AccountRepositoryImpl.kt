@@ -22,8 +22,8 @@ class AccountRepositoryImpl(
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun updateWidgets() {
-        Log.d("AccountRepo", "Triggering widget update")
-        WidgetUpdateHelper.triggerUpdate(context)
+        // Log.d("AccountRepo", "Triggering widget update")
+        // WidgetUpdateHelper.triggerUpdate(context)
     }
 
     override fun getAllAccounts(profileId: Int): Flow<List<Account>> = accountDao.getAllAccounts(profileId).map { entities ->

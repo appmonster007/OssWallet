@@ -55,6 +55,7 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
@@ -94,7 +95,8 @@ fun DashboardScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
-    budgetViewModel: BudgetViewModel
+    budgetViewModel: BudgetViewModel,
+    cardManagerViewModel: CardManagerViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

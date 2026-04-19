@@ -45,10 +45,31 @@ data class CurrencyAggregationItem(
     val amountInBase: BigDecimal
 )
 
+/**
+ * Shared data structure for filtered and grouped transactions
+ */
+private data class FilteredTransactionData(
+    val filteredTransactions: List<Transaction>,
+    val transactionsByAccount: Map<String, List<Transaction>>,
+    val includeInitialBalance: Boolean
+)
+
 class FinancialUseCases(
     private val transactionRepository: TransactionRepository,
     private val currencyRepository: CurrencyRepository
 ) {
+    /**
+     * Shared helper to filter transactions by timeline range and group by account
+     */
+    private fun filterAndGroupTransactions(
+        allTransactions: List<Transaction>,
+        timelineRange: TimelineRange
+    ): FilteredTransactionData {
+        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
+        val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
+        val includeInitialBalance = timelineRange is TimelineRange.AllTime
+        return FilteredTransactionData(filteredTransactions, transactionsByAccount, includeInitialBalance)
+    }
     fun calculateNetWorth(
         accounts: List<Account>,
         allTransactions: List<Transaction>,
@@ -57,18 +78,15 @@ class FinancialUseCases(
         precision: Int,
         timelineRange: TimelineRange
     ): BigDecimal {
-        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
+        val transactionData = filterAndGroupTransactions(allTransactions, timelineRange)
 
-        val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
-        val includeInitialBalance = timelineRange is TimelineRange.AllTime
-        
         val globalCurrencyTotals = mutableMapOf<String, BigDecimal>()
-        
+
         accounts.forEach { account ->
-            val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+            val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
             val breakdown = mutableMapOf<String, BigDecimal>()
-            
-            if (includeInitialBalance) {
+
+            if (transactionData.includeInitialBalance) {
                 breakdown[account.currencyCode] = account.initialBalance
             }
 
@@ -76,7 +94,7 @@ class FinancialUseCases(
                 val current = breakdown[tx.currency] ?: BigDecimal.ZERO
                 breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
             }
-            
+
             breakdown.forEach { (curr, amount) ->
                 globalCurrencyTotals[curr] = (globalCurrencyTotals[curr] ?: BigDecimal.ZERO).add(amount)
             }
@@ -142,37 +160,34 @@ class FinancialUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Map<String, AccountSummaryItem> {
-        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
-
-        val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
-        val includeInitial = timelineRange is TimelineRange.AllTime
+        val transactionData = filterAndGroupTransactions(allTransactions, timelineRange)
 
         return accounts.associate { account ->
-            val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+            val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
             val breakdown = mutableMapOf<String, BigDecimal>()
-            
-            if (includeInitial) {
+
+            if (transactionData.includeInitialBalance) {
                 breakdown[account.currencyCode] = account.initialBalance
             }
 
             val incomeBreakdown = mutableMapOf<String, BigDecimal>()
             val expenseBreakdown = mutableMapOf<String, BigDecimal>()
-            
+
             accountTransactions.forEach { tx ->
                 val current = breakdown[tx.currency] ?: BigDecimal.ZERO
                 breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
-                
+
                 if (tx.isIncome) {
                     incomeBreakdown[tx.currency] = (incomeBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
                 } else {
                     expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
                 }
             }
-            
+
             val incomeInAccountCurrency = CurrencyService.calculateTotalInCurrency(incomeBreakdown, account.currencyCode, exchangeRates, precision)
             val expenseInAccountCurrency = CurrencyService.calculateTotalInCurrency(expenseBreakdown, account.currencyCode, exchangeRates, precision)
             val balanceInBase = CurrencyService.calculateTotalInCurrency(breakdown, baseCurrency, exchangeRates, precision)
-            
+
             account.id to AccountSummaryItem(
                 account = account,
                 currencyBalances = breakdown.toMap(),
@@ -191,21 +206,18 @@ class FinancialUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CurrencyAggregationItem> {
-        val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
+        val transactionData = filterAndGroupTransactions(allTransactions, timelineRange)
 
-        val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
-        val includeInitial = timelineRange is TimelineRange.AllTime
-        
         val totalsMap = mutableMapOf<String, BigDecimal>()
-        
+
         accounts.forEach { account ->
-            val accountTransactions = transactionsByAccount[account.id] ?: emptyList()
+            val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
             val accountBreakdown = mutableMapOf<String, BigDecimal>()
-            
-            if (includeInitial) {
+
+            if (transactionData.includeInitialBalance) {
                 accountBreakdown[account.currencyCode] = account.initialBalance
             }
-            
+
             accountTransactions.forEach { tx ->
                 val current = accountBreakdown[tx.currency] ?: BigDecimal.ZERO
                 accountBreakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
@@ -214,7 +226,7 @@ class FinancialUseCases(
                 totalsMap[curr] = (totalsMap[curr] ?: BigDecimal.ZERO).add(amount)
             }
         }
-        
+
         return totalsMap.map { (currency, amount) ->
             CurrencyAggregationItem(
                 currency = currency,

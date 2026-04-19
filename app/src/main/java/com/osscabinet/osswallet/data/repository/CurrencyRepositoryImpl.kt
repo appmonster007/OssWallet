@@ -19,19 +19,17 @@ class CurrencyRepositoryImpl(
     }
 
     override suspend fun saveRates(baseCurrency: String, response: com.osscabinet.ossWallet.data.remote.CurrencyResponse) {
-        withContext(Dispatchers.IO) {
-            val nextUpdateMillis = (response.timeNextUpdateUnix ?: 0L) * 1000L
-            val entities = response.rates.map {
-                CurrencyRateEntity(
-                    currencyCode = it.key,
-                    baseCurrency = baseCurrency,
-                    rate = it.value,
-                    timestamp = System.currentTimeMillis(),
-                    nextUpdate = nextUpdateMillis
-                )
-            }
-            dao.replaceRates(entities)
+        val nextUpdateMillis = (response.timeNextUpdateUnix ?: 0L) * 1000L
+        val entities = response.rates.map {
+            CurrencyRateEntity(
+                currencyCode = it.key,
+                baseCurrency = baseCurrency,
+                rate = it.value,
+                timestamp = System.currentTimeMillis(),
+                nextUpdate = nextUpdateMillis
+            )
         }
+        dao.replaceRates(entities)
     }
 
     override suspend fun getExchangeRates(baseCurrency: String, forceRefresh: Boolean): Map<String, Double> {
@@ -67,12 +65,10 @@ class CurrencyRepositoryImpl(
     }
 
     override suspend fun convert(amount: Double, fromCurrency: String, toCurrency: String): Double {
-        return withContext(Dispatchers.IO) {
-            // Get rates relative to any stable base (the cache will handle derivation or fetching)
-            val rates = getExchangeRates(fromCurrency)
-            val toRate = rates[toCurrency] ?: 1.0
-            amount * toRate
-        }
+        // Get rates relative to any stable base (the cache will handle derivation or fetching)
+        val rates = getExchangeRates(fromCurrency)
+        val toRate = rates[toCurrency] ?: 1.0
+        return amount * toRate
     }
 
     private suspend fun updateRates(baseCurrency: String): Map<String, Double> {

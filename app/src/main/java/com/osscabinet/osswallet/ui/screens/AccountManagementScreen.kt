@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,7 +37,7 @@ fun AccountManagementScreen(
     onAccountClick: (String) -> Unit,
     viewModel: AccountViewModel
 ) {
-    val accounts by viewModel.accounts.collectAsState()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     var editList by remember { mutableStateOf(emptyList<Account>()) }
 
     var navTriggered by remember { mutableStateOf(false) }

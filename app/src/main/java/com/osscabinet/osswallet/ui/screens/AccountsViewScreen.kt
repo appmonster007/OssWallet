@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -93,17 +94,17 @@ fun AccountsViewScreen(
     }
 
     
-    val accountsUiState by accountsViewViewModel.uiState.collectAsState()
-    val sectionOrder by accountsViewViewModel.sectionOrder.collectAsState()
-    
-    val accounts by accountViewModel.accounts.collectAsState()
+    val accountsUiState by accountsViewViewModel.uiState.collectAsStateWithLifecycle()
+    val sectionOrder by accountsViewViewModel.sectionOrder.collectAsStateWithLifecycle()
+
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    
-    val currentProfile by settingsViewModel.currentProfile.collectAsState()
-    val currentTheme by settingsViewModel.theme.collectAsState(initial = "System")
-    
-    val dbTemplates by templateViewModel.templates.collectAsState()
-    val starredTemplates by templateViewModel.starredTemplates.collectAsState()
+
+    val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
+    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+
+    val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
     
     val templates = remember(dbTemplates, starredTemplates) {
         val displayTemplates = if (starredTemplates.isNotEmpty()) {
@@ -134,7 +135,7 @@ fun AccountsViewScreen(
 
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val settingsCurrency by settingsViewModel.currency.collectAsState()
+    val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
     LaunchedEffect(settingsCurrency) {
         analyticsViewModel.onCurrencySelected(settingsCurrency)
     }

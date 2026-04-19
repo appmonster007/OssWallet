@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,11 +44,11 @@ fun AddTemplateScreen(
     settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val templates by templateViewModel.templates.collectAsState()
-    val accounts by accountViewModel.accounts.collectAsState()
-    val categoriesList by transactionViewModel.categories.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
-    val allTags by tagViewModel.tags.collectAsState()
+    val templates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
 
     var name by remember { mutableStateOf(template?.name ?: "") }

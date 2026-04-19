@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,9 +33,9 @@ fun BudgetsScreen(
     onBackClick: () -> Unit,
     onEditBudgetClick: (String) -> Unit
 ) {
-    val budgets by viewModel.budgets.collectAsState()
-    val baseCurrency by settingsViewModel.currency.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
     

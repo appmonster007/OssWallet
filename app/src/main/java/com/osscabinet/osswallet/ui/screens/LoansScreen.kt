@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,9 +42,9 @@ fun LoansScreen(
     settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val loans by viewModel.loans.collectAsState()
-    val baseCurrency by settingsViewModel.currency.collectAsState()
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val loans by viewModel.loans.collectAsStateWithLifecycle()
+    val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
 
     var navTriggered by remember { mutableStateOf(false) }

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -34,10 +35,10 @@ fun EditBudgetScreen(
     settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val budgets by viewModel.budgets.collectAsState()
-    val currency by settingsViewModel.currency.collectAsState()
+    val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val currency by settingsViewModel.currency.collectAsStateWithLifecycle()
     val budget = budgets.find { it.category == category }
-    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsState()
+    val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
     var isNumpadVisible by remember { mutableStateOf(false) }
 

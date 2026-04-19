@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,8 +50,8 @@ fun OnboardingScreen(
     var step by remember { mutableStateOf(0) }
     val currency by viewModel.currency.collectAsState(initial = "USD")
     val theme by viewModel.theme.collectAsState(initial = "System")
-    val precision by viewModel.decimalPrecision.collectAsState(initial = 2)
-    val syncState by viewModel.onboardingSyncState.collectAsState()
+    val precision by viewModel.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
+    val syncState by viewModel.onboardingSyncState.collectAsStateWithLifecycle()
 
     var accountName by remember { mutableStateOf("Cash") }
     var initialBalance by remember { mutableStateOf("") }

@@ -6,6 +6,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -55,7 +56,7 @@ fun OssWalletApp(
     appContainer: AppContainer,
     onSplashConditionChanged: (Boolean) -> Unit = {}
 ) {
-    val theme by appContainer.settingsDataStore.theme.collectAsState(initial = "System")
+    val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
 
     OssWalletTheme(theme = theme) {
         val navController = rememberNavController()

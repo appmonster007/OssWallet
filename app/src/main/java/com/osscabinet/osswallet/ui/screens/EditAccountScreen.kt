@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,8 +35,8 @@ fun EditAccountScreen(
     transactionViewModel: TransactionViewModel,
     onBackClick: () -> Unit
 ) {
-    val accounts by viewModel.accounts.collectAsState()
-    val allTransactions by transactionViewModel.transactions.collectAsState()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val allTransactions by transactionViewModel.transactions.collectAsStateWithLifecycle()
     val account = accounts.find { it.id == accountId }
 
     if (account == null) {

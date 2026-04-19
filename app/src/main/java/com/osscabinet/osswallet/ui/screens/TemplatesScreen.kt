@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,8 +36,8 @@ fun TemplatesScreen(
     onAddTemplateClick: (Long?) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val templates by viewModel.templates.collectAsState()
-    val starredTemplates by viewModel.starredTemplates.collectAsState()
+    val templates by viewModel.templates.collectAsStateWithLifecycle()
+    val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
 
     var editList by remember { mutableStateOf(emptyList<TemplateEntity>()) }
 

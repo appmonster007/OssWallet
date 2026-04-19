@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -164,8 +165,8 @@ fun OssWalletNavGraph(
         }
     )
 
-    val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsState()
-    val dashboardUiState by dashboardViewModel.uiState.collectAsState()
+    val isOnboardingCompleted by settingsViewModel.isOnboardingCompleted.collectAsStateWithLifecycle()
+    val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
 
     val keepSplashOnScreen = when (isOnboardingCompleted) {
         null -> true
@@ -300,11 +301,11 @@ fun OssWalletNavGraph(
             )
         ) { backStackEntry ->
             val filterId = backStackEntry.arguments?.getLong("filterId").takeIf { it != -1L }
-            val filters by settingsViewModel.allFilters.collectAsState(initial = emptyList())
+            val filters by settingsViewModel.allFilters.collectAsStateWithLifecycle(initialValue = emptyList())
             val filterEntity = filters.find { it.id == filterId }
             
-            val accounts by accountViewModel.accounts.collectAsState()
-            val allCategories by transactionViewModel.categories.collectAsState()
+            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+            val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
 
             EditFilterScreen(
                 filterEntity = filterEntity,

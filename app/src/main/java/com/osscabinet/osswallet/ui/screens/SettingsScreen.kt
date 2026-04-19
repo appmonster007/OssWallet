@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,11 +41,11 @@ fun SettingsScreen(
     onManageFiltersClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    val currencyCode by viewModel.currency.collectAsState()
-    val theme by viewModel.theme.collectAsState()
-    val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsState()
-    val decimalPrecision by viewModel.decimalPrecision.collectAsState()
-    val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsState()
+    val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsStateWithLifecycle()
+    val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()

@@ -8,7 +8,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsSectionSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesSettings
-import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthSettings
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable

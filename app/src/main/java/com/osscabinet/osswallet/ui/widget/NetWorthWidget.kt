@@ -32,6 +32,7 @@ import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.appwidget.state.getAppWidgetState
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.widget.config.NetWorthWidgetConfigActivity
 import kotlinx.serialization.json.Json
@@ -54,22 +55,37 @@ class NetWorthWidget : GlanceAppWidget() {
         val precision = settingsDataStore.decimalPrecision.first()
         
         val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
-        val timelineRangeJson = prefs[NetWorthWidgetConfigActivity.KEY_TIMELINE]
-        val fontSizeStr = prefs[NetWorthWidgetConfigActivity.KEY_FONT_SIZE] ?: "Medium"
         
-        val timelineRange = timelineRangeJson?.let {
+        val settingsJson = prefs[NetWorthWidgetConfigActivity.KEY_SETTINGS]
+        val widgetSettings = settingsJson?.let {
             try {
-                Json.decodeFromString<TimelineRange>(it)
+                Json.decodeFromString<NetWorthSettings>(it)
             } catch (e: Exception) {
-                TimelineRange.AllTime
+                null
             }
-        } ?: TimelineRange.AllTime
+        } ?: NetWorthSettings(
+            timelineRange = prefs[NetWorthWidgetConfigActivity.KEY_TIMELINE]?.let {
+                try {
+                    Json.decodeFromString<TimelineRange>(it)
+                } catch (e: Exception) {
+                    TimelineRange.AllTime
+                }
+            } ?: TimelineRange.AllTime,
+            fontSize = prefs[NetWorthWidgetConfigActivity.KEY_FONT_SIZE] ?: "Medium"
+        )
+        
+        val timelineRange = widgetSettings.timelineRange
+        val fontSizeStr = widgetSettings.fontSize
+        val effectiveProfileId = widgetSettings.profileId ?: profileId
 
         val accountRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.accountRepository
         val transactionRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.transactionRepository
         val currencyRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.currencyRepository
         
-        val accounts = accountRepository.getAllAccountsSync(profileId)
+        val allAccounts = accountRepository.getAllAccountsSync(effectiveProfileId)
+        val accounts = allAccounts.filter { 
+            widgetSettings.selectedAccountIds == null || it.id in widgetSettings.selectedAccountIds
+        }
         val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
         val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
         
@@ -81,31 +97,37 @@ class NetWorthWidget : GlanceAppWidget() {
                 precision = precision
             )
             // For All Time, we can still calculate total income/expense from all transactions
-            val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
-            val income = allTransactions.filter { it.isIncome }
+            val allTransactions = transactionRepository.getAllTransactionsSync(effectiveProfileId)
+            val filteredTransactions = allTransactions.filter { 
+                widgetSettings.selectedAccountIds == null || it.accountId in widgetSettings.selectedAccountIds 
+            }
+            val income = filteredTransactions.filter { it.isIncome }
                 .fold(BigDecimal.ZERO) { acc, t -> 
                     acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
                 }
-            val expense = allTransactions.filter { !it.isIncome }
+            val expense = filteredTransactions.filter { !it.isIncome }
                 .fold(BigDecimal.ZERO) { acc, t -> 
                     acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
                 }
             Triple(nw, income.setScale(precision, java.math.RoundingMode.HALF_UP), expense.setScale(precision, java.math.RoundingMode.HALF_UP))
         } else {
-            val transactions = when (timelineRange) {
+            val filter = when (timelineRange) {
                 is TimelineRange.ThisPeriod -> {
                     val (start, end) = FilterUtils.getRangeForThis(timelineRange.period)
-                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
+                    TransactionFilter(startDate = start, endDate = end)
                 }
                 is TimelineRange.LastPeriod -> {
                     val (start, end) = FilterUtils.getRangeForLast(timelineRange.period)
-                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = start, endDate = end))
+                    TransactionFilter(startDate = start, endDate = end)
                 }
                 is TimelineRange.CustomRange -> {
-                    transactionRepository.getFilteredTransactionsSync(profileId, TransactionFilter(startDate = timelineRange.start, endDate = timelineRange.end))
+                    TransactionFilter(startDate = timelineRange.start, endDate = timelineRange.end)
                 }
-                else -> emptyList()
+                else -> TransactionFilter()
             }
+            
+            val transactions = transactionRepository.getFilteredTransactionsSync(effectiveProfileId, filter)
+                .filter { widgetSettings.selectedAccountIds == null || it.accountId in widgetSettings.selectedAccountIds }
 
             val nw = calculateNetWorth(
                 accounts = accounts,
@@ -115,6 +137,7 @@ class NetWorthWidget : GlanceAppWidget() {
                 precision = precision,
                 includeInitialBalance = false
             )
+
             
             val income = transactions.filter { it.isIncome }
                 .fold(BigDecimal.ZERO) { acc, t -> 

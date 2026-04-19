@@ -22,13 +22,8 @@ class AccountRepositoryImpl(
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun updateWidgets() {
-        repositoryScope.launch {
-            try {
-                WidgetUpdateHelper.updateAllWidgets(context)
-            } catch (e: Exception) {
-                Log.e("AccountRepo", "Widget update failed", e)
-            }
-        }
+        Log.d("AccountRepo", "Triggering widget update")
+        WidgetUpdateHelper.triggerUpdate(context)
     }
 
     override fun getAllAccounts(profileId: Int): Flow<List<Account>> = accountDao.getAllAccounts(profileId).map { entities ->
@@ -36,7 +31,7 @@ class AccountRepositoryImpl(
     }
 
     override suspend fun getAllAccountsSync(profileId: Int): List<Account> {
-        return accountDao.getAllAccountsSync().filter { it.profileId == profileId }.map { it.toDomain() }
+        return accountDao.getAllAccountsSync(profileId).map { it.toDomain() }
     }
 
     override suspend fun insertAccount(account: Account, profileId: Int) {

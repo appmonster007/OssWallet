@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -236,7 +237,7 @@ class DashboardViewModel(
                         precision = precision
                     )
                 )
-            }
+            }.flowOn(Dispatchers.Default)
         }
         .stateIn(
             scope = viewModelScope,

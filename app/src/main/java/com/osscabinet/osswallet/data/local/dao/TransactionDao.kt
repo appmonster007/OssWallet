@@ -6,6 +6,17 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
+data class TransactionSummary(
+    val totalIncome: BigDecimal,
+    val totalExpense: BigDecimal
+)
+
+data class CurrencySummary(
+    val currency: String,
+    val totalIncome: BigDecimal,
+    val totalExpense: BigDecimal
+)
+
 @Dao
 abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
@@ -55,6 +66,15 @@ abstract class TransactionDao {
         val applyAmount = if (newTransaction.isIncome) newTransaction.amount else newTransaction.amount.negate()
         accountDao.updateBalance(newTransaction.accountId, applyAmount)
     }
+
+    @Query("SELECT * FROM transactions WHERE profileId = :profileId")
+    abstract suspend fun getAllTransactionsSync(profileId: Int): List<TransactionEntity>
+
+    @Query("SELECT currency, SUM(CASE WHEN isIncome = 1 THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN isIncome = 0 THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId GROUP BY currency")
+    abstract suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
+
+    @Query("SELECT currency, SUM(CASE WHEN isIncome = 1 THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN isIncome = 0 THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
+    abstract suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
 
     @Query("SELECT * FROM transactions")
     abstract suspend fun getAllTransactionsSync(): List<TransactionEntity>

@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.viewmodel
+package com.osscabinet.ossWallet.ui.accountdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.dashboard.components.*
 import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,7 +22,7 @@ class AccountDetailViewModel(
     private val accountRepository: AccountRepository,
     private val getTransactionsUseCase: GetTransactionsUseCase,
     val settingsDataStore: SettingsDataStore,
-    private val analyticsViewModel: AnalyticsViewModel,
+    private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     private val getCurrencyAggregationUseCase: GetCurrencyAggregationUseCase,
     private val getTotalBalancesUseCase: GetTotalBalancesUseCase,
     private val calculateCashFlowUseCase: CalculateCashFlowUseCase
@@ -85,6 +86,10 @@ class AccountDetailViewModel(
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
                 
+                if (!analyticsState.hasLoadedExchangeRates) {
+                    return@combine AccountDetailUiState.Loading
+                }
+
                 if (!settings.transactionsSection.showPlannedPayments) {
                     val now = System.currentTimeMillis()
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }

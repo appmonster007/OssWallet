@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.util.isDark
 
@@ -118,7 +119,7 @@ innerPadding ->
 
             // Identity Section
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("IDENTITY", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline, letterSpacing = 1.sp)
+                AeonFlowSectionHeader(title = "IDENTITY")
                 
                 EditorialInput(
                     value = accountName,
@@ -150,7 +151,7 @@ innerPadding ->
                         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                     ) {
                         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                            Text("STRUCTURE TYPE", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            AeonFlowSectionHeader(title = "STRUCTURE TYPE")
                             Spacer(modifier = Modifier.height(24.dp))
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 items(structureTypes) { type ->

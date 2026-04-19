@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.util.Currency.getAvailableCurrencies
 
@@ -66,7 +67,7 @@ fun CurrencyManagementSection(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Text("Currency Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            AeonFlowSectionHeader(title = "CURRENCY MANAGEMENT")
             
             // Search Bar
             Surface(

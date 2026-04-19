@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components.dashboard
+package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -17,9 +17,6 @@ import com.osscabinet.ossWallet.ui.components.AeonBudgetProgress
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import kotlinx.serialization.Serializable
-
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 @Serializable
@@ -28,7 +25,7 @@ data class BudgetSettings(
 )
 
 @Composable
-fun BudgetTrackingSection(
+fun BudgetsCard(
     onManageClick: () -> Unit,
     budgets: List<Budget>,
     baseCurrency: String,
@@ -130,35 +127,5 @@ fun BudgetTrackingSection(
             shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surface
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BudgetTrackingSectionPreview() {
-    val sampleBudgets = listOf(
-        Budget(
-            category = "Food",
-            spent = BigDecimal("450.00"),
-            limit = BigDecimal("500.00"),
-            currency = "USD"
-        ),
-        Budget(
-            category = "Entertainment",
-            spent = BigDecimal("120.00"),
-            limit = BigDecimal("100.00"),
-            currency = "USD"
-        )
-    )
-
-    OssWalletTheme {
-        Surface {
-            BudgetTrackingSection(
-                onManageClick = {},
-                budgets = sampleBudgets,
-                baseCurrency = "USD",
-                modifier = Modifier.padding(16.dp)
-            )
-        }
     }
 }

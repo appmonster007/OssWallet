@@ -23,7 +23,7 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.ui.components.dashboard.AeonFlowCard
+import com.osscabinet.ossWallet.ui.dashboard.components.AeonFlowCard
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -84,10 +84,16 @@ fun LoansScreen(
             val totalCredit = loans.filter { it.type == LoanType.LOAN }
                 .fold(BigDecimal.ZERO) { acc, loan -> acc.add(loan.principal.subtract(loan.repayments)) }
 
-            AeonFlowSectionHeader(title = "Summary")
+            AeonFlowSectionHeader(
+                title = "SUMMARY",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
             LoanSummaryHeader(totalDebt, totalCredit, baseCurrency, decimalPrecision)
 
-            AeonFlowSectionHeader(title = "Your Loans")
+            AeonFlowSectionHeader(
+                title = "YOUR LOANS",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
             if (loans.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No active loans or debts", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)

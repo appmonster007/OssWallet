@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components.dashboard
+package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -20,21 +20,15 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Serializable
 data class CashFlowSettings(
@@ -43,7 +37,7 @@ data class CashFlowSettings(
 )
 
 @Composable
-fun AeonCashFlowSummary(
+fun CashFlowCard(
     cashFlowResult: CashFlowResult?,
     baseCurrency: String,
     currentTheme: String,
@@ -219,46 +213,6 @@ fun AeonCashFlowSummary(
             shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surface
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AeonCashFlowSummaryPreview() {
-    val sampleTransactions = listOf(
-        Transaction(
-            id = 1L,
-            title = "Salary",
-            amount = BigDecimal("5000.00"),
-            category = "Salary",
-            timestamp = System.currentTimeMillis(),
-            currency = "USD",
-            isIncome = true,
-            accountId = "1",
-            note = "Monthly salary"
-        ),
-        Transaction(
-            id = 2L,
-            title = "Rent",
-            amount = BigDecimal("1200.00"),
-            category = "Rent",
-            timestamp = System.currentTimeMillis(),
-            currency = "USD",
-            isIncome = false,
-            accountId = "1",
-            note = "Apartment rent"
-        )
-    )
-
-    OssWalletTheme {
-        Surface {
-            AeonCashFlowSummary(
-                cashFlowResult = null,
-                baseCurrency = "USD",
-                currentTheme = "Light",
-                modifier = Modifier.padding(16.dp)
-            )
-        }
     }
 }
 

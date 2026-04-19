@@ -17,8 +17,50 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.osscabinet.ossWallet.di.AppContainer
-import com.osscabinet.ossWallet.ui.screens.*
-import com.osscabinet.ossWallet.ui.viewmodel.*
+import com.osscabinet.ossWallet.ui.dashboard.DashboardScreen
+import com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel
+import com.osscabinet.ossWallet.ui.dashboard.DashboardUiState
+import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
+import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen
+import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailUiState
+import com.osscabinet.ossWallet.ui.screens.OnboardingScreen
+import com.osscabinet.ossWallet.ui.screens.AccountsViewScreen
+import com.osscabinet.ossWallet.ui.screens.ExchangeRatesScreen
+import com.osscabinet.ossWallet.ui.screens.SettingsScreen
+import com.osscabinet.ossWallet.ui.screens.FiltersSettingsScreen
+import com.osscabinet.ossWallet.ui.screens.EditFilterScreen
+import com.osscabinet.ossWallet.ui.screens.ManageLabelsScreen
+import com.osscabinet.ossWallet.ui.screens.CategoryManagementScreen
+import com.osscabinet.ossWallet.ui.screens.TemplatesScreen
+import com.osscabinet.ossWallet.ui.screens.AddTemplateScreen
+import com.osscabinet.ossWallet.ui.screens.LoansScreen
+import com.osscabinet.ossWallet.ui.screens.BudgetsScreen
+import com.osscabinet.ossWallet.ui.screens.EditBudgetScreen
+import com.osscabinet.ossWallet.ui.screens.TransactionListScreen
+import com.osscabinet.ossWallet.ui.screens.TransactionEntryScreen
+import com.osscabinet.ossWallet.ui.screens.EditAccountScreen
+import com.osscabinet.ossWallet.ui.screens.AccountSetupScreen
+import com.osscabinet.ossWallet.ui.screens.AccountManagementScreen
+import com.osscabinet.ossWallet.ui.screens.AnalyticsScreen
+import com.osscabinet.ossWallet.ui.screens.SharedWalletScreen
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SharedWalletViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CurrencyViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModelFactory
+import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
 @Composable
 fun OssWalletNavGraph(
@@ -101,9 +143,9 @@ fun OssWalletNavGraph(
         }
     )
 
-    val dashboardViewModel: DashboardViewModel = viewModel(
+    val dashboardViewModel: com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel = viewModel(
         factory = GenericViewModelFactory {
-            DashboardViewModel(
+            com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel(
                 appContainer.accountRepository,
                 appContainer.getTransactionsUseCase,
                 appContainer.settingsDataStore,
@@ -146,7 +188,7 @@ fun OssWalletNavGraph(
     val keepSplashOnScreen = when (isOnboardingCompleted) {
         null -> true
         false -> false
-        true -> dashboardUiState is DashboardUiState.Loading
+        true -> dashboardUiState is com.osscabinet.ossWallet.ui.dashboard.DashboardUiState.Loading
     }
 
     SideEffect {
@@ -185,7 +227,7 @@ fun OssWalletNavGraph(
         }
 
         composable(Screen.Dashboard.route) {
-            DashboardScreen(
+            com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
@@ -436,10 +478,10 @@ fun OssWalletNavGraph(
 
         composable(Screen.AccountDetail.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            val accountDetailViewModel: AccountDetailViewModel = viewModel(
+            val accountDetailViewModel: com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel = viewModel(
                 key = "AccountDetailViewModel_$accountId",
                 factory = GenericViewModelFactory {
-                    AccountDetailViewModel(
+                    com.osscabinet.ossWallet.ui.accountdetail.AccountDetailViewModel(
                         accountId = accountId,
                         accountRepository = appContainer.accountRepository,
                         getTransactionsUseCase = appContainer.getTransactionsUseCase,
@@ -451,7 +493,7 @@ fun OssWalletNavGraph(
                     )
                 }
             )
-            AccountDetailScreen(
+            com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen(
                 accountId = accountId,
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,

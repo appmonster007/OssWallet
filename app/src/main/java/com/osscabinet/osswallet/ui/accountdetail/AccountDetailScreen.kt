@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens
+package com.osscabinet.ossWallet.ui.accountdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,13 +20,15 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
-import com.osscabinet.ossWallet.ui.components.dashboard.*
+import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
+import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
+
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import kotlinx.coroutines.launch
 
@@ -202,9 +204,9 @@ fun AccountDetailScreen(
                             )
                         ) {
                             item {
-                                AeonSectionHeader(title = "Account Summary")
+                                AeonFlowSectionHeader(title = "ACCOUNT SUMMARY")
                                 Spacer(modifier = Modifier.height(4.dp))
-                                AeonAccountHeroCard(
+                                AccountHeroCard(
                                     account = account,
                                     balance = account.balance,
                                     netBalance = account.balance.subtract(account.initialBalance), // Correct net in account currency
@@ -215,7 +217,7 @@ fun AccountDetailScreen(
                             }
 
                             item {
-                                AeonCashFlowSummary(
+                                CashFlowCard(
                                     cashFlowResult = state.cashFlowResult,
                                     baseCurrency = account.currencyCode,
                                     currentTheme = currentTheme,
@@ -230,7 +232,7 @@ fun AccountDetailScreen(
                             }
 
                             item {
-                                CurrencyAggregationSection(
+                                CurrencyBalancesCard(
                                     currencyTotals = state.currencyTotals,
                                     baseCurrency = state.baseCurrency,
                                     modifier = Modifier.fillMaxWidth(),

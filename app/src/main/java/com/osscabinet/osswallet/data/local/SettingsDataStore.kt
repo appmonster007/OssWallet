@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import com.osscabinet.ossWallet.ui.components.dashboard.AccountsSectionSettings
-import com.osscabinet.ossWallet.ui.components.dashboard.BudgetSettings
-import com.osscabinet.ossWallet.ui.components.dashboard.CashFlowSettings
-import com.osscabinet.ossWallet.ui.components.dashboard.CurrencyBalancesSettings
-import com.osscabinet.ossWallet.ui.components.dashboard.NetWorthSettings
+import com.osscabinet.ossWallet.ui.dashboard.components.AccountsSectionSettings
+import com.osscabinet.ossWallet.ui.dashboard.components.BudgetSettings
+import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowSettings
+import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesSettings
+import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable

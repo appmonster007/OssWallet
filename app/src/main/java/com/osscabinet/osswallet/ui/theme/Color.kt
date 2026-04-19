@@ -51,3 +51,6 @@ val BackgroundDark = Color(0xFF191C1A)
 val OnBackgroundDark = Color(0xFFE1E3DF)
 val SurfaceDark = Color(0xFF191C1A)
 val OnSurfaceDark = Color(0xFFE1E3DF)
+
+val PositiveAmountColor = Color(0xFF4CAF50)
+val NegativeAmountColor = Color(0xFFBA1A1A)

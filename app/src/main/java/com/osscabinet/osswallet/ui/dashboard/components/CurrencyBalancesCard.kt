@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components.dashboard
+package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -14,18 +14,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Serializable
 data class CurrencyBalancesSettings(
@@ -35,14 +32,14 @@ data class CurrencyBalancesSettings(
 )
 
 @Composable
-fun CurrencyAggregationSection(
+fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     title: String = "AGGREGATED CURRENCY BALANCES",
     precision: Int = 2,
-    layout: String = "scroll",
+    layout: String = "scroll", // "scroll" or "grid"
     showBaseConversion: Boolean = true,
     timelineRange: TimelineRange = TimelineRange.AllTime,
     onLayoutChange: (String) -> Unit = {},
@@ -114,8 +111,8 @@ fun CurrencyAggregationSection(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 rowItems.forEach { item ->
-                                    AeonCurrencyBalanceItem(
-                                        currency = item.currency,
+                                    CurrencyBalanceItem(
+                                        curr = item.currency,
                                         amount = item.amount,
                                         inBase = item.amountInBase,
                                         baseCurrency = baseCurrency,
@@ -138,8 +135,8 @@ fun CurrencyAggregationSection(
                         contentPadding = PaddingValues(bottom = 4.dp)
                     ) {
                         items(currencyTotals) { item ->
-                            AeonCurrencyBalanceItem(
-                                currency = item.currency,
+                            CurrencyBalanceItem(
+                                curr = item.currency,
                                 amount = item.amount,
                                 inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
@@ -215,8 +212,8 @@ fun CurrencyAggregationSection(
 }
 
 @Composable
-fun AeonCurrencyBalanceItem(
-    currency: String,
+fun CurrencyBalanceItem(
+    curr: String,
     amount: BigDecimal,
     inBase: BigDecimal,
     baseCurrency: String,
@@ -238,7 +235,7 @@ fun AeonCurrencyBalanceItem(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                currency,
+                curr,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -251,7 +248,7 @@ fun AeonCurrencyBalanceItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    formatCurrencyRight(amount, currency, precision),
+                    formatCurrencyRight(amount, curr, precision),
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontFeatureSettings = "tnum",
                         fontWeight = FontWeight.Bold
@@ -259,7 +256,7 @@ fun AeonCurrencyBalanceItem(
                     maxLines = 1
                 )
                 
-                if (showBaseConversion && currency != baseCurrency) {
+                if (showBaseConversion && curr != baseCurrency) {
                     Text(
                         "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                         style = MaterialTheme.typography.labelSmall,
@@ -274,30 +271,6 @@ fun AeonCurrencyBalanceItem(
                     )
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CurrencyAggregationSectionPreview() {
-    val sampleCurrencyTotals = mapOf(
-        "USD" to BigDecimal("1000.00"),
-        "EUR" to BigDecimal("500.00"),
-        "GBP" to BigDecimal("250.00")
-    )
-    val sampleExchangeRates = mapOf(
-        "EUR" to BigDecimal("1.10"),
-        "GBP" to BigDecimal("1.25")
-    )
-
-    OssWalletTheme {
-        Surface {
-            CurrencyAggregationSection(
-                currencyTotals = emptyList(),
-                baseCurrency = "USD",
-                modifier = Modifier.padding(16.dp)
-            )
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.components.dashboard
+package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -16,15 +16,12 @@ import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
+import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import kotlinx.serialization.Serializable
-
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import java.math.BigDecimal
 
 @Serializable
 data class NetWorthSettings(
@@ -33,7 +30,7 @@ data class NetWorthSettings(
 )
 
 @Composable
-fun NetWorthSection(
+fun NetWorthCard(
     uiState: NetWorthUiState,
     onFontSizeChange: (String) -> Unit,
     onTimelineRangeChange: (TimelineRange) -> Unit,
@@ -65,7 +62,7 @@ fun NetWorthSection(
 
 @Composable
 private fun NetWorthContent(
-    netWorth: java.math.BigDecimal,
+    netWorth: BigDecimal,
     baseCurrency: String,
     precision: Int,
     fontSize: String,
@@ -80,6 +77,7 @@ private fun NetWorthContent(
     val textStyle = when (fontSize) {
         "Small" -> MaterialTheme.typography.displaySmall
         "Large" -> MaterialTheme.typography.displayLarge
+        "X-Large" -> MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp)
         else -> MaterialTheme.typography.displayMedium
     }
 
@@ -233,20 +231,21 @@ private fun NetWorthSettingsDialog(
                         )
 
                         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
+                            listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                                 SegmentedButton(
                                     selected = fontSize == size,
                                     onClick = { onFontSizeChange(size) },
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
-                                        count = 3
+                                        count = 4
                                     ),
                                     label = { 
                                         Text(
                                             when(size) {
                                                 "Small" -> "S"
                                                 "Medium" -> "M"
-                                                else -> "L"
+                                                "Large" -> "L"
+                                                else -> "XL"
                                             }
                                         )
                                     }
@@ -260,25 +259,4 @@ private fun NetWorthSettingsDialog(
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surface
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NetWorthSectionPreview() {
-    OssWalletTheme {
-        Surface {
-            NetWorthSection(
-                uiState = NetWorthUiState.Success(
-                    netWorth = BigDecimal("12345.67"),
-                    baseCurrency = "USD",
-                    precision = 2,
-                    fontSize = "Medium",
-                    timelineRange = TimelineRange.AllTime
-                ),
-                onFontSizeChange = {},
-                onTimelineRangeChange = {},
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
 }

@@ -82,12 +82,16 @@ class NetWorthWidget : GlanceAppWidget() {
         val transactionRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.transactionRepository
         val currencyRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.currencyRepository
         
-        val allAccounts = accountRepository.getAllAccountsSync(effectiveProfileId)
+        val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
+        val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
+
+        // Try to use cached data first
+        val cachedSnapshot = WidgetDataCache.get(effectiveProfileId)
+        
+        val allAccounts = cachedSnapshot?.accounts ?: accountRepository.getAllAccountsSync(effectiveProfileId)
         val accounts = allAccounts.filter { 
             widgetSettings.selectedAccountIds == null || it.id in widgetSettings.selectedAccountIds
         }
-        val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
-        val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
         
         val (netWorth, netIncome, netExpense) = if (timelineRange is TimelineRange.AllTime) {
             val nw = calculateNetWorthFromAccounts(
@@ -96,36 +100,43 @@ class NetWorthWidget : GlanceAppWidget() {
                 exchangeRates = exchangeRates,
                 precision = precision
             )
-            // For All Time, we can still calculate total income/expense from all transactions
-            val allTransactions = transactionRepository.getAllTransactionsSync(effectiveProfileId)
-            val filteredTransactions = allTransactions.filter { 
-                widgetSettings.selectedAccountIds == null || it.accountId in widgetSettings.selectedAccountIds 
+            
+            // Use cached summaries or fetch if missing
+            val summaries = cachedSnapshot?.currencySummaries ?: transactionRepository.getCurrencySummaries(effectiveProfileId)
+            
+            var totalIncome = BigDecimal.ZERO
+            var totalExpense = BigDecimal.ZERO
+            
+            summaries.forEach { s ->
+                val incomeInBase = convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4)
+                val expenseInBase = convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4)
+                totalIncome = totalIncome.add(incomeInBase)
+                totalExpense = totalExpense.add(expenseInBase)
             }
-            val income = filteredTransactions.filter { it.isIncome }
-                .fold(BigDecimal.ZERO) { acc, t -> 
-                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
-                }
-            val expense = filteredTransactions.filter { !it.isIncome }
-                .fold(BigDecimal.ZERO) { acc, t -> 
-                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
-                }
-            Triple(nw, income.setScale(precision, java.math.RoundingMode.HALF_UP), expense.setScale(precision, java.math.RoundingMode.HALF_UP))
+
+            Triple(nw, totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP), totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP))
         } else {
-            val filter = when (timelineRange) {
-                is TimelineRange.ThisPeriod -> {
-                    val (start, end) = FilterUtils.getRangeForThis(timelineRange.period)
-                    TransactionFilter(startDate = start, endDate = end)
-                }
-                is TimelineRange.LastPeriod -> {
-                    val (start, end) = FilterUtils.getRangeForLast(timelineRange.period)
-                    TransactionFilter(startDate = start, endDate = end)
-                }
-                is TimelineRange.CustomRange -> {
-                    TransactionFilter(startDate = timelineRange.start, endDate = timelineRange.end)
-                }
-                else -> TransactionFilter()
+            val (start, end) = when (timelineRange) {
+                is TimelineRange.ThisPeriod -> FilterUtils.getRangeForThis(timelineRange.period)
+                is TimelineRange.LastPeriod -> FilterUtils.getRangeForLast(timelineRange.period)
+                is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
+                else -> Pair(0L, Long.MAX_VALUE)
             }
             
+            // For range-based NW, we still need transactions for fine-grained account filtering if selectedAccountIds is present
+            // but we can optimize the summary part
+            val summaries = cachedSnapshot?.currencySummaries ?: transactionRepository.getCurrencySummariesInRange(effectiveProfileId, start, end)
+            
+            var totalIncome = BigDecimal.ZERO
+            var totalExpense = BigDecimal.ZERO
+            summaries.forEach { s ->
+                totalIncome = totalIncome.add(convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4))
+                totalExpense = totalExpense.add(convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4))
+            }
+
+            // Still fetch filtered transactions ONLY if we need to filter by specific accounts for the NW calculation
+            // If all accounts are selected, we can optimize further, but let's keep it simple for now
+            val filter = TransactionFilter(startDate = start, endDate = end)
             val transactions = transactionRepository.getFilteredTransactionsSync(effectiveProfileId, filter)
                 .filter { widgetSettings.selectedAccountIds == null || it.accountId in widgetSettings.selectedAccountIds }
 
@@ -137,18 +148,8 @@ class NetWorthWidget : GlanceAppWidget() {
                 precision = precision,
                 includeInitialBalance = false
             )
-
             
-            val income = transactions.filter { it.isIncome }
-                .fold(BigDecimal.ZERO) { acc, t -> 
-                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
-                }
-            val expense = transactions.filter { !it.isIncome }
-                .fold(BigDecimal.ZERO) { acc, t -> 
-                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
-                }
-            
-            Triple(nw, income.setScale(precision, java.math.RoundingMode.HALF_UP), expense.setScale(precision, java.math.RoundingMode.HALF_UP))
+            Triple(nw, totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP), totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP))
         }
 
         val timelineLabel = when (timelineRange) {

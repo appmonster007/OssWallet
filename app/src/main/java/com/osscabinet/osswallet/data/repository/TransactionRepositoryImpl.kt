@@ -31,14 +31,7 @@ class TransactionRepositoryImpl @Inject constructor(
 
     private fun updateWidgets() {
         Log.d("TransactionRepo", "Triggering widget update")
-        repositoryScope.launch {
-            try {
-                WidgetUpdateHelper.updateAllWidgets(context)
-                Log.d("TransactionRepo", "Widget update successful")
-            } catch (e: Exception) {
-                Log.e("TransactionRepo", "Widget update failed", e)
-            }
-        }
+        WidgetUpdateHelper.triggerUpdate(context)
     }
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
@@ -48,7 +41,7 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAllTransactionsSync(profileId: Int): List<Transaction> {
-        return transactionDao.getAllTransactionsSync().filter { it.profileId == profileId }.map { it.toDomain() }
+        return transactionDao.getAllTransactionsSync(profileId).map { it.toDomain() }
     }
 
     override fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
@@ -215,6 +208,14 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun getTransactionById(id: Long): Transaction? {
         return transactionDao.getTransactionById(id)?.toDomain()
+    }
+
+    override suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary> {
+        return transactionDao.getCurrencySummaries(profileId)
+    }
+
+    override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary> {
+        return transactionDao.getCurrencySummariesInRange(profileId, start, end)
     }
 
     override suspend fun triggerWidgetUpdate() {

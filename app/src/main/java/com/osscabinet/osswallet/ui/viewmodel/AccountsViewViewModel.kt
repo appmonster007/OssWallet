@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.ui.util.FilterUtils
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.ui.util.convertAmount
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -235,7 +236,7 @@ class AccountsViewViewModel(
                     netWorthTimelineRange = netWorthTimelineRange,
                     cashFlowResult = cashFlowResult
                 )
-            }
+            }.flowOn(Dispatchers.Default)
         }
         .stateIn(
             scope = viewModelScope,

@@ -22,13 +22,8 @@ class BudgetRepositoryImpl(
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun updateWidgets() {
-        repositoryScope.launch {
-            try {
-                WidgetUpdateHelper.updateAllWidgets(context)
-            } catch (e: Exception) {
-                Log.e("BudgetRepo", "Widget update failed", e)
-            }
-        }
+        Log.d("BudgetRepo", "Triggering widget update")
+        WidgetUpdateHelper.triggerUpdate(context)
     }
 
     override fun getBudgets(): Flow<List<Budget>> = budgetDao.getAllBudgets().map { entities ->

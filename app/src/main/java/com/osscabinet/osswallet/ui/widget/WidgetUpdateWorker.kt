@@ -15,9 +15,18 @@ class WidgetUpdateWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Periodic widget update triggered")
-        WidgetUpdateHelper.updateAllWidgets(applicationContext)
-        return Result.success()
+        Log.d(TAG, "Widget update worker started (Type: ${if (isPeriodic()) "Periodic" else "Manual"})")
+        try {
+            WidgetUpdateHelper.performUpdate(applicationContext)
+            return Result.success()
+        } catch (e: Exception) {
+            Log.e(TAG, "Worker failed", e)
+            return if (runAttemptCount < 3) Result.retry() else Result.failure()
+        }
+    }
+
+    private fun isPeriodic(): Boolean {
+        return tags.contains("WidgetPeriodicUpdate")
     }
 
     companion object {

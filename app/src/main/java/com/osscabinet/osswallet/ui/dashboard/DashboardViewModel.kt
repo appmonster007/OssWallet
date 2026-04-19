@@ -188,6 +188,14 @@ class DashboardViewModel(
                     timelineRange = dashboardSettings.netWorthSection.timelineRange
                 )
 
+                val netWorthCashFlow = calculateCashFlowUseCase(
+                    allTransactions = allTransactions,
+                    timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision
+                )
+
                 val transactionsWithBalance = getRecentTransactionsUseCase(
                     allTransactions = allTransactions,
                     accounts = updatedAccounts,
@@ -215,6 +223,8 @@ class DashboardViewModel(
                     cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange,
                     budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels,
                     netWorth = netWorth,
+                    netIncome = netWorthCashFlow.totalIncomeInBase,
+                    netExpense = netWorthCashFlow.totalExpensesInBase,
                     netWorthFontSize = dashboardSettings.netWorthSection.fontSize,
                     netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange,
                     cashFlowResult = calculateCashFlowUseCase(
@@ -256,6 +266,8 @@ sealed class DashboardUiState {
         val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
         val budgetShowProgressLabels: Boolean = true,
         val netWorth: BigDecimal = BigDecimal.ZERO,
+        val netIncome: BigDecimal = BigDecimal.ZERO,
+        val netExpense: BigDecimal = BigDecimal.ZERO,
         val netWorthFontSize: String = "Medium",
         val netWorthTimelineRange: TimelineRange = TimelineRange.AllTime,
         val cashFlowResult: CashFlowResult? = null

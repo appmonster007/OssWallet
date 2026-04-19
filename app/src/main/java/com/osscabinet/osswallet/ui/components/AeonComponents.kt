@@ -142,7 +142,7 @@ fun EditorialInput(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(

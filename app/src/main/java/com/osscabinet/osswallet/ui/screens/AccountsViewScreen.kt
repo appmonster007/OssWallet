@@ -194,6 +194,8 @@ fun AccountsViewScreen(
                     is AccountsViewUiState.Success -> {
                         val netWorthUiState = remember(
                             state.netWorth,
+                            state.netIncome,
+                            state.netExpense,
                             state.baseCurrency,
                             state.decimalPrecision,
                             state.netWorthFontSize,
@@ -201,6 +203,8 @@ fun AccountsViewScreen(
                         ) {
                             NetWorthUiState.Success(
                                 netWorth = state.netWorth,
+                                netIncome = state.netIncome,
+                                netExpense = state.netExpense,
                                 baseCurrency = state.baseCurrency,
                                 precision = state.decimalPrecision,
                                 fontSize = state.netWorthFontSize,

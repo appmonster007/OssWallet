@@ -117,12 +117,21 @@ class NetWorthWidgetConfigActivity : ComponentActivity() {
                 // Font Size Section
                 SectionCard(title = "FONT SIZE") {
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        listOf("Small", "Medium", "Large").forEachIndexed { index, size ->
+                        listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                             SegmentedButton(
                                 selected = fontSize == size,
                                 onClick = { fontSize = size },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = 3),
-                                label = { Text(size.take(1)) }
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
+                                label = { 
+                                    Text(
+                                        when(size) {
+                                            "Small" -> "S"
+                                            "Medium" -> "M"
+                                            "Large" -> "L"
+                                            else -> "XL"
+                                        }
+                                    )
+                                }
                             )
                         }
                     }

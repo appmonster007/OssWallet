@@ -930,7 +930,7 @@ fun TransactionEntryContent(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),

@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.util.calculateNetWorth
 import com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.appwidget.state.getAppWidgetState
@@ -72,13 +73,24 @@ class NetWorthWidget : GlanceAppWidget() {
         val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
         val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
         
-        val netWorth = if (timelineRange is TimelineRange.AllTime) {
-            calculateNetWorthFromAccounts(
+        val (netWorth, netIncome, netExpense) = if (timelineRange is TimelineRange.AllTime) {
+            val nw = calculateNetWorthFromAccounts(
                 accounts = accounts,
                 baseCurrency = baseCurrency,
                 exchangeRates = exchangeRates,
                 precision = precision
             )
+            // For All Time, we can still calculate total income/expense from all transactions
+            val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+            val income = allTransactions.filter { it.isIncome }
+                .fold(BigDecimal.ZERO) { acc, t -> 
+                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
+                }
+            val expense = allTransactions.filter { !it.isIncome }
+                .fold(BigDecimal.ZERO) { acc, t -> 
+                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
+                }
+            Triple(nw, income.setScale(precision, java.math.RoundingMode.HALF_UP), expense.setScale(precision, java.math.RoundingMode.HALF_UP))
         } else {
             val transactions = when (timelineRange) {
                 is TimelineRange.ThisPeriod -> {
@@ -95,7 +107,7 @@ class NetWorthWidget : GlanceAppWidget() {
                 else -> emptyList()
             }
 
-            calculateNetWorth(
+            val nw = calculateNetWorth(
                 accounts = accounts,
                 allTransactions = transactions,
                 baseCurrency = baseCurrency,
@@ -103,6 +115,17 @@ class NetWorthWidget : GlanceAppWidget() {
                 precision = precision,
                 includeInitialBalance = false
             )
+            
+            val income = transactions.filter { it.isIncome }
+                .fold(BigDecimal.ZERO) { acc, t -> 
+                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
+                }
+            val expense = transactions.filter { !it.isIncome }
+                .fold(BigDecimal.ZERO) { acc, t -> 
+                    acc.add(convertAmount(t.amount, t.currency, baseCurrency, exchangeRates, precision + 4))
+                }
+            
+            Triple(nw, income.setScale(precision, java.math.RoundingMode.HALF_UP), expense.setScale(precision, java.math.RoundingMode.HALF_UP))
         }
 
         val timelineLabel = when (timelineRange) {
@@ -121,6 +144,8 @@ class NetWorthWidget : GlanceAppWidget() {
         provideContent {
             NetWorthWidgetContent(
                 netWorth = netWorth,
+                netIncome = netIncome,
+                netExpense = netExpense,
                 currency = baseCurrency,
                 precision = precision,
                 fontSize = fontSizeStr,
@@ -136,6 +161,8 @@ class NetWorthWidget : GlanceAppWidget() {
     @Composable
     private fun NetWorthWidgetContent(
         netWorth: BigDecimal,
+        netIncome: BigDecimal,
+        netExpense: BigDecimal,
         currency: String,
         precision: Int,
         fontSize: String,
@@ -144,6 +171,7 @@ class NetWorthWidget : GlanceAppWidget() {
         val netWorthFontSize = when (fontSize) {
             "Small" -> 20.sp
             "Large" -> 36.sp
+            "X-Large" -> 48.sp
             else -> 28.sp
         }
 
@@ -153,15 +181,14 @@ class NetWorthWidget : GlanceAppWidget() {
                 .appWidgetBackground()
                 .background(Color.White)
                 .cornerRadius(24.dp)
-                .padding(16.dp)
+                .padding(12.dp)
                 .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalAlignment = Alignment.Start
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "NET WORTH",
@@ -177,12 +204,34 @@ class NetWorthWidget : GlanceAppWidget() {
                     style = TextStyle(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorProvider(Color.Gray)
+                        color = ColorProvider(Color(0xFF6200EE).copy(alpha = 0.6f))
                     )
                 )
             }
             
             Spacer(modifier = GlanceModifier.defaultWeight())
+
+            Row(
+                modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                WidgetFlowBadge(
+                    label = "INCOME",
+                    amount = netIncome,
+                    currency = currency,
+                    precision = precision,
+                    color = Color(0xFF4CAF50)
+                )
+                Spacer(modifier = GlanceModifier.width(8.dp))
+                WidgetFlowBadge(
+                    label = "EXPENSE",
+                    amount = netExpense,
+                    currency = currency,
+                    precision = precision,
+                    color = Color(0xFFF44336)
+                )
+            }
             
             Text(
                 text = formatCurrencyRight(netWorth, currency, precision),
@@ -194,6 +243,31 @@ class NetWorthWidget : GlanceAppWidget() {
             )
             
             Spacer(modifier = GlanceModifier.defaultWeight())
+        }
+    }
+
+    @Composable
+    private fun WidgetFlowBadge(
+        label: String,
+        amount: BigDecimal,
+        currency: String,
+        precision: Int,
+        color: Color
+    ) {
+        Box(
+            modifier = GlanceModifier
+                .background(color.copy(alpha = 0.1f))
+                .cornerRadius(4.dp)
+                .padding(horizontal = 4.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = "${label}: ${formatCurrencyRight(amount, currency, precision)}",
+                style = TextStyle(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(color)
+                )
+            )
         }
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -198,6 +199,13 @@ fun Numpad(
                                         modifier = Modifier.size(24.dp),
                                         tint = textColor
                                     )
+                                } else if (key == "DONE") {
+                                    Icon(
+                                        Icons.Rounded.Done,
+                                        contentDescription = "Done",
+                                        modifier = Modifier.size(28.dp),
+                                        tint = textColor
+                                    )
                                 } else {
                                     Text(
                                         text = key,
@@ -253,7 +261,7 @@ fun Numpad(
                         }
                         // Equal button spanning two rows
                         NumpadKey(
-                            key = "=",
+                            key = if (operator != null) "=" else "DONE",
                             onClick = {
                                 if (operator != null) {
                                     calculateResult()

@@ -93,3 +93,8 @@ data class BudgetsCardConfig(
     override val order: Int = 4,
     val showProgressLabels: Boolean = true
 ) : CardConfig()
+
+@Serializable
+data class DashboardCardsConfig(
+    val cards: List<CardConfig> = emptyList()
+)

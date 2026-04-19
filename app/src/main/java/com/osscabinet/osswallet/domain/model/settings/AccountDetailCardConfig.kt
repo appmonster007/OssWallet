@@ -60,3 +60,8 @@ data class AccountCurrencyBalancesCardConfig(
     val showBaseConversion: Boolean = true,
     val timelineRange: TimelineRange = TimelineRange.AllTime
 ) : AccountDetailCardConfig()
+
+@Serializable
+data class AccountDetailCardsConfig(
+    val cards: List<AccountDetailCardConfig> = emptyList()
+)

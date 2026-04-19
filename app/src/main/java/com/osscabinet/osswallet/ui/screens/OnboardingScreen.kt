@@ -55,6 +55,15 @@ fun OnboardingScreen(
 
     var accountName by remember { mutableStateOf("Cash") }
     var initialBalance by remember { mutableStateOf("") }
+    var allowedCurrencies by remember { mutableStateOf(setOf(currency)) }
+    var isCurrencyMenuExpanded by remember { mutableStateOf(false) }
+
+    // When the primary currency changes, ensure it's added to the allowed list, preserving others.
+    LaunchedEffect(currency) {
+        if (!allowedCurrencies.contains(currency)) {
+            allowedCurrencies = allowedCurrencies + currency
+        }
+    }
 
     val steps = listOf("Currency", "Appearance", "Precision", "Account")
 
@@ -100,7 +109,7 @@ fun OnboardingScreen(
                                     structureType = "Cash",
                                     colorHex = "#4CAF50",
                                     icon = "Payments",
-                                    allowedCurrencies = listOf(currency)
+                                    allowedCurrencies = allowedCurrencies.toList()
                                 )
                                 viewModel.setOnboardingCompleted(true)
                                 onFinished()
@@ -122,20 +131,54 @@ fun OnboardingScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when (step) {
-                0 -> CurrencyStep(currency, syncState, onCurrencySelected = { viewModel.setCurrency(it) })
-                1 -> ThemeStep(theme, onThemeSelected = { viewModel.setTheme(it) })
-                2 -> PrecisionStep(precision, onPrecisionSelected = { viewModel.setDecimalPrecision(it) })
+                0 -> CurrencyStep(
+                    selectedCurrency = currency,
+                    syncState = syncState,
+                    onCurrencySelected = { viewModel.setCurrency(it) }
+                )
+                1 -> {
+                    Spacer(modifier = Modifier.weight(1f))
+                    ThemeStep(theme, onThemeSelected = { viewModel.setTheme(it) })
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                2 -> {
+                    Spacer(modifier = Modifier.weight(1f))
+                    PrecisionStep(precision, onPrecisionSelected = { viewModel.setDecimalPrecision(it) })
+                    Spacer(modifier = Modifier.weight(1f))
+                }
                 3 -> AccountStep(
                     initialCurrency = currency,
                     accountName = accountName,
                     onAccountNameChange = { accountName = it },
                     initialBalance = initialBalance,
-                    onInitialBalanceChange = { initialBalance = it }
+                    onInitialBalanceChange = { initialBalance = it },
+                    allowedCurrencies = allowedCurrencies,
+                    onAllowedCurrenciesChange = { allowedCurrencies = it },
+                    onCurrencyMenuOpen = { isCurrencyMenuExpanded = true }
                 )
+            }
+
+            if (isCurrencyMenuExpanded) {
+                ModalBottomSheet(
+                    onDismissRequest = { isCurrencyMenuExpanded = false },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    modifier = Modifier.fillMaxHeight(0.9f)
+                ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        com.osscabinet.ossWallet.ui.components.CurrencyManagementSection(
+                            primaryCurrency = currency,
+                            onPrimaryCurrencyChange = { viewModel.setCurrency(it) },
+                            allowedCurrencies = allowedCurrencies,
+                            onAllowedCurrenciesChange = { allowedCurrencies = it },
+                            accentColorHex = "#4CAF50"
+                        )
+                    }
+                }
             }
         }
     }
@@ -143,7 +186,11 @@ fun OnboardingScreen(
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelected: (String) -> Unit) {
+fun CurrencyStep(
+    selectedCurrency: String,
+    syncState: SyncState,
+    onCurrencySelected: (String) -> Unit
+) {
     StepHeader(
         icon = Icons.Rounded.Payments,
         title = "Base Currency",
@@ -160,7 +207,7 @@ fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelec
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OutlinedTextField(
@@ -183,7 +230,7 @@ fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelec
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 300.dp),
+                .weight(1f),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -195,10 +242,12 @@ fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelec
                 items(filteredCurrencies) { code ->
                     val name = getCurrencyName(code)
                     val symbol = getCurrencySymbol(code)
+                    val isSelected = selectedCurrency == code
+
                     Surface(
                         onClick = { onCurrencySelected(code) },
                         shape = RoundedCornerShape(16.dp),
-                        color = if (selectedCurrency == code) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent
                     ) {
                         Row(
                             modifier = Modifier
@@ -216,11 +265,11 @@ fun CurrencyStep(selectedCurrency: String, syncState: SyncState, onCurrencySelec
                                 Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                                 Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             }
-                            if (selectedCurrency == code) {
+                            if (isSelected) {
                                 when (syncState) {
                                     is SyncState.Loading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                    is SyncState.Error -> Icon(Icons.Rounded.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                    else -> Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    is SyncState.Error -> Icon(Icons.Rounded.Error, contentDescription = "Sync Error", tint = MaterialTheme.colorScheme.error)
+                                    else -> Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -354,7 +403,10 @@ fun AccountStep(
     accountName: String,
     onAccountNameChange: (String) -> Unit,
     initialBalance: String,
-    onInitialBalanceChange: (String) -> Unit
+    onInitialBalanceChange: (String) -> Unit,
+    allowedCurrencies: Set<String>,
+    onAllowedCurrenciesChange: (Set<String>) -> Unit,
+    onCurrencyMenuOpen: () -> Unit
 ) {
     StepHeader(
         icon = Icons.Rounded.AccountBalanceWallet,
@@ -398,6 +450,15 @@ fun AccountStep(
             singleLine = true
         )
 
+        com.osscabinet.ossWallet.ui.components.RecordFieldCard(
+            icon = Icons.Rounded.Payments,
+            label = "ALLOWED CURRENCIES",
+            value = "${allowedCurrencies.size} Selected (${initialCurrency})",
+            onClick = onCurrencyMenuOpen,
+            trailingIcon = Icons.Rounded.KeyboardArrowDown,
+            isSlim = true
+        )
+
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -415,7 +476,7 @@ fun AccountStep(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    "This will create your primary account in $initialCurrency.",
+                    "Your primary account will be in $initialCurrency and can handle ${allowedCurrencies.size} currencies.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -43,8 +43,15 @@ fun AccountSetupScreen(
     val defaultCurrency by viewModel.defaultCurrency.collectAsStateWithLifecycle()
 
     // Currency logic
-    var primaryCurrency by remember(defaultCurrency) { mutableStateOf(defaultCurrency) }
-    var allowedCurrencies by remember(defaultCurrency) { mutableStateOf(setOf(defaultCurrency)) }
+    var primaryCurrency by remember { mutableStateOf(defaultCurrency) }
+    var allowedCurrencies by remember { mutableStateOf(setOf(defaultCurrency)) }
+
+    // When the primary currency changes, ensure it's added to the allowed list.
+    LaunchedEffect(primaryCurrency) {
+        if (!allowedCurrencies.contains(primaryCurrency)) {
+            allowedCurrencies = allowedCurrencies + primaryCurrency
+        }
+    }
 
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
 

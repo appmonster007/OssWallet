@@ -26,7 +26,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.NetWorthWidgetReceiver"
+            android:name=".ui.widget.NetWorthWidgetProvider"
             android:exported="true"
             android:label="OssWallet Net Worth">
             <intent-filter>
@@ -46,7 +46,7 @@
         </activity>
 
         <receiver
-            android:name=".ui.widget.BalanceWidgetReceiver"
+            android:name=".ui.widget.BalanceWidgetProvider"
             android:exported="true"
             android:label="OssWallet Balance">
             <intent-filter>
@@ -58,7 +58,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.TransactionHistoryWidgetReceiver"
+            android:name=".ui.widget.TransactionHistoryWidgetProvider"
             android:exported="true"
             android:label="OssWallet History">
             <intent-filter>
@@ -70,7 +70,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.BudgetWidgetReceiver"
+            android:name=".ui.widget.BudgetWidgetProvider"
             android:exported="true"
             android:label="OssWallet Budget">
             <intent-filter>
@@ -82,7 +82,7 @@
         </receiver>
 
         <receiver
-            android:name=".ui.widget.CashFlowWidgetReceiver"
+            android:name=".ui.widget.CashFlowWidgetProvider"
             android:exported="true"
             android:label="OssWallet Cash Flow">
             <intent-filter>

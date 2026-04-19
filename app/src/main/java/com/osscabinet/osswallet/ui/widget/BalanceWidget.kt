@@ -28,11 +28,24 @@ import java.math.BigDecimal
 class BalanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as OssWalletApp).container
+        val settingsDataStore = container.settingsDataStore
+        val profileId = settingsDataStore.currentProfileId.first()
+
+        // 1. Try to get precomputed data from cache
+        val precomputedState = WidgetDataCache.get(profileId)
+        val cachedResult = precomputedState?.balanceResult
+
+        if (cachedResult != null) {
+            provideContent {
+                BalanceWidgetContent(cachedResult.totalBalance, cachedResult.currency, cachedResult.precision)
+            }
+            return
+        }
+
+        // 2. Fallback
         val accountRepository = container.accountRepository
         val currencyRepository = container.currencyRepository
-        val settingsDataStore = container.settingsDataStore
         
-        val profileId = settingsDataStore.currentProfileId.first()
         val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
         

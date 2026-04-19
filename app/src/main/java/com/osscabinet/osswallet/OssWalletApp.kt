@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet
 import android.app.Application
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.widget.WidgetUpdateWorker
+import com.osscabinet.ossWallet.ui.widget.WidgetUpdateManager
 
 class OssWalletApp : Application() {
     lateinit var container: AppContainer
@@ -11,5 +12,6 @@ class OssWalletApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         WidgetUpdateWorker.enqueuePeriodicWork(this)
+        WidgetUpdateManager.startObserving(this)
     }
 }

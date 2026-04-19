@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -19,27 +20,22 @@ import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.MainActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
-import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
-import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.ui.util.calculateNetWorth
-import com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.convertAmount
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.appwidget.state.getAppWidgetState
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import com.osscabinet.ossWallet.ui.util.FilterUtils
+import com.osscabinet.ossWallet.ui.util.calculateNetWorth
+import com.osscabinet.ossWallet.ui.util.calculateNetWorthFromAccounts
+import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.widget.config.NetWorthWidgetConfigActivity
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
@@ -48,9 +44,33 @@ class NetWorthWidget : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val settingsDataStore = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.settingsDataStore
-        
+        val app = context.applicationContext as com.osscabinet.ossWallet.OssWalletApp
+        val settingsDataStore = app.container.settingsDataStore
         val profileId = settingsDataStore.currentProfileId.first()
+
+        // 1. Try to get precomputed data from cache
+        val precomputedState = WidgetDataCache.get(profileId)
+        val cachedResult = precomputedState?.netWorthResults?.get(id.toString())
+
+        if (cachedResult != null) {
+            Log.d("NetWorthWidget", "Using precomputed data for $id")
+            provideContent {
+                NetWorthWidgetContent(
+                    netWorth = cachedResult.netWorth,
+                    netIncome = cachedResult.netIncome,
+                    netExpense = cachedResult.netExpense,
+                    currency = cachedResult.baseCurrency,
+                    precision = cachedResult.precision,
+                    fontSize = cachedResult.fontSize,
+                    timelineLabel = cachedResult.timelineLabel
+                )
+            }
+            return
+        }
+
+        // 2. Fallback to manual computation if cache miss
+        Log.d("NetWorthWidget", "Cache miss for $id, falling back to manual computation")
+        
         val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
         
@@ -58,18 +78,10 @@ class NetWorthWidget : GlanceAppWidget() {
         
         val settingsJson = prefs[NetWorthWidgetConfigActivity.KEY_SETTINGS]
         val widgetSettings = settingsJson?.let {
-            try {
-                Json.decodeFromString<NetWorthSettings>(it)
-            } catch (e: Exception) {
-                null
-            }
+            try { Json.decodeFromString<NetWorthSettings>(it) } catch (e: Exception) { null }
         } ?: NetWorthSettings(
             timelineRange = prefs[NetWorthWidgetConfigActivity.KEY_TIMELINE]?.let {
-                try {
-                    Json.decodeFromString<TimelineRange>(it)
-                } catch (e: Exception) {
-                    TimelineRange.AllTime
-                }
+                try { Json.decodeFromString<TimelineRange>(it) } catch (e: Exception) { TimelineRange.AllTime }
             } ?: TimelineRange.AllTime,
             fontSize = prefs[NetWorthWidgetConfigActivity.KEY_FONT_SIZE] ?: "Medium"
         )
@@ -78,42 +90,27 @@ class NetWorthWidget : GlanceAppWidget() {
         val fontSizeStr = widgetSettings.fontSize
         val effectiveProfileId = widgetSettings.profileId ?: profileId
 
-        val accountRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.accountRepository
-        val transactionRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.transactionRepository
-        val currencyRepository = (context.applicationContext as com.osscabinet.ossWallet.OssWalletApp).container.currencyRepository
+        val accountRepository = app.container.accountRepository
+        val transactionRepository = app.container.transactionRepository
+        val currencyRepository = app.container.currencyRepository
         
         val exchangeRatesMap = currencyRepository.getExchangeRates(baseCurrency)
         val exchangeRates = exchangeRatesMap.mapValues { BigDecimal.valueOf(it.value) }
 
-        // Try to use cached data first
-        val cachedSnapshot = WidgetDataCache.get(effectiveProfileId)
-        
-        val allAccounts = cachedSnapshot?.accounts ?: accountRepository.getAllAccountsSync(effectiveProfileId)
+        val allAccounts = accountRepository.getAllAccountsSync(effectiveProfileId)
         val accounts = allAccounts.filter { 
             widgetSettings.selectedAccountIds == null || it.id in widgetSettings.selectedAccountIds
         }
         
         val (netWorth, netIncome, netExpense) = if (timelineRange is TimelineRange.AllTime) {
-            val nw = calculateNetWorthFromAccounts(
-                accounts = accounts,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
-            )
-            
-            // Use cached summaries or fetch if missing
-            val summaries = cachedSnapshot?.currencySummaries ?: transactionRepository.getCurrencySummaries(effectiveProfileId)
-            
+            val nw = calculateNetWorthFromAccounts(accounts, baseCurrency, exchangeRates, precision)
+            val summaries = transactionRepository.getCurrencySummaries(effectiveProfileId)
             var totalIncome = BigDecimal.ZERO
             var totalExpense = BigDecimal.ZERO
-            
             summaries.forEach { s ->
-                val incomeInBase = convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4)
-                val expenseInBase = convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4)
-                totalIncome = totalIncome.add(incomeInBase)
-                totalExpense = totalExpense.add(expenseInBase)
+                totalIncome = totalIncome.add(convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4))
+                totalExpense = totalExpense.add(convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4))
             }
-
             Triple(nw, totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP), totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP))
         } else {
             val (start, end) = when (timelineRange) {
@@ -122,40 +119,24 @@ class NetWorthWidget : GlanceAppWidget() {
                 is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
                 else -> Pair(0L, Long.MAX_VALUE)
             }
-            
-            // For range-based NW, we still need transactions for fine-grained account filtering if selectedAccountIds is present
-            // but we can optimize the summary part
-            val summaries = cachedSnapshot?.currencySummaries ?: transactionRepository.getCurrencySummariesInRange(effectiveProfileId, start, end)
-            
+            val summaries = transactionRepository.getCurrencySummariesInRange(effectiveProfileId, start, end)
             var totalIncome = BigDecimal.ZERO
             var totalExpense = BigDecimal.ZERO
             summaries.forEach { s ->
                 totalIncome = totalIncome.add(convertAmount(s.totalIncome, s.currency, baseCurrency, exchangeRates, precision + 4))
                 totalExpense = totalExpense.add(convertAmount(s.totalExpense, s.currency, baseCurrency, exchangeRates, precision + 4))
             }
-
-            // Still fetch filtered transactions ONLY if we need to filter by specific accounts for the NW calculation
-            // If all accounts are selected, we can optimize further, but let's keep it simple for now
             val filter = TransactionFilter(startDate = start, endDate = end)
             val transactions = transactionRepository.getFilteredTransactionsSync(effectiveProfileId, filter)
                 .filter { widgetSettings.selectedAccountIds == null || it.accountId in widgetSettings.selectedAccountIds }
-
-            val nw = calculateNetWorth(
-                accounts = accounts,
-                allTransactions = transactions,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision,
-                includeInitialBalance = false
-            )
-            
+            val nw = calculateNetWorth(accounts, transactions, baseCurrency, exchangeRates, precision, includeInitialBalance = false)
             Triple(nw, totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP), totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP))
         }
 
         val timelineLabel = when (timelineRange) {
             is TimelineRange.AllTime -> "ALL TIME"
             is TimelineRange.ThisPeriod -> timelineRange.period.label.uppercase()
-            is TimelineRange.LastPeriod -> timelineLabelFromLastPeriod(timelineRange.period)
+            is TimelineRange.LastPeriod -> timelineRange.period.label.uppercase()
             is TimelineRange.CustomRange -> {
                 val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
                 val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
@@ -176,10 +157,6 @@ class NetWorthWidget : GlanceAppWidget() {
                 timelineLabel = timelineLabel
             )
         }
-    }
-
-    private fun timelineLabelFromLastPeriod(period: com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType): String {
-        return period.label.uppercase()
     }
 
     @Composable

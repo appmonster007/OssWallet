@@ -29,11 +29,24 @@ import java.math.RoundingMode
 class CashFlowWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val container = (context.applicationContext as OssWalletApp).container
-        val transactionRepository = container.transactionRepository
         val settingsDataStore = container.settingsDataStore
+        val profileId = settingsDataStore.currentProfileId.first()
+
+        // 1. Try to get precomputed data from cache
+        val precomputedState = WidgetDataCache.get(profileId)
+        val cachedResult = precomputedState?.cashFlowResult
+
+        if (cachedResult != null) {
+            provideContent {
+                CashFlowContent(cachedResult.income, cachedResult.expense, cachedResult.currency, cachedResult.precision)
+            }
+            return
+        }
+
+        // 2. Fallback
+        val transactionRepository = container.transactionRepository
         val currencyRepository = container.currencyRepository
 
-        val profileId = settingsDataStore.currentProfileId.first()
         val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
 

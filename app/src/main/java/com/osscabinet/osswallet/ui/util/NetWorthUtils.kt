@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.util
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -17,7 +18,7 @@ fun calculateNetWorthFromAccounts(
         globalCurrencyTotals[account.currencyCode] = (globalCurrencyTotals[account.currencyCode] ?: BigDecimal.ZERO).add(account.balance)
     }
 
-    return calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
+    return CurrencyService.calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
 }
 
 fun calculateNetWorth(
@@ -57,5 +58,5 @@ fun calculateNetWorth(
         }
     }
 
-    return calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
+    return CurrencyService.calculateTotalInCurrency(globalCurrencyTotals, baseCurrency, exchangeRates, precision)
 }

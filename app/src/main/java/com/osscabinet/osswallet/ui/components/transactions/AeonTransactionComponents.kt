@@ -29,8 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.convertAmount
-import com.osscabinet.ossWallet.ui.util.calculateTotalInCurrency
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
 
 import java.text.SimpleDateFormat
@@ -82,12 +81,12 @@ fun AeonTransactionList(
             val incomeByCurrency = weekTransactions.filter { it.transaction.isIncome }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekIncomeBase = calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
+            val weekIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
 
             val expenseByCurrency = weekTransactions.filter { !it.transaction.isIncome }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekExpenseBase = calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
+            val weekExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
 
             val weekNetBase = weekIncomeBase.subtract(weekExpenseBase)
 
@@ -103,7 +102,7 @@ fun AeonTransactionList(
                     latestTxs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } 
                 }
             
-            val totalClosingBalanceBase = calculateTotalInCurrency(
+            val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
                 finalClosingBalancesByCurrency, 
                 baseCurrency, 
                 exchangeRates, 
@@ -137,7 +136,7 @@ fun AeonTransactionList(
                 val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
 
-                val amountInBase = convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
+                val amountInBase = CurrencyService.convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
 
                 AeonTransactionItem(
                     category = category?.name ?: "Uncategorized",

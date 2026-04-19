@@ -59,7 +59,7 @@ import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.util.FilterUtils
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard

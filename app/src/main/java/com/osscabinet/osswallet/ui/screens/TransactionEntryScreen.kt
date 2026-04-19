@@ -49,6 +49,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.*
 import java.math.BigDecimal
@@ -474,11 +475,14 @@ fun TransactionEntryContent(
     LaunchedEffect(transactionType == 2, selectedCurrency, targetCurrency, exchangeRates) {
         if (transactionType == 2 && !isEditMode) {
             if (exchangeRates.isNotEmpty()) {
-                val sourceRateInUSD = exchangeRates[selectedCurrency] ?: BigDecimal.ONE
-                val destRateInUSD = exchangeRates[targetCurrency] ?: BigDecimal.ONE
-                if (sourceRateInUSD.signum() != 0) {
-                    exchangeRate = destRateInUSD.divide(sourceRateInUSD, 8, RoundingMode.HALF_UP)
-                }
+                // Use CurrencyService for exchange rate calculation (business logic in domain layer)
+                exchangeRate = CurrencyService.convertAmount(
+                    amount = BigDecimal.ONE,
+                    fromCurrency = selectedCurrency,
+                    toCurrency = targetCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = 8
+                )
             }
         }
     }

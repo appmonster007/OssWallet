@@ -4,7 +4,6 @@ import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,11 +20,6 @@ class AccountRepositoryImpl(
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private fun updateWidgets() {
-        // Log.d("AccountRepo", "Triggering widget update")
-        // WidgetUpdateHelper.triggerUpdate(context)
-    }
-
     override fun getAllAccounts(profileId: Int): Flow<List<Account>> = accountDao.getAllAccounts(profileId).map { entities ->
         entities.map { it.toDomain() }
     }
@@ -36,24 +30,20 @@ class AccountRepositoryImpl(
 
     override suspend fun insertAccount(account: Account, profileId: Int) {
         accountDao.upsertAccount(account.toEntity(profileId))
-        updateWidgets()
     }
 
     override suspend fun updateBalance(accountId: String, amount: java.math.BigDecimal) {
         accountDao.updateBalance(accountId, amount)
-        updateWidgets()
     }
 
     override suspend fun deleteAccount(accountId: String) {
         accountDao.getAccountById(accountId)?.let {
             accountDao.deleteAccount(it)
-            updateWidgets()
         }
     }
 
     override suspend fun updateAccounts(accounts: List<Account>, profileId: Int) {
         accountDao.upsertAccounts(accounts.map { it.toEntity(profileId) })
-        updateWidgets()
     }
 
     private fun AccountEntity.toDomain() = Account(

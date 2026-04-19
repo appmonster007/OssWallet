@@ -9,7 +9,6 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,11 +27,6 @@ class TransactionRepositoryImpl @Inject constructor(
 ) : TransactionRepository {
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    private fun updateWidgets() {
-        // Log.d("TransactionRepo", "Triggering widget update")
-        // WidgetUpdateHelper.triggerUpdate(context)
-    }
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
         return transactionDao.getAllTransactions(profileId).map { entities ->
@@ -156,9 +150,7 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long {
-        return transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao).also {
-            updateWidgets()
-        }
+        return transactionDao.insertTransactionWithBalanceUpdate(transaction.toEntity(profileId), accountDao)
     }
 
     override suspend fun saveTransfer(
@@ -178,8 +170,6 @@ class TransactionRepositoryImpl @Inject constructor(
             transactionDao.insertTransaction(finalSource.toEntity(profileId))
             
             Pair(sourceId, targetId)
-        }.also {
-            updateWidgets()
         }
     }
 
@@ -189,14 +179,12 @@ class TransactionRepositoryImpl @Inject constructor(
             newTransaction.toEntity(profileId),
             accountDao
         )
-        updateWidgets()
     }
 
     override suspend fun deleteTransaction(id: Long) {
         val transaction = transactionDao.getTransactionById(id)
         transaction?.let {
             transactionDao.deleteTransactionWithBalanceUpdate(it, accountDao)
-            updateWidgets()
         }
     }
 
@@ -218,10 +206,7 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getCurrencySummariesInRange(profileId, start, end)
     }
 
-    override suspend fun triggerWidgetUpdate() {
-        updateWidgets()
-    }
-
+    
     private fun TransactionEntity.toDomain(): Transaction {
         return Transaction(
             id = id,

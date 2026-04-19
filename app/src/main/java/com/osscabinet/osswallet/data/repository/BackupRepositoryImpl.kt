@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.data.local.*
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
-import com.osscabinet.ossWallet.ui.widget.WidgetUpdateHelper
 import android.content.Context
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -172,8 +171,5 @@ class BackupRepositoryImpl(
                 )
             )
         }
-        
-        // Trigger widget update after import
-        WidgetUpdateHelper.updateAllWidgets(context)
     }
 }

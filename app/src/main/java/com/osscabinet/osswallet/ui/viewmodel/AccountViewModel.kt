@@ -44,10 +44,10 @@ class AccountViewModel(
     }
 
     fun addAccount(
-        name: String, 
-        balance: BigDecimal, 
-        currency: String, 
-        structureType: String, 
+        name: String,
+        balance: BigDecimal,
+        currency: String,
+        structureType: String,
         colorHex: String,
         icon: String,
         allowedCurrencies: List<String>
@@ -80,6 +80,54 @@ class AccountViewModel(
                     isIncome = true,
                     accountId = accountId,
                     note = "Initial balance for $name",
+                    paymentMethod = structureType,
+                    payee = "System"
+                )
+                transactionRepository.insertTransaction(initialTransaction, profileId)
+            }
+        }
+    }
+
+    fun addAccountWithInitialBalances(
+        name: String,
+        initialBalances: Map<String, String>, // currency -> balance string
+        currency: String,
+        structureType: String,
+        colorHex: String,
+        icon: String,
+        allowedCurrencies: List<String>
+    ) {
+        viewModelScope.launch {
+            val profileId = settingsDataStore.currentProfileId.first()
+            val accountId = UUID.randomUUID().toString()
+            val account = Account(
+                id = accountId,
+                name = name,
+                balance = BigDecimal.ZERO, // Will be updated by transactions
+                initialBalance = BigDecimal.ZERO, // We use transactions for initial balance now
+                currencyCode = currency,
+                structureType = structureType,
+                colorHex = colorHex,
+                icon = icon,
+                allowedCurrencies = allowedCurrencies,
+                isArchived = false,
+                displayOrder = accounts.value.size
+            )
+            repository.insertAccount(account, profileId)
+
+            // Create initial balance transactions for all selected currencies
+            allowedCurrencies.forEach { currencyCode ->
+                val balanceStr = initialBalances[currencyCode] ?: "0"
+                val balance = balanceStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val initialTransaction = Transaction(
+                    title = "Initial Balance",
+                    amount = balance,
+                    category = "Adjustment",
+                    timestamp = System.currentTimeMillis(),
+                    currency = currencyCode,
+                    isIncome = true,
+                    accountId = accountId,
+                    note = "Initial balance for $name in $currencyCode",
                     paymentMethod = structureType,
                     payee = "System"
                 )

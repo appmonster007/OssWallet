@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -460,48 +461,73 @@ fun DynamicAccountDetailCards(
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
-                    com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard(
-                        cashFlowResult = state.cashFlowResult,
-                        baseCurrency = state.account.currencyCode,
-                        currentTheme = currentTheme,
-                        cardId = cardConfig.cardId,
-                        modifier = Modifier.fillMaxWidth(),
-                        headerModifier = dragModifier,
-                        showTitle = true,
-                        precision = state.decimalPrecision,
-                        showBaseConversion = cardConfig.showBaseConversion,
-                        timelineRange = cardConfig.timelineRange,
-                        onShowBaseConversionChange = { _, it ->
-                            accountDetailViewModel.updateCardCashFlowShowBaseConversion(cardConfig.cardId, it)
-                        },
-                        onTimelineRangeChange = { _, it ->
-                            accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, it)
-                        },
-                        onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
-                    )
+                    val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                        value = accountDetailViewModel.computeCashFlowForCard(
+                            cardConfig = cardConfig,
+                            accountTransactions = state.cashFlowTransactions,
+                            baseCurrency = state.account.currencyCode,
+                            exchangeRates = state.exchangeRates,
+                            precision = state.decimalPrecision
+                        )
+                    }
+
+                    cashFlowResult?.let { result ->
+                        com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard(
+                            cashFlowResult = result,
+                            baseCurrency = state.account.currencyCode,
+                            currentTheme = currentTheme,
+                            cardId = cardConfig.cardId,
+                            modifier = Modifier.fillMaxWidth(),
+                            headerModifier = dragModifier,
+                            showTitle = true,
+                            precision = state.decimalPrecision,
+                            showBaseConversion = cardConfig.showBaseConversion,
+                            timelineRange = cardConfig.timelineRange,
+                            onShowBaseConversionChange = { _, it ->
+                                accountDetailViewModel.updateCardCashFlowShowBaseConversion(cardConfig.cardId, it)
+                            },
+                            onTimelineRangeChange = { _, it ->
+                                accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, it)
+                            },
+                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                        )
+                    } ?: Box(modifier = Modifier.size(0.dp))
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
-                    com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard(
-                        currencyTotals = state.currencyTotals,
-                        baseCurrency = state.baseCurrency,
-                        cardId = cardConfig.cardId,
-                        modifier = Modifier.fillMaxWidth(),
-                        headerModifier = dragModifier,
-                        precision = state.decimalPrecision,
-                        layout = cardConfig.layout,
-                        showBaseConversion = cardConfig.showBaseConversion,
-                        timelineRange = cardConfig.timelineRange,
-                        onLayoutChange = { _, it ->
-                            accountDetailViewModel.updateCardCurrencyBalancesLayout(cardConfig.cardId, it)
-                        },
-                        onShowBaseConversionChange = { _, it ->
-                            accountDetailViewModel.updateCardCurrencyBalancesShowBaseConversion(cardConfig.cardId, it)
-                        },
-                        onTimelineRangeChange = { _, it ->
-                            accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, it)
-                        },
-                        onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
-                    )
+                    val currencyTotals by produceState<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                        value = accountDetailViewModel.computeCurrencyTotalsForCard(
+                            cardConfig = cardConfig,
+                            account = state.account,
+                            accountTransactions = state.cashFlowTransactions,
+                            baseCurrency = state.baseCurrency,
+                            exchangeRates = state.exchangeRates,
+                            precision = state.decimalPrecision
+                        )
+                    }
+
+                    currencyTotals?.let { totals ->
+                        com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard(
+                            currencyTotals = totals,
+                            baseCurrency = state.baseCurrency,
+                            cardId = cardConfig.cardId,
+                            modifier = Modifier.fillMaxWidth(),
+                            headerModifier = dragModifier,
+                            precision = state.decimalPrecision,
+                            layout = cardConfig.layout,
+                            showBaseConversion = cardConfig.showBaseConversion,
+                            timelineRange = cardConfig.timelineRange,
+                            onLayoutChange = { _, it ->
+                                accountDetailViewModel.updateCardCurrencyBalancesLayout(cardConfig.cardId, it)
+                            },
+                            onShowBaseConversionChange = { _, it ->
+                                accountDetailViewModel.updateCardCurrencyBalancesShowBaseConversion(cardConfig.cardId, it)
+                            },
+                            onTimelineRangeChange = { _, it ->
+                                accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, it)
+                            },
+                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                        )
+                    } ?: Box(modifier = Modifier.size(0.dp))
                 }
             }
         }

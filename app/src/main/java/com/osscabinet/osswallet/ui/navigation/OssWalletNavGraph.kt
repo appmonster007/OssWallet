@@ -21,7 +21,7 @@ import com.osscabinet.ossWallet.ui.dashboard.DashboardScreen
 import com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.dashboard.DashboardUiState
 import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
-import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreenRefactored
+import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import com.osscabinet.ossWallet.ui.screens.OnboardingScreen
@@ -483,7 +483,7 @@ fun OssWalletNavGraph(
                     )
                 }
             )
-            AccountDetailScreenRefactored(
+            AccountDetailScreen(
                 accountId = accountId,
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,

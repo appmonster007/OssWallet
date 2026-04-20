@@ -1,11 +1,14 @@
 package com.osscabinet.ossWallet.ui.accountdetail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -20,19 +23,18 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
-import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
-import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,9 +43,9 @@ fun AccountDetailScreen(
     accountId: String,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
-    settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
-    analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    accountDetailViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel,
+    settingsViewModel: SettingsViewModel,
+    analyticsViewModel: AnalyticsViewModel,
+    accountDetailViewModel: AccountDetailViewModel,
     cardManagerViewModel: CardManagerViewModel,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
@@ -190,69 +192,25 @@ fun AccountDetailScreen(
                 }
             }
             is AccountDetailUiState.Success -> {
-                val account = state.account
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     if (selectedTabIndex == 0) {
-                        LazyColumn(
+                        DynamicAccountDetailCards(
+                            state = state,
+                            cardManagerViewModel = cardManagerViewModel,
+                            accountDetailViewModel = accountDetailViewModel,
+                            currentTheme = currentTheme,
+                            accountId = accountId,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(24.dp),
-                            contentPadding = PaddingValues(
-                                top = screenPadding.calculateTopPadding() + 24.dp,
-                                bottom = screenPadding.calculateBottomPadding() + 96.dp
-                            )
-                        ) {
-                            item {
-                                AeonFlowSectionHeader(title = "ACCOUNT SUMMARY")
-                                Spacer(modifier = Modifier.height(4.dp))
-                                AccountHeroCard(
-                                    account = account,
-                                    balance = account.balance,
-                                    netBalance = account.balance.subtract(account.initialBalance), // Correct net in account currency
-                                    baseCurrency = state.baseCurrency,
-                                    exchangeRates = state.exchangeRates,
-                                    precision = state.decimalPrecision
-                                )
-                            }
-
-                            item {
-                                CashFlowCard(
-                                    cashFlowResult = state.cashFlowResult,
-                                    baseCurrency = account.currencyCode,
-                                    currentTheme = currentTheme,
-                                    cardId = "cash_flow_account_detail",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    showTitle = true,
-                                    precision = state.decimalPrecision,
-                                    showBaseConversion = state.cashFlowShowBaseConversion,
-                                    timelineRange = state.cashFlowTimelineRange,
-                                    onShowBaseConversionChange = { _, it -> accountDetailViewModel.updateCashFlowShowBaseConversion(it) },
-                                    onTimelineRangeChange = { _, it -> accountDetailViewModel.updateCashFlowTimelineRange(it) }
-                                )
-                            }
-
-                            item {
-                                CurrencyBalancesCard(
-                                    currencyTotals = state.currencyTotals,
-                                    baseCurrency = state.baseCurrency,
-                                    cardId = "currency_balances_account_detail",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    precision = state.decimalPrecision,
-                                    layout = state.currencyBalancesLayout,
-                                    showBaseConversion = state.showBaseConversion,
-                                    timelineRange = state.currencyBalancesTimelineRange,
-                                    onLayoutChange = { _, it -> accountDetailViewModel.updateCurrencyBalancesLayout(it) },
-                                    onShowBaseConversionChange = { _, it -> accountDetailViewModel.updateShowBaseConversion(it) },
-                                    onTimelineRangeChange = { _, it -> accountDetailViewModel.updateCurrencyBalancesTimelineRange(it) }
-                                )
-                            }
-                        }
+                            screenPadding = screenPadding
+                        )
                     } else {
+                        // Transactions tab content (same as original)
                         val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.initialBalance) {
                             var currentBalance = state.account.initialBalance
                             state.cashFlowTransactions.sortedBy { it.timestamp }.map { tx ->
@@ -435,4 +393,323 @@ fun AccountDetailScreen(
             fabPaddingBottom = if (selectedTabIndex == 1) 100.dp else 16.dp
         )
     }
+}
+
+@Composable
+fun DynamicAccountDetailCards(
+    state: AccountDetailUiState.Success,
+    cardManagerViewModel: CardManagerViewModel,
+    accountDetailViewModel: AccountDetailViewModel,
+    currentTheme: String,
+    accountId: String,
+    modifier: Modifier = Modifier,
+    screenPadding: PaddingValues = PaddingValues()
+) {
+    val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
+    var showAddCardDialog by remember { mutableStateOf(false) }
+    var showDeleteCardsDialog by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = modifier
+    ) {
+        CardReorderableList(
+            items = accountDetailCardsConfig.cards.sortedBy { it.order },
+            key = { it.cardId },
+            onReorder = { reorderedCards ->
+                // Update order property based on new position and save atomically
+                cardManagerViewModel.reorderAccountDetailCards(reorderedCards)
+            },
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(
+                start = 0.dp,
+                end = 0.dp,
+                top = screenPadding.calculateTopPadding() + 24.dp,
+                bottom = 8.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) { cardConfig, isDragging, dragModifier ->
+            when (cardConfig) {
+                is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> {
+                    AccountHeroCard(
+                        account = state.account,
+                        balance = state.account.balance,
+                        netBalance = state.account.balance.subtract(state.account.initialBalance),
+                        baseCurrency = state.baseCurrency,
+                        exchangeRates = state.exchangeRates,
+                        precision = state.decimalPrecision,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
+                    com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard(
+                        cashFlowResult = state.cashFlowResult,
+                        baseCurrency = state.account.currencyCode,
+                        currentTheme = currentTheme,
+                        cardId = cardConfig.cardId,
+                        modifier = Modifier.fillMaxWidth(),
+                        headerModifier = dragModifier,
+                        showTitle = true,
+                        precision = state.decimalPrecision,
+                        showBaseConversion = cardConfig.showBaseConversion,
+                        timelineRange = cardConfig.timelineRange,
+                        onShowBaseConversionChange = { _, it ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                                    config.copy(showBaseConversion = it)
+                                } else config
+                            }
+                        },
+                        onTimelineRangeChange = { _, it ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                                    config.copy(timelineRange = it)
+                                } else config
+                            }
+                        }
+                    )
+                }
+                is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
+                    com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard(
+                        currencyTotals = state.currencyTotals,
+                        baseCurrency = state.baseCurrency,
+                        cardId = cardConfig.cardId,
+                        modifier = Modifier.fillMaxWidth(),
+                        headerModifier = dragModifier,
+                        precision = state.decimalPrecision,
+                        layout = cardConfig.layout,
+                        showBaseConversion = cardConfig.showBaseConversion,
+                        timelineRange = cardConfig.timelineRange,
+                        onLayoutChange = { _, it ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                                    config.copy(layout = it)
+                                } else config
+                            }
+                        },
+                        onShowBaseConversionChange = { _, it ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                                    config.copy(showBaseConversion = it)
+                                } else config
+                            }
+                        },
+                        onTimelineRangeChange = { _, it ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                                    config.copy(timelineRange = it)
+                                } else config
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    // Add card button at the bottom
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
+    ) {
+        AddCardButton(
+            onClick = { showAddCardDialog = true }
+        )
+    }
+    
+    if (showAddCardDialog) {
+        AccountDetailCardTypeSelectionDialog(
+            onDismiss = { showAddCardDialog = false },
+            onCardTypeSelected = { cardType ->
+                cardManagerViewModel.addAccountDetailCard(cardType)
+                showAddCardDialog = false
+            }
+        )
+    }
+    
+    if (showDeleteCardsDialog) {
+        DeleteAccountDetailCardsDialog(
+            cardsConfig = accountDetailCardsConfig.cards,
+            onDismiss = { showDeleteCardsDialog = false },
+            onDeleteCards = { cardIds ->
+                cardIds.forEach { cardId ->
+                    cardManagerViewModel.removeAccountDetailCard(cardId)
+                }
+                showDeleteCardsDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun AccountDetailCardTypeSelectionDialog(
+    onDismiss: () -> Unit,
+    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Card") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Select a card type to add:")
+                CardTypeOption(
+                    title = "Account Summary",
+                    description = "Display account balance and details",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_HERO) }
+                )
+                CardTypeOption(
+                    title = "Cash Flow",
+                    description = "Track income and expenses for this account",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CASH_FLOW) }
+                )
+                CardTypeOption(
+                    title = "Currency Balances",
+                    description = "Show currency breakdown for this account",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun AddCardButton(
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add card",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Add Card",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun CardTypeOption(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun DeleteAccountDetailCardsDialog(
+    cardsConfig: List<com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardConfig>,
+    onDismiss: () -> Unit,
+    onDeleteCards: (List<String>) -> Unit
+) {
+    var selectedCards by remember { mutableStateOf(setOf<String>()) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Cards") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Select cards to delete:")
+                
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(cardsConfig.sortedBy { it.order }) { card ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedCards = if (selectedCards.contains(card.cardId)) {
+                                        selectedCards - card.cardId
+                                    } else {
+                                        selectedCards + card.cardId
+                                    }
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selectedCards.contains(card.cardId),
+                                onCheckedChange = { checked ->
+                                    selectedCards = if (checked) {
+                                        selectedCards + card.cardId
+                                    } else {
+                                        selectedCards - card.cardId
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(card.title)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDeleteCards(selectedCards.toList())
+                },
+                enabled = selectedCards.isNotEmpty()
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

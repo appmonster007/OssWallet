@@ -268,7 +268,8 @@ fun OssWalletNavGraph(
                 settingsViewModel = settingsViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
-                accountsViewViewModel = accountsViewViewModel
+                accountsViewViewModel = accountsViewViewModel,
+                cardManagerViewModel = cardManagerViewModel
             )
         }
 

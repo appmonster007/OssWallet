@@ -72,6 +72,7 @@ class SettingsDataStore(private val context: Context) {
         val RECORDS_SETTINGS_KEY = stringPreferencesKey("records_settings")
         val DASHBOARD_CARDS_CONFIG_KEY = stringPreferencesKey("dashboard_cards_config")
         val ACCOUNT_DETAIL_CARDS_CONFIG_KEY = stringPreferencesKey("account_detail_cards_config")
+        val ACCOUNTS_VIEW_CARDS_CONFIG_KEY = stringPreferencesKey("accounts_view_cards_config")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -144,6 +145,10 @@ class SettingsDataStore(private val context: Context) {
 
     val accountDetailCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[ACCOUNT_DETAIL_CARDS_CONFIG_KEY] ?: ""
+    }
+
+    val accountsViewCardsConfig: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[ACCOUNTS_VIEW_CARDS_CONFIG_KEY] ?: ""
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -243,6 +248,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveAccountDetailCardsConfig(config: String) {
         context.dataStore.edit { preferences ->
             preferences[ACCOUNT_DETAIL_CARDS_CONFIG_KEY] = config
+        }
+    }
+
+    suspend fun saveAccountsViewCardsConfig(config: String) {
+        context.dataStore.edit { preferences ->
+            preferences[ACCOUNTS_VIEW_CARDS_CONFIG_KEY] = config
         }
     }
 }

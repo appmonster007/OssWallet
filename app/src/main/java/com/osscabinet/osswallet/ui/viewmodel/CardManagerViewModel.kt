@@ -45,6 +45,22 @@ enum class AccountDetailCardType(val displayName: String, val serialName: String
     }
 }
 
+/**
+ * Enum representing available accounts view card types.
+ */
+enum class AccountsViewCardType(val displayName: String, val serialName: String) {
+    NET_WORTH("Net Worth", "net_worth"),
+    CURRENCY_BALANCES("Currency Balances", "currency_balances"),
+    CASH_FLOW("Cash Flow", "cash_flow"),
+    ACCOUNTS_LIST("Accounts List", "accounts_list");
+
+    companion object {
+        fun fromSerialName(serialName: String): AccountsViewCardType? {
+            return entries.find { it.serialName == serialName }
+        }
+    }
+}
+
 class CardManagerViewModel(
     private val settingsDataStore: com.osscabinet.ossWallet.data.local.SettingsDataStore
 ) : ViewModel() {
@@ -60,6 +76,10 @@ class CardManagerViewModel(
     // Account Detail Cards Configuration
     private val _accountDetailCardsConfig = MutableStateFlow(AccountDetailCardsConfig())
     val accountDetailCardsConfig: StateFlow<AccountDetailCardsConfig> = _accountDetailCardsConfig.asStateFlow()
+
+    // Accounts View Cards Configuration
+    private val _accountsViewCardsConfig = MutableStateFlow(AccountsViewCardsConfig())
+    val accountsViewCardsConfig: StateFlow<AccountsViewCardsConfig> = _accountsViewCardsConfig.asStateFlow()
 
     // Track which card types are currently in use for the add card dialog
     val availableDashboardCardTypes: StateFlow<List<DashboardCardType>> = cardsConfig.map { config ->
@@ -92,6 +112,22 @@ class CardManagerViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AccountDetailCardType.entries
+    )
+
+    val availableAccountsViewCardTypes: StateFlow<List<AccountsViewCardType>> = accountsViewCardsConfig.map { config ->
+        val usedTypes = config.cards.mapNotNull { card ->
+            when (card) {
+                is AccountsViewNetWorthCardConfig -> AccountsViewCardType.NET_WORTH
+                is AccountsViewCurrencyBalancesCardConfig -> AccountsViewCardType.CURRENCY_BALANCES
+                is AccountsViewCashFlowCardConfig -> AccountsViewCardType.CASH_FLOW
+                is AccountsViewAccountsListCardConfig -> AccountsViewCardType.ACCOUNTS_LIST
+            }
+        }
+        AccountsViewCardType.entries.filter { it !in usedTypes }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = AccountsViewCardType.entries
     )
 
     init {
@@ -139,6 +175,28 @@ class CardManagerViewModel(
                         }
                     } else {
                         initializeDefaultAccountDetailCards()
+                    }
+                }
+        }
+
+        viewModelScope.launch {
+            // Load accounts view cards
+            settingsDataStore.accountsViewCardsConfig
+                .distinctUntilChanged()
+                .collect { configJson ->
+                    if (configJson.isNotEmpty()) {
+                        try {
+                            val decoded = json.decodeFromString<AccountsViewCardsConfig>(configJson)
+                            if (decoded.cards.isNotEmpty()) {
+                                _accountsViewCardsConfig.value = decoded
+                            } else {
+                                initializeDefaultAccountsViewCards()
+                            }
+                        } catch (e: Exception) {
+                            initializeDefaultAccountsViewCards()
+                        }
+                    } else {
+                        initializeDefaultAccountsViewCards()
                     }
                 }
         }
@@ -190,6 +248,29 @@ class CardManagerViewModel(
         saveAccountDetailCards()
     }
 
+    private fun initializeDefaultAccountsViewCards() {
+        val defaultAccountsViewCards = listOf(
+            AccountsViewNetWorthCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = 0
+            ),
+            AccountsViewCurrencyBalancesCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = 1
+            ),
+            AccountsViewCashFlowCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = 2
+            ),
+            AccountsViewAccountsListCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = 3
+            )
+        )
+        _accountsViewCardsConfig.value = AccountsViewCardsConfig(cards = defaultAccountsViewCards)
+        saveAccountsViewCards()
+    }
+
     private fun saveDashboardCards() {
         viewModelScope.launch {
             settingsDataStore.saveDashboardCardsConfig(json.encodeToString(_cardsConfig.value))
@@ -199,6 +280,12 @@ class CardManagerViewModel(
     private fun saveAccountDetailCards() {
         viewModelScope.launch {
             settingsDataStore.saveAccountDetailCardsConfig(json.encodeToString(_accountDetailCardsConfig.value))
+        }
+    }
+
+    private fun saveAccountsViewCards() {
+        viewModelScope.launch {
+            settingsDataStore.saveAccountsViewCardsConfig(json.encodeToString(_accountsViewCardsConfig.value))
         }
     }
 
@@ -340,6 +427,76 @@ class CardManagerViewModel(
             }
         )
         saveAccountDetailCards()
+    }
+
+    // Accounts View Card Management
+    /**
+     * Adds a new card of the specified type to the accounts view screen.
+     * Uses type-safe enum for card type selection.
+     */
+    fun addAccountsViewCard(cardType: AccountsViewCardType) {
+        val newCard = when (cardType) {
+            AccountsViewCardType.NET_WORTH -> AccountsViewNetWorthCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _accountsViewCardsConfig.value.cards.size
+            )
+            AccountsViewCardType.CURRENCY_BALANCES -> AccountsViewCurrencyBalancesCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _accountsViewCardsConfig.value.cards.size
+            )
+            AccountsViewCardType.CASH_FLOW -> AccountsViewCashFlowCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _accountsViewCardsConfig.value.cards.size
+            )
+            AccountsViewCardType.ACCOUNTS_LIST -> AccountsViewAccountsListCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _accountsViewCardsConfig.value.cards.size
+            )
+        }
+
+        _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
+            cards = _accountsViewCardsConfig.value.cards + newCard
+        )
+        saveAccountsViewCards()
+    }
+
+    /**
+     * Legacy method for backward compatibility.
+     * @deprecated Use addAccountsViewCard with AccountsViewCardType enum instead.
+     */
+    @Deprecated("Use addAccountsViewCard with AccountsViewCardType enum instead")
+    fun addAccountsViewCard(cardType: String) {
+        AccountsViewCardType.fromSerialName(cardType)?.let { addAccountsViewCard(it) }
+    }
+
+    fun removeAccountsViewCard(cardId: String) {
+        _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
+            cards = _accountsViewCardsConfig.value.cards.filter { it.cardId != cardId }
+        )
+        saveAccountsViewCards()
+    }
+
+    fun updateAccountsViewCard(cardId: String, updateFn: (AccountsViewCardConfig) -> AccountsViewCardConfig) {
+        _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
+            cards = _accountsViewCardsConfig.value.cards.map { card ->
+                if (card.cardId == cardId) updateFn(card) else card
+            }
+        )
+        saveAccountsViewCards()
+    }
+
+    fun reorderAccountsViewCards(reorderedCards: List<AccountsViewCardConfig>) {
+        _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
+            cards = reorderedCards.mapIndexed { index, card ->
+                when (card) {
+                    is AccountsViewNetWorthCardConfig -> card.copy(order = index)
+                    is AccountsViewCurrencyBalancesCardConfig -> card.copy(order = index)
+                    is AccountsViewCashFlowCardConfig -> card.copy(order = index)
+                    is AccountsViewAccountsListCardConfig -> card.copy(order = index)
+                }
+            }
+        )
+        saveAccountsViewCards()
     }
 
     // Serialization for persistence

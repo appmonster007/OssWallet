@@ -152,7 +152,8 @@ fun OssWalletNavGraph(
                 appContainer.settingsDataStore,
                 analyticsViewModel,
                 appContainer.financialUseCases,
-                cardManagerViewModel
+                cardManagerViewModel,
+                settingsViewModel
             )
         }
     )

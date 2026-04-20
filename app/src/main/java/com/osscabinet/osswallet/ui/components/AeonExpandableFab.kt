@@ -98,7 +98,7 @@ fun AeonExpandableFab(
                         ) {
                             Surface(
                                 color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 shadowElevation = 4.dp,
                                 onClick = { 
                                     isFabExpanded = false
@@ -137,7 +137,7 @@ fun AeonExpandableFab(
                     ) {
                         Surface(
                             color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(16.dp),
                             shadowElevation = 4.dp,
                             onClick = { 
                                 isFabExpanded = false
@@ -175,7 +175,7 @@ fun AeonExpandableFab(
                     ) {
                         Surface(
                             color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(16.dp),
                             shadowElevation = 4.dp,
                             onClick = { 
                                 isFabExpanded = false

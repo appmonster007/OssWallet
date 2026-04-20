@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
@@ -81,6 +82,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.DashboardNavigationPill
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import java.math.BigDecimal
@@ -141,7 +143,12 @@ fun DashboardScreen(
     
     var showAddCardDialog by remember { mutableStateOf(false) }
 
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pageCount = 2
+    val pagerState = remember {
+        object : PagerState() {
+            override val pageCount: Int get() = pageCount
+        }
+    }
     val tabs = listOf("Glance", "Recent Activities")
 
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -184,49 +191,19 @@ fun DashboardScreen(
         ) {
             Scaffold(
                 topBar = {
-                    Column {
-                        TopAppBar(
-                            navigationIcon = {
-                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                    Icon(Icons.Default.Menu, contentDescription = "Menu")
-                                }
-                            },
-                            title = {
-                                Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
-                                    Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                                    Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                }
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
                             }
-                        )
-                        TabRow(
-                            selectedTabIndex = pagerState.currentPage,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            divider = {},
-                            indicator = { tabPositions ->
-                                if (pagerState.currentPage < tabPositions.size) {
-                                    TabRowDefaults.SecondaryIndicator(
-                                        modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        ) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = pagerState.currentPage == index,
-                                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                                    text = {
-                                        Text(
-                                            title,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium
-                                        )
-                                    }
-                                )
+                        },
+                        title = {
+                            Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
+                                Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
+                                Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                             }
                         }
-                    }
+                    )
                 }
             ) { innerPadding ->
                 when (val state = dashboardUiState) {
@@ -266,9 +243,16 @@ fun DashboardScreen(
             }
         }
 
+        DashboardNavigationPill(
+            pagerState = pagerState,
+            tabs = tabs,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+
         AeonExpandableFab(
             onAddClick = { type, name -> navigate { onAddClick(type, name) } },
-            templates = allTemplates
+            templates = allTemplates,
+            fabPaddingBottom = 24.dp
         )
     }
 }
@@ -347,7 +331,7 @@ fun DashboardContent(
                             cardManagerViewModel.reorderDashboardCards(reorderedCards)
                         },
                         modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) { cardConfig, isDragging, dragModifier ->
                         when (cardConfig) {
@@ -532,6 +516,7 @@ fun DashboardContent(
                     baseCurrency = state.baseCurrency,
                     exchangeRates = state.exchangeRates,
                     accountCurrencyMap = accountCurrencyMap,
+                    contentPadding = PaddingValues(bottom = 80.dp),
                     modifier = Modifier.fillMaxSize()
                 )
             }

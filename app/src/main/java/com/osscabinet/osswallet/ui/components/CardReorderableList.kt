@@ -265,7 +265,8 @@ fun <T> CardReorderableList(
                                     )
                                 }
                         )
-                    } else {
+                    }
+                    else {
                         // Normal Item
                         itemContent(item, false, Modifier)
                     }

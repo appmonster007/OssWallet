@@ -389,7 +389,7 @@ fun DashboardContent(
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )
-                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                                } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is CurrencyBalancesCardConfig -> {
                                 val currencyTotals by produceState<List<CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig, key2 = state) {
@@ -419,7 +419,7 @@ fun DashboardContent(
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
-                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                                } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is CashFlowCardConfig -> {
                                 val cashFlowResult by produceState<CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
@@ -448,7 +448,7 @@ fun DashboardContent(
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
-                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                                } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is AccountsCardConfig -> {
                                 val accountData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
@@ -486,7 +486,7 @@ fun DashboardContent(
                                         settingsTitle = "Dashboard Settings",
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
-                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                                } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is BudgetsCardConfig -> {
                                 if (budgets.isNotEmpty()) {
@@ -502,9 +502,10 @@ fun DashboardContent(
                                         onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
-                                } else {
-//                                    Box(modifier = Modifier.size(0.dp))
                                 }
+//                                else {
+//                                    Box(modifier = Modifier.size(0.dp))
+//                                }
                             }
                         }
                     }

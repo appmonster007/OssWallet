@@ -87,6 +87,7 @@ fun AccountDetailScreen(
     )
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAddCardDialog by remember { mutableStateOf(false) }
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -137,11 +138,7 @@ fun AccountDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val title = when (val state = uiState) {
-                        is AccountDetailUiState.Success -> state.account.name
-                        else -> "Account"
-                    }
-                    Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Account Details", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigate { onBackClick() } }) {
@@ -154,6 +151,9 @@ fun AccountDetailScreen(
                     }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(Icons.Rounded.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = { showAddCardDialog = true }) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Card")
                     }
                 }
             )
@@ -195,7 +195,9 @@ fun AccountDetailScreen(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .padding(horizontal = 16.dp),
-                                        screenPadding = PaddingValues()
+                                        screenPadding = PaddingValues(),
+                                        showAddCardDialog = showAddCardDialog,
+                                        onShowAddCardDialogChange = { showAddCardDialog = it }
                                     )
                                 }
                             }
@@ -390,6 +392,16 @@ fun AccountDetailScreen(
             fabPaddingBottom = if (pagerState.currentPage == 1) 100.dp else 16.dp
         )
         }
+
+        if (showAddCardDialog && uiState is AccountDetailUiState.Success) {
+            AccountDetailCardTypeSelectionDialog(
+                onDismiss = { showAddCardDialog = false },
+                onCardTypeSelected = { cardType ->
+                    cardManagerViewModel.addAccountDetailCard(cardType)
+                    showAddCardDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -401,10 +413,11 @@ fun DynamicAccountDetailCards(
     currentTheme: String,
     accountId: String,
     modifier: Modifier = Modifier,
-    screenPadding: PaddingValues = PaddingValues()
+    screenPadding: PaddingValues = PaddingValues(),
+    showAddCardDialog: Boolean,
+    onShowAddCardDialogChange: (Boolean) -> Unit
 ) {
     val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
-    var showAddCardDialog by remember { mutableStateOf(false) }
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
     
     Column(
@@ -503,24 +516,13 @@ fun DynamicAccountDetailCards(
             }
         }
     }
-    
-    // Add card button at the bottom
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp)
-    ) {
-        AddCardButton(
-            onClick = { showAddCardDialog = true }
-        )
-    }
-    
+
     if (showAddCardDialog) {
         AccountDetailCardTypeSelectionDialog(
-            onDismiss = { showAddCardDialog = false },
+            onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
                 cardManagerViewModel.addAccountDetailCard(cardType)
-                showAddCardDialog = false
+                onShowAddCardDialogChange(false)
             }
         )
     }
@@ -564,40 +566,6 @@ fun AccountDetailCardTypeSelectionDialog(
             )
         )
     )
-}
-
-@Composable
-fun AddCardButton(
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add card",
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Add Card",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
 }
 
 @Composable

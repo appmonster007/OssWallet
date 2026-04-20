@@ -103,11 +103,9 @@ fun OnboardingScreen(
                                 step++
                             } else {
                                 // Finalize Onboarding
-                                // Use primary currency's initial balance for the account
-                                val primaryBalance = initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                accountViewModel.addAccount(
+                                accountViewModel.addAccountWithInitialBalances(
                                     name = accountName,
-                                    balance = primaryBalance,
+                                    initialBalances = initialBalances,
                                     currency = currency,
                                     structureType = "Cash",
                                     colorHex = "#4CAF50",

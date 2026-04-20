@@ -80,10 +80,9 @@ fun AccountSetupScreen(
                         title = "", // Not used in top bar actions directly but for consistency
                         onSaveClick = {
                             navigate {
-                                val primaryBalance = initialBalances[primaryCurrency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                viewModel.addAccount(
+                                viewModel.addAccountWithInitialBalances(
                                     name = accountName,
-                                    balance = primaryBalance,
+                                    initialBalances = initialBalances,
                                     currency = primaryCurrency,
                                     structureType = structureType,
                                     colorHex = accentColorHex,

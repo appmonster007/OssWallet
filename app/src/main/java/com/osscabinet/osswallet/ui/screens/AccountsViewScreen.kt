@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.*
 import kotlinx.coroutines.flow.map
@@ -74,7 +75,8 @@ fun AccountsViewScreen(
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
-    accountsViewViewModel: AccountsViewViewModel
+    accountsViewViewModel: AccountsViewViewModel,
+    cardManagerViewModel: CardManagerViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -96,6 +98,8 @@ fun AccountsViewScreen(
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsStateWithLifecycle()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsStateWithLifecycle()
+    val accountsViewCardsConfig by cardManagerViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
+    var showAddCardDialog by remember { mutableStateOf(false) }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -213,86 +217,176 @@ fun AccountsViewScreen(
                             )
                         }
 
-                        CardReorderableList(
-                            items = sectionOrder,
-                            key = { it.ordinal },
-                            onReorder = { accountsViewViewModel.updateSectionOrder(it) },
+                        Column(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(innerPadding)
-                                .background(MaterialTheme.colorScheme.background),
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) { section, isDragging, dragModifier ->
-                            when (section) {
-                                AccountsViewSection.NET_WORTH -> {
+                                .background(MaterialTheme.colorScheme.background)
+                        ) {
+                            // Header row with Add Card button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Accounts View",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                IconButton(
+                                    onClick = { showAddCardDialog = true }
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add Card")
+                                }
+                            }
+
+                            CardReorderableList(
+                                items = accountsViewCardsConfig.cards.sortedBy { it.order },
+                                key = { it.cardId },
+                                onReorder = { cardManagerViewModel.reorderAccountsViewCards(it) },
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) { cardConfig, isDragging, dragModifier ->
+                            when (cardConfig) {
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig -> {
                                     NetWorthCard(
                                         uiState = netWorthUiState,
-                                        cardId = "net_worth_accounts_view",
-                                        fontSize = state.netWorthFontSize,
-                                        timelineRange = state.netWorthTimelineRange,
-                                        onFontSizeChange = { _, it -> accountsViewViewModel.updateNetWorthFontSize(it) },
-                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateNetWorthTimelineRange(it) },
+                                        cardId = cardConfig.cardId,
+                                        fontSize = cardConfig.fontSize,
+                                        timelineRange = cardConfig.timelineRange,
+                                        onFontSizeChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
+                                                    config.copy(fontSize = it)
+                                                } else config
+                                            }
+                                        },
+                                        onTimelineRangeChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
+                                                    config.copy(timelineRange = it)
+                                                } else config
+                                            }
+                                        },
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )
                                 }
-                                AccountsViewSection.CURRENCY_BALANCES -> {
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig -> {
                                     CurrencyBalancesCard(
                                         currencyTotals = state.currencyTotals,
                                         baseCurrency = state.baseCurrency,
-                                        cardId = "currency_balances_accounts_view",
+                                        cardId = cardConfig.cardId,
                                         precision = state.decimalPrecision,
-                                        layout = state.currencyBalancesLayout,
-                                        showBaseConversion = state.showBaseConversion,
-                                        timelineRange = state.currencyBalancesTimelineRange,
-                                        onLayoutChange = { _, it -> accountsViewViewModel.updateCurrencyBalancesLayout(it) },
-                                        onShowBaseConversionChange = { _, it -> accountsViewViewModel.updateShowBaseConversion(it) },
-                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateCurrencyBalancesTimelineRange(it) },
+                                        layout = cardConfig.layout,
+                                        showBaseConversion = cardConfig.showBaseConversion,
+                                        timelineRange = cardConfig.timelineRange,
+                                        onLayoutChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                                                    config.copy(layout = it)
+                                                } else config
+                                            }
+                                        },
+                                        onShowBaseConversionChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                                                    config.copy(showBaseConversion = it)
+                                                } else config
+                                            }
+                                        },
+                                        onTimelineRangeChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                                                    config.copy(timelineRange = it)
+                                                } else config
+                                            }
+                                        },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-                                AccountsViewSection.CASHFLOW -> {
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig -> {
                                     CashFlowCard(
                                         cashFlowResult = state.cashFlowResult,
                                         baseCurrency = state.baseCurrency,
                                         currentTheme = currentTheme,
-                                        cardId = "cash_flow_accounts_view",
+                                        cardId = cardConfig.cardId,
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier,
                                         showTitle = true,
                                         precision = state.decimalPrecision,
-                                        showBaseConversion = state.cashFlowShowBaseConversion,
-                                        timelineRange = state.cashFlowTimelineRange,
-                                        onShowBaseConversionChange = { _, it -> accountsViewViewModel.updateCashFlowShowBaseConversion(it) },
-                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateCashFlowTimelineRange(it) }
+                                        showBaseConversion = cardConfig.showBaseConversion,
+                                        timelineRange = cardConfig.timelineRange,
+                                        onShowBaseConversionChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
+                                                    config.copy(showBaseConversion = it)
+                                                } else config
+                                            }
+                                        },
+                                        onTimelineRangeChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
+                                                    config.copy(timelineRange = it)
+                                                } else config
+                                            }
+                                        }
                                     )
                                 }
-                                AccountsViewSection.ACCOUNTS_LIST -> {
+                                is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig -> {
                                     AccountsCard(
                                         onManageClick = { navigate(onManageAccountsClick) },
                                         onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                        onGridColumnsChange = { _, it -> accountsViewViewModel.updateGridColumns(it) },
+                                        onGridColumnsChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                                                    config.copy(gridColumns = it)
+                                                } else config
+                                            }
+                                        },
                                         accounts = state.accounts,
                                         accountStats = state.accountStats,
                                         baseCurrency = state.baseCurrency,
-                                        cardId = "accounts_accounts_view",
+                                        cardId = cardConfig.cardId,
                                         currentTheme = currentTheme,
-                                        gridColumns = state.gridColumns,
+                                        gridColumns = cardConfig.gridColumns,
                                         precision = state.decimalPrecision,
-                                        layout = state.accountsLayout,
-                                        onLayoutChange = { _, it -> accountsViewViewModel.updateAccountsLayout(it) },
-                                        timelineRange = state.accountsTimelineRange,
-                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateAccountsTimelineRange(it) },
-                                        showAddAccountCard = state.showAddAccountCard,
-                                        onShowAddAccountCardChange = { _, it -> accountsViewViewModel.updateShowAddAccountCard(it) },
+                                        layout = cardConfig.layout,
+                                        onLayoutChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                                                    config.copy(layout = it)
+                                                } else config
+                                            }
+                                        },
+                                        timelineRange = cardConfig.timelineRange,
+                                        onTimelineRangeChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                                                    config.copy(timelineRange = it)
+                                                } else config
+                                            }
+                                        },
+                                        showAddAccountCard = cardConfig.showAddAccountCard,
+                                        onShowAddAccountCardChange = { _, it ->
+                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
+                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                                                    config.copy(showAddAccountCard = it)
+                                                } else config
+                                            }
+                                        },
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         modifier = Modifier.fillMaxWidth(),
                                         settingsTitle = "Accounts List Settings"
                                     )
                                 }
                             }
+                        }
                         }
                     }
                     is AccountsViewUiState.Error -> {
@@ -501,6 +595,89 @@ fun AccountsViewScreen(
                     .graphicsLayer { rotationZ = rotation },
                 icon = Icons.Default.Add,
                 contentDescription = if (isFabExpanded) "Close" else "Add"
+            )
+        }
+    }
+
+    if (showAddCardDialog) {
+        AccountsViewCardTypeSelectionDialog(
+            onDismiss = { showAddCardDialog = false },
+            onCardTypeSelected = { cardType ->
+                cardManagerViewModel.addAccountsViewCard(cardType)
+                showAddCardDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun AccountsViewCardTypeSelectionDialog(
+    onDismiss: () -> Unit,
+    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Card") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Select a card type to add:")
+                CardTypeOption(
+                    title = "Net Worth",
+                    description = "Display your net worth over time",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.NET_WORTH) }
+                )
+                CardTypeOption(
+                    title = "Currency Balances",
+                    description = "Show currency breakdown",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CURRENCY_BALANCES) }
+                )
+                CardTypeOption(
+                    title = "Cash Flow",
+                    description = "Track income and expenses",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CASH_FLOW) }
+                )
+                CardTypeOption(
+                    title = "Accounts List",
+                    description = "Display your accounts",
+                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.ACCOUNTS_LIST) }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun CardTypeOption(
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

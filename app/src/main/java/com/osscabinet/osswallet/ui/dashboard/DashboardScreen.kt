@@ -17,6 +17,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -131,7 +137,6 @@ fun DashboardScreen(
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     
     var showAddCardDialog by remember { mutableStateOf(false) }
-    val availableCardTypes by cardManagerViewModel.availableDashboardCardTypes.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
@@ -245,7 +250,6 @@ fun DashboardScreen(
                                 cardManagerViewModel = cardManagerViewModel,
                                 cardsConfig = cardsConfig,
                                 showAddCardDialog = showAddCardDialog,
-                                availableCardTypes = availableCardTypes,
                                 onShowAddCardDialogChange = { showAddCardDialog = it }
                             )
                     }
@@ -287,7 +291,6 @@ fun DashboardContent(
     cardManagerViewModel: CardManagerViewModel,
     cardsConfig: DashboardCardsConfig,
     showAddCardDialog: Boolean,
-    availableCardTypes: List<DashboardCardType>,
     onShowAddCardDialogChange: (Boolean) -> Unit
 ) {
     remember(state.recentTransactions) {
@@ -321,16 +324,14 @@ fun DashboardContent(
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
-                        if (availableCardTypes.isNotEmpty()) {
-                            IconButton(
-                                onClick = { onShowAddCardDialogChange(true) }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add card",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                        IconButton(
+                            onClick = { onShowAddCardDialogChange(true) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add card",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                     
@@ -529,10 +530,9 @@ fun DashboardContent(
     // Add Card Dialog
     if (showAddCardDialog) {
         AddCardDialog(
-            availableCardTypes = availableCardTypes,
             onDismiss = { onShowAddCardDialogChange(false) },
-            onCardTypeSelected = { cardType ->
-                cardManagerViewModel.addDashboardCard(cardType)
+            onAddCard = { cardType ->
+                cardManagerViewModel.addDashboardCard(DashboardCardType.fromSerialName(cardType) ?: return@AddCardDialog)
                 onShowAddCardDialogChange(false)
             }
         )
@@ -541,31 +541,55 @@ fun DashboardContent(
 
 @Composable
 fun AddCardDialog(
-    availableCardTypes: List<DashboardCardType>,
     onDismiss: () -> Unit,
-    onCardTypeSelected: (DashboardCardType) -> Unit
+    onAddCard: (String) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Card") },
+        title = {
+            Text(
+                text = "Add New Card",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Select a card type to add:")
-                availableCardTypes.forEach { cardType ->
-                    CardTypeOption(
-                        title = cardType.displayName,
-                        onClick = { onCardTypeSelected(cardType) }
-                    )
-                }
-                if (availableCardTypes.isEmpty()) {
-                    Text(
-                        "All card types are already in use. Remove a card first to add a different type.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+                Text(
+                    text = "Select a card type to add to your dashboard:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                CardTypeOption(
+                    name = "Net Worth",
+                    description = "Track your total net worth over time",
+                    icon = Icons.Default.AccountBalance,
+                    onClick = { onAddCard("net_worth") }
+                )
+                CardTypeOption(
+                    name = "Currency Balances",
+                    description = "View balances across different currencies",
+                    icon = Icons.Default.AttachMoney,
+                    onClick = { onAddCard("currency_balances") }
+                )
+                CardTypeOption(
+                    name = "Cash Flow",
+                    description = "Track income and expenses",
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    onClick = { onAddCard("cash_flow") }
+                )
+                CardTypeOption(
+                    name = "Accounts",
+                    description = "View your account summaries",
+                    icon = Icons.Default.AccountBox,
+                    onClick = { onAddCard("accounts") }
+                )
+                CardTypeOption(
+                    name = "Budgets",
+                    description = "Monitor your budget progress",
+                    icon = Icons.Default.PieChart,
+                    onClick = { onAddCard("budgets") }
+                )
             }
         },
         confirmButton = {
@@ -578,24 +602,46 @@ fun AddCardDialog(
 
 @Composable
 fun CardTypeOption(
-    title: String,
+    name: String,
+    description: String,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
             )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

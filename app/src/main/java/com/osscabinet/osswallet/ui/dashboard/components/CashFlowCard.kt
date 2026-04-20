@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -50,7 +51,8 @@ fun CashFlowCard(
     showBaseConversion: Boolean = true,
     timelineRange: TimelineRange = TimelineRange.AllTime,
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
-    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> }
+    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
+    onDelete: () -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -165,6 +167,22 @@ fun CashFlowCard(
     if (showSettings) {
         AlertDialog(
             onDismissRequest = { showSettings = false },
+            dismissButton = {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete card",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
+                }
+            },
             confirmButton = {
                 TextButton(onClick = { showSettings = false }) {
                     Text("Done")

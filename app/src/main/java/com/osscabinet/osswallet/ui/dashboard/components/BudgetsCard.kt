@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -35,7 +36,8 @@ fun BudgetsCard(
     headerModifier: Modifier = Modifier,
     precision: Int = 2,
     showProgressLabels: Boolean = true,
-    onShowProgressLabelsChange: (String, Boolean) -> Unit = { _, _ -> }
+    onShowProgressLabelsChange: (String, Boolean) -> Unit = { _, _ -> },
+    onDelete: () -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -85,6 +87,22 @@ fun BudgetsCard(
     if (showSettings) {
         AlertDialog(
             onDismissRequest = { showSettings = false },
+            dismissButton = {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete card",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
+                }
+            },
             confirmButton = {
                 TextButton(onClick = { showSettings = false }) {
                     Text("Done")

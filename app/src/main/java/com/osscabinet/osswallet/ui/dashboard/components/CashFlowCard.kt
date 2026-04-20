@@ -42,14 +42,15 @@ fun CashFlowCard(
     cashFlowResult: CashFlowResult?,
     baseCurrency: String,
     currentTheme: String,
+    cardId: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = true,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
     timelineRange: TimelineRange = TimelineRange.AllTime,
-    onShowBaseConversionChange: (Boolean) -> Unit = {},
-    onTimelineRangeChange: (TimelineRange) -> Unit = {}
+    onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> }
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -198,7 +199,7 @@ fun CashFlowCard(
 
                             TimelineFilterBar(
                                 currentRange = timelineRange,
-                                onRangeSelected = onTimelineRangeChange,
+                                onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -207,7 +208,7 @@ fun CashFlowCard(
                     AeonBaseConversionToggle(
                         baseCurrency = baseCurrency,
                         showBaseConversion = showBaseConversion,
-                        onShowBaseConversionChange = onShowBaseConversionChange
+                        onShowBaseConversionChange = { show -> onShowBaseConversionChange(cardId, show) }
                     )
                 }
             },

@@ -36,6 +36,7 @@ data class CurrencyBalancesSettings(
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
+    cardId: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     title: String = "AGGREGATED CURRENCY BALANCES",
@@ -43,9 +44,9 @@ fun CurrencyBalancesCard(
     layout: String = "scroll", // "scroll" or "grid"
     showBaseConversion: Boolean = true,
     timelineRange: TimelineRange = TimelineRange.AllTime,
-    onLayoutChange: (String) -> Unit = {},
-    onShowBaseConversionChange: (Boolean) -> Unit = {},
-    onTimelineRangeChange: (TimelineRange) -> Unit = {}
+    onLayoutChange: (String, String) -> Unit = { _, _ -> },
+    onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> }
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -188,7 +189,7 @@ fun CurrencyBalancesCard(
 
                             TimelineFilterBar(
                                 currentRange = timelineRange,
-                                onRangeSelected = onTimelineRangeChange,
+                                onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -196,13 +197,13 @@ fun CurrencyBalancesCard(
 
                     AeonLayoutToggle(
                         layout = layout,
-                        onLayoutChange = onLayoutChange
+                        onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
                     )
 
                     AeonBaseConversionToggle(
                         baseCurrency = baseCurrency,
                         showBaseConversion = showBaseConversion,
-                        onShowBaseConversionChange = onShowBaseConversionChange
+                        onShowBaseConversionChange = { show -> onShowBaseConversionChange(cardId, show) }
                     )
                 }
             },

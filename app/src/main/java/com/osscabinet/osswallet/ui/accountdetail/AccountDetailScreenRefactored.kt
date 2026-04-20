@@ -439,29 +439,31 @@ fun DynamicAccountDetailCards(
                         cashFlowResult = state.cashFlowResult,
                         baseCurrency = state.account.currencyCode,
                         currentTheme = currentTheme,
+                        cardId = cardConfig.cardId,
                         modifier = Modifier.fillMaxWidth(),
                         headerModifier = dragModifier,
                         showTitle = true,
                         precision = state.decimalPrecision,
                         showBaseConversion = cardConfig.showBaseConversion,
                         timelineRange = cardConfig.timelineRange,
-                        onShowBaseConversionChange = { /* Update through card manager */ },
-                        onTimelineRangeChange = { /* Update through card manager */ }
+                        onShowBaseConversionChange = { _, _ -> /* Update through card manager */ },
+                        onTimelineRangeChange = { _, _ -> /* Update through card manager */ }
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
                     com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard(
                         currencyTotals = state.currencyTotals,
                         baseCurrency = state.baseCurrency,
+                        cardId = cardConfig.cardId,
                         modifier = Modifier.fillMaxWidth(),
                         headerModifier = dragModifier,
                         precision = state.decimalPrecision,
                         layout = cardConfig.layout,
                         showBaseConversion = cardConfig.showBaseConversion,
                         timelineRange = cardConfig.timelineRange,
-                        onLayoutChange = { /* Update through card manager */ },
-                        onShowBaseConversionChange = { /* Update through card manager */ },
-                        onTimelineRangeChange = { /* Update through card manager */ }
+                        onLayoutChange = { _, _ -> /* Update through card manager */ },
+                        onShowBaseConversionChange = { _, _ -> /* Update through card manager */ },
+                        onTimelineRangeChange = { _, _ -> /* Update through card manager */ }
                     )
                 }
             }

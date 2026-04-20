@@ -136,6 +136,14 @@ fun OssWalletNavGraph(
         }
     )
 
+    val cardManagerViewModel: CardManagerViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            CardManagerViewModel(
+                appContainer.settingsDataStore
+            )
+        }
+    )
+
     val dashboardViewModel: com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel = viewModel(
         factory = GenericViewModelFactory {
             com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel(
@@ -143,15 +151,8 @@ fun OssWalletNavGraph(
                 appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
                 analyticsViewModel,
-                appContainer.financialUseCases
-            )
-        }
-    )
-
-    val cardManagerViewModel: CardManagerViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            CardManagerViewModel(
-                appContainer.settingsDataStore
+                appContainer.financialUseCases,
+                cardManagerViewModel
             )
         }
     )

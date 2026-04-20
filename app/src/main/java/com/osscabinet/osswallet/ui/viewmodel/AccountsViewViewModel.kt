@@ -31,7 +31,8 @@ class AccountsViewViewModel(
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
-    private val cardManagerViewModel: CardManagerViewModel
+    private val cardManagerViewModel: CardManagerViewModel,
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
@@ -397,15 +398,26 @@ class AccountsViewViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val accountStats = financialUseCases.getAccountSummaries(
+        // Convert AccountsViewAccountsListCardConfig to AccountsCardConfig
+        val unifiedConfig = com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig(
+            cardId = cardConfig.cardId,
+            title = cardConfig.title,
+            isEnabled = cardConfig.isEnabled,
+            order = cardConfig.order,
+            layout = cardConfig.layout,
+            gridColumns = cardConfig.gridColumns,
+            showAddAccountCard = cardConfig.showAddAccountCard,
+            timelineRange = cardConfig.timelineRange
+        )
+        
+        return cardComputationService.computeAccountStats(
+            config = unifiedConfig,
             accounts = accounts,
-            allTransactions = allTransactions,
-            timelineRange = cardConfig.timelineRange,
+            transactions = allTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
         )
-        return Pair(accounts, accountStats)
     }
 }
 

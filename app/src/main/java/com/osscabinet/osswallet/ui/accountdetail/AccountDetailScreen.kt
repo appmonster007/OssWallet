@@ -546,36 +546,25 @@ fun AccountDetailCardTypeSelectionDialog(
     onDismiss: () -> Unit,
     onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType) -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Card") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text("Select a card type to add:")
-                CardTypeOption(
-                    title = "Account Summary",
-                    description = "Display account balance and details",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_HERO) }
-                )
-                CardTypeOption(
-                    title = "Cash Flow",
-                    description = "Track income and expenses for this account",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CASH_FLOW) }
-                )
-                CardTypeOption(
-                    title = "Currency Balances",
-                    description = "Show currency breakdown for this account",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES) }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
+    GenericAddCardDialog(
+        onDismiss = onDismiss,
+        cardOptions = listOf(
+            CardTypeOptionData(
+                title = "Account Summary",
+                description = "Display account balance and details",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_HERO) }
+            ),
+            CardTypeOptionData(
+                title = "Cash Flow",
+                description = "Track income and expenses for this account",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CASH_FLOW) }
+            ),
+            CardTypeOptionData(
+                title = "Currency Balances",
+                description = "Show currency breakdown for this account",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES) }
+            )
+        )
     )
 }
 
@@ -608,36 +597,6 @@ fun AddCardButton(
                 text = "Add Card",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-fun CardTypeOption(
-    title: String,
-    description: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

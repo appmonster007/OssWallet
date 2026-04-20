@@ -523,4 +523,40 @@ class CardManagerViewModel(
             // Keep default configuration if deserialization fails
         }
     }
+
+    // Generic Card Management Helpers
+    /**
+     * Generic function to remove a card from any card list.
+     * This can be used by screens to provide a unified delete experience.
+     */
+    fun <T : com.osscabinet.ossWallet.domain.model.settings.BaseCardConfig> removeCardGeneric(
+        cards: List<T>,
+        cardId: String
+    ): List<T> {
+        return cards.filter { it.cardId != cardId }
+    }
+
+    /**
+     * Generic function to reorder cards.
+     * Updates the order field based on the new position.
+     */
+    fun <T : com.osscabinet.ossWallet.domain.model.settings.BaseCardConfig> reorderCardsGeneric(
+        cards: List<T>,
+        onOrderUpdate: (T, Int) -> T
+    ): List<T> {
+        return cards.mapIndexed { index, card -> onOrderUpdate(card, index) }
+    }
+
+    /**
+     * Generic function to update a card in a list.
+     */
+    fun <T : com.osscabinet.ossWallet.domain.model.settings.BaseCardConfig> updateCardGeneric(
+        cards: List<T>,
+        cardId: String,
+        updateFn: (T) -> T
+    ): List<T> {
+        return cards.map { card ->
+            if (card.cardId == cardId) updateFn(card) else card
+        }
+    }
 }

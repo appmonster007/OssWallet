@@ -13,11 +13,11 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("cardType")
-sealed class CardConfig {
-    abstract val cardId: String
-    abstract val title: String
-    abstract val isEnabled: Boolean
-    abstract val order: Int
+sealed class CardConfig : BaseCardConfig {
+    abstract override val cardId: String
+    abstract override val title: String
+    abstract override val isEnabled: Boolean
+    abstract override val order: Int
 }
 
 /**

@@ -55,15 +55,8 @@ fun OnboardingScreen(
 
     var accountName by remember { mutableStateOf("Cash") }
     var initialBalance by remember { mutableStateOf("") }
-    var allowedCurrencies by remember { mutableStateOf(setOf(currency)) }
+    var allowedCurrencies by remember { mutableStateOf(emptySet<String>()) }
     var isCurrencyMenuExpanded by remember { mutableStateOf(false) }
-
-    // When the primary currency changes, ensure it's added to the allowed list, preserving others.
-    LaunchedEffect(currency) {
-        if (!allowedCurrencies.contains(currency)) {
-            allowedCurrencies = allowedCurrencies + currency
-        }
-    }
 
     val steps = listOf("Currency", "Appearance", "Precision", "Account")
 
@@ -99,6 +92,14 @@ fun OnboardingScreen(
                     Button(
                         onClick = {
                             if (step < steps.size - 1) {
+                                // Validate Account step before proceeding
+                                if (step == 3) {
+                                    if (allowedCurrencies.isEmpty()) {
+                                        // Show currency menu if no currencies selected
+                                        isCurrencyMenuExpanded = true
+                                        return@Button
+                                    }
+                                }
                                 step++
                             } else {
                                 // Finalize Onboarding
@@ -453,7 +454,7 @@ fun AccountStep(
         com.osscabinet.ossWallet.ui.components.RecordFieldCard(
             icon = Icons.Rounded.Payments,
             label = "ALLOWED CURRENCIES",
-            value = "${allowedCurrencies.size} Selected (${initialCurrency})",
+            value = if (allowedCurrencies.isEmpty()) "None selected" else allowedCurrencies.joinToString(", "),
             onClick = onCurrencyMenuOpen,
             trailingIcon = Icons.Rounded.KeyboardArrowDown,
             isSlim = true
@@ -462,23 +463,26 @@ fun AccountStep(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            color = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                   else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Rounded.Info,
+                    if (allowedCurrencies.isEmpty()) Icons.Rounded.Warning else Icons.Rounded.Info,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    "Your primary account will be in $initialCurrency and can handle ${allowedCurrencies.size} currencies.",
+                    if (allowedCurrencies.isEmpty()) "Please select at least 1 currency for your account."
+                    else "Your account can handle ${allowedCurrencies.joinToString(", ")}.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.onErrorContainer
+                           else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

@@ -228,8 +228,11 @@ fun AccountsViewScreen(
                                 AccountsViewSection.NET_WORTH -> {
                                     NetWorthCard(
                                         uiState = netWorthUiState,
-                                        onFontSizeChange = { accountsViewViewModel.updateNetWorthFontSize(it) },
-                                        onTimelineRangeChange = { accountsViewViewModel.updateNetWorthTimelineRange(it) },
+                                        cardId = "net_worth_accounts_view",
+                                        fontSize = state.netWorthFontSize,
+                                        timelineRange = state.netWorthTimelineRange,
+                                        onFontSizeChange = { _, it -> accountsViewViewModel.updateNetWorthFontSize(it) },
+                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateNetWorthTimelineRange(it) },
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )
@@ -238,13 +241,14 @@ fun AccountsViewScreen(
                                     CurrencyBalancesCard(
                                         currencyTotals = state.currencyTotals,
                                         baseCurrency = state.baseCurrency,
+                                        cardId = "currency_balances_accounts_view",
                                         precision = state.decimalPrecision,
                                         layout = state.currencyBalancesLayout,
                                         showBaseConversion = state.showBaseConversion,
                                         timelineRange = state.currencyBalancesTimelineRange,
-                                        onLayoutChange = { accountsViewViewModel.updateCurrencyBalancesLayout(it) },
-                                        onShowBaseConversionChange = { accountsViewViewModel.updateShowBaseConversion(it) },
-                                        onTimelineRangeChange = { accountsViewViewModel.updateCurrencyBalancesTimelineRange(it) },
+                                        onLayoutChange = { _, it -> accountsViewViewModel.updateCurrencyBalancesLayout(it) },
+                                        onShowBaseConversionChange = { _, it -> accountsViewViewModel.updateShowBaseConversion(it) },
+                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateCurrencyBalancesTimelineRange(it) },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -254,33 +258,35 @@ fun AccountsViewScreen(
                                         cashFlowResult = state.cashFlowResult,
                                         baseCurrency = state.baseCurrency,
                                         currentTheme = currentTheme,
+                                        cardId = "cash_flow_accounts_view",
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier,
                                         showTitle = true,
                                         precision = state.decimalPrecision,
                                         showBaseConversion = state.cashFlowShowBaseConversion,
                                         timelineRange = state.cashFlowTimelineRange,
-                                        onShowBaseConversionChange = { accountsViewViewModel.updateCashFlowShowBaseConversion(it) },
-                                        onTimelineRangeChange = { accountsViewViewModel.updateCashFlowTimelineRange(it) }
+                                        onShowBaseConversionChange = { _, it -> accountsViewViewModel.updateCashFlowShowBaseConversion(it) },
+                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateCashFlowTimelineRange(it) }
                                     )
                                 }
                                 AccountsViewSection.ACCOUNTS_LIST -> {
                                     AccountsCard(
                                         onManageClick = { navigate(onManageAccountsClick) },
                                         onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                        onGridColumnsChange = { accountsViewViewModel.updateGridColumns(it) },
+                                        onGridColumnsChange = { _, it -> accountsViewViewModel.updateGridColumns(it) },
                                         accounts = state.accounts,
                                         accountStats = state.accountStats,
                                         baseCurrency = state.baseCurrency,
+                                        cardId = "accounts_accounts_view",
                                         currentTheme = currentTheme,
                                         gridColumns = state.gridColumns,
                                         precision = state.decimalPrecision,
                                         layout = state.accountsLayout,
-                                        onLayoutChange = { accountsViewViewModel.updateAccountsLayout(it) },
+                                        onLayoutChange = { _, it -> accountsViewViewModel.updateAccountsLayout(it) },
                                         timelineRange = state.accountsTimelineRange,
-                                        onTimelineRangeChange = { accountsViewViewModel.updateAccountsTimelineRange(it) },
+                                        onTimelineRangeChange = { _, it -> accountsViewViewModel.updateAccountsTimelineRange(it) },
                                         showAddAccountCard = state.showAddAccountCard,
-                                        onShowAddAccountCardChange = { accountsViewViewModel.updateShowAddAccountCard(it) },
+                                        onShowAddAccountCardChange = { _, it -> accountsViewViewModel.updateShowAddAccountCard(it) },
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         modifier = Modifier.fillMaxWidth(),
                                         settingsTitle = "Accounts List Settings"

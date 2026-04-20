@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.runtime.produceState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.map
 import androidx.compose.ui.Alignment
@@ -40,10 +41,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
+import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.domain.model.Budget
-
+import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -56,6 +60,7 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.DashboardCardType
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
@@ -124,6 +129,9 @@ fun DashboardScreen(
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val budgets by budgetViewModel.budgets.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    
+    var showAddCardDialog by remember { mutableStateOf(false) }
+    val availableCardTypes by cardManagerViewModel.availableDashboardCardTypes.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
     val tabs = listOf("Glance", "Recent Activities")
@@ -235,7 +243,10 @@ fun DashboardScreen(
                                 budgets = budgets,
                                 dashboardViewModel = dashboardViewModel,
                                 cardManagerViewModel = cardManagerViewModel,
-                                cardsConfig = cardsConfig
+                                cardsConfig = cardsConfig,
+                                showAddCardDialog = showAddCardDialog,
+                                availableCardTypes = availableCardTypes,
+                                onShowAddCardDialogChange = { showAddCardDialog = it }
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -274,30 +285,13 @@ fun DashboardContent(
     budgets: List<Budget>,
     dashboardViewModel: DashboardViewModel,
     cardManagerViewModel: CardManagerViewModel,
-    cardsConfig: DashboardCardsConfig
+    cardsConfig: DashboardCardsConfig,
+    showAddCardDialog: Boolean,
+    availableCardTypes: List<DashboardCardType>,
+    onShowAddCardDialogChange: (Boolean) -> Unit
 ) {
     remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
-    }
-
-    val netWorthUiState = remember(
-        state.netWorth,
-        state.netIncome,
-        state.netExpense,
-        state.baseCurrency,
-        state.decimalPrecision,
-        state.netWorthFontSize,
-        state.netWorthTimelineRange
-    ) {
-        NetWorthUiState.Success(
-            netWorth = state.netWorth,
-            netIncome = state.netIncome,
-            netExpense = state.netExpense,
-            baseCurrency = state.baseCurrency,
-            precision = state.decimalPrecision,
-            fontSize = state.netWorthFontSize,
-            timelineRange = state.netWorthTimelineRange
-        )
     }
 
     HorizontalPager(
@@ -309,96 +303,190 @@ fun DashboardContent(
     ) { page ->
         when (page) {
             0 -> {
-                CardReorderableList(
-                    items = cardsConfig.cards.sortedBy { it.order },
-                    key = { it.cardId },
-                    onReorder = { reorderedCards ->
-                        cardManagerViewModel.reorderDashboardCards(reorderedCards)
-                    },
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) { cardConfig, isDragging, dragModifier ->
-                    when (cardConfig) {
-                        is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> {
-                            NetWorthCard(
-                                uiState = netWorthUiState,
-                                onFontSizeChange = { dashboardViewModel.updateNetWorthFontSize(it) },
-                                onTimelineRangeChange = { dashboardViewModel.updateNetWorthTimelineRange(it) },
-                                modifier = Modifier.fillMaxWidth(),
-                                headerModifier = dragModifier
-                            )
-                        }
-                        is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
-                            CurrencyBalancesCard(
-                                currencyTotals = state.currencyTotals,
-                                baseCurrency = state.baseCurrency,
-                                modifier = Modifier.fillMaxWidth(),
-                                headerModifier = dragModifier,
-                                precision = decimalPrecision,
-                                layout = state.currencyBalancesLayout,
-                                showBaseConversion = state.showBaseConversion,
-                                timelineRange = state.currencyBalancesTimelineRange,
-                                onLayoutChange = { dashboardViewModel.updateCurrencyBalancesLayout(it) },
-                                onShowBaseConversionChange = { dashboardViewModel.updateShowBaseConversion(it) },
-                                onTimelineRangeChange = { dashboardViewModel.updateCurrencyBalancesTimelineRange(it) }
-                            )
-                        }
-                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
-                            CashFlowCard(
-                                cashFlowResult = state.cashFlowResult,
-                                baseCurrency = state.baseCurrency,
-                                currentTheme = currentTheme,
-                                modifier = Modifier.fillMaxWidth(),
-                                headerModifier = dragModifier,
-                                showTitle = true,
-                                precision = decimalPrecision,
-                                showBaseConversion = state.cashFlowShowBaseConversion,
-                                timelineRange = state.cashFlowTimelineRange,
-                                onShowBaseConversionChange = { dashboardViewModel.updateCashFlowShowBaseConversion(it) },
-                                onTimelineRangeChange = { dashboardViewModel.updateCashFlowTimelineRange(it) }
-                            )
-                        }
-                        is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> {
-                            AccountsCard(
-                                onManageClick = onManageAccountsClick,
-                                onHeaderClick = onAccountsViewClick,
-                                onAccountClick = onAccountClick,
-                                onGridColumnsChange = { dashboardViewModel.updateGridColumns(it) },
-                                accounts = state.accounts,
-                                accountStats = state.accountStats,
-                                baseCurrency = state.baseCurrency,
-                                currentTheme = currentTheme,
-                                modifier = Modifier.fillMaxWidth(),
-                                gridColumns = gridColumns,
-                                precision = decimalPrecision,
-                                layout = state.accountsLayout,
-                                onLayoutChange = { dashboardViewModel.updateAccountsLayout(it) },
-                                timelineRange = state.accountsTimelineRange,
-                                onTimelineRangeChange = { dashboardViewModel.updateAccountsTimelineRange(it) },
-                                showAddAccountCard = state.showAddAccountCard,
-                                onShowAddAccountCardChange = { dashboardViewModel.updateShowAddAccountCard(it) },
-                                headerModifier = dragModifier.fillMaxWidth(),
-                                settingsTitle = "Dashboard Settings"
-                            )
-                        }
-                        is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> {
-                            if (budgets.isNotEmpty()) {
-                                BudgetsCard(
-                                    onManageClick = onBudgetsClick,
-                                    budgets = budgets,
-                                    baseCurrency = state.baseCurrency,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    precision = decimalPrecision,
-                                    headerModifier = dragModifier.fillMaxWidth(),
-                                    showProgressLabels = state.budgetShowProgressLabels,
-                                    onShowProgressLabelsChange = { dashboardViewModel.updateBudgetShowProgressLabels(it) }
-                                )
-                            } else {
-                                Box(modifier = Modifier.size(0.dp))
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    CardReorderableList(
+                        items = cardsConfig.cards.sortedBy { it.order },
+                        key = { it.cardId },
+                        onReorder = { reorderedCards ->
+                            cardManagerViewModel.reorderDashboardCards(reorderedCards)
+                        },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) { cardConfig, isDragging, dragModifier ->
+                        when (cardConfig) {
+                            is NetWorthCardConfig -> {
+                                val cardData by produceState<Pair<BigDecimal, CashFlowResult>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeNetWorthForCard(
+                                        cardConfig = cardConfig,
+                                        accounts = state.accounts,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                cardData?.let { (netWorth, cashFlow) ->
+                                    val cardUiState = remember(
+                                        netWorth,
+                                        cashFlow.totalIncomeInBase,
+                                        cashFlow.totalExpensesInBase,
+                                        state.baseCurrency,
+                                        state.decimalPrecision,
+                                        cardConfig.fontSize,
+                                        cardConfig.timelineRange
+                                    ) {
+                                        NetWorthUiState.Success(
+                                            netWorth = netWorth,
+                                            netIncome = cashFlow.totalIncomeInBase,
+                                            netExpense = cashFlow.totalExpensesInBase,
+                                            baseCurrency = state.baseCurrency,
+                                            precision = state.decimalPrecision,
+                                            fontSize = cardConfig.fontSize,
+                                            timelineRange = cardConfig.timelineRange
+                                        )
+                                    }
+                                    NetWorthCard(
+                                        uiState = cardUiState,
+                                        cardId = cardConfig.cardId,
+                                        fontSize = cardConfig.fontSize,
+                                        timelineRange = cardConfig.timelineRange,
+                                        onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardNetWorthTimelineRange(cardId, range) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier
+                                    )
+                                } ?: Box(modifier = Modifier.fillMaxWidth())
                             }
+                            is CurrencyBalancesCardConfig -> {
+                                val currencyTotals by produceState<List<CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeCurrencyTotalsForCard(
+                                        cardConfig = cardConfig,
+                                        accounts = state.accounts,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                currencyTotals?.let { totals ->
+                                    CurrencyBalancesCard(
+                                        currencyTotals = totals,
+                                        baseCurrency = state.baseCurrency,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        precision = decimalPrecision,
+                                        layout = cardConfig.layout,
+                                        showBaseConversion = cardConfig.showBaseConversion,
+                                        timelineRange = cardConfig.timelineRange,
+                                        cardId = cardConfig.cardId,
+                                        onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
+                                        onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show) },
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) }
+                                    )
+                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                            }
+                            is CashFlowCardConfig -> {
+                                val cashFlowResult by produceState<CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeCashFlowForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                cashFlowResult?.let { result ->
+                                    CashFlowCard(
+                                        cashFlowResult = result,
+                                        baseCurrency = state.baseCurrency,
+                                        currentTheme = currentTheme,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        showTitle = true,
+                                        precision = decimalPrecision,
+                                        showBaseConversion = cardConfig.showBaseConversion,
+                                        timelineRange = cardConfig.timelineRange,
+                                        cardId = cardConfig.cardId,
+                                        onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) }
+                                    )
+                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                            }
+                            is AccountsCardConfig -> {
+                                val accountData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeAccountStatsForCard(
+                                        cardConfig = cardConfig,
+                                        accounts = state.accounts,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                accountData?.let { (updatedAccounts, accountStats) ->
+                                    AccountsCard(
+                                        onManageClick = onManageAccountsClick,
+                                        onHeaderClick = onAccountsViewClick,
+                                        onAccountClick = onAccountClick,
+                                        onGridColumnsChange = { cardId, columns -> dashboardViewModel.updateCardAccountsGridColumns(cardId, columns) },
+                                        accounts = updatedAccounts,
+                                        accountStats = accountStats,
+                                        baseCurrency = state.baseCurrency,
+                                        currentTheme = currentTheme,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        gridColumns = cardConfig.gridColumns,
+                                        precision = decimalPrecision,
+                                        layout = cardConfig.layout,
+                                        onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardAccountsLayout(cardId, layout) },
+                                        timelineRange = cardConfig.timelineRange,
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardAccountsTimelineRange(cardId, range) },
+                                        showAddAccountCard = cardConfig.showAddAccountCard,
+                                        onShowAddAccountCardChange = { cardId, show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardId, show) },
+                                        cardId = cardConfig.cardId,
+                                        headerModifier = dragModifier.fillMaxWidth(),
+                                        settingsTitle = "Dashboard Settings"
+                                    )
+                                } ?: Box(modifier = Modifier.fillMaxWidth())
+                            }
+                            is BudgetsCardConfig -> {
+                                if (budgets.isNotEmpty()) {
+                                    BudgetsCard(
+                                        onManageClick = onBudgetsClick,
+                                        budgets = budgets,
+                                        baseCurrency = state.baseCurrency,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        precision = decimalPrecision,
+                                        headerModifier = dragModifier.fillMaxWidth(),
+                                        showProgressLabels = cardConfig.showProgressLabels,
+                                        cardId = cardConfig.cardId,
+                                        onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) }
+                                    )
+                                } else {
+//                                    Box(modifier = Modifier.size(0.dp))
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add Card Button
+                    if (availableCardTypes.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                        ) {
+                            AddCardButton(
+                                onClick = { onShowAddCardDialogChange(true) }
+                            )
                         }
                     }
                 }
@@ -417,6 +505,113 @@ fun DashboardContent(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+    }
+    
+    // Add Card Dialog
+    if (showAddCardDialog) {
+        AddCardDialog(
+            availableCardTypes = availableCardTypes,
+            onDismiss = { onShowAddCardDialogChange(false) },
+            onCardTypeSelected = { cardType ->
+                cardManagerViewModel.addDashboardCard(cardType)
+                onShowAddCardDialogChange(false)
+            }
+        )
+    }
+}
+
+@Composable
+fun AddCardButton(
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add card",
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Add Card",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun AddCardDialog(
+    availableCardTypes: List<DashboardCardType>,
+    onDismiss: () -> Unit,
+    onCardTypeSelected: (DashboardCardType) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Card") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Select a card type to add:")
+                availableCardTypes.forEach { cardType ->
+                    CardTypeOption(
+                        title = cardType.displayName,
+                        onClick = { onCardTypeSelected(cardType) }
+                    )
+                }
+                if (availableCardTypes.isEmpty()) {
+                    Text(
+                        "All card types are already in use. Remove a card first to add a different type.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun CardTypeOption(
+    title: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }

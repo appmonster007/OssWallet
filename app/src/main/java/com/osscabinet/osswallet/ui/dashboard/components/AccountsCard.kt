@@ -42,23 +42,24 @@ data class AccountsSectionSettings(
 fun AccountsCard(
     onManageClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onGridColumnsChange: (Int) -> Unit,
+    onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
     currentTheme: String,
+    cardId: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     gridColumns: Int = 2,
     layout: String = "grid",
     precision: Int = 2,
     timelineRange: TimelineRange = TimelineRange.AllTime,
-    onLayoutChange: (String) -> Unit = {},
-    onTimelineRangeChange: (TimelineRange) -> Unit = {},
+    onLayoutChange: (String, String) -> Unit = { _, _ -> },
+    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
     onHeaderClick: (() -> Unit)? = null,
     settingsTitle: String = "Account Settings",
     showAddAccountCard: Boolean = true,
-    onShowAddAccountCardChange: (Boolean) -> Unit = {}
+    onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> }
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -170,7 +171,7 @@ fun AccountsCard(
 
                                     TimelineFilterBar(
                                         currentRange = timelineRange,
-                                        onRangeSelected = onTimelineRangeChange,
+                                        onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -178,20 +179,20 @@ fun AccountsCard(
 
                             AeonLayoutToggle(
                                 layout = layout,
-                                onLayoutChange = onLayoutChange
+                                onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
                             )
 
                             if (layout == "grid") {
                                 AeonGridColumnsSettings(
                                     gridColumns = gridColumns,
-                                    onGridColumnsChange = onGridColumnsChange
+                                    onGridColumnsChange = { columns -> onGridColumnsChange(cardId, columns) }
                                 )
                             }
 
                             AeonSettingsToggle(
                                 label = "SHOW ADD ACCOUNT CARD",
                                 checked = showAddAccountCard,
-                                onCheckedChange = onShowAddAccountCardChange
+                                onCheckedChange = { show -> onShowAddAccountCardChange(cardId, show) }
                             )
                         }
                     },

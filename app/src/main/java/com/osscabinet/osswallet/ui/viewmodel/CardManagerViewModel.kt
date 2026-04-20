@@ -12,10 +12,46 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
 
+/**
+ * Enum representing available dashboard card types.
+ * Provides type-safe card type selection and metadata.
+ */
+enum class DashboardCardType(val displayName: String, val serialName: String) {
+    NET_WORTH("Net Worth", "net_worth"),
+    CURRENCY_BALANCES("Currency Balances", "currency_balances"),
+    CASH_FLOW("Cash Flow", "cash_flow"),
+    ACCOUNTS("Accounts", "accounts"),
+    BUDGETS("Budgets", "budgets");
+
+    companion object {
+        fun fromSerialName(serialName: String): DashboardCardType? {
+            return entries.find { it.serialName == serialName }
+        }
+    }
+}
+
+/**
+ * Enum representing available account detail card types.
+ */
+enum class AccountDetailCardType(val displayName: String, val serialName: String) {
+    ACCOUNT_HERO("Account Summary", "account_hero"),
+    ACCOUNT_CASH_FLOW("Cash Flow", "account_cash_flow"),
+    ACCOUNT_CURRENCY_BALANCES("Currency Balances", "account_currency_balances");
+
+    companion object {
+        fun fromSerialName(serialName: String): AccountDetailCardType? {
+            return entries.find { it.serialName == serialName }
+        }
+    }
+}
+
 class CardManagerViewModel(
     private val settingsDataStore: com.osscabinet.ossWallet.data.local.SettingsDataStore
 ) : ViewModel() {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { 
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     // Dashboard Cards Configuration
     private val _cardsConfig = MutableStateFlow(DashboardCardsConfig())
@@ -25,6 +61,39 @@ class CardManagerViewModel(
     private val _accountDetailCardsConfig = MutableStateFlow(AccountDetailCardsConfig())
     val accountDetailCardsConfig: StateFlow<AccountDetailCardsConfig> = _accountDetailCardsConfig.asStateFlow()
 
+    // Track which card types are currently in use for the add card dialog
+    val availableDashboardCardTypes: StateFlow<List<DashboardCardType>> = cardsConfig.map { config ->
+        val usedTypes = config.cards.mapNotNull { card ->
+            when (card) {
+                is NetWorthCardConfig -> DashboardCardType.NET_WORTH
+                is CurrencyBalancesCardConfig -> DashboardCardType.CURRENCY_BALANCES
+                is CashFlowCardConfig -> DashboardCardType.CASH_FLOW
+                is AccountsCardConfig -> DashboardCardType.ACCOUNTS
+                is BudgetsCardConfig -> DashboardCardType.BUDGETS
+            }
+        }
+        DashboardCardType.entries.filter { it !in usedTypes }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DashboardCardType.entries
+    )
+
+    val availableAccountDetailCardTypes: StateFlow<List<AccountDetailCardType>> = accountDetailCardsConfig.map { config ->
+        val usedTypes = config.cards.mapNotNull { card ->
+            when (card) {
+                is AccountHeroCardConfig -> AccountDetailCardType.ACCOUNT_HERO
+                is AccountCashFlowCardConfig -> AccountDetailCardType.ACCOUNT_CASH_FLOW
+                is AccountCurrencyBalancesCardConfig -> AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES
+            }
+        }
+        AccountDetailCardType.entries.filter { it !in usedTypes }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = AccountDetailCardType.entries
+    )
+
     init {
         loadCardsFromStorage()
     }
@@ -32,32 +101,46 @@ class CardManagerViewModel(
     private fun loadCardsFromStorage() {
         viewModelScope.launch {
             // Load dashboard cards
-            settingsDataStore.dashboardCardsConfig.collect { configJson ->
-                if (configJson.isNotEmpty()) {
-                    try {
-                        _cardsConfig.value = json.decodeFromString(configJson)
-                    } catch (e: Exception) {
+            settingsDataStore.dashboardCardsConfig
+                .distinctUntilChanged()
+                .collect { configJson ->
+                    if (configJson.isNotEmpty()) {
+                        try {
+                            val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
+                            if (decoded.cards.isNotEmpty()) {
+                                _cardsConfig.value = decoded
+                            } else {
+                                initializeDefaultDashboardCards()
+                            }
+                        } catch (e: Exception) {
+                            initializeDefaultDashboardCards()
+                        }
+                    } else {
                         initializeDefaultDashboardCards()
                     }
-                } else {
-                    initializeDefaultDashboardCards()
                 }
-            }
         }
 
         viewModelScope.launch {
             // Load account detail cards
-            settingsDataStore.accountDetailCardsConfig.collect { configJson ->
-                if (configJson.isNotEmpty()) {
-                    try {
-                        _accountDetailCardsConfig.value = json.decodeFromString(configJson)
-                    } catch (e: Exception) {
+            settingsDataStore.accountDetailCardsConfig
+                .distinctUntilChanged()
+                .collect { configJson ->
+                    if (configJson.isNotEmpty()) {
+                        try {
+                            val decoded = json.decodeFromString<AccountDetailCardsConfig>(configJson)
+                            if (decoded.cards.isNotEmpty()) {
+                                _accountDetailCardsConfig.value = decoded
+                            } else {
+                                initializeDefaultAccountDetailCards()
+                            }
+                        } catch (e: Exception) {
+                            initializeDefaultAccountDetailCards()
+                        }
+                    } else {
                         initializeDefaultAccountDetailCards()
                     }
-                } else {
-                    initializeDefaultAccountDetailCards()
                 }
-            }
         }
     }
 
@@ -120,35 +203,47 @@ class CardManagerViewModel(
     }
 
     // Dashboard Card Management
-    fun addCard(cardType: String) {
+    /**
+     * Adds a new card of the specified type to the dashboard.
+     * Uses type-safe enum for card type selection.
+     */
+    fun addDashboardCard(cardType: DashboardCardType) {
         val newCard = when (cardType) {
-            "net_worth" -> NetWorthCardConfig(
+            DashboardCardType.NET_WORTH -> NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
-            "currency_balances" -> CurrencyBalancesCardConfig(
+            DashboardCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
-            "cash_flow" -> CashFlowCardConfig(
+            DashboardCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
-            "accounts" -> AccountsCardConfig(
+            DashboardCardType.ACCOUNTS -> AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
-            "budgets" -> BudgetsCardConfig(
+            DashboardCardType.BUDGETS -> BudgetsCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
-            else -> return
         }
         
         _cardsConfig.value = _cardsConfig.value.copy(
             cards = _cardsConfig.value.cards + newCard
         )
         saveDashboardCards()
+    }
+
+    /**
+     * Legacy method for backward compatibility.
+     * @deprecated Use addDashboardCard with DashboardCardType enum instead.
+     */
+    @Deprecated("Use addDashboardCard with DashboardCardType enum instead")
+    fun addCard(cardType: String) {
+        DashboardCardType.fromSerialName(cardType)?.let { addDashboardCard(it) }
     }
 
     fun removeCard(cardId: String) {
@@ -183,27 +278,39 @@ class CardManagerViewModel(
     }
 
     // Account Detail Card Management
-    fun addAccountDetailCard(cardType: String) {
+    /**
+     * Adds a new card of the specified type to the account detail screen.
+     * Uses type-safe enum for card type selection.
+     */
+    fun addAccountDetailCard(cardType: AccountDetailCardType) {
         val newCard = when (cardType) {
-            "account_hero" -> AccountHeroCardConfig(
+            AccountDetailCardType.ACCOUNT_HERO -> AccountHeroCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size
             )
-            "account_cash_flow" -> AccountCashFlowCardConfig(
+            AccountDetailCardType.ACCOUNT_CASH_FLOW -> AccountCashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size
             )
-            "account_currency_balances" -> AccountCurrencyBalancesCardConfig(
+            AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES -> AccountCurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size
             )
-            else -> return
         }
         
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = _accountDetailCardsConfig.value.cards + newCard
         )
         saveAccountDetailCards()
+    }
+
+    /**
+     * Legacy method for backward compatibility.
+     * @deprecated Use addAccountDetailCard with AccountDetailCardType enum instead.
+     */
+    @Deprecated("Use addAccountDetailCard with AccountDetailCardType enum instead")
+    fun addAccountDetailCard(cardType: String) {
+        AccountDetailCardType.fromSerialName(cardType)?.let { addAccountDetailCard(it) }
     }
 
     fun removeAccountDetailCard(cardId: String) {

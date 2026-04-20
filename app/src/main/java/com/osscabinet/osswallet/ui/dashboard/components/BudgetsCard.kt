@@ -30,11 +30,12 @@ fun BudgetsCard(
     onManageClick: () -> Unit,
     budgets: List<Budget>,
     baseCurrency: String,
+    cardId: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     precision: Int = 2,
     showProgressLabels: Boolean = true,
-    onShowProgressLabelsChange: (Boolean) -> Unit = {}
+    onShowProgressLabelsChange: (String, Boolean) -> Unit = { _, _ -> }
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -121,7 +122,7 @@ fun BudgetsCard(
                     AeonSettingsToggle(
                         label = "SHOW PROGRESS LABELS",
                         checked = showProgressLabels,
-                        onCheckedChange = onShowProgressLabelsChange
+                        onCheckedChange = { show -> onShowProgressLabelsChange(cardId, show) }
                     )
                 }
             },

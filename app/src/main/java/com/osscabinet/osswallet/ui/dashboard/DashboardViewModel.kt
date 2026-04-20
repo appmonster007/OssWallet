@@ -34,7 +34,8 @@ class DashboardViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    private val financialUseCases: FinancialUseCases
+    private val financialUseCases: FinancialUseCases,
+    private val cardManagerViewModel: com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
@@ -133,6 +134,191 @@ class DashboardViewModel(
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
         }
+    }
+
+    // Card-specific update functions - delegate to CardManagerViewModel only
+    // These do NOT update global settings to allow per-card independent data computation
+    fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
+                cardConfig.copy(fontSize = fontSize)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                cardConfig.copy(layout = layout)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                cardConfig.copy(showBaseConversion = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
+                cardConfig.copy(showBaseConversion = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsLayout(cardId: String, layout: String) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                cardConfig.copy(layout = layout)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                cardConfig.copy(gridColumns = columns)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                cardConfig.copy(showAddAccountCard = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardBudgetsShowProgressLabels(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig) {
+                cardConfig.copy(showProgressLabels = show)
+            } else cardConfig
+        }
+    }
+
+    // Helper functions to compute data for a specific card based on its config
+    suspend fun computeNetWorthForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<BigDecimal, CashFlowResult> {
+        val netWorth = financialUseCases.calculateNetWorth(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision,
+            timelineRange = cardConfig.timelineRange
+        )
+        val cashFlow = financialUseCases.calculateCashFlow(
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+        return Pair(netWorth, cashFlow)
+    }
+
+    suspend fun computeCurrencyTotalsForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<CurrencyAggregationItem> {
+        return financialUseCases.getCurrencyAggregation(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    suspend fun computeCashFlowForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        return financialUseCases.calculateCashFlow(
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    suspend fun computeAccountStatsForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        val accountStats = financialUseCases.getAccountSummaries(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+        val updatedAccounts = financialUseCases.getTotalBalances(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            exchangeRates = exchangeRates,
+            precision = precision,
+            timelineRange = cardConfig.timelineRange
+        )
+        return Pair(updatedAccounts, accountStats)
     }
 
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId

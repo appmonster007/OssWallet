@@ -225,13 +225,14 @@ fun AccountDetailScreen(
                                     cashFlowResult = state.cashFlowResult,
                                     baseCurrency = account.currencyCode,
                                     currentTheme = currentTheme,
+                                    cardId = "cash_flow_account_detail",
                                     modifier = Modifier.fillMaxWidth(),
                                     showTitle = true,
                                     precision = state.decimalPrecision,
                                     showBaseConversion = state.cashFlowShowBaseConversion,
                                     timelineRange = state.cashFlowTimelineRange,
-                                    onShowBaseConversionChange = { accountDetailViewModel.updateCashFlowShowBaseConversion(it) },
-                                    onTimelineRangeChange = { accountDetailViewModel.updateCashFlowTimelineRange(it) }
+                                    onShowBaseConversionChange = { _, it -> accountDetailViewModel.updateCashFlowShowBaseConversion(it) },
+                                    onTimelineRangeChange = { _, it -> accountDetailViewModel.updateCashFlowTimelineRange(it) }
                                 )
                             }
 
@@ -239,14 +240,15 @@ fun AccountDetailScreen(
                                 CurrencyBalancesCard(
                                     currencyTotals = state.currencyTotals,
                                     baseCurrency = state.baseCurrency,
+                                    cardId = "currency_balances_account_detail",
                                     modifier = Modifier.fillMaxWidth(),
                                     precision = state.decimalPrecision,
                                     layout = state.currencyBalancesLayout,
                                     showBaseConversion = state.showBaseConversion,
                                     timelineRange = state.currencyBalancesTimelineRange,
-                                    onLayoutChange = { accountDetailViewModel.updateCurrencyBalancesLayout(it) },
-                                    onShowBaseConversionChange = { accountDetailViewModel.updateShowBaseConversion(it) },
-                                    onTimelineRangeChange = { accountDetailViewModel.updateCurrencyBalancesTimelineRange(it) }
+                                    onLayoutChange = { _, it -> accountDetailViewModel.updateCurrencyBalancesLayout(it) },
+                                    onShowBaseConversionChange = { _, it -> accountDetailViewModel.updateShowBaseConversion(it) },
+                                    onTimelineRangeChange = { _, it -> accountDetailViewModel.updateCurrencyBalancesTimelineRange(it) }
                                 )
                             }
                         }

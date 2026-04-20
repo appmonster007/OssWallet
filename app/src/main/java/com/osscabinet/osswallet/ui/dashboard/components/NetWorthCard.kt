@@ -31,8 +31,11 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun NetWorthCard(
     uiState: NetWorthUiState,
-    onFontSizeChange: (String) -> Unit,
-    onTimelineRangeChange: (TimelineRange) -> Unit,
+    cardId: String,
+    fontSize: String,
+    timelineRange: TimelineRange,
+    onFontSizeChange: (String, String) -> Unit,
+    onTimelineRangeChange: (String, TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -47,8 +50,9 @@ fun NetWorthCard(
                 netExpense = state.netExpense,
                 baseCurrency = state.baseCurrency,
                 precision = state.precision,
-                fontSize = state.fontSize,
-                timelineRange = state.timelineRange,
+                fontSize = fontSize,
+                timelineRange = timelineRange,
+                cardId = cardId,
                 onFontSizeChange = onFontSizeChange,
                 onTimelineRangeChange = onTimelineRangeChange,
                 modifier = modifier,
@@ -70,8 +74,9 @@ private fun NetWorthContent(
     precision: Int,
     fontSize: String,
     timelineRange: TimelineRange,
-    onFontSizeChange: (String) -> Unit,
-    onTimelineRangeChange: (TimelineRange) -> Unit,
+    cardId: String,
+    onFontSizeChange: (String, String) -> Unit,
+    onTimelineRangeChange: (String, TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -179,6 +184,7 @@ private fun NetWorthContent(
         NetWorthSettingsDialog(
             fontSize = fontSize,
             timelineRange = timelineRange,
+            cardId = cardId,
             onFontSizeChange = onFontSizeChange,
             onTimelineRangeChange = onTimelineRangeChange,
             onDismiss = { showSettings = false }
@@ -228,8 +234,9 @@ private fun FlowBadge(
 private fun NetWorthSettingsDialog(
     fontSize: String,
     timelineRange: TimelineRange,
-    onFontSizeChange: (String) -> Unit,
-    onTimelineRangeChange: (TimelineRange) -> Unit,
+    cardId: String,
+    onFontSizeChange: (String, String) -> Unit,
+    onTimelineRangeChange: (String, TimelineRange) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -268,7 +275,7 @@ private fun NetWorthSettingsDialog(
 
                         TimelineFilterBar(
                             currentRange = timelineRange,
-                            onRangeSelected = onTimelineRangeChange,
+                            onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -297,7 +304,7 @@ private fun NetWorthSettingsDialog(
                             listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                                 SegmentedButton(
                                     selected = fontSize == size,
-                                    onClick = { onFontSizeChange(size) },
+                                    onClick = { onFontSizeChange(cardId, size) },
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = 4

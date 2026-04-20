@@ -52,10 +52,15 @@ class TransactionUseCases(
         accounts: List<Account>,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int,
-        limit: Int = 20
+        limit: Int = 20,
+        days: Int? = null
     ): List<TransactionWithBalance> {
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
+        
+        val cutoffTime = if (days != null) {
+            System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+        } else null
 
         return allTransactions.sortedBy { it.timestamp }
             .groupBy { it.accountId }
@@ -87,6 +92,7 @@ class TransactionUseCases(
                 }
             }
             .filter { it.transaction.accountId in nonArchivedAccountIds }
+            .filter { cutoffTime == null || it.transaction.timestamp >= cutoffTime }
             .sortedByDescending { it.transaction.timestamp }
             .take(limit)
     }

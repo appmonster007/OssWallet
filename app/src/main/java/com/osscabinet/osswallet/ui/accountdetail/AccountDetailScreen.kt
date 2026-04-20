@@ -19,8 +19,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -41,6 +44,19 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterShee
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
+
+/**
+ * Helper function to calculate 30% of screen height as dp padding.
+ * This ensures the scroll ends when the last item is 30% above the bottom.
+ */
+@Composable
+private fun calculateScrollBottomPadding(): Dp {
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenHeightPx = configuration.screenHeightDp * density.density
+    val thirtyPercentPx = screenHeightPx * 0.3f
+    return with(density) { thirtyPercentPx.toDp() }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -363,7 +379,7 @@ fun AccountDetailScreen(
                                         categoryMap = categoryMap,
                                         onTransactionClick = { tx -> navigate { onEditTransactionClick(tx.id) } },
                                         contentPadding = PaddingValues(
-                                            bottom = sheetPadding.calculateBottomPadding() + screenPadding.calculateBottomPadding() + 16.dp
+                                            bottom = calculateScrollBottomPadding()
                                         ),
                                         precision = state.decimalPrecision,
                                         useNoteAsHeader = state.useNoteAsHeader,
@@ -439,7 +455,7 @@ fun DynamicAccountDetailCards(
                 start = 0.dp,
                 end = 0.dp,
                 top = screenPadding.calculateTopPadding() + 24.dp,
-                bottom = 8.dp
+                bottom = calculateScrollBottomPadding()
             ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) { cardConfig, isDragging, dragModifier ->

@@ -26,6 +26,7 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import com.osscabinet.ossWallet.ui.util.getCurrencySymbol
 import com.osscabinet.ossWallet.ui.util.isDark
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -36,7 +37,7 @@ fun AccountSetupScreen(
     viewModel: AccountViewModel
 ) {
     var accountName by remember { mutableStateOf("") }
-    var initialBalance by remember { mutableStateOf("") }
+    var initialBalances by remember { mutableStateOf(mapOf<String, String>()) }
     var structureType by remember { mutableStateOf("Savings") }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
 
@@ -44,14 +45,7 @@ fun AccountSetupScreen(
 
     // Currency logic
     var primaryCurrency by remember { mutableStateOf(defaultCurrency) }
-    var allowedCurrencies by remember { mutableStateOf(setOf(defaultCurrency)) }
-
-    // When the primary currency changes, ensure it's added to the allowed list.
-    LaunchedEffect(primaryCurrency) {
-        if (!allowedCurrencies.contains(primaryCurrency)) {
-            allowedCurrencies = allowedCurrencies + primaryCurrency
-        }
-    }
+    var allowedCurrencies by remember { mutableStateOf(emptySet<String>()) }
 
     val structureTypes = listOf("Savings", "Credit Card", "Checking", "Investment", "Cash", "Other")
 
@@ -69,7 +63,7 @@ fun AccountSetupScreen(
 
     Scaffold(
         topBar = {
-            val isBalanceValid = initialBalance.isEmpty() || initialBalance.toBigDecimalOrNull() != null
+            val isBalanceValid = initialBalances.values.all { it.isEmpty() || it.toBigDecimalOrNull() != null }
             val canCreate = accountName.isNotBlank() && isBalanceValid && primaryCurrency.isNotBlank() && allowedCurrencies.isNotEmpty()
 
             CenterAlignedTopAppBar(
@@ -86,9 +80,10 @@ fun AccountSetupScreen(
                         title = "", // Not used in top bar actions directly but for consistency
                         onSaveClick = {
                             navigate {
+                                val primaryBalance = initialBalances[primaryCurrency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 viewModel.addAccount(
                                     name = accountName,
-                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                    balance = primaryBalance,
                                     currency = primaryCurrency,
                                     structureType = structureType,
                                     colorHex = accentColorHex,
@@ -120,7 +115,7 @@ innerPadding ->
             // Header Section
             AeonHeroHeader(
                 title = accountName,
-                subtitle = "$primaryCurrency ${initialBalance.ifBlank { "0.00" }}",
+                subtitle = "$primaryCurrency ${initialBalances[primaryCurrency]?.ifBlank { "0.00" } ?: "0.00"}",
                 accentColorHex = accentColorHex,
                 iconName = selectedIconName
             )
@@ -128,19 +123,12 @@ innerPadding ->
             // Identity Section
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AeonFlowSectionHeader(title = "IDENTITY")
-                
+
                 EditorialInput(
                     value = accountName,
                     onValueChange = { accountName = it },
                     label = "ACCOUNT NAME",
                     icon = Icons.AutoMirrored.Rounded.Label
-                )
-
-                EditorialInput(
-                    value = initialBalance,
-                    onValueChange = { initialBalance = it },
-                    label = "INITIAL BALANCE",
-                    icon = Icons.Rounded.AccountBalanceWallet
                 )
 
                 RecordFieldCard(
@@ -185,6 +173,24 @@ innerPadding ->
                 onAllowedCurrenciesChange = { allowedCurrencies = it },
                 accentColorHex = accentColorHex
             )
+
+            // Initial Balance Section
+            if (allowedCurrencies.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AeonFlowSectionHeader(title = "INITIAL BALANCES")
+
+                    allowedCurrencies.forEach { currencyCode ->
+                        EditorialInput(
+                            value = initialBalances[currencyCode] ?: "",
+                            onValueChange = { newBalance ->
+                                initialBalances = initialBalances.toMutableMap().apply { put(currencyCode, newBalance) }
+                            },
+                            label = "INITIAL BALANCE ($currencyCode)",
+                            icon = Icons.Rounded.AccountBalanceWallet
+                        )
+                    }
+                }
+            }
 
             // Visual Identity Section
             VisualIdentitySection(

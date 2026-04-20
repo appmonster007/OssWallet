@@ -29,6 +29,7 @@ fun RecentActivitiesCard(
     categoryMap: Map<Long, CategoryEntity>,
     decimalPrecision: Int,
     onRecordsClick: () -> Unit,
+    onTransactionClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -74,7 +75,7 @@ fun RecentActivitiesCard(
                 icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
                 iconBg = categoryEntity?.let { Color(it.colorHex) },
                 precision = decimalPrecision,
-                onClick = { /* Navigate to edit? */ }
+                onClick = { onTransactionClick(transaction.id) }
             )
         }
         

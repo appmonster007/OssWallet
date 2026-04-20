@@ -602,7 +602,8 @@ class DashboardViewModel(
                     allTransactions = allTransactions,
                     accounts = updatedAccounts,
                     exchangeRates = rates,
-                    precision = precision
+                    precision = precision,
+                    days = 7
                 )
 
                 DashboardUiState.Success(

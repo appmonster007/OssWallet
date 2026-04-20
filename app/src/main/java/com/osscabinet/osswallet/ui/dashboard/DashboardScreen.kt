@@ -103,6 +103,7 @@ fun DashboardScreen(
     onExchangeRatesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
@@ -246,6 +247,7 @@ fun DashboardScreen(
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
                                 onRecordsClick = { navigate(onRecordsClick) },
                                 onBudgetsClick = { navigate(onBudgetsClick) },
+                                onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
                                 dashboardViewModel = dashboardViewModel,
@@ -287,6 +289,7 @@ fun DashboardContent(
     onAccountClick: (String) -> Unit,
     onRecordsClick: () -> Unit,
     onBudgetsClick: () -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
     dashboardViewModel: DashboardViewModel,
@@ -524,6 +527,7 @@ fun DashboardContent(
                     categoryMap = categoryMap,
                     decimalPrecision = state.decimalPrecision,
                     onRecordsClick = onRecordsClick,
+                    onTransactionClick = onEditTransactionClick,
                     modifier = Modifier.fillMaxSize()
                 )
             }

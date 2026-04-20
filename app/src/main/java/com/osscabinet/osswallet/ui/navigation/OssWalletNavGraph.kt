@@ -224,8 +224,8 @@ fun OssWalletNavGraph(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onAddClick = { type, template -> 
-                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
+                onAddClick = { type, template ->
+                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                 },
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
@@ -234,6 +234,7 @@ fun OssWalletNavGraph(
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
+                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,

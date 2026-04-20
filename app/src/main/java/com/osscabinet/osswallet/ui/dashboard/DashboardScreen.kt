@@ -518,6 +518,7 @@ fun DashboardContent(
             }
             1 -> {
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
+                val accountCurrencyMap = remember(state.accounts) { state.accounts.associate { it.id to it.currencyCode } }
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
@@ -528,6 +529,9 @@ fun DashboardContent(
                     decimalPrecision = state.decimalPrecision,
                     onRecordsClick = onRecordsClick,
                     onTransactionClick = onEditTransactionClick,
+                    baseCurrency = state.baseCurrency,
+                    exchangeRates = state.exchangeRates,
+                    accountCurrencyMap = accountCurrencyMap,
                     modifier = Modifier.fillMaxSize()
                 )
             }

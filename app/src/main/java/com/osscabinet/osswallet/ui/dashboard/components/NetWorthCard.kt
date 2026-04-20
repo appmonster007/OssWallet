@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,6 +37,7 @@ fun NetWorthCard(
     timelineRange: TimelineRange,
     onFontSizeChange: (String, String) -> Unit,
     onTimelineRangeChange: (String, TimelineRange) -> Unit,
+    onDelete: () -> Unit = {},
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -55,6 +57,7 @@ fun NetWorthCard(
                 cardId = cardId,
                 onFontSizeChange = onFontSizeChange,
                 onTimelineRangeChange = onTimelineRangeChange,
+                onDelete = onDelete,
                 modifier = modifier,
                 headerModifier = headerModifier
             )
@@ -77,6 +80,7 @@ private fun NetWorthContent(
     cardId: String,
     onFontSizeChange: (String, String) -> Unit,
     onTimelineRangeChange: (String, TimelineRange) -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -187,7 +191,8 @@ private fun NetWorthContent(
             cardId = cardId,
             onFontSizeChange = onFontSizeChange,
             onTimelineRangeChange = onTimelineRangeChange,
-            onDismiss = { showSettings = false }
+            onDismiss = { showSettings = false },
+            onDelete = { onDelete }
         )
     }
 }
@@ -237,10 +242,27 @@ private fun NetWorthSettingsDialog(
     cardId: String,
     onFontSizeChange: (String, String) -> Unit,
     onTimelineRangeChange: (String, TimelineRange) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = onDelete,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete card",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Done")

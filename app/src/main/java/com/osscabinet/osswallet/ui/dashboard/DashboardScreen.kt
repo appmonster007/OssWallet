@@ -308,6 +308,32 @@ fun DashboardContent(
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                 ) {
+                    // Header row with Add Card button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Glance",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (availableCardTypes.isNotEmpty()) {
+                            IconButton(
+                                onClick = { onShowAddCardDialogChange(true) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add card",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    
                     CardReorderableList(
                         items = cardsConfig.cards.sortedBy { it.order },
                         key = { it.cardId },
@@ -358,6 +384,7 @@ fun DashboardContent(
                                         timelineRange = cardConfig.timelineRange,
                                         onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardNetWorthTimelineRange(cardId, range) },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )
@@ -388,7 +415,8 @@ fun DashboardContent(
                                         cardId = cardConfig.cardId,
                                         onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
                                         onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show) },
-                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) }
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
                                 } ?: Box(modifier = Modifier.fillMaxWidth())
                             }
@@ -416,7 +444,8 @@ fun DashboardContent(
                                         timelineRange = cardConfig.timelineRange,
                                         cardId = cardConfig.cardId,
                                         onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
-                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) }
+                                        onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
                                 } ?: Box(modifier = Modifier.fillMaxWidth())
                             }
@@ -453,7 +482,8 @@ fun DashboardContent(
                                         onShowAddAccountCardChange = { cardId, show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardId, show) },
                                         cardId = cardConfig.cardId,
                                         headerModifier = dragModifier.fillMaxWidth(),
-                                        settingsTitle = "Dashboard Settings"
+                                        settingsTitle = "Dashboard Settings",
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
                                 } ?: Box(modifier = Modifier.fillMaxWidth())
                             }
@@ -468,25 +498,13 @@ fun DashboardContent(
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         showProgressLabels = cardConfig.showProgressLabels,
                                         cardId = cardConfig.cardId,
-                                        onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) }
+                                        onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                                     )
                                 } else {
 //                                    Box(modifier = Modifier.size(0.dp))
                                 }
                             }
-                        }
-                    }
-                    
-                    // Add Card Button
-                    if (availableCardTypes.isNotEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
-                        ) {
-                            AddCardButton(
-                                onClick = { onShowAddCardDialogChange(true) }
-                            )
                         }
                     }
                 }
@@ -518,40 +536,6 @@ fun DashboardContent(
                 onShowAddCardDialogChange(false)
             }
         )
-    }
-}
-
-@Composable
-fun AddCardButton(
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add card",
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Add Card",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }
 

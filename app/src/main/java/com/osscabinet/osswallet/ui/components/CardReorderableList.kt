@@ -223,7 +223,7 @@ fun <T> CardReorderableList(
             verticalArrangement = verticalArrangement,
             // Disable native scrolling while dragging to avoid gesture conflicts
             userScrollEnabled = draggedKey == null,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth()
         ) {
             itemsIndexed(
                 items = items,

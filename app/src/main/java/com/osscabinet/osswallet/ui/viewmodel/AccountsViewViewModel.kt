@@ -27,7 +27,8 @@ class AccountsViewViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    private val financialUseCases: FinancialUseCases
+    private val financialUseCases: FinancialUseCases,
+    private val cardManagerViewModel: CardManagerViewModel
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
@@ -233,6 +234,96 @@ class AccountsViewViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AccountsViewUiState.Loading
         )
+
+    // Card-specific update functions - delegate to CardManagerViewModel only
+    // These do NOT update global settings to allow per-card independent data computation
+    fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
+                cardConfig.copy(fontSize = fontSize)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                cardConfig.copy(layout = layout)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                cardConfig.copy(showBaseConversion = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
+                cardConfig.copy(showBaseConversion = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsLayout(cardId: String, layout: String) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                cardConfig.copy(layout = layout)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                cardConfig.copy(gridColumns = columns)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                cardConfig.copy(showAddAccountCard = show)
+            } else cardConfig
+        }
+    }
+
+    fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
+        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
+            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
+                cardConfig.copy(timelineRange = range)
+            } else cardConfig
+        }
+    }
 }
 
 sealed class AccountsViewUiState {

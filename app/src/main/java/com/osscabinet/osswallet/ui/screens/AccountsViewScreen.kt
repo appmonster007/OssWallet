@@ -260,20 +260,9 @@ fun AccountsViewScreen(
                                         cardId = cardConfig.cardId,
                                         fontSize = cardConfig.fontSize,
                                         timelineRange = cardConfig.timelineRange,
-                                        onFontSizeChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
-                                                    config.copy(fontSize = it)
-                                                } else config
-                                            }
-                                        },
-                                        onTimelineRangeChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig) {
-                                                    config.copy(timelineRange = it)
-                                                } else config
-                                            }
-                                        },
+                                        onFontSizeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthFontSize(cardId, it) },
+                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthTimelineRange(cardId, it) },
+                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier
                                     )
@@ -287,27 +276,10 @@ fun AccountsViewScreen(
                                         layout = cardConfig.layout,
                                         showBaseConversion = cardConfig.showBaseConversion,
                                         timelineRange = cardConfig.timelineRange,
-                                        onLayoutChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
-                                                    config.copy(layout = it)
-                                                } else config
-                                            }
-                                        },
-                                        onShowBaseConversionChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
-                                                    config.copy(showBaseConversion = it)
-                                                } else config
-                                            }
-                                        },
-                                        onTimelineRangeChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig) {
-                                                    config.copy(timelineRange = it)
-                                                } else config
-                                            }
-                                        },
+                                        onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesLayout(cardId, it) },
+                                        onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
+                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
+                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
                                         headerModifier = dragModifier,
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -324,33 +296,16 @@ fun AccountsViewScreen(
                                         precision = state.decimalPrecision,
                                         showBaseConversion = cardConfig.showBaseConversion,
                                         timelineRange = cardConfig.timelineRange,
-                                        onShowBaseConversionChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
-                                                    config.copy(showBaseConversion = it)
-                                                } else config
-                                            }
-                                        },
-                                        onTimelineRangeChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig) {
-                                                    config.copy(timelineRange = it)
-                                                } else config
-                                            }
-                                        }
+                                        onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
+                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
+                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
                                     )
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig -> {
                                     AccountsCard(
                                         onManageClick = { navigate(onManageAccountsClick) },
                                         onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                        onGridColumnsChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
-                                                    config.copy(gridColumns = it)
-                                                } else config
-                                            }
-                                        },
+                                        onGridColumnsChange = { cardId, it -> accountsViewViewModel.updateCardAccountsGridColumns(cardId, it) },
                                         accounts = state.accounts,
                                         accountStats = state.accountStats,
                                         baseCurrency = state.baseCurrency,
@@ -359,29 +314,12 @@ fun AccountsViewScreen(
                                         gridColumns = cardConfig.gridColumns,
                                         precision = state.decimalPrecision,
                                         layout = cardConfig.layout,
-                                        onLayoutChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
-                                                    config.copy(layout = it)
-                                                } else config
-                                            }
-                                        },
+                                        onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardAccountsLayout(cardId, it) },
                                         timelineRange = cardConfig.timelineRange,
-                                        onTimelineRangeChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
-                                                    config.copy(timelineRange = it)
-                                                } else config
-                                            }
-                                        },
+                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardAccountsTimelineRange(cardId, it) },
                                         showAddAccountCard = cardConfig.showAddAccountCard,
-                                        onShowAddAccountCardChange = { _, it ->
-                                            cardManagerViewModel.updateAccountsViewCard(cardConfig.cardId) { config ->
-                                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig) {
-                                                    config.copy(showAddAccountCard = it)
-                                                } else config
-                                            }
-                                        },
+                                        onShowAddAccountCardChange = { cardId, it -> accountsViewViewModel.updateCardAccountsShowAddAccountCard(cardId, it) },
+                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         modifier = Modifier.fillMaxWidth(),
                                         settingsTitle = "Accounts List Settings"

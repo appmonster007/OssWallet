@@ -54,7 +54,7 @@ fun OnboardingScreen(
     val syncState by viewModel.onboardingSyncState.collectAsStateWithLifecycle()
 
     var accountName by remember { mutableStateOf("Cash") }
-    var initialBalance by remember { mutableStateOf("") }
+    var initialBalances by remember { mutableStateOf(mapOf<String, String>()) }
     var allowedCurrencies by remember { mutableStateOf(emptySet<String>()) }
     var isCurrencyMenuExpanded by remember { mutableStateOf(false) }
 
@@ -103,9 +103,11 @@ fun OnboardingScreen(
                                 step++
                             } else {
                                 // Finalize Onboarding
+                                // Use primary currency's initial balance for the account
+                                val primaryBalance = initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                 accountViewModel.addAccount(
                                     name = accountName,
-                                    balance = initialBalance.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                                    balance = primaryBalance,
                                     currency = currency,
                                     structureType = "Cash",
                                     colorHex = "#4CAF50",
@@ -152,11 +154,10 @@ fun OnboardingScreen(
                     Spacer(modifier = Modifier.weight(1f))
                 }
                 3 -> AccountStep(
-                    initialCurrency = currency,
                     accountName = accountName,
                     onAccountNameChange = { accountName = it },
-                    initialBalance = initialBalance,
-                    onInitialBalanceChange = { initialBalance = it },
+                    initialBalances = initialBalances,
+                    onInitialBalancesChange = { initialBalances = it },
                     allowedCurrencies = allowedCurrencies,
                     onAllowedCurrenciesChange = { allowedCurrencies = it },
                     onCurrencyMenuOpen = { isCurrencyMenuExpanded = true }
@@ -400,11 +401,10 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
 
 @Composable
 fun AccountStep(
-    initialCurrency: String,
     accountName: String,
     onAccountNameChange: (String) -> Unit,
-    initialBalance: String,
-    onInitialBalanceChange: (String) -> Unit,
+    initialBalances: Map<String, String>,
+    onInitialBalancesChange: (Map<String, String>) -> Unit,
     allowedCurrencies: Set<String>,
     onAllowedCurrenciesChange: (Set<String>) -> Unit,
     onCurrencyMenuOpen: () -> Unit
@@ -430,27 +430,6 @@ fun AccountStep(
             singleLine = true
         )
 
-        OutlinedTextField(
-            value = initialBalance,
-            onValueChange = onInitialBalanceChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Initial Balance") },
-            placeholder = { Text("0.00") },
-            leadingIcon = {
-                Text(
-                    getCurrencySymbol(initialCurrency),
-                    modifier = Modifier.padding(start = 12.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-            ),
-            shape = RoundedCornerShape(16.dp),
-            singleLine = true
-        )
-
         com.osscabinet.ossWallet.ui.components.RecordFieldCard(
             icon = Icons.Rounded.Payments,
             label = "ALLOWED CURRENCIES",
@@ -459,6 +438,43 @@ fun AccountStep(
             trailingIcon = Icons.Rounded.KeyboardArrowDown,
             isSlim = true
         )
+
+        // Initial balance fields for each selected currency
+        if (allowedCurrencies.isNotEmpty()) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Initial Balances",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                allowedCurrencies.forEach { currencyCode ->
+                    OutlinedTextField(
+                        value = initialBalances[currencyCode] ?: "",
+                        onValueChange = { newBalance ->
+                            onInitialBalancesChange(initialBalances.toMutableMap().apply { put(currencyCode, newBalance) })
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Initial Balance ($currencyCode)") },
+                        placeholder = { Text("0.00") },
+                        leadingIcon = {
+                            Text(
+                                getCurrencySymbol(currencyCode),
+                                modifier = Modifier.padding(start = 12.dp),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+                }
+            }
+        }
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -479,7 +495,7 @@ fun AccountStep(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     if (allowedCurrencies.isEmpty()) "Please select at least 1 currency for your account."
-                    else "Your account can handle ${allowedCurrencies.joinToString(", ")}.",
+                    else "Set initial balances for each selected currency.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.onErrorContainer
                            else MaterialTheme.colorScheme.onSurfaceVariant

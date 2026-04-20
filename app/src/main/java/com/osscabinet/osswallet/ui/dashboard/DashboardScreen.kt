@@ -82,7 +82,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.DashboardNavigationPill
+import com.osscabinet.ossWallet.ui.components.NavigationPill
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import java.math.BigDecimal
@@ -246,7 +246,7 @@ fun DashboardScreen(
             }
         }
 
-        DashboardNavigationPill(
+        NavigationPill(
             pagerState = pagerState,
             tabs = tabs,
             modifier = Modifier.align(Alignment.BottomCenter)

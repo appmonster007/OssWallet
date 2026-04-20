@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.dashboard.components
+package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 @Composable
-fun DashboardNavigationPill(
+fun NavigationPill(
     pagerState: PagerState,
     tabs: List<Pair<ImageVector, String>>,
     modifier: Modifier = Modifier

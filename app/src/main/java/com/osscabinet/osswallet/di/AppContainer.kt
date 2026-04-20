@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
 import com.osscabinet.ossWallet.data.seed.DatabaseSeeder
+import com.osscabinet.ossWallet.domain.service.CardComputationService
+import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
 import com.osscabinet.ossWallet.domain.usecase.*
 
 /**
@@ -77,7 +79,12 @@ class AppContainer(private val context: Context) {
         BudgetUseCases(budgetRepository, transactionRepository) 
     }
     
-    val accountUseCases by lazy { 
-        AccountUseCases(accountRepository) 
+    val accountUseCases by lazy {
+        AccountUseCases(accountRepository)
+    }
+
+    // Services
+    val cardComputationService: CardComputationService by lazy {
+        CardComputationServiceImpl(financialUseCases)
     }
 }

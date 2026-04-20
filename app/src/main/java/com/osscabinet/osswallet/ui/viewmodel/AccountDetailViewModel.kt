@@ -21,7 +21,8 @@ class AccountDetailViewModel(
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
-    private val cardManagerViewModel: CardManagerViewModel
+    private val cardManagerViewModel: CardManagerViewModel,
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
 
     fun updateCurrencyBalancesLayout(layout: String) {
@@ -141,9 +142,20 @@ class AccountDetailViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): CashFlowResult {
-        return financialUseCases.calculateCashFlow(
-            allTransactions = accountTransactions,
+        // Convert AccountCashFlowCardConfig to CashFlowCardConfig with accountId
+        val unifiedConfig = com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
+            cardId = cardConfig.cardId,
+            title = cardConfig.title,
+            isEnabled = cardConfig.isEnabled,
+            order = cardConfig.order,
+            showBaseConversion = cardConfig.showBaseConversion,
             timelineRange = cardConfig.timelineRange,
+            accountId = accountId // Set accountId for account scope
+        )
+        
+        return cardComputationService.computeCashFlow(
+            config = unifiedConfig,
+            transactions = accountTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
@@ -158,10 +170,22 @@ class AccountDetailViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CurrencyAggregationItem> {
-        return financialUseCases.getCurrencyAggregation(
-            accounts = listOf(account),
-            allTransactions = accountTransactions,
+        // Convert AccountCurrencyBalancesCardConfig to CurrencyBalancesCardConfig with accountId
+        val unifiedConfig = com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
+            cardId = cardConfig.cardId,
+            title = cardConfig.title,
+            isEnabled = cardConfig.isEnabled,
+            order = cardConfig.order,
+            layout = cardConfig.layout,
+            showBaseConversion = cardConfig.showBaseConversion,
             timelineRange = cardConfig.timelineRange,
+            accountId = accountId // Set accountId for account scope
+        )
+        
+        return cardComputationService.computeCurrencyTotals(
+            config = unifiedConfig,
+            accounts = listOf(account),
+            transactions = accountTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision

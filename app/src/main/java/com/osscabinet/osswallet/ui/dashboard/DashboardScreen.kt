@@ -149,7 +149,10 @@ fun DashboardScreen(
             override val pageCount: Int get() = pageCount
         }
     }
-    val tabs = listOf("Glance", "Recent Activities")
+    val tabs = listOf(
+        Icons.Rounded.Dashboard to "Glance",
+        Icons.Rounded.History to "Recent Activities"
+    )
 
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
 
@@ -263,7 +266,7 @@ fun DashboardScreen(
 fun DashboardContent(
     innerPadding: PaddingValues,
     pagerState: androidx.compose.foundation.pager.PagerState,
-    tabs: List<String>,
+    tabs: List<Pair<ImageVector, String>>,
     state: DashboardUiState.Success,
     currentTheme: String,
     gridColumns: Int,

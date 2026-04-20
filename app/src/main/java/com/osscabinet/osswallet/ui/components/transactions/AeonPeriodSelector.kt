@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,10 +64,11 @@ fun AeonPeriodSelector(
         }
     }
 
-    val pagerState = rememberPagerState(
-        initialPage = currentModePage,
-        pageCount = { 4 }
-    )
+    val pagerState = remember {
+        object : PagerState(currentPage = currentModePage) {
+            override val pageCount: Int get() = 4
+        }
+    }
 
     // Sync Pager -> Filter (on swipe)
     LaunchedEffect(pagerState.currentPage) {

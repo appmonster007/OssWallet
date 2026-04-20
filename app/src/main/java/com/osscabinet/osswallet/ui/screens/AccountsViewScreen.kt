@@ -16,6 +16,8 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.produceState
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -61,6 +63,19 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Color as AndroidColor
+
+/**
+ * Helper function to calculate 30% of screen height as dp padding.
+ * This ensures the scroll ends when the last item is 30% above the bottom.
+ */
+@Composable
+private fun calculateScrollBottomPadding(): Dp {
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenHeightPx = configuration.screenHeightDp * density.density
+    val thirtyPercentPx = screenHeightPx * 0.3f
+    return with(density) { thirtyPercentPx.toDp() }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -255,7 +270,7 @@ fun AccountsViewScreen(
                                 key = { it.cardId },
                                 onReorder = { cardManagerViewModel.reorderAccountsViewCards(it) },
                                 modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) { cardConfig, isDragging, dragModifier ->
                             when (cardConfig) {

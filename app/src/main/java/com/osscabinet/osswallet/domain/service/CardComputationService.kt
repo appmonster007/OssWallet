@@ -2,11 +2,13 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardScope
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import java.math.BigDecimal
@@ -54,6 +56,19 @@ interface CardComputationService {
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Pair<BigDecimal, CashFlowResult>
+
+    /**
+     * Computes account statistics for an accounts card.
+     * Filters transactions based on card scope (GLOBAL or ACCOUNT).
+     */
+    suspend fun computeAccountStats(
+        config: AccountsCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<List<Account>, Map<String, AccountSummaryItem>>
 }
 
 /**
@@ -165,6 +180,26 @@ class CardComputationServiceImpl(
         )
         
         return Pair(netWorth, cashFlow)
+    }
+
+    override suspend fun computeAccountStats(
+        config: AccountsCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        // Filter transactions based on timelineRange
+        val accountStats = financialUseCases.getAccountSummaries(
+            accounts = accounts,
+            allTransactions = transactions,
+            timelineRange = config.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+        return Pair(accounts, accountStats)
     }
 
     /**

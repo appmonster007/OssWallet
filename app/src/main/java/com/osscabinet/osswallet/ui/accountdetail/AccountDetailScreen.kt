@@ -89,6 +89,8 @@ fun AccountDetailScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddCardDialog by remember { mutableStateOf(false) }
 
+    val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
+
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
         AlertDialog(
@@ -188,6 +190,7 @@ fun AccountDetailScreen(
                                 ) {
                                     DynamicAccountDetailCards(
                                         state = state,
+                                        cardsConfig = accountDetailCardsConfig,
                                         cardManagerViewModel = cardManagerViewModel,
                                         accountDetailViewModel = accountDetailViewModel,
                                         currentTheme = currentTheme,
@@ -408,6 +411,7 @@ fun AccountDetailScreen(
 @Composable
 fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
+    cardsConfig: com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardsConfig,
     cardManagerViewModel: CardManagerViewModel,
     accountDetailViewModel: AccountDetailViewModel,
     currentTheme: String,
@@ -417,14 +421,13 @@ fun DynamicAccountDetailCards(
     showAddCardDialog: Boolean,
     onShowAddCardDialogChange: (Boolean) -> Unit
 ) {
-    val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier
     ) {
         CardReorderableList(
-            items = accountDetailCardsConfig.cards.sortedBy { it.order },
+            items = cardsConfig.cards.sortedBy { it.order },
             key = { it.cardId },
             onReorder = { reorderedCards ->
                 // Update order property based on new position and save atomically
@@ -451,13 +454,9 @@ fun DynamicAccountDetailCards(
                         modifier = Modifier.fillMaxWidth(),
                         showCurrencyBadges = cardConfig.showCurrencyBadges,
                         onShowCurrencyBadgesChange = { show ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig) {
-                                    config.copy(showCurrencyBadges = show)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardConfig.cardId, show)
                         },
-                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                        onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
@@ -473,20 +472,12 @@ fun DynamicAccountDetailCards(
                         showBaseConversion = cardConfig.showBaseConversion,
                         timelineRange = cardConfig.timelineRange,
                         onShowBaseConversionChange = { _, it ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
-                                    config.copy(showBaseConversion = it)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardCashFlowShowBaseConversion(cardConfig.cardId, it)
                         },
                         onTimelineRangeChange = { _, it ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
-                                    config.copy(timelineRange = it)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, it)
                         },
-                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                        onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
@@ -501,27 +492,15 @@ fun DynamicAccountDetailCards(
                         showBaseConversion = cardConfig.showBaseConversion,
                         timelineRange = cardConfig.timelineRange,
                         onLayoutChange = { _, it ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
-                                    config.copy(layout = it)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardCurrencyBalancesLayout(cardConfig.cardId, it)
                         },
                         onShowBaseConversionChange = { _, it ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
-                                    config.copy(showBaseConversion = it)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardCurrencyBalancesShowBaseConversion(cardConfig.cardId, it)
                         },
                         onTimelineRangeChange = { _, it ->
-                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
-                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
-                                    config.copy(timelineRange = it)
-                                } else config
-                            }
+                            accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, it)
                         },
-                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                        onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
             }
@@ -540,11 +519,11 @@ fun DynamicAccountDetailCards(
     
     if (showDeleteCardsDialog) {
         DeleteAccountDetailCardsDialog(
-            cardsConfig = accountDetailCardsConfig.cards,
+            cardsConfig = cardsConfig.cards,
             onDismiss = { showDeleteCardsDialog = false },
             onDeleteCards = { cardIds ->
                 cardIds.forEach { cardId ->
-                    cardManagerViewModel.removeAccountDetailCard(cardId)
+                    accountDetailViewModel.removeAccountDetailCard(cardId)
                 }
                 showDeleteCardsDialog = false
             }

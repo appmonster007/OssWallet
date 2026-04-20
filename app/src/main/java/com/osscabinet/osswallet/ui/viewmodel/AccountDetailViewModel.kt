@@ -20,7 +20,8 @@ class AccountDetailViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    private val financialUseCases: FinancialUseCases
+    private val financialUseCases: FinancialUseCases,
+    private val cardManagerViewModel: CardManagerViewModel
 ) : ViewModel() {
 
     fun updateCurrencyBalancesLayout(layout: String) {
@@ -62,6 +63,73 @@ class AccountDetailViewModel(
     fun updateUseNoteAsHeader(use: Boolean) {
         viewModelScope.launch {
             settingsDataStore.updateAccountDetailSettings { it.copy(transactionsSection = it.transactionsSection.copy(useNoteAsHeader = use)) }
+        }
+    }
+
+    // Card-specific update methods
+    fun updateCardHeroShowCurrencyBadges(cardId: String, show: Boolean) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig) {
+                    config.copy(showCurrencyBadges = show)
+                } else config
+            }
+        }
+    }
+
+    fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                    config.copy(showBaseConversion = show)
+                } else config
+            }
+        }
+    }
+
+    fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                    config.copy(timelineRange = range)
+                } else config
+            }
+        }
+    }
+
+    fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                    config.copy(layout = layout)
+                } else config
+            }
+        }
+    }
+
+    fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                    config.copy(showBaseConversion = show)
+                } else config
+            }
+        }
+    }
+
+    fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+        viewModelScope.launch {
+            cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
+                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                    config.copy(timelineRange = range)
+                } else config
+            }
+        }
+    }
+
+    fun removeAccountDetailCard(cardId: String) {
+        viewModelScope.launch {
+            cardManagerViewModel.removeAccountDetailCard(cardId)
         }
     }
 

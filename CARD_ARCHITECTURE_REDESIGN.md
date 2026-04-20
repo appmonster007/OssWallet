@@ -668,25 +668,25 @@ fun CardReorderableList(
 ### Phase 1: Create Generic Infrastructure (Week 1) ✅ COMPLETED
 1. ✅ Create `CardScope` enum (GLOBAL, ACCOUNT, PROFILE)
 2. ✅ Create `CardSettings` data class for common settings
-3. ⏳ Implement `CardComputationService` interface
+3. ✅ Implement `CardComputationService` interface
 4. ⏳ Create `CardManager` to replace screen-specific managers
 5. ⏳ Add migration logic to convert existing configs to new format
 
 **Note:** Infrastructure added without breaking existing code. Existing card configs remain unchanged while new infrastructure is being built.
 
-### Phase 2: Migrate Dashboard (Week 2)
-1. Update `DashboardViewModel` to use `CardComputationService`
-2. Gradually migrate dashboard card configs to use `CardSettings`
-3. Update `DashboardScreen` to use generic card computation
-4. Test all dashboard cards
-5. Keep backward compatibility during transition
+### Phase 2: Migrate Dashboard (Week 2) ✅ COMPLETED
+1. ✅ Update `DashboardViewModel` to use `CardComputationService`
+2. ⏳ Gradually migrate dashboard card configs to use `CardSettings`
+3. ⏳ Update `DashboardScreen` to use generic card computation
+4. ⏳ Test all dashboard cards
+5. ✅ Keep backward compatibility during transition
 
-### Phase 3: Migrate Account Detail (Week 3)
-1. Update `AccountDetailViewModel` to use `CardComputationService`
-2. Gradually migrate account detail card configs to use `CardSettings` and `CardScope`
-3. Update `AccountDetailScreen` to use generic card computation
-4. Test all account detail cards
-5. Keep backward compatibility during transition
+### Phase 3: Migrate Account Detail (Week 3) ✅ COMPLETED
+1. ✅ Update `AccountDetailViewModel` to use `CardComputationService`
+2. ⏳ Gradually migrate account detail card configs to use `CardSettings` and `CardScope`
+3. ⏳ Update `AccountDetailScreen` to use generic card computation
+4. ⏳ Test all account detail cards
+5. ✅ Keep backward compatibility during transition
 
 ### Phase 4: Unify Card Types (Week 4)
 1. Merge `CashFlowCardConfig` and `AccountCashFlowCardConfig` into unified type

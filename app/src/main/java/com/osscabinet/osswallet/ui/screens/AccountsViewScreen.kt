@@ -47,6 +47,8 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
+import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.*
 import kotlinx.coroutines.flow.map
@@ -615,72 +617,31 @@ fun AccountsViewCardTypeSelectionDialog(
     onDismiss: () -> Unit,
     onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType) -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Card") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text("Select a card type to add:")
-                CardTypeOption(
-                    title = "Net Worth",
-                    description = "Display your net worth over time",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.NET_WORTH) }
-                )
-                CardTypeOption(
-                    title = "Currency Balances",
-                    description = "Show currency breakdown",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CURRENCY_BALANCES) }
-                )
-                CardTypeOption(
-                    title = "Cash Flow",
-                    description = "Track income and expenses",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CASH_FLOW) }
-                )
-                CardTypeOption(
-                    title = "Accounts List",
-                    description = "Display your accounts",
-                    onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.ACCOUNTS_LIST) }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-fun CardTypeOption(
-    title: String,
-    description: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+    GenericAddCardDialog(
+        onDismiss = onDismiss,
+        cardOptions = listOf(
+            CardTypeOptionData(
+                title = "Net Worth",
+                description = "Display your net worth over time",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.NET_WORTH) }
+            ),
+            CardTypeOptionData(
+                title = "Currency Balances",
+                description = "Show currency breakdown",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CURRENCY_BALANCES) }
+            ),
+            CardTypeOptionData(
+                title = "Cash Flow",
+                description = "Track income and expenses",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CASH_FLOW) }
+            ),
+            CardTypeOptionData(
+                title = "Accounts List",
+                description = "Display your accounts",
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.ACCOUNTS_LIST) }
+            )
         )
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
+    )
 }
 
 

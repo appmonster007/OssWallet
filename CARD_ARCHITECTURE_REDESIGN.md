@@ -40,6 +40,323 @@
    - Bug fixes need to be applied in multiple locations
    - Hard to ensure consistency across screens
 
+## Architecture Flow Charts
+
+### Before: Current Architecture
+
+```mermaid
+graph TB
+    subgraph Dashboard_Screen
+        DS[DashboardScreen]
+        DVM[DashboardViewModel]
+        DC[DashboardCardsConfig]
+        DCM[CardManagerViewModel]
+    end
+
+    subgraph Account_Detail_Screen
+        ADS[AccountDetailScreen]
+        ADVM[AccountDetailViewModel]
+        ADC[AccountDetailCardsConfig]
+        ADCM[CardManagerViewModel]
+    end
+
+    subgraph Card_Configs_Dashboard
+        NW[NetWorthCardConfig]
+        CB[CurrencyBalancesCardConfig]
+        CF[CashFlowCardConfig]
+        AC[AccountsCardConfig]
+        BD[BudgetsCardConfig]
+        RA[RecentActivitiesCardConfig]
+    end
+
+    subgraph Card_Configs_Account
+        AH[AccountHeroCardConfig]
+        ACF[AccountCashFlowCardConfig]
+        ACB[AccountCurrencyBalancesCardConfig]
+    end
+
+    subgraph Computation_Logic
+        DCF[computeCashFlowForCard]
+        DCCT[computeCurrencyTotalsForCard]
+        DCNW[computeNetWorthForCard]
+        ADCF[computeCashFlowForCard]
+        ADCCT[computeCurrencyTotalsForCard]
+    end
+
+    subgraph Update_Methods
+        DUT[updateCardCashFlowTimelineRange]
+        DUSB[updateCardCashFlowShowBaseConversion]
+        ADUT[updateCardCashFlowTimelineRange]
+        ADUSB[updateCardCashFlowShowBaseConversion]
+    end
+
+    DS --> DVM
+    DVM --> DC
+    DC --> NW
+    DC --> CB
+    DC --> CF
+    DC --> AC
+    DC --> BD
+    DC --> RA
+    DVM --> DCF
+    DVM --> DCCT
+    DVM --> DCNW
+    DVM --> DUT
+    DVM --> DUSB
+    DVM --> DCM
+
+    ADS --> ADVM
+    ADVM --> ADC
+    ADC --> AH
+    ADC --> ACF
+    ADC --> ACB
+    ADVM --> ADCF
+    ADVM --> ADCCT
+    ADVM --> ADUT
+    ADVM --> ADUSB
+    ADVM --> ADCM
+
+    style DCF fill:#ff9999
+    style DCCT fill:#ff9999
+    style DCNW fill:#ff9999
+    style ADCF fill:#ff9999
+    style ADCCT fill:#ff9999
+    style DUT fill:#ff9999
+    style DUSB fill:#ff9999
+    style ADUT fill:#ff9999
+    style ADUSB fill:#ff9999
+
+    style CF fill:#ffcc99
+    style ACF fill:#ffcc99
+    style CB fill:#ffcc99
+    style ACB fill:#ffcc99
+```
+
+**Current Architecture Issues:**
+- 🔴 **Duplicated computation methods** (highlighted in red) - Same logic in both viewmodels
+- 🟠 **Duplicated card configs** (highlighted in orange) - CashFlowCardConfig vs AccountCashFlowCardConfig
+- 🔴 **Duplicated update methods** (highlighted in red) - Same update logic in both viewmodels
+- Tight coupling between screens and their specific card managers
+- No reuse of card types across screens
+
+### After: Proposed Architecture
+
+```mermaid
+graph TB
+    subgraph Unified_Card_System
+        CCS[CardComputationService]
+        CM[CardManager]
+        BCVM[BaseCardViewModel]
+    end
+
+    subgraph Dashboard_Screen
+        DS[DashboardScreen]
+        DVM[DashboardViewModel]
+    end
+
+    subgraph Account_Detail_Screen
+        ADS[AccountDetailScreen]
+        ADVM[AccountDetailViewModel]
+    end
+
+    subgraph Unified_Card_Configs
+        UCF[CashFlowCardConfig]
+        UCB[CurrencyBalancesCardConfig]
+        UNW[NetWorthCardConfig]
+        UAC[AccountsCardConfig]
+        UBD[BudgetsCardConfig]
+        URA[RecentActivitiesCardConfig]
+        UAH[AccountHeroCardConfig]
+    end
+
+    subgraph Card_Scopes
+        GS[GLOBAL Scope]
+        AS[ACCOUNT Scope]
+    end
+
+    subgraph Generic_Computation
+        GCF[computeCashFlow]
+        GCCT[computeCurrencyTotals]
+        GCNW[computeNetWorth]
+    end
+
+    subgraph Generic_Update_Methods
+        GUT[updateCardTimelineRange]
+        GUSB[updateCardShowBaseConversion]
+        GUL[updateCardLayout]
+        GR[removeCard]
+    end
+
+    DS --> DVM
+    DVM -->|extends| BCVM
+    DVM --> CM
+    DVM --> CCS
+
+    ADS --> ADVM
+    ADVM -->|extends| BCVM
+    ADVM --> CM
+    ADVM --> CCS
+
+    CM --> UCF
+    CM --> UCB
+    CM --> UNW
+    CM --> UAC
+    CM --> UBD
+    CM --> URA
+    CM --> UAH
+
+    UCF --> GS
+    UCF --> AS
+    UCB --> GS
+    UCB --> AS
+    UAH --> AS
+
+    CCS --> GCF
+    CCS --> GCCT
+    CCS --> GCNW
+
+    BCVM --> GUT
+    BCVM --> GUSB
+    BCVM --> GUL
+    BCVM --> GR
+
+    style GCF fill:#99ff99
+    style GCCT fill:#99ff99
+    style GCNW fill:#99ff99
+    style GUT fill:#99ff99
+    style GUSB fill:#99ff99
+    style GUL fill:#99ff99
+    style GR fill:#99ff99
+    style UCF fill:#99ccff
+    style UCB fill:#99ccff
+    style CCS fill:#ccffcc
+    style CM fill:#ccffcc
+    style BCVM fill:#ccffcc
+```
+
+**Proposed Architecture Benefits:**
+- 🟢 **Single computation service** (highlighted in green) - One implementation for all cards
+- 🟢 **Generic update methods** (highlighted in green) - Reusable across all viewmodels
+- 🔵 **Unified card configs** (highlighted in blue) - Single config per card type with scope
+- 🟢 **Generic infrastructure** (highlighted in light green) - Reusable service and manager
+- Cards can be reused across different screens
+- Scope-based filtering for data computation
+- Extensible for future card types and scopes
+
+### Data Flow Comparison
+
+#### Before: Current Data Flow
+```mermaid
+sequenceDiagram
+    participant DS as DashboardScreen
+    participant DVM as DashboardViewModel
+    participant DCF as computeCashFlowForCard
+    participant DCM as CardManagerViewModel
+
+    DS->>DVM: Get cash flow for card
+    DVM->>DCF: computeCashFlowForCard(config, transactions)
+    DCF->>DCF: Filter transactions (manual)
+    DCF->>DCF: Calculate cash flow
+    DCF-->>DVM: CashFlowResult
+    DVM-->>DS: Result
+
+    DS->>DVM: Update timeline range
+    DVM->>DVM: updateCardCashFlowTimelineRange(cardId, range)
+    DVM->>DCM: updateAccountDetailCard(cardId) { config.copy(timelineRange) }
+    DCM-->>DVM: Success
+
+    Note over DS,DCM: Same flow repeated in AccountDetailScreen<br/>with duplicated methods
+```
+
+#### After: Proposed Data Flow
+```mermaid
+sequenceDiagram
+    participant Screen as Any Screen
+    participant VM as ViewModel
+    participant CCS as CardComputationService
+    participant CM as CardManager
+
+    Screen->>VM: Get card data
+    VM->>CCS: computeCardData(config, context)
+    CCS->>CCS: Filter by scope (automatic)
+    CCS->>CCS: Calculate card data
+    CCS-->>VM: CardData
+    VM-->>Screen: Result
+
+    Screen->>VM: Update card setting
+    VM->>CM: updateCard(scope, cardId, update)
+    CM->>CM: Update config in storage
+    CM-->>VM: Success
+    VM-->>Screen: Updated
+
+    Note over Screen,CM: Single flow for all screens<br/>and all card types
+```
+
+### Component Relationship Diagram
+
+#### Before: Component Relationships
+```mermaid
+graph LR
+    subgraph Dashboard
+        DVM[DashboardViewModel]
+        DCC[DashboardCardConfig]
+        DComp[DashboardComputation]
+    end
+
+    subgraph AccountDetail
+        ADVM[AccountDetailViewModel]
+        ADCC[AccountDetailCardConfig]
+        ADComp[AccountDetailComputation]
+    end
+
+    DVM -.-> DCC
+    DVM -.-> DComp
+    ADVM -.-> ADCC
+    ADVM -.-> ADComp
+
+    DCC -.duplicate.-> ADCC
+    DComp -.duplicate.-> ADComp
+
+    style DCC fill:#ffcccc
+    style ADCC fill:#ffcccc
+    style DComp fill:#ffcccc
+    style ADComp fill:#ffcccc
+```
+
+#### After: Component Relationships
+```mermaid
+graph LR
+    subgraph Shared_Infrastructure
+        CM[CardManager]
+        CCS[CardComputationService]
+        UCC[UnifiedCardConfig]
+    end
+
+    subgraph Dashboard
+        DVM[DashboardViewModel]
+    end
+
+    subgraph AccountDetail
+        ADVM[AccountDetailViewModel]
+    end
+
+    DVM --> CM
+    DVM --> CCS
+    ADVM --> CM
+    ADVM --> CCS
+
+    CM --> UCC
+    CCS --> UCC
+
+    DVM -.extends.-> BCVM[BaseCardViewModel]
+    ADVM -.extends.-> BCVM
+
+    style CM fill:#ccffcc
+    style CCS fill:#ccffcc
+    style UCC fill:#ccffcc
+    style BCVM fill:#ccffcc
+```
+
 ## Proposed Redesign
 
 ### 1. Generic Card Configuration System

@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -350,7 +351,11 @@ fun AdvancedColorPickerDialog(
         mutableStateOf(Triple(hsvOut[0], hsvOut[1], hsvOut[2]))
     }
 
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pagerState = remember {
+        object : PagerState() {
+            override val pageCount: Int get() = 2
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

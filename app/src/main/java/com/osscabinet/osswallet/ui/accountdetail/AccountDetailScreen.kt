@@ -5,13 +5,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +32,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.ui.components.NavigationPill
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
@@ -75,8 +79,12 @@ fun AccountDetailScreen(
         }
     }
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Overview", "Transactions")
+    val pageCount = 2
+    val pagerState = rememberPagerState(initialPage = 0) { pageCount }
+    val tabs: List<Pair<ImageVector, String>> = listOf(
+        Icons.Rounded.Dashboard to "Overview",
+        Icons.Rounded.Receipt to "Transactions"
+    )
 
     var showSettingsDialog by remember { mutableStateOf(false) }
 
@@ -127,89 +135,71 @@ fun AccountDetailScreen(
 
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { 
-                        val title = when (val state = uiState) {
-                            is AccountDetailUiState.Success -> state.account.name
-                            else -> "Account"
-                        }
-                        Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) 
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navigate { onBackClick() } }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Edit")
-                        }
-                        IconButton(onClick = { showSettingsDialog = true }) {
-                            Icon(Icons.Rounded.Settings, contentDescription = "Settings")
-                        }
+            TopAppBar(
+                title = {
+                    val title = when (val state = uiState) {
+                        is AccountDetailUiState.Success -> state.account.name
+                        else -> "Account"
                     }
-                )
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    divider = {}
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                )
-                            }
-                        )
+                    Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navigate { onBackClick() } }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
+                        Icon(Icons.Rounded.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = { showSettingsDialog = true }) {
+                        Icon(Icons.Rounded.Settings, contentDescription = "Settings")
                     }
                 }
-            }
+            )
         }
     ) { screenPadding ->
-        when (val state = uiState) {
-            is AccountDetailUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (val state = uiState) {
+                is AccountDetailUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-            is AccountDetailUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(state.message)
+                is AccountDetailUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(state.message)
+                    }
                 }
-            }
-            is AccountDetailUiState.Success -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    if (selectedTabIndex == 0) {
-                        DynamicAccountDetailCards(
-                            state = state,
-                            cardManagerViewModel = cardManagerViewModel,
-                            accountDetailViewModel = accountDetailViewModel,
-                            currentTheme = currentTheme,
-                            accountId = accountId,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            screenPadding = screenPadding
-                        )
-                    } else {
+                is AccountDetailUiState.Success -> {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(screenPadding),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        when (page) {
+                            0 -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.background)
+                                ) {
+                                    DynamicAccountDetailCards(
+                                        state = state,
+                                        cardManagerViewModel = cardManagerViewModel,
+                                        accountDetailViewModel = accountDetailViewModel,
+                                        currentTheme = currentTheme,
+                                        accountId = accountId,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 16.dp),
+                                        screenPadding = PaddingValues()
+                                    )
+                                }
+                            }
+                            1 -> {
                         // Transactions tab content (same as original)
                         val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.initialBalance) {
                             var currentBalance = state.account.initialBalance
@@ -382,16 +372,24 @@ fun AccountDetailScreen(
                                 }
                             }
                         }
+                                    }
                     }
                 }
             }
         }
 
+        NavigationPill(
+            pagerState = pagerState,
+            tabs = tabs,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+
         AeonExpandableFab(
             onAddClick = { type, name -> navigate { onAddTransactionClick(accountId, type, name) } },
             templates = allTemplates,
-            fabPaddingBottom = if (selectedTabIndex == 1) 100.dp else 16.dp
+            fabPaddingBottom = if (pagerState.currentPage == 1) 100.dp else 16.dp
         )
+        }
     }
 }
 

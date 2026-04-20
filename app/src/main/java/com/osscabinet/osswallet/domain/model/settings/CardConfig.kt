@@ -7,6 +7,29 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
+ * Card scope determines the context in which a card operates.
+ * GLOBAL: Dashboard - all accounts
+ * ACCOUNT: Account Detail - single account
+ * PROFILE: Future - profile-level cards
+ */
+@Serializable
+enum class CardScope {
+    GLOBAL,
+    ACCOUNT,
+    PROFILE
+}
+
+/**
+ * Common settings shared across different card types.
+ */
+@Serializable
+data class CardSettings(
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val showBaseConversion: Boolean = true,
+    val layout: String = "grid"
+)
+
+/**
  * Base sealed class for all dashboard card configurations.
  * Each card type extends this with its specific settings.
  */

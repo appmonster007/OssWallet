@@ -71,7 +71,8 @@ data class CurrencyBalancesCardConfig(
     override val order: Int = 1,
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val accountId: String? = null // For account scope (null = global)
 ) : CardConfig()
 
 /**
@@ -85,7 +86,8 @@ data class CashFlowCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 2,
     val showBaseConversion: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val accountId: String? = null // For account scope (null = global)
 ) : CardConfig()
 
 /**

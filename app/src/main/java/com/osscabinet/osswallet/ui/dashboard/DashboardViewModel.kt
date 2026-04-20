@@ -40,7 +40,8 @@ class DashboardViewModel(
     private val analyticsViewModel: AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel,
-    private val settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+    private val settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
@@ -248,22 +249,14 @@ class DashboardViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Pair<BigDecimal, CashFlowResult> {
-        val netWorth = financialUseCases.calculateNetWorth(
+        return cardComputationService.computeNetWorth(
+            config = cardConfig,
             accounts = accounts,
-            allTransactions = allTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision,
-            timelineRange = cardConfig.timelineRange
-        )
-        val cashFlow = financialUseCases.calculateCashFlow(
-            allTransactions = allTransactions,
-            timelineRange = cardConfig.timelineRange,
+            transactions = allTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
         )
-        return Pair(netWorth, cashFlow)
     }
 
     suspend fun computeCurrencyTotalsForCard(
@@ -274,10 +267,10 @@ class DashboardViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CurrencyAggregationItem> {
-        return financialUseCases.getCurrencyAggregation(
+        return cardComputationService.computeCurrencyTotals(
+            config = cardConfig,
             accounts = accounts,
-            allTransactions = allTransactions,
-            timelineRange = cardConfig.timelineRange,
+            transactions = allTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
@@ -291,9 +284,9 @@ class DashboardViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): CashFlowResult {
-        return financialUseCases.calculateCashFlow(
-            allTransactions = allTransactions,
-            timelineRange = cardConfig.timelineRange,
+        return cardComputationService.computeCashFlow(
+            config = cardConfig,
+            transactions = allTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision

@@ -199,7 +199,15 @@ class CardComputationServiceImpl(
             exchangeRates = exchangeRates,
             precision = precision
         )
-        return Pair(accounts, accountStats)
+        // Update accounts with timeline-filtered balances
+        val updatedAccounts = financialUseCases.getTotalBalances(
+            accounts = accounts,
+            allTransactions = transactions,
+            exchangeRates = exchangeRates,
+            precision = precision,
+            timelineRange = config.timelineRange
+        )
+        return Pair(updatedAccounts, accountStats)
     }
 
     /**

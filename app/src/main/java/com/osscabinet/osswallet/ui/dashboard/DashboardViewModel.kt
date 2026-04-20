@@ -301,22 +301,14 @@ class DashboardViewModel(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val accountStats = financialUseCases.getAccountSummaries(
+        return cardComputationService.computeAccountStats(
+            config = cardConfig,
             accounts = accounts,
-            allTransactions = allTransactions,
-            timelineRange = cardConfig.timelineRange,
+            transactions = allTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
         )
-        val updatedAccounts = financialUseCases.getTotalBalances(
-            accounts = accounts,
-            allTransactions = allTransactions,
-            exchangeRates = exchangeRates,
-            precision = precision,
-            timelineRange = cardConfig.timelineRange
-        )
-        return Pair(updatedAccounts, accountStats)
     }
 
     // NEW: Card ViewState computation functions

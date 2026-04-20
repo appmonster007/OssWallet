@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.produceState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -356,9 +357,8 @@ fun AccountsViewScreen(
                                     } ?: Box(modifier = Modifier.size(0.dp))
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig -> {
-                                    var accountStatsData by remember { mutableStateOf<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null) }
-                                    LaunchedEffect(cardConfig, state) {
-                                        accountStatsData = accountsViewViewModel.computeAccountStatsForCard(
+                                    val accountStatsData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                        value = accountsViewViewModel.computeAccountStatsForCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
                                             allTransactions = state.allTransactions,

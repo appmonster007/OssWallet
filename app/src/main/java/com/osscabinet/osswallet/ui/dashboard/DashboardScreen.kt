@@ -71,6 +71,8 @@ import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
+import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
@@ -545,104 +547,39 @@ fun AddCardDialog(
     onDismiss: () -> Unit,
     onAddCard: (String) -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Add New Card",
-                style = MaterialTheme.typography.headlineSmall
+    GenericAddCardDialog(
+        onDismiss = onDismiss,
+        cardOptions = listOf(
+            CardTypeOptionData(
+                title = "Net Worth",
+                description = "Track your total net worth over time",
+                icon = Icons.Default.AccountBalance,
+                onClick = { onAddCard("net_worth") }
+            ),
+            CardTypeOptionData(
+                title = "Currency Balances",
+                description = "View balances across different currencies",
+                icon = Icons.Default.AttachMoney,
+                onClick = { onAddCard("currency_balances") }
+            ),
+            CardTypeOptionData(
+                title = "Cash Flow",
+                description = "Track income and expenses",
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
+                onClick = { onAddCard("cash_flow") }
+            ),
+            CardTypeOptionData(
+                title = "Accounts",
+                description = "View your account summaries",
+                icon = Icons.Default.AccountBox,
+                onClick = { onAddCard("accounts") }
+            ),
+            CardTypeOptionData(
+                title = "Budgets",
+                description = "Monitor your budget progress",
+                icon = Icons.Default.PieChart,
+                onClick = { onAddCard("budgets") }
             )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Select a card type to add to your dashboard:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                CardTypeOption(
-                    name = "Net Worth",
-                    description = "Track your total net worth over time",
-                    icon = Icons.Default.AccountBalance,
-                    onClick = { onAddCard("net_worth") }
-                )
-                CardTypeOption(
-                    name = "Currency Balances",
-                    description = "View balances across different currencies",
-                    icon = Icons.Default.AttachMoney,
-                    onClick = { onAddCard("currency_balances") }
-                )
-                CardTypeOption(
-                    name = "Cash Flow",
-                    description = "Track income and expenses",
-                    icon = Icons.AutoMirrored.Filled.TrendingUp,
-                    onClick = { onAddCard("cash_flow") }
-                )
-                CardTypeOption(
-                    name = "Accounts",
-                    description = "View your account summaries",
-                    icon = Icons.Default.AccountBox,
-                    onClick = { onAddCard("accounts") }
-                )
-                CardTypeOption(
-                    name = "Budgets",
-                    description = "Monitor your budget progress",
-                    icon = Icons.Default.PieChart,
-                    onClick = { onAddCard("budgets") }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-fun CardTypeOption(
-    name: String,
-    description: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
+    )
 }

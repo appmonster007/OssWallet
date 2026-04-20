@@ -665,29 +665,42 @@ fun CardReorderableList(
 
 ## Migration Strategy
 
-### Phase 1: Create Generic Infrastructure (Week 1)
-1. Create `CardConfig` base classes and unified card types
-2. Implement `CardComputationService` interface
-3. Create `CardManager` to replace screen-specific managers
-4. Add migration logic to convert existing configs to new format
+### Phase 1: Create Generic Infrastructure (Week 1) ✅ COMPLETED
+1. ✅ Create `CardScope` enum (GLOBAL, ACCOUNT, PROFILE)
+2. ✅ Create `CardSettings` data class for common settings
+3. ⏳ Implement `CardComputationService` interface
+4. ⏳ Create `CardManager` to replace screen-specific managers
+5. ⏳ Add migration logic to convert existing configs to new format
+
+**Note:** Infrastructure added without breaking existing code. Existing card configs remain unchanged while new infrastructure is being built.
 
 ### Phase 2: Migrate Dashboard (Week 2)
-1. Update `DashboardViewModel` to use `CardManager`
-2. Replace dashboard-specific card configs with unified ones
-3. Update `DashboardScreen` to use generic card rendering
+1. Update `DashboardViewModel` to use `CardComputationService`
+2. Gradually migrate dashboard card configs to use `CardSettings`
+3. Update `DashboardScreen` to use generic card computation
 4. Test all dashboard cards
+5. Keep backward compatibility during transition
 
 ### Phase 3: Migrate Account Detail (Week 3)
-1. Update `AccountDetailViewModel` to use `CardManager`
-2. Replace account-specific card configs with unified ones
-3. Update `AccountDetailScreen` to use generic card rendering
+1. Update `AccountDetailViewModel` to use `CardComputationService`
+2. Gradually migrate account detail card configs to use `CardSettings` and `CardScope`
+3. Update `AccountDetailScreen` to use generic card computation
 4. Test all account detail cards
+5. Keep backward compatibility during transition
 
-### Phase 4: Cleanup (Week 4)
+### Phase 4: Unify Card Types (Week 4)
+1. Merge `CashFlowCardConfig` and `AccountCashFlowCardConfig` into unified type
+2. Merge `CurrencyBalancesCardConfig` and `AccountCurrencyBalancesCardConfig` into unified type
+3. Add `accountId` field to unified configs for account scope
+4. Update serialization to handle both old and new formats
+5. Test data migration
+
+### Phase 5: Cleanup (Week 5)
 1. Remove old screen-specific card configs
 2. Remove old computation methods from viewmodels
 3. Update tests to use new architecture
 4. Documentation updates
+5. Remove deprecated code
 
 ## Benefits
 

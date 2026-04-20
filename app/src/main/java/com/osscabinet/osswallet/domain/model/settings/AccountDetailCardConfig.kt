@@ -29,7 +29,8 @@ data class AccountHeroCardConfig(
     override val cardId: String,
     override val title: String = "ACCOUNT SUMMARY",
     override val isEnabled: Boolean = true,
-    override val order: Int = 0
+    override val order: Int = 0,
+    val showCurrencyBadges: Boolean = true
 ) : AccountDetailCardConfig()
 
 /**

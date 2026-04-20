@@ -448,7 +448,16 @@ fun DynamicAccountDetailCards(
                         baseCurrency = state.baseCurrency,
                         exchangeRates = state.exchangeRates,
                         precision = state.decimalPrecision,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        showCurrencyBadges = cardConfig.showCurrencyBadges,
+                        onShowCurrencyBadgesChange = { show ->
+                            cardManagerViewModel.updateAccountDetailCard(cardConfig.cardId) { config ->
+                                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig) {
+                                    config.copy(showCurrencyBadges = show)
+                                } else config
+                            }
+                        },
+                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
@@ -476,7 +485,8 @@ fun DynamicAccountDetailCards(
                                     config.copy(timelineRange = it)
                                 } else config
                             }
-                        }
+                        },
+                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
@@ -510,7 +520,8 @@ fun DynamicAccountDetailCards(
                                     config.copy(timelineRange = it)
                                 } else config
                             }
-                        }
+                        },
+                        onDelete = { cardManagerViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
             }

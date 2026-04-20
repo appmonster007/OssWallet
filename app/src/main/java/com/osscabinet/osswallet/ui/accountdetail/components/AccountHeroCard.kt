@@ -3,11 +3,18 @@ package com.osscabinet.ossWallet.ui.accountdetail.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -36,8 +43,12 @@ fun AccountHeroCard(
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
-    precision: Int = 2
+    precision: Int = 2,
+    showCurrencyBadges: Boolean = true,
+    onShowCurrencyBadgesChange: (Boolean) -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
+    var showSettings by remember { mutableStateOf(false) }
     val accountColor = try {
         Color(account.colorHex.toColorInt())
     } catch (e: Exception) {
@@ -72,6 +83,21 @@ fun AccountHeroCard(
                     .alpha(0.12f),
                 tint = contentColor
             )
+
+            // More Options Button
+            IconButton(
+                onClick = { showSettings = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(24.dp)
+            ) {
+                Icon(
+                    Icons.Default.MoreHoriz,
+                    contentDescription = "Settings",
+                    tint = contentColor.copy(alpha = 0.7f)
+                )
+            }
 
             Column(modifier = Modifier.padding(24.dp)) {
                 // First Row: Account Icon, Name, Structure Type and Balance
@@ -153,5 +179,58 @@ fun AccountHeroCard(
                 }
             }
         }
+    }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            dismissButton = {
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete card",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) {
+                    Text("Done")
+                }
+            },
+            title = {
+                Text(
+                    "Account Summary Settings",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Show Currency Badges", style = MaterialTheme.typography.bodyLarge)
+                            Text("Display currency breakdown badges on balance", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                        Switch(
+                            checked = showCurrencyBadges,
+                            onCheckedChange = { onShowCurrencyBadgesChange(it) }
+                        )
+                    }
+                }
+            },
+            shape = RoundedCornerShape(32.dp),
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     }
 }

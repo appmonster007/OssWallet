@@ -32,7 +32,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
@@ -255,75 +259,139 @@ fun AccountsViewScreen(
                             ) { cardConfig, isDragging, dragModifier ->
                             when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig -> {
-                                    NetWorthCard(
-                                        uiState = netWorthUiState,
-                                        cardId = cardConfig.cardId,
-                                        fontSize = cardConfig.fontSize,
-                                        timelineRange = cardConfig.timelineRange,
-                                        onFontSizeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthFontSize(cardId, it) },
-                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthTimelineRange(cardId, it) },
-                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        headerModifier = dragModifier
-                                    )
+                                    var cardNetWorthData by remember { mutableStateOf<Pair<BigDecimal, CashFlowResult>?>(null) }
+                                    LaunchedEffect(cardConfig, state) {
+                                        cardNetWorthData = accountsViewViewModel.computeNetWorthForCard(
+                                            cardConfig = cardConfig,
+                                            accounts = state.accounts,
+                                            allTransactions = state.allTransactions,
+                                            baseCurrency = state.baseCurrency,
+                                            exchangeRates = state.exchangeRates,
+                                            precision = state.decimalPrecision
+                                        )
+                                    }
+
+                                    cardNetWorthData?.let { (netWorth, cashFlow) ->
+                                        val cardUiState = NetWorthUiState.Success(
+                                            netWorth = netWorth,
+                                            netIncome = cashFlow.totalIncomeInBase,
+                                            netExpense = cashFlow.totalExpensesInBase,
+                                            baseCurrency = state.baseCurrency,
+                                            precision = state.decimalPrecision,
+                                            fontSize = cardConfig.fontSize,
+                                            timelineRange = cardConfig.timelineRange
+                                        )
+                                        NetWorthCard(
+                                            uiState = cardUiState,
+                                            cardId = cardConfig.cardId,
+                                            fontSize = cardConfig.fontSize,
+                                            timelineRange = cardConfig.timelineRange,
+                                            onFontSizeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthFontSize(cardId, it) },
+                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthTimelineRange(cardId, it) },
+                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            headerModifier = dragModifier
+                                        )
+                                    } ?: Box(modifier = Modifier.size(0.dp))
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig -> {
-                                    CurrencyBalancesCard(
-                                        currencyTotals = state.currencyTotals,
-                                        baseCurrency = state.baseCurrency,
-                                        cardId = cardConfig.cardId,
-                                        precision = state.decimalPrecision,
-                                        layout = cardConfig.layout,
-                                        showBaseConversion = cardConfig.showBaseConversion,
-                                        timelineRange = cardConfig.timelineRange,
-                                        onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesLayout(cardId, it) },
-                                        onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
-                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
-                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                        headerModifier = dragModifier,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                    var currencyTotals by remember { mutableStateOf<List<CurrencyAggregationItem>?>(null) }
+                                    LaunchedEffect(cardConfig, state) {
+                                        currencyTotals = accountsViewViewModel.computeCurrencyTotalsForCard(
+                                            cardConfig = cardConfig,
+                                            accounts = state.accounts,
+                                            allTransactions = state.allTransactions,
+                                            baseCurrency = state.baseCurrency,
+                                            exchangeRates = state.exchangeRates,
+                                            precision = state.decimalPrecision
+                                        )
+                                    }
+
+                                    currencyTotals?.let { totals ->
+                                        CurrencyBalancesCard(
+                                            currencyTotals = totals,
+                                            baseCurrency = state.baseCurrency,
+                                            cardId = cardConfig.cardId,
+                                            precision = state.decimalPrecision,
+                                            layout = cardConfig.layout,
+                                            showBaseConversion = cardConfig.showBaseConversion,
+                                            timelineRange = cardConfig.timelineRange,
+                                            onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesLayout(cardId, it) },
+                                            onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
+                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
+                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
+                                            headerModifier = dragModifier,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    } ?: Box(modifier = Modifier.size(0.dp))
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig -> {
-                                    CashFlowCard(
-                                        cashFlowResult = state.cashFlowResult,
-                                        baseCurrency = state.baseCurrency,
-                                        currentTheme = currentTheme,
-                                        cardId = cardConfig.cardId,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        headerModifier = dragModifier,
-                                        showTitle = true,
-                                        precision = state.decimalPrecision,
-                                        showBaseConversion = cardConfig.showBaseConversion,
-                                        timelineRange = cardConfig.timelineRange,
-                                        onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
-                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
-                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
-                                    )
+                                    var cashFlowResult by remember { mutableStateOf<CashFlowResult?>(null) }
+                                    LaunchedEffect(cardConfig, state) {
+                                        cashFlowResult = accountsViewViewModel.computeCashFlowForCard(
+                                            cardConfig = cardConfig,
+                                            allTransactions = state.allTransactions,
+                                            baseCurrency = state.baseCurrency,
+                                            exchangeRates = state.exchangeRates,
+                                            precision = state.decimalPrecision
+                                        )
+                                    }
+
+                                    cashFlowResult?.let { result ->
+                                        CashFlowCard(
+                                            cashFlowResult = result,
+                                            baseCurrency = state.baseCurrency,
+                                            currentTheme = currentTheme,
+                                            cardId = cardConfig.cardId,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            headerModifier = dragModifier,
+                                            showTitle = true,
+                                            precision = state.decimalPrecision,
+                                            showBaseConversion = cardConfig.showBaseConversion,
+                                            timelineRange = cardConfig.timelineRange,
+                                            onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
+                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
+                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                        )
+                                    } ?: Box(modifier = Modifier.size(0.dp))
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig -> {
-                                    AccountsCard(
-                                        onManageClick = { navigate(onManageAccountsClick) },
-                                        onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                        onGridColumnsChange = { cardId, it -> accountsViewViewModel.updateCardAccountsGridColumns(cardId, it) },
-                                        accounts = state.accounts,
-                                        accountStats = state.accountStats,
-                                        baseCurrency = state.baseCurrency,
-                                        cardId = cardConfig.cardId,
-                                        currentTheme = currentTheme,
-                                        gridColumns = cardConfig.gridColumns,
-                                        precision = state.decimalPrecision,
-                                        layout = cardConfig.layout,
-                                        onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardAccountsLayout(cardId, it) },
-                                        timelineRange = cardConfig.timelineRange,
-                                        onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardAccountsTimelineRange(cardId, it) },
-                                        showAddAccountCard = cardConfig.showAddAccountCard,
-                                        onShowAddAccountCardChange = { cardId, it -> accountsViewViewModel.updateCardAccountsShowAddAccountCard(cardId, it) },
-                                        onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                        headerModifier = dragModifier.fillMaxWidth(),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        settingsTitle = "Accounts List Settings"
-                                    )
+                                    var accountStatsData by remember { mutableStateOf<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null) }
+                                    LaunchedEffect(cardConfig, state) {
+                                        accountStatsData = accountsViewViewModel.computeAccountStatsForCard(
+                                            cardConfig = cardConfig,
+                                            accounts = state.accounts,
+                                            allTransactions = state.allTransactions,
+                                            baseCurrency = state.baseCurrency,
+                                            exchangeRates = state.exchangeRates,
+                                            precision = state.decimalPrecision
+                                        )
+                                    }
+
+                                    accountStatsData?.let { (accounts, accountStats) ->
+                                        AccountsCard(
+                                            onManageClick = { navigate(onManageAccountsClick) },
+                                            onAccountClick = { id -> navigate { onAccountClick(id) } },
+                                            onGridColumnsChange = { cardId, it -> accountsViewViewModel.updateCardAccountsGridColumns(cardId, it) },
+                                            accounts = accounts,
+                                            accountStats = accountStats,
+                                            baseCurrency = state.baseCurrency,
+                                            cardId = cardConfig.cardId,
+                                            currentTheme = currentTheme,
+                                            gridColumns = cardConfig.gridColumns,
+                                            precision = state.decimalPrecision,
+                                            layout = cardConfig.layout,
+                                            onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardAccountsLayout(cardId, it) },
+                                            timelineRange = cardConfig.timelineRange,
+                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardAccountsTimelineRange(cardId, it) },
+                                            showAddAccountCard = cardConfig.showAddAccountCard,
+                                            onShowAddAccountCardChange = { cardId, it -> accountsViewViewModel.updateCardAccountsShowAddAccountCard(cardId, it) },
+                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
+                                            headerModifier = dragModifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            settingsTitle = "Accounts List Settings"
+                                        )
+                                    } ?: Box(modifier = Modifier.size(0.dp))
                                 }
                             }
                         }

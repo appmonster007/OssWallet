@@ -8,6 +8,9 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -323,6 +326,86 @@ class AccountsViewViewModel(
                 cardConfig.copy(timelineRange = range)
             } else cardConfig
         }
+    }
+
+    // Helper functions to compute data for a specific card based on its config
+    suspend fun computeNetWorthForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<BigDecimal, CashFlowResult> {
+        val netWorth = financialUseCases.calculateNetWorth(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision,
+            timelineRange = cardConfig.timelineRange
+        )
+        val cashFlow = financialUseCases.calculateCashFlow(
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+        return Pair(netWorth, cashFlow)
+    }
+
+    suspend fun computeCurrencyTotalsForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<CurrencyAggregationItem> {
+        return financialUseCases.getCurrencyAggregation(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    suspend fun computeCashFlowForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        return financialUseCases.calculateCashFlow(
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    suspend fun computeAccountStatsForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig,
+        accounts: List<Account>,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        val accountStats = financialUseCases.getAccountSummaries(
+            accounts = accounts,
+            allTransactions = allTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+        return Pair(accounts, accountStats)
     }
 }
 

@@ -104,7 +104,7 @@ fun AeonFloatingActionButton(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
     ) {
         Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(24.dp))
@@ -125,7 +125,7 @@ fun AeonExtendedFloatingActionButton(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
         icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
         text = { 

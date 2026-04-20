@@ -48,6 +48,7 @@ fun RecentActivitiesCard(
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     accountCurrencyMap: Map<String, String> = emptyMap(),
+    contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
     modifier: Modifier = Modifier
 ) {
     val calendar = Calendar.getInstance()
@@ -64,7 +65,7 @@ fun RecentActivitiesCard(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(0.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
+        contentPadding = contentPadding
     ) {
         item {
             AeonFlowSectionHeader(

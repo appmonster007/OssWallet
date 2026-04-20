@@ -133,6 +133,41 @@ class AccountDetailViewModel(
         }
     }
 
+    // Card-specific compute methods
+    suspend fun computeCashFlowForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig,
+        accountTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        return financialUseCases.calculateCashFlow(
+            allTransactions = accountTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    suspend fun computeCurrencyTotalsForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig,
+        account: Account,
+        accountTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<CurrencyAggregationItem> {
+        return financialUseCases.getCurrencyAggregation(
+            accounts = listOf(account),
+            allTransactions = accountTransactions,
+            timelineRange = cardConfig.timelineRange,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
     val uiState: StateFlow<AccountDetailUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(

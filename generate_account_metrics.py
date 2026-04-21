@@ -260,8 +260,8 @@ def calculate_global_breakdown(all_transactions: List[Dict[str, Any]]) -> Dict[s
     return global_breakdown
 
 
-def generate_metrics(accounts_csv: str, transactions_csv: str, output_json: str):
-    """Generate account_metrics.json from CSV files."""
+def generate_metrics(accounts_csv: str, transactions_csv: str):
+    """Generate account metrics from CSV files and print JSON output."""
     
     # Load data
     accounts = load_accounts(accounts_csv)
@@ -330,22 +330,14 @@ def generate_metrics(accounts_csv: str, transactions_csv: str, output_json: str)
         'exchangeRatesUsed': EXCHANGE_RATES
     }
     
-    # Write to JSON file
-    with open(output_json, 'w') as f:
-        json.dump(output, f, indent=2)
-    
-    print(f"Generated {output_json}")
-    print(f"  Accounts: {len(accounts)}")
-    print(f"  Transactions: {len(all_transactions)}")
-    print(f"  Total Balance: ${total_balance:,.2f}")
-    print(f"  Currencies: {', '.join(sorted(currencies_used))}")
+    # Print JSON to stdout
+    print(json.dumps(output, indent=2))
 
 
 if __name__ == '__main__':
     # File paths
     accounts_csv = 'app/src/main/assets/accounts.csv'
     transactions_csv = 'app/src/main/assets/transactions.csv'
-    output_json = 'app/src/main/assets/account_metrics.json'
     
-    # Generate metrics
-    generate_metrics(accounts_csv, transactions_csv, output_json)
+    # Generate metrics and print to stdout
+    generate_metrics(accounts_csv, transactions_csv)

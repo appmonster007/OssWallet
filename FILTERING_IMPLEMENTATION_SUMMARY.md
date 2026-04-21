@@ -27,7 +27,7 @@ Created the following new domain models in `domain/model/filter/`:
 
 **UnifiedFilter.kt**
 - Sealed class defining all filter types:
-  - **Atomic Filters:** NoteFilter, PayeeFilter, CategoryFilter, AccountFilter, DateRangeFilter, AmountFilter, PaymentMethodFilter, CurrencyFilter, IncomeTypeFilter, WarrantyFilter
+  - **Atomic Filters:** TextFilter (searches both note and payee), CategoryFilter, AccountFilter, DateRangeFilter, AmountFilter, PaymentMethodFilter, CurrencyFilter, IncomeTypeFilter, WarrantyFilter
   - **Composite Filter:** Combines multiple filters with logical operators
   - **Saved Filter Reference:** References saved filters by ID for composition
 - Type-safe and extensible design
@@ -68,6 +68,13 @@ Created the following new domain models in `domain/model/filter/`:
    - Thread-safe by design
 
 ### What This Enables
+
+#### Unified Text Search
+```kotlin
+// Single text search that checks both note and payee fields
+val textFilter = TextFilter(query = "coffee", isRegex = false)
+// This will find transactions where "coffee" appears in either note or payee
+```
 
 #### Filter Stacking
 ```kotlin
@@ -156,12 +163,13 @@ val convertedBack = newStack.toTransactionFilter()
 
 ### Problems Solved by New Architecture
 
-1. ✅ **Standard Format** - UnifiedFilter unifies all filter types
-2. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
-3. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
-4. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
-5. ✅ **Type Safety** - Sealed classes prevent invalid combinations
-6. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
+1. ✅ **Unified Text Search** - TextFilter searches both note and payee fields with a single input
+2. ✅ **Standard Format** - UnifiedFilter unifies all filter types
+3. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
+4. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
+5. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
+6. ✅ **Type Safety** - Sealed classes prevent invalid combinations
+7. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
 
 ### Files Created
 

@@ -12,18 +12,10 @@ sealed class UnifiedFilter {
     // ========== Atomic Filters (Single Criteria) ==========
     
     /**
-     * Filter transactions by note content.
+     * Filter transactions by text content (searches both note and payee fields).
+     * This provides a unified search experience without requiring users to specify which field to search.
      */
-    data class NoteFilter(
-        val query: String,
-        val isRegex: Boolean = false,
-        val operator: FilterOperator = FilterOperator.CONTAINS
-    ) : UnifiedFilter()
-    
-    /**
-     * Filter transactions by payee.
-     */
-    data class PayeeFilter(
+    data class TextFilter(
         val query: String,
         val isRegex: Boolean = false,
         val operator: FilterOperator = FilterOperator.CONTAINS

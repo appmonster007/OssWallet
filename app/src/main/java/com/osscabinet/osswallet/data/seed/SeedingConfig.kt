@@ -23,7 +23,7 @@ object SeedingConfig {
      * Master toggle for seeding functionality.
      * Change this to false to disable seeding globally.
      */
-    const val SEEDING_ENABLED = BuildConfig.ENABLE_SEEDING && BuildConfig.DEBUG
+    val SEEDING_ENABLED = BuildConfig.ENABLE_SEEDING && BuildConfig.DEBUG
 
     /**
      * Check if seeding should run based on configuration

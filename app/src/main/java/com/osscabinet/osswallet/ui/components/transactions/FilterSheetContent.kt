@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,7 +31,7 @@ import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FilterSheetContent(
     filter: TransactionFilter,
@@ -81,7 +82,7 @@ fun FilterSheetContent(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             // Sticky: Handle/Selector at top
-            item {
+            stickyHeader {
                 AeonPeriodSelector(
                     filter = localFilter,
                     onSetDateRange = { start, end ->

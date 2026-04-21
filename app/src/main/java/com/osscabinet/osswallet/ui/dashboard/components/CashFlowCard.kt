@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,7 +53,9 @@ fun CashFlowCard(
     timelineRange: TimelineRange = TimelineRange.AllTime,
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
     onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onClickIncome: () -> Unit = {},
+    onClickExpense: () -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -122,7 +125,8 @@ fun CashFlowCard(
                     type = CashFlowType.INCOME,
                     currentTheme = currentTheme,
                     precision = precision,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = onClickIncome
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->
@@ -145,7 +149,8 @@ fun CashFlowCard(
                     type = CashFlowType.EXPENSE,
                     currentTheme = currentTheme,
                     precision = precision,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = onClickExpense
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->
@@ -288,6 +293,7 @@ fun AeonFlowCard(
     incomeColor: Color = Color(0xFF4CAF50),
     expenseColor: Color = Color(0xFFF44336),
     precision: Int = 2,
+    onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
@@ -300,7 +306,9 @@ fun AeonFlowCard(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
-        modifier = modifier.onSizeChanged { cardSize = it }
+        modifier = modifier
+            .onSizeChanged { cardSize = it }
+            .clickable { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             val iconHeight = with(density) { (cardSize.height * 0.6f).toDp() }

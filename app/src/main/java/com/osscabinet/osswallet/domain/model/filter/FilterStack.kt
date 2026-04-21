@@ -63,14 +63,11 @@ data class FilterStack(
         
         for (filter in activeFilters) {
             result = when (filter) {
-                is UnifiedFilter.NoteFilter -> {
+                is UnifiedFilter.TextFilter -> {
+                    // TextFilter searches both note and payee fields
                     result.copy(
                         queryNote = filter.query,
-                        isNoteRegex = filter.isRegex
-                    )
-                }
-                is UnifiedFilter.PayeeFilter -> {
-                    result.copy(
+                        isNoteRegex = filter.isRegex,
                         queryPayee = filter.query,
                         isPayeeRegex = filter.isRegex
                     )
@@ -172,20 +169,15 @@ data class FilterStack(
         fun fromTransactionFilter(filter: TransactionFilter): FilterStack {
             val filters = mutableListOf<UnifiedFilter>()
             
-            if (!filter.queryNote.isNullOrBlank()) {
+            // Unified text search - if either note or payee query is set, create a TextFilter
+            // This searches both fields for a better user experience
+            if (!filter.queryNote.isNullOrBlank() || !filter.queryPayee.isNullOrBlank()) {
+                val query = filter.queryNote ?: filter.queryPayee ?: ""
+                val isRegex = filter.isNoteRegex || filter.isPayeeRegex
                 filters.add(
-                    UnifiedFilter.NoteFilter(
-                        query = filter.queryNote,
-                        isRegex = filter.isNoteRegex
-                    )
-                )
-            }
-            
-            if (!filter.queryPayee.isNullOrBlank()) {
-                filters.add(
-                    UnifiedFilter.PayeeFilter(
-                        query = filter.queryPayee,
-                        isRegex = filter.isPayeeRegex
+                    UnifiedFilter.TextFilter(
+                        query = query,
+                        isRegex = isRegex
                     )
                 )
             }

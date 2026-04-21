@@ -8,10 +8,10 @@
 **Location:** `domain/model/TransactionFilter.kt`
 
 **Fields:**
-- `queryNote: String?` - Note text search
-- `isNoteRegex: Boolean` - Regex flag for note
-- `queryPayee: String?` - Payee text search
-- `isPayeeRegex: Boolean` - Regex flag for payee
+- `queryNote: String?` - Note text search (legacy, will be unified with payee)
+- `isNoteRegex: Boolean` - Regex flag for note (legacy)
+- `queryPayee: String?` - Payee text search (legacy, will be unified with note)
+- `isPayeeRegex: Boolean` - Regex flag for payee (legacy)
 - `categoryIds: List<Long>` - Category filters
 - `accountIds: List<String>` - Account filters
 - `startDate: Long?` - Date range start
@@ -78,17 +78,11 @@ Stores saved filters with comma-separated lists for collections.
 ```kotlin
 sealed class UnifiedFilter {
     // Atomic filters (single criteria)
-    data class NoteFilter(
+    data class TextFilter(
         val query: String,
         val isRegex: Boolean = false,
         val operator: FilterOperator = FilterOperator.CONTAINS
-    ) : UnifiedFilter()
-    
-    data class PayeeFilter(
-        val query: String,
-        val isRegex: Boolean = false,
-        val operator: FilterOperator = FilterOperator.CONTAINS
-    ) : UnifiedFilter()
+    ) : UnifiedFilter() // Searches both note and payee fields
     
     data class CategoryFilter(
         val categoryIds: List<Long>,
@@ -237,7 +231,14 @@ data class FilterStack(
 
 ### Implementation Benefits
 
-1. **Filter Stacking**
+1. **Unified Text Search**
+```kotlin
+// Single text search that checks both note and payee fields
+val textFilter = TextFilter(query = "coffee", isRegex = false)
+// This will find transactions where "coffee" appears in either note or payee
+```
+
+2. **Filter Stacking**
 ```kotlin
 // Create a filter stack combining saved filter + date range
 val savedFilter = SavedFilterReference(filterId = 1)
@@ -245,7 +246,7 @@ val dateFilter = DateRangeFilter(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
 val stack = FilterStack(listOf(savedFilter, dateFilter), LogicalOperator.AND)
 ```
 
-2. **Complex Compositions**
+3. **Complex Compositions**
 ```kotlin
 // Category X OR (Category Y AND Amount > 100)
 val categoryX = CategoryFilter(listOf(1L))
@@ -255,7 +256,7 @@ val composite = CompositeFilter(listOf(categoryY, amount), LogicalOperator.AND)
 val stack = FilterStack(listOf(categoryX, composite), LogicalOperator.OR)
 ```
 
-3. **Filter Operators**
+4. **Filter Operators**
 ```kotlin
 // NOT in category X
 val notCategoryX = CategoryFilter(listOf(1L), FilterOperator.NOT_IN)
@@ -264,7 +265,7 @@ val notCategoryX = CategoryFilter(listOf(1L), FilterOperator.NOT_IN)
 val amountRange = AmountFilter(min = BigDecimal(50), max = BigDecimal(100))
 ```
 
-4. **Backward Compatibility**
+5. **Backward Compatibility**
 ```kotlin
 // Old code still works
 val oldFilter = TransactionFilter(categoryIds = listOf(1L, 2L))

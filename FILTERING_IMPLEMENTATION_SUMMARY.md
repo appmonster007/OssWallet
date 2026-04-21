@@ -175,7 +175,8 @@ val convertedBack = newStack.toTransactionFilter()
 **Phase 5: UI Components** (3-5 days)
 - Add FilterStack-aware UI components
 - Add filter stack visualization
-- Add save/load filter combinations
+- Add UI to load multiple saved filters into a stack
+- No UI for saving filter combinations (only individual filters)
 
 **Phase 6: Deprecation** (After validation)
 - Mark old methods as @Deprecated
@@ -242,6 +243,7 @@ If issues arise in later phases:
 4. **Conversion**: Bidirectional conversion with legacy system ensures smooth migration
 5. **Performance**: SQL query builder will be optimized in Phase 2
 6. **Extensibility**: Easy to add new filter types by extending UnifiedFilter sealed class
+7. **Database Schema**: Only individual filters are saved (existing transaction_filters table), filter combinations are constructed at runtime
 
 ### Recommendation
 

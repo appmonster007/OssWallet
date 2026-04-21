@@ -228,7 +228,8 @@ data class FilterStack(
 - Add FilterStack-aware UI components
 - Keep existing filter UI for compatibility
 - Add filter stack visualization
-- Add save/load filter combinations
+- Add UI to load multiple saved filters into a stack
+- No UI for saving filter combinations (only individual filters)
 
 #### Phase 6: Deprecate Old System (After Validation)
 - Mark old filter methods as `@Deprecated`
@@ -300,25 +301,15 @@ val convertedBack = newStack.toTransactionFilter()
 
 ### Database Schema Changes
 
-#### New Table: FilterCombinations
-
-```sql
-CREATE TABLE filter_combinations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    filters TEXT NOT NULL, -- JSON serialized UnifiedFilter list
-    logical_operator TEXT NOT NULL, -- "AND" or "OR"
-    profile_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
-);
-```
+#### Existing Table: transaction_filters (No changes needed)
+- The existing `transaction_filters` table (FilterEntity) will continue to store individual filters
+- No new tables needed - only individual filters are saved, not combinations
+- Filter combinations are constructed at runtime by loading multiple saved filters
 
 #### Migration
-- Add migration to create new table
-- Migrate existing saved filters to new format
-- Keep existing `transaction_filters` table for compatibility
+- No schema changes required for Phase 1-5
+- Existing saved filters continue to work
+- Filter combinations are constructed in the application layer, not persisted
 
 ### Performance Considerations
 

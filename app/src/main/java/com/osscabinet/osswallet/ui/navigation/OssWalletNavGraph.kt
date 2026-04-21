@@ -407,18 +407,29 @@ fun OssWalletNavGraph(
             )
         }
 
-        composable(Screen.TransactionList.route) {
+        composable(
+            Screen.TransactionList.route,
+            arguments = listOf(
+                navArgument("filterContext") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val filterContext = backStackEntry.arguments?.getString("filterContext")
             TransactionListScreen(
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
-                onAddTransactionClick = { type, name -> 
+                onAddTransactionClick = { type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
                 },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                 onBackClick = safePopBackStack,
-                onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) }
+                onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                filterContext = filterContext
             )
         }
 

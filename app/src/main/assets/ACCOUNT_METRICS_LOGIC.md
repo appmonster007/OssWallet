@@ -8,8 +8,8 @@ The account metrics provide a comprehensive view of all accounts including balan
 
 ## Data Sources
 
-- **accounts.csv**: Contains account definitions with initial balances
-- **transactions.csv**: Contains all transactions with amounts, categories, and currencies
+- **accounts.csv**: Contains account definitions without initial balances
+- **transactions.csv**: Contains all transactions including initial balance transactions
 
 ## Calculation Logic
 
@@ -18,10 +18,10 @@ The account metrics provide a comprehensive view of all accounts including balan
 For each account, the final balance is calculated as:
 
 ```
-finalBalance = initialBalance + netCashFlow
+finalBalance = sum of all transaction amounts (income adds, expenses subtracts)
 ```
 
-Where `netCashFlow` is the sum of all transaction amounts (income adds, expenses subtracts).
+**Important:** Accounts start with zero balance. Initial balances are represented as "Initial Balance" income transactions in transactions.csv.
 
 #### Single-Currency Accounts
 For accounts that only support one currency (e.g., acc_cash, acc_credit, acc_invest):
@@ -31,7 +31,7 @@ For accounts that only support one currency (e.g., acc_cash, acc_credit, acc_inv
 
 Example (acc_cash):
 ```
-initialBalance: 1000.00 USD
+Initial Balance transaction: 1000.00 USD (income)
 expenses: 85.50 + 5.75 + 22.50 + 29.99 + 120.75 + 95.00 = 359.49 USD
 finalBalance: 1000.00 - 359.49 = 640.51 USD
 ```
@@ -45,12 +45,12 @@ For accounts that support multiple currencies (e.g., acc_bank, acc_savings):
 
 Example (acc_bank):
 ```
-initialBalance: 5000.00 USD
+Initial Balance transaction: 5000.00 USD (income)
 
 USD Transactions:
-  Income: 5000.00 + 850.00 + 2000.00 = 7850.00 USD
+  Income: 5000.00 (initial) + 5000.00 + 850.00 + 2000.00 = 12850.00 USD
   Expenses: 45.00 + 1200.00 + 180.00 + 65.00 = 1490.00 USD
-  USD Net: 7850.00 - 1490.00 = 6360.00 USD
+  USD Net: 12850.00 - 1490.00 = 11360.00 USD
 
 INR Transactions:
   Income: 85000.00 INR
@@ -64,8 +64,8 @@ EUR Transactions:
   EUR Net: 800.00 - 185.50 = 614.50 EUR
   Converted to USD: 614.50 × 1.087 = 668.48 USD
 
-Total USD Net: 6360.00 + 894.58 + 668.48 = 7923.06 USD
-finalBalance: 5000.00 + 7923.06 = 12923.06 USD
+Total USD Net: 11360.00 + 894.58 + 668.48 = 12923.06 USD
+finalBalance: 12923.06 USD
 ```
 
 ### 2. Cash Flow Calculation
@@ -182,21 +182,24 @@ The metrics are calculated in the following order:
 
 ## Notes
 
-- Investment accounts (like acc_invest) may have no transactions but can have a balance set in the CSV
+- All accounts start with zero balance
+- Initial balances are represented as "Initial Balance" income transactions in transactions.csv
+- Investment accounts (like acc_invest) may have only an initial balance transaction
 - Credit card accounts show negative balances for expenses
 - Multi-currency accounts always calculate their final balance in USD for consistency
 - The `convertedToUSD` values in multi-currency breakdowns are for reference only
 - Category breakdown amounts are in original currency, not converted
+- "Initial Balance" category is filtered out from category breakdowns
 
 ## Example: Complete Calculation for acc_bank
 
 ```
-Initial Balance: 5000.00 USD
+Initial Balance Transaction: 5000.00 USD (income)
 
 USD Transactions:
-  Income: 5000.00 (Salary) + 850.00 (Freelance) + 2000.00 (Bonus) = 7850.00
+  Income: 5000.00 (Initial) + 5000.00 (Salary) + 850.00 (Freelance) + 2000.00 (Bonus) = 12850.00
   Expenses: 45.00 (Fuel) + 1200.00 (Rent) + 180.00 (Utilities) + 65.00 (Phone) = 1490.00
-  Net: 6360.00
+  Net: 11360.00
 
 INR Transactions:
   Income: 85000.00 (Salary in INR)
@@ -210,13 +213,13 @@ EUR Transactions:
   Net: 614.50 EUR
   Converted: 614.50 × 1.087 = 668.48 USD
 
-Total USD Net: 6360.00 + 894.58 + 668.48 = 7923.06
-Final Balance: 5000.00 + 7923.06 = 12923.06 USD
+Total USD Net: 11360.00 + 894.58 + 668.48 = 12923.06
+Final Balance: 12923.06 USD
 
 Cash Flow (USD):
-  totalIncome: 7850.00 + 894.58 + 668.48 = 9743.85
+  totalIncome: 12850.00 + 894.58 + 668.48 = 14743.85
   totalExpenses: 1490.00 + 128.94 + 201.63 = 1820.79
-  netCashFlow: 9743.85 - 1820.79 = 7923.06
+  netCashFlow: 14743.85 - 1820.79 = 12923.06
 ```
 
 ## Usage

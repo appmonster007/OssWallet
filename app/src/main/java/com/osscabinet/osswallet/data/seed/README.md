@@ -68,9 +68,11 @@ Open `app/build.gradle.kts` and remove line 30:
 buildConfigField("boolean", "ENABLE_SEEDING", "true")  // DELETE THIS LINE
 ```
 
-### Step 4: Remove CSV assets
+### Step 4: Remove CSV and JSON assets
 ```bash
-rm app/src/main/assets/seed_data.csv
+rm app/src/main/assets/accounts.csv
+rm app/src/main/assets/transactions.csv
+rm app/src/main/assets/account_metrics.json
 ```
 
 ### Step 5: Clean build (recommended)
@@ -87,8 +89,13 @@ After removal, the app should:
 ## Files in This Package
 
 - `SeedingConfig.kt` - Central configuration and toggle for seeding
-- `DatabaseSeeder.kt` - Core seeding logic that reads from CSV
-- `seed_data.csv` - Sample data for accounts and transactions
+- `DatabaseSeeder.kt` - Core seeding logic that reads from separate CSV files
+
+## Assets Files
+
+- `accounts.csv` - Account seed data (id, name, initial balance, currency, structure type, color, icon, allowed currencies)
+- `transactions.csv` - Transaction seed data (title, amount, category, timestamp, currency, income/expense, account ID, payment method, payee, note, tags, recurring, profile ID)
+- `account_metrics.json` - Pre-calculated account metrics for testing
 
 ## Architecture
 
@@ -102,14 +109,21 @@ The seeding logic is intentionally isolated to make it easy to remove:
 
 ## CSV Format
 
-The `seed_data.csv` file uses the following format:
-
+### accounts.csv
 ```
-type,id,name,balance,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
+id,name,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId
 ```
 
-- `type`: "account" or "transaction"
+Note: Account balance is calculated from transactions during seeding.
+
+### transactions.csv
+```
+title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
+```
+
 - Fields with commas (like `allowedCurrencies`) must be quoted
+- Transactions reference accounts by `accountId`
+- Account balances are updated as transactions are inserted
 
 ## Seeding Behavior
 

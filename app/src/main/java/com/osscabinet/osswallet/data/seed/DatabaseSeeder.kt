@@ -34,10 +34,9 @@ class DatabaseSeeder @Inject constructor(
         accountDao.clearAll()
         transactionDao.clearAll()
 
-        // Load seed data from CSV
-        val seedData = loadSeedDataFromCsv()
-        val accounts = seedData.filter { it.type == "account" }.map { it.toAccountEntity() }
-        val transactions = seedData.filter { it.type == "transaction" }.map { it.toTransactionEntity() }
+        // Load seed data from separate CSV files
+        val accounts = loadAccountsFromCsv()
+        val transactions = loadTransactionsFromCsv()
 
         // Insert accounts
         accountDao.upsertAccounts(accounts)
@@ -64,145 +63,176 @@ class DatabaseSeeder @Inject constructor(
         settingsDataStore.saveDatabaseSeeded(true)
     }
 
-    private fun loadSeedDataFromCsv(): List<SeedDataRow> {
-        val rows = mutableListOf<SeedDataRow>()
+    private fun loadAccountsFromCsv(): List<AccountEntity> {
+        val accounts = mutableListOf<AccountEntity>()
         try {
-            val inputStream = context.assets.open("seed_data.csv")
+            val inputStream = context.assets.open("accounts.csv")
             val reader = BufferedReader(InputStreamReader(inputStream))
-            
+
             // Skip header
             reader.readLine()
-            
+
             reader.useLines { lines ->
                 lines.forEach { line ->
                     if (line.isNotBlank()) {
-                        rows.add(SeedDataRow.fromCsv(line))
+                        accounts.add(AccountSeedRow.fromCsv(line).toAccountEntity())
                     }
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return rows
+        return accounts
     }
 
-    private data class SeedDataRow(
-        val type: String,
-        val id: String?,
-        val name: String?,
-        val balance: BigDecimal?,
-        val initialBalance: BigDecimal?,
-        val currencyCode: String?,
-        val structureType: String?,
-        val colorHex: String?,
-        val icon: String?,
-        val allowedCurrencies: String?,
-        val title: String?,
-        val amount: BigDecimal?,
-        val category: String?,
-        val categoryId: Long?,
-        val timestamp: Long?,
-        val currency: String?,
-        val isIncome: Boolean?,
-        val accountId: String?,
-        val paymentMethod: String?,
-        val payee: String?,
-        val note: String?,
-        val tags: String?,
-        val recurring: String?,
-        val profileId: Int?
+    private fun loadTransactionsFromCsv(): List<TransactionEntity> {
+        val transactions = mutableListOf<TransactionEntity>()
+        try {
+            val inputStream = context.assets.open("transactions.csv")
+            val reader = BufferedReader(InputStreamReader(inputStream))
+
+            // Skip header
+            reader.readLine()
+
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotBlank()) {
+                        transactions.add(TransactionSeedRow.fromCsv(line).toTransactionEntity())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return transactions
+    }
+
+    private data class AccountSeedRow(
+        val id: String,
+        val name: String,
+        val initialBalance: BigDecimal,
+        val currencyCode: String,
+        val structureType: String,
+        val colorHex: String,
+        val icon: String,
+        val allowedCurrencies: String,
+        val profileId: Int
     ) {
         fun toAccountEntity(): AccountEntity {
             return AccountEntity(
-                id = id ?: "",
-                name = name ?: "",
-                balance = balance ?: BigDecimal.ZERO,
-                initialBalance = initialBalance ?: BigDecimal.ZERO,
-                currencyCode = currencyCode ?: "USD",
-                structureType = structureType ?: "REGULAR",
-                colorHex = colorHex ?: "#000000",
-                icon = icon ?: "",
-                allowedCurrencies = allowedCurrencies ?: "USD",
-                profileId = profileId ?: 1
-            )
-        }
-
-        fun toTransactionEntity(): TransactionEntity {
-            return TransactionEntity(
-                title = title ?: "",
-                amount = amount ?: BigDecimal.ZERO,
-                category = category ?: "",
-                timestamp = timestamp ?: System.currentTimeMillis(),
-                currency = currency ?: "USD",
-                isIncome = isIncome ?: false,
-                accountId = accountId ?: "",
-                categoryId = categoryId,
-                paymentMethod = paymentMethod ?: "Cash",
-                payee = payee ?: "",
-                note = note ?: "",
-                tags = tags ?: "",
-                recurring = recurring,
-                profileId = profileId ?: 1
+                id = id,
+                name = name,
+                balance = initialBalance,
+                initialBalance = initialBalance,
+                currencyCode = currencyCode,
+                structureType = structureType,
+                colorHex = colorHex,
+                icon = icon,
+                allowedCurrencies = allowedCurrencies.removeSurrounding("\""),
+                profileId = profileId
             )
         }
 
         companion object {
-            fun fromCsv(line: String): SeedDataRow {
+            fun fromCsv(line: String): AccountSeedRow {
                 val parts = parseCsvLine(line)
-                return SeedDataRow(
-                    type = parts.getOrNull(0) ?: "",
-                    id = parts.getOrNull(1),
-                    name = parts.getOrNull(2),
-                    balance = parts.getOrNull(3)?.toBigDecimalOrNull(),
-                    initialBalance = parts.getOrNull(4)?.toBigDecimalOrNull(),
-                    currencyCode = parts.getOrNull(5),
-                    structureType = parts.getOrNull(6),
-                    colorHex = parts.getOrNull(7),
-                    icon = parts.getOrNull(8),
-                    allowedCurrencies = parts.getOrNull(9)?.removeSurrounding("\""),
-                    title = parts.getOrNull(10),
-                    amount = parts.getOrNull(11)?.toBigDecimalOrNull(),
-                    category = parts.getOrNull(12),
-                    categoryId = parts.getOrNull(13)?.toLongOrNull(),
-                    timestamp = parts.getOrNull(14)?.toLongOrNull(),
-                    currency = parts.getOrNull(15),
-                    isIncome = parts.getOrNull(16)?.toBoolean(),
-                    accountId = parts.getOrNull(17),
-                    paymentMethod = parts.getOrNull(18),
-                    payee = parts.getOrNull(19),
-                    note = parts.getOrNull(20),
-                    tags = parts.getOrNull(21),
-                    recurring = parts.getOrNull(22),
-                    profileId = parts.getOrNull(23)?.toIntOrNull()
+                return AccountSeedRow(
+                    id = parts.getOrNull(0) ?: "",
+                    name = parts.getOrNull(1) ?: "",
+                    initialBalance = parts.getOrNull(2)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                    currencyCode = parts.getOrNull(3) ?: "USD",
+                    structureType = parts.getOrNull(4) ?: "REGULAR",
+                    colorHex = parts.getOrNull(5) ?: "#000000",
+                    icon = parts.getOrNull(6) ?: "",
+                    allowedCurrencies = parts.getOrNull(7) ?: "USD",
+                    profileId = parts.getOrNull(8)?.toIntOrNull() ?: 1
                 )
             }
+        }
+    }
 
-            private fun parseCsvLine(line: String): List<String> {
-                val result = mutableListOf<String>()
-                var current = StringBuilder()
-                var inQuotes = false
+    private data class TransactionSeedRow(
+        val title: String,
+        val amount: BigDecimal,
+        val category: String,
+        val categoryId: Long?,
+        val timestamp: Long?,
+        val currency: String,
+        val isIncome: Boolean,
+        val accountId: String,
+        val paymentMethod: String,
+        val payee: String,
+        val note: String,
+        val tags: String,
+        val recurring: String?,
+        val profileId: Int
+    ) {
+        fun toTransactionEntity(): TransactionEntity {
+            return TransactionEntity(
+                title = title,
+                amount = amount,
+                category = category,
+                timestamp = timestamp ?: System.currentTimeMillis(),
+                currency = currency,
+                isIncome = isIncome,
+                accountId = accountId,
+                categoryId = categoryId,
+                paymentMethod = paymentMethod,
+                payee = payee,
+                note = note,
+                tags = tags,
+                recurring = recurring,
+                profileId = profileId
+            )
+        }
 
-                for (char in line) {
-                    when (char) {
-                        '"' -> {
-                            inQuotes = !inQuotes
-                        }
-                        ',' -> {
-                            if (inQuotes) {
-                                current.append(char)
-                            } else {
-                                result.add(current.toString())
-                                current = StringBuilder()
-                            }
-                        }
-                        else -> {
-                            current.append(char)
-                        }
-                    }
-                }
-                result.add(current.toString())
-                return result
+        companion object {
+            fun fromCsv(line: String): TransactionSeedRow {
+                val parts = parseCsvLine(line)
+                return TransactionSeedRow(
+                    title = parts.getOrNull(0) ?: "",
+                    amount = parts.getOrNull(1)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                    category = parts.getOrNull(2) ?: "",
+                    categoryId = parts.getOrNull(3)?.toLongOrNull(),
+                    timestamp = parts.getOrNull(4)?.toLongOrNull(),
+                    currency = parts.getOrNull(5) ?: "USD",
+                    isIncome = parts.getOrNull(6)?.toBoolean() ?: false,
+                    accountId = parts.getOrNull(7) ?: "",
+                    paymentMethod = parts.getOrNull(8) ?: "Cash",
+                    payee = parts.getOrNull(9) ?: "",
+                    note = parts.getOrNull(10) ?: "",
+                    tags = parts.getOrNull(11) ?: "",
+                    recurring = parts.getOrNull(12),
+                    profileId = parts.getOrNull(13)?.toIntOrNull() ?: 1
+                )
             }
         }
+    }
+
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        var current = StringBuilder()
+        var inQuotes = false
+
+        for (char in line) {
+            when (char) {
+                '"' -> {
+                    inQuotes = !inQuotes
+                }
+                ',' -> {
+                    if (inQuotes) {
+                        current.append(char)
+                    } else {
+                        result.add(current.toString())
+                        current = StringBuilder()
+                    }
+                }
+                else -> {
+                    current.append(char)
+                }
+            }
+        }
+        result.add(current.toString())
+        return result
     }
 }

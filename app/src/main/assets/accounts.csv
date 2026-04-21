@@ -1,6 +1,6 @@
-id,name,balance,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId
-acc_cash,Cash Wallet,1000.00,1000.00,USD,REGULAR,#4CAF50,AccountBalanceWallet,"USD",1
-acc_bank,Main Bank,5000.00,5000.00,USD,REGULAR,#2196F3,AccountBalance,"USD,INR,EUR",1
-acc_savings,Savings,15000.00,15000.00,USD,SAVINGS,#9C27B0,Savings,"USD,INR",1
-acc_credit,Credit Card,-500.00,0.00,USD,CREDIT,#F44336,CreditCard,"USD",1
-acc_invest,Investment,20000.00,10000.00,USD,INVESTMENT,#FF9800,TrendingUp,"USD",1
+id,name,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId
+acc_cash,Cash Wallet,1000.00,USD,REGULAR,#4CAF50,AccountBalanceWallet,"USD",1
+acc_bank,Main Bank,5000.00,USD,REGULAR,#2196F3,AccountBalance,"USD,INR,EUR",1
+acc_savings,Savings,15000.00,USD,SAVINGS,#9C27B0,Savings,"USD,INR",1
+acc_credit,Credit Card,0.00,USD,CREDIT,#F44336,CreditCard,"USD",1
+acc_invest,Investment,10000.00,USD,INVESTMENT,#FF9800,TrendingUp,"USD",1

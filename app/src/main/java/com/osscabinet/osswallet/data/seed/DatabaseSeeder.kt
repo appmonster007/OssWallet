@@ -14,6 +14,33 @@ import java.math.BigDecimal
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
+private fun parseCsvLine(line: String): List<String> {
+    val result = mutableListOf<String>()
+    var current = StringBuilder()
+    var inQuotes = false
+
+    for (char in line) {
+        when (char) {
+            '"' -> {
+                inQuotes = !inQuotes
+            }
+            ',' -> {
+                if (inQuotes) {
+                    current.append(char)
+                } else {
+                    result.add(current.toString())
+                    current = StringBuilder()
+                }
+            }
+            else -> {
+                current.append(char)
+            }
+        }
+    }
+    result.add(current.toString())
+    return result
+}
+
 class DatabaseSeeder @Inject constructor(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
@@ -27,40 +54,77 @@ class DatabaseSeeder @Inject constructor(
         // Check if already seeded
         val isSeeded = settingsDataStore.isDatabaseSeeded.first()
         if (isSeeded) {
+            android.util.Log.d("DatabaseSeeder", "Database already seeded, skipping")
             return
         }
+
+        android.util.Log.d("DatabaseSeeder", "Starting database seeding...")
 
         // Clear existing data for a fresh start in dev
         accountDao.clearAll()
         transactionDao.clearAll()
+        android.util.Log.d("DatabaseSeeder", "Cleared existing data")
 
         // Load seed data from separate CSV files
         val accounts = loadAccountsFromCsv()
+        android.util.Log.d("DatabaseSeeder", "Loaded ${accounts.size} accounts from CSV")
+
         val transactions = loadTransactionsFromCsv()
+        android.util.Log.d("DatabaseSeeder", "Loaded ${transactions.size} transactions from CSV")
+
+        // Validate that we have data to seed
+        if (accounts.isEmpty()) {
+            android.util.Log.e("DatabaseSeeder", "No accounts found in CSV, aborting seeding")
+            return
+        }
 
         // Insert accounts
         accountDao.upsertAccounts(accounts)
+        android.util.Log.d("DatabaseSeeder", "Inserted ${accounts.size} accounts")
 
         // Ensure categories exist
         val categories = categoryDao.getAllCategoriesSync()
-        if (categories.isEmpty()) return // Should be seeded by DB callback
+        if (categories.isEmpty()) {
+            android.util.Log.e("DatabaseSeeder", "No categories found, aborting seeding")
+            return
+        }
+        android.util.Log.d("DatabaseSeeder", "Found ${categories.size} categories")
 
         // Create a map of category names to IDs
         val categoryNameToId = categories.associate { it.name to it.id }
 
         // Insert transactions with correct category IDs
-        transactions.forEach { transaction ->
-            val categoryId = categoryNameToId[transaction.category]
-            val transactionWithCategoryId = transaction.copy(categoryId = categoryId)
-            transactionDao.insertTransaction(transactionWithCategoryId)
+        var successfulTransactions = 0
+        var failedTransactions = 0
 
-            // Update account balance
-            val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
-            accountDao.updateBalance(transaction.accountId, updateAmount)
+        transactions.forEach { transaction ->
+            try {
+                val categoryId = categoryNameToId[transaction.category]
+                if (categoryId == null) {
+                    android.util.Log.w("DatabaseSeeder", "Category '${transaction.category}' not found for transaction '${transaction.title}'")
+                    failedTransactions++
+                    return@forEach
+                }
+
+                val transactionWithCategoryId = transaction.copy(categoryId = categoryId)
+                transactionDao.insertTransaction(transactionWithCategoryId)
+
+                // Update account balance
+                val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+                accountDao.updateBalance(transaction.accountId, updateAmount)
+
+                successfulTransactions++
+            } catch (e: Exception) {
+                android.util.Log.e("DatabaseSeeder", "Failed to insert transaction '${transaction.title}': ${e.message}")
+                failedTransactions++
+            }
         }
+
+        android.util.Log.d("DatabaseSeeder", "Inserted $successfulTransactions transactions successfully, $failedTransactions failed")
 
         // Mark as seeded
         settingsDataStore.saveDatabaseSeeded(true)
+        android.util.Log.d("DatabaseSeeder", "Database seeding completed successfully")
     }
 
     private fun loadAccountsFromCsv(): List<AccountEntity> {
@@ -75,12 +139,16 @@ class DatabaseSeeder @Inject constructor(
             reader.useLines { lines ->
                 lines.forEach { line ->
                     if (line.isNotBlank()) {
-                        accounts.add(AccountSeedRow.fromCsv(line).toAccountEntity())
+                        try {
+                            accounts.add(AccountSeedRow.fromCsv(line).toAccountEntity())
+                        } catch (e: Exception) {
+                            android.util.Log.e("DatabaseSeeder", "Failed to parse account line: $line, error: ${e.message}")
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("DatabaseSeeder", "Failed to load accounts.csv: ${e.message}")
         }
         return accounts
     }
@@ -97,12 +165,16 @@ class DatabaseSeeder @Inject constructor(
             reader.useLines { lines ->
                 lines.forEach { line ->
                     if (line.isNotBlank()) {
-                        transactions.add(TransactionSeedRow.fromCsv(line).toTransactionEntity())
+                        try {
+                            transactions.add(TransactionSeedRow.fromCsv(line).toTransactionEntity())
+                        } catch (e: Exception) {
+                            android.util.Log.e("DatabaseSeeder", "Failed to parse transaction line: $line, error: ${e.message}")
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("DatabaseSeeder", "Failed to load transactions.csv: ${e.message}")
         }
         return transactions
     }
@@ -207,32 +279,5 @@ class DatabaseSeeder @Inject constructor(
                 )
             }
         }
-    }
-
-    private fun parseCsvLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        var current = StringBuilder()
-        var inQuotes = false
-
-        for (char in line) {
-            when (char) {
-                '"' -> {
-                    inQuotes = !inQuotes
-                }
-                ',' -> {
-                    if (inQuotes) {
-                        current.append(char)
-                    } else {
-                        result.add(current.toString())
-                        current = StringBuilder()
-                    }
-                }
-                else -> {
-                    current.append(char)
-                }
-            }
-        }
-        result.add(current.toString())
-        return result
     }
 }

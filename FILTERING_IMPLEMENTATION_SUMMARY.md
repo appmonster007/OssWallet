@@ -146,20 +146,21 @@ val convertedBack = newStack.toTransactionFilter()
 ### Build Status
 ✅ Build successful - all new models compile correctly
 
-### Next Steps (Phase 4: ViewModels)
+### Next Steps (Phase 5: UI Components)
 
-**Goal:** Add FilterStack support to ViewModels
+**Goal:** Add FilterStack-aware UI components
 
 **Tasks:**
-1. Add `filterStack: StateFlow<FilterStack>` to TransactionViewModel
-2. Add methods to manipulate FilterStack (add, remove, clear, clearInstant)
-3. Gradually migrate screens to use FilterStack
-4. Keep existing filter methods for compatibility
+1. Add FilterStack-aware UI components
+2. Add filter stack visualization
+3. Add UI to load multiple saved filters into a stack
+4. No UI for saving filter combinations (only individual filters)
 
-**Estimated Time:** 5-7 days
+**Estimated Time:** 3-5 days
 
 **Phase 2 Status: ✅ COMPLETED**
 **Phase 3 Status: ✅ COMPLETED**
+**Phase 4 Status: ✅ COMPLETED**
 
 **Phase 2 Completed Tasks:**
 1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionRepository interface
@@ -172,18 +173,22 @@ val convertedBack = newStack.toTransactionFilter()
 2. ⏳ Filter composition helpers (deferred)
 3. ⏳ Unit tests (deferred to testing phase)
 
+**Phase 4 Completed Tasks:**
+1. ✅ Added `filterStack: StateFlow<FilterStack>` to TransactionViewModel (records and account detail)
+2. ✅ Added methods to manipulate FilterStack (add, remove, clear, clearInstant)
+3. ✅ Added FilterStack-based transactions flow (transactionsWithBalanceFromStack)
+4. ✅ Kept existing filter methods for compatibility
+5. ✅ Existing flows continue to work (backward compatible)
+6. ⏳ Gradual screen migration (deferred to UI phase)
+
 **Implementation Notes:**
 - Current implementation converts FilterStack to TransactionFilter for immediate functionality
 - This allows the new system to work without breaking existing code
 - Direct SQL query building from FilterStack can be added later for performance optimization
 - Case-insensitive search implemented using SQLite COLLATE NOCASE
+- ViewModel provides both old and new flows for gradual migration
 
 ### Remaining Phases
-
-**Phase 4: ViewModels** (5-7 days)
-- Add filterStack StateFlow alongside existing filters
-- Add methods to manipulate FilterStack
-- Gradually migrate screens to use FilterStack
 
 **Phase 5: UI Components** (3-5 days)
 - Add FilterStack-aware UI components

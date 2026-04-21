@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.accountdetail.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,6 +47,7 @@ fun AccountHeroCard(
     precision: Int = 2,
     showCurrencyBadges: Boolean = true,
     onShowCurrencyBadgesChange: (Boolean) -> Unit = {},
+    onClick: (() -> Unit)? = null,
     onDelete: () -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
@@ -65,7 +67,8 @@ fun AccountHeroCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { cardSize = it },
+            .onSizeChanged { cardSize = it }
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(32.dp),
         color = accountColor,
         contentColor = contentColor,

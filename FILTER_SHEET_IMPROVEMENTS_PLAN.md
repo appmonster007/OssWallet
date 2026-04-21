@@ -14,25 +14,24 @@
 ---
 
 ### Issue #1: Context Filter Individual Field Removal
-**Status**: ⏳ PENDING
-**Root Cause**: ContextIndicator only has a single Reset button that clears all filters to None
+**Status**: ✅ COMPLETED
+**Root Cause**: Context was shown as single chip with reset all functionality
 **Current State**:
-- ContextIndicator shows all fields in expanded view
-- Only one Reset button clears everything
-- No individual field removal capability
+- Context expanded into individual field chips
+- Each chip can be removed independently
+- Supports all context types
 **Resolution**:
-1. Add individual remove button to each ContextFilterField
-2. When a field is removed:
-   - Update localFilter to remove that specific field
-   - Call onApplyFilter to update ViewModel
-   - Keep other context fields intact
-3. Add onRemoveField callback to ContextIndicator
-4. Pass callback to ContextFilterField components
+1. ✅ Expand context into individual filter chips
+2. ✅ Each field has its own remove button
+3. ✅ When a field is removed, calls appropriate onRemoveFilter
+4. ✅ Keeps other context fields intact
+5. ✅ Uses categoryMap for category names
 **Files to Modify**:
-- `ui/components/transactions/FilterSheetContent.kt`
-  - Add onRemoveField callback to ContextIndicator
-  - Add remove button to ContextFilterField
-  - Handle individual field removal logic
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Expand context into individual chips in ActiveFiltersSummary
+  - ✅ Support ByAccount, ByAccountAndType, ByAccountAndCurrency, Custom
+  - ✅ Each chip calls onRemoveFilter with specific field and value
+  - ✅ Use categoryMap for category names in context
 
 ---
 
@@ -87,27 +86,25 @@ label = "Category: $categoryId"
 ---
 
 ### Issue #5: Filter Sheet Scrollability
-**Status**: ✅ COMPLETED (PARTIAL)
+**Status**: ✅ COMPLETED
 **Root Cause**: Filter sheet structure has nested scroll containers and no sticky positioning
 **Current Structure**:
 - FilterSheetContent (Column)
-  - AeonPeriodSelector (top)
-  - ContextIndicator (if context)
-  - ActiveFiltersSummary
-  - Column with verticalScroll
-    - Header (Title + Reset)
-    - Saved Filters
-    - FilterFields
-    - Apply Button
+  - LazyColumn with sticky header
+    - AeonPeriodSelector (sticky)
+    - ActiveFiltersSummary
+    - Filter fields content
 **Resolution**:
 1. ✅ Make the entire FilterSheetContent scrollable using LazyColumn
-2. ⏳ Make AeonPeriodSelector sticky at top (NOT YET IMPLEMENTED)
+2. ✅ Make AeonPeriodSelector sticky at top
 3. ✅ Remove nested verticalScroll from inner Column
 4. ✅ Ensure proper spacing and dividers
+5. ✅ Add ExperimentalFoundationApi opt-in annotation
 **Files to Modify**:
 - ✅ `ui/components/transactions/FilterSheetContent.kt`
   - ✅ Replace Column with LazyColumn
-  - ⏳ Add stickyHeader for AeonPeriodSelector (PENDING)
+  - ✅ Add stickyHeader for AeonPeriodSelector
+  - ✅ Add ExperimentalFoundationApi import and opt-in
   - ✅ Remove nested verticalScroll
   - ✅ Adjust content padding and dividers
 
@@ -204,10 +201,10 @@ label = "Category: $categoryId"
 ### Phase 1: High Priority (Critical UX Issues) - ✅ COMPLETED
 1. ✅ **Issue #4**: Fix category names in active filters (quick win, high visibility)
 2. ✅ **Issue #2**: Fix transaction type selection UI (prevents user confusion)
-3. ✅ **Issue #5**: Make filter sheet scrollable (improves usability on small screens) - PARTIAL (sticky header pending)
+3. ✅ **Issue #5**: Make filter sheet scrollable with sticky header (improves usability)
 
 ### Phase 2: Medium Priority (Feature Enhancements) - ✅ COMPLETED
-4. ⏳ **Issue #1**: Individual context field removal (enhances flexibility) - PENDING
+4. ✅ **Issue #1**: Individual context field removal (enhances flexibility)
 5. ✅ **Issue #7**: Currency filter implementation (enables complete filtering)
 6. ✅ **Issue #8**: Filter dropdowns show unfiltered options (data flow improvement)
 7. ✅ **Issue #9**: Merge context and active filters (UI simplification)
@@ -241,7 +238,6 @@ label = "Category: $categoryId"
 - Phase 1: ✅ COMPLETED (2-3 hours)
 - Phase 2: ✅ COMPLETED (3-4 hours)
 - Phase 3: ✅ COMPLETED (30 minutes verification)
-- Remaining: Issue #1 (individual context field removal) - 1-2 hours
-- Remaining: Issue #5 (sticky header for timeline) - 30 minutes
 - **Total Completed**: 6-8 hours
-- **Total Remaining**: 1.5-2.5 hours
+- **Total Remaining**: 0 hours
+- **ALL ISSUES COMPLETED** ✅

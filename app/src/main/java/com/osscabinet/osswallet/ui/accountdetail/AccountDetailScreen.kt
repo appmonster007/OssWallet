@@ -73,8 +73,7 @@ fun AccountDetailScreen(
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
-    onAddTransactionClick: (String, Int?, String?) -> Unit,
-    onRecordsClick: ((String) -> Unit)? = null
+    onAddTransactionClick: (String, Int?, String?) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)

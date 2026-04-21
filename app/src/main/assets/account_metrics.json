@@ -171,9 +171,9 @@
       "accountName": "Credit Card",
       "currencyCode": "USD",
       "structureType": "CREDIT",
-      "currentBalance": -500.00,
+      "currentBalance": -235.79,
       "initialBalance": 0.00,
-      "netChange": -500.00,
+      "netChange": -235.79,
       "transactionCount": 4,
       "cashFlow": {
         "totalIncome": 0.00,
@@ -209,7 +209,7 @@
           "month": "2024-01",
           "income": 0.00,
           "expenses": 235.79,
-          "balance": -500.00
+          "balance": -235.79
         }
       ]
     },
@@ -218,9 +218,9 @@
       "accountName": "Investment",
       "currencyCode": "USD",
       "structureType": "INVESTMENT",
-      "currentBalance": 20000.00,
+      "currentBalance": 10000.00,
       "initialBalance": 10000.00,
-      "netChange": 10000.00,
+      "netChange": 0.00,
       "transactionCount": 0,
       "cashFlow": {
         "totalIncome": 0.00,
@@ -240,15 +240,15 @@
           "month": "2024-01",
           "income": 0.00,
           "expenses": 0.00,
-          "balance": 20000.00
+          "balance": 10000.00
         }
       ]
     }
   ],
   "summary": {
     "totalAccounts": 5,
-    "totalBalance": 47700.51,
-    "totalBalanceConverted": 51070.78,
+    "totalBalance": 42964.72,
+    "totalBalanceConverted": 46335.00,
     "totalIncome": 7850.00,
     "totalExpenses": 2085.28,
     "netCashFlow": 5764.72,

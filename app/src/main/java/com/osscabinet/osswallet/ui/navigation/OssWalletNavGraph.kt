@@ -248,7 +248,17 @@ fun OssWalletNavGraph(
             )
         }
         
-        composable(Screen.AccountsView.route) {
+        composable(
+            Screen.AccountsView.route,
+            arguments = listOf(
+                navArgument("filterContext") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val filterContext = backStackEntry.arguments?.getString("filterContext")
             AccountsViewScreen(
                 onDashboardClick = { 
                     navController.popBackStack()
@@ -272,7 +282,8 @@ fun OssWalletNavGraph(
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
                 accountsViewViewModel = accountsViewViewModel,
-                cardManagerViewModel = cardManagerViewModel
+                cardManagerViewModel = cardManagerViewModel,
+                filterContext = filterContext
             )
         }
 

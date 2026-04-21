@@ -102,9 +102,14 @@ class DatabaseSeeder @Inject constructor(
                 isDefault = true,
                 parentId = null
             )
-            val insertedId = categoryDao.insertCategory(initialBalanceCategory)
-            categoryNameToId["Initial Balance"] = insertedId
-            android.util.Log.d("DatabaseSeeder", "Created Initial Balance category with ID $insertedId")
+            categoryDao.insertCategory(initialBalanceCategory)
+            // Query the category to get its ID after insertion
+            val allCategories = categoryDao.getAllCategories().first()
+            val initialBalanceCategoryEntity = allCategories.find { it.name == "Initial Balance" }
+            initialBalanceCategoryEntity?.let {
+                categoryNameToId["Initial Balance"] = it.id
+                android.util.Log.d("DatabaseSeeder", "Created Initial Balance category with ID ${it.id}")
+            }
         }
 
         // Insert transactions with correct category IDs

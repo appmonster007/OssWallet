@@ -105,4 +105,15 @@ sealed class UnifiedFilter {
     data class SavedFilterReference(
         val filterId: Long
     ) : UnifiedFilter()
+    
+    // ========== Instant/Transient Filters ==========
+    
+    /**
+     * Wraps any filter to mark it as transient/instant.
+     * Instant filters are not persisted and only exist until screen changes.
+     * These are useful for quick, temporary filtering without saving.
+     */
+    data class InstantFilter(
+        val filter: UnifiedFilter
+    ) : UnifiedFilter()
 }

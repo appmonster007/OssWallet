@@ -134,6 +134,11 @@ sealed class UnifiedFilter {
     data class SavedFilterReference(
         val filterId: Long
     ) : UnifiedFilter()
+    
+    // Instant/transient filter wrapper
+    data class InstantFilter(
+        val filter: UnifiedFilter
+    ) : UnifiedFilter() // Marks filter as transient (not persisted)
 }
 ```
 
@@ -239,7 +244,24 @@ val textFilter = TextFilter(query = "coffee", isRegex = false)
 // This will find transactions where "coffee" appears in either note or payee
 ```
 
-2. **Filter Stacking**
+2. **Instant/Transient Filters**
+```kotlin
+// Create a quick temporary filter that won't be saved
+val instantStack = FilterStack.instant(
+    TextFilter(query = "coffee")
+)
+// Clear when navigating away from screen
+instantStack.clearInstantFilters()
+
+// Mix permanent and instant filters
+val permanentFilter = CategoryFilter(listOf(1L))
+val instantFilter = TextFilter(query = "coffee")
+val stack = FilterStack(listOf(permanentFilter, UnifiedFilter.InstantFilter(instantFilter)))
+// Keep permanent, clear instant on screen change
+val permanentOnly = stack.clearInstantFilters()
+```
+
+3. **Filter Stacking**
 ```kotlin
 // Create a filter stack combining saved filter + date range
 val savedFilter = SavedFilterReference(filterId = 1)
@@ -247,7 +269,7 @@ val dateFilter = DateRangeFilter(TimelineRange.ThisPeriod(ThisPeriodType.MONTH))
 val stack = FilterStack(listOf(savedFilter, dateFilter), LogicalOperator.AND)
 ```
 
-3. **Complex Compositions**
+4. **Complex Compositions**
 ```kotlin
 // Category X OR (Category Y AND Amount > 100)
 val categoryX = CategoryFilter(listOf(1L))
@@ -257,7 +279,7 @@ val composite = CompositeFilter(listOf(categoryY, amount), LogicalOperator.AND)
 val stack = FilterStack(listOf(categoryX, composite), LogicalOperator.OR)
 ```
 
-4. **Filter Operators**
+5. **Filter Operators**
 ```kotlin
 // NOT in category X
 val notCategoryX = CategoryFilter(listOf(1L), FilterOperator.NOT_IN)
@@ -266,7 +288,7 @@ val notCategoryX = CategoryFilter(listOf(1L), FilterOperator.NOT_IN)
 val amountRange = AmountFilter(min = BigDecimal(50), max = BigDecimal(100))
 ```
 
-5. **Backward Compatibility**
+6. **Backward Compatibility**
 ```kotlin
 // Old code still works
 val oldFilter = TransactionFilter(categoryIds = listOf(1L, 2L))

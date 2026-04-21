@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.filter.FilterStack
 import com.osscabinet.ossWallet.domain.model.filter.UnifiedFilter
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.domain.model.toDomain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,9 +27,11 @@ class TransactionViewModel(
 ) : ViewModel() {
 
     private val _recordsFilter = MutableStateFlow(TransactionFilter())
+    @Deprecated("Use recordsFilterStack instead for better filter composition.", ReplaceWith("recordsFilterStack"))
     val recordsFilter = _recordsFilter.asStateFlow()
 
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
+    @Deprecated("Use accountDetailFilterStack instead for better filter composition.", ReplaceWith("accountDetailFilterStack"))
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
 
     // New FilterStack support for unified filtering
@@ -50,6 +53,7 @@ class TransactionViewModel(
     val recordsSettings: StateFlow<TransactionSectionSettings> = settingsDataStore.recordsSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
+    @Deprecated("Use transactionsWithBalanceFromStack instead for FilterStack support.", ReplaceWith("transactionsWithBalanceFromStack"))
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -105,30 +109,37 @@ class TransactionViewModel(
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() for better filter composition.", ReplaceWith("addRecordsFilterStack()"))
     fun updateRecordsFilter(newFilter: TransactionFilter) {
         _recordsFilter.value = newFilter
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to addAccountDetailFilterStack() for better filter composition.", ReplaceWith("addAccountDetailFilterStack()"))
     fun updateAccountDetailFilter(newFilter: TransactionFilter) {
         _accountDetailFilter.value = newFilter
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() with AccountFilter.", ReplaceWith("addRecordsFilterStack(AccountFilter(...))"))
     fun setRecordsAccountFilter(accountId: String?) {
         _recordsFilter.value = _recordsFilter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() with DateRangeFilter.", ReplaceWith("addRecordsFilterStack(DateRangeFilter(...))"))
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
         _recordsFilter.value = _recordsFilter.value.copy(startDate = start, endDate = end)
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to addAccountDetailFilterStack() with DateRangeFilter.", ReplaceWith("addAccountDetailFilterStack(DateRangeFilter(...))"))
     fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
         _accountDetailFilter.value = _accountDetailFilter.value.copy(startDate = start, endDate = end)
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to clearRecordsFilterStack().", ReplaceWith("clearRecordsFilterStack()"))
     fun clearRecordsFilters() {
         _recordsFilter.value = TransactionFilter()
     }
 
+    @Deprecated("Use FilterStack-based methods instead. Migrate to clearAccountDetailFilterStack().", ReplaceWith("clearAccountDetailFilterStack()"))
     fun clearAccountDetailFilters() {
         _accountDetailFilter.value = TransactionFilter()
     }
@@ -173,6 +184,46 @@ class TransactionViewModel(
 
     fun clearAccountDetailInstantFilters() {
         _accountDetailFilterStack.value = _accountDetailFilterStack.value.clearInstantFilters()
+    }
+
+    // ========== Load Saved Filters into Stack ==========
+
+    /**
+     * Loads a saved filter into the records filter stack.
+     * Converts FilterEntity to TransactionFilter, then to FilterStack, and adds it.
+     */
+    fun loadSavedFilterToRecordsStack(filterEntity: com.osscabinet.ossWallet.data.local.entity.FilterEntity) {
+        val transactionFilter = filterEntity.toDomain()
+        val filterStack = FilterStack.fromTransactionFilter(transactionFilter)
+        // Add all filters from the saved filter to the current stack
+        _recordsFilterStack.value = filterStack.activeFilters.fold(_recordsFilterStack.value) { acc, filter ->
+            acc.addFilter(filter)
+        }
+    }
+
+    /**
+     * Loads multiple saved filters into the records filter stack.
+     */
+    fun loadSavedFiltersToRecordsStack(filterEntities: List<com.osscabinet.ossWallet.data.local.entity.FilterEntity>) {
+        filterEntities.forEach { loadSavedFilterToRecordsStack(it) }
+    }
+
+    /**
+     * Loads a saved filter into the account detail filter stack.
+     */
+    fun loadSavedFilterToAccountDetailStack(filterEntity: com.osscabinet.ossWallet.data.local.entity.FilterEntity) {
+        val transactionFilter = filterEntity.toDomain()
+        val filterStack = FilterStack.fromTransactionFilter(transactionFilter)
+        _accountDetailFilterStack.value = filterStack.activeFilters.fold(_accountDetailFilterStack.value) { acc, filter ->
+            acc.addFilter(filter)
+        }
+    }
+
+    /**
+     * Loads multiple saved filters into the account detail filter stack.
+     */
+    fun loadSavedFiltersToAccountDetailStack(filterEntities: List<com.osscabinet.ossWallet.data.local.entity.FilterEntity>) {
+        filterEntities.forEach { loadSavedFilterToAccountDetailStack(it) }
     }
 
     fun addTransaction(

@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
+import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -37,6 +38,21 @@ class AccountsViewViewModel(
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
     val sectionOrder: StateFlow<List<AccountsViewSection>> = _sectionOrder.asStateFlow()
+
+    // Filter state for accounts
+    private val _initialFilterContext = MutableStateFlow<AccountsFilterContext>(AccountsFilterContext.None)
+    val initialFilterContext: StateFlow<AccountsFilterContext> = _initialFilterContext.asStateFlow()
+
+    data class AccountFilter(
+        val accountTypes: List<String> = emptyList(),
+        val currencies: List<String> = emptyList(),
+        val minBalance: BigDecimal? = null,
+        val maxBalance: BigDecimal? = null,
+        val includeHidden: Boolean = true
+    )
+
+    private val _accountFilter = MutableStateFlow(AccountFilter())
+    val accountFilter: StateFlow<AccountFilter> = _accountFilter.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -101,6 +117,70 @@ class AccountsViewViewModel(
         viewModelScope.launch {
             settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
+    }
+
+    /**
+     * Initialize the account filter from a navigation context
+     */
+    fun initializeAccountsFilter(context: AccountsFilterContext) {
+        _initialFilterContext.value = context
+        val filter = when (context) {
+            is AccountsFilterContext.None -> AccountFilter()
+            is AccountsFilterContext.ByType -> AccountFilter(accountTypes = listOf(context.accountType))
+            is AccountsFilterContext.ByCurrency -> AccountFilter(currencies = listOf(context.currency))
+            is AccountsFilterContext.Custom -> AccountFilter(
+                accountTypes = context.accountTypes,
+                currencies = context.currencies,
+                minBalance = context.minBalance?.let { java.math.BigDecimal(it) },
+                maxBalance = context.maxBalance?.let { java.math.BigDecimal(it) },
+                includeHidden = context.includeHidden
+            )
+        }
+        _accountFilter.value = filter
+    }
+
+    /**
+     * Update the account filter
+     */
+    fun updateAccountsFilter(filter: AccountFilter) {
+        _accountFilter.value = filter
+    }
+
+    /**
+     * Reset the filter to the initial context
+     */
+    fun resetToInitialFilter() {
+        initializeAccountsFilter(_initialFilterContext.value)
+    }
+
+    /**
+     * Check if the current filter has been modified from the initial context
+     */
+    fun hasModifiedFilter(): Boolean {
+        val initialFilter = when (_initialFilterContext.value) {
+            is AccountsFilterContext.None -> AccountFilter()
+            is AccountsFilterContext.ByType -> AccountFilter(accountTypes = listOf((_initialFilterContext.value as AccountsFilterContext.ByType).accountType))
+            is AccountsFilterContext.ByCurrency -> AccountFilter(currencies = listOf((_initialFilterContext.value as AccountsFilterContext.ByCurrency).currency))
+            is AccountsFilterContext.Custom -> {
+                val ctx = _initialFilterContext.value as AccountsFilterContext.Custom
+                AccountFilter(
+                    accountTypes = ctx.accountTypes,
+                    currencies = ctx.currencies,
+                    minBalance = ctx.minBalance?.let { java.math.BigDecimal(it) },
+                    maxBalance = ctx.maxBalance?.let { java.math.BigDecimal(it) },
+                    includeHidden = ctx.includeHidden
+                )
+            }
+        }
+        return _accountFilter.value != initialFilter
+    }
+
+    /**
+     * Clear the account filter (reset to default)
+     */
+    fun clearAccountsFilter() {
+        _accountFilter.value = AccountFilter()
+        _initialFilterContext.value = AccountsFilterContext.None
     }
 
     fun updateCashFlowTimelineRange(range: TimelineRange) {

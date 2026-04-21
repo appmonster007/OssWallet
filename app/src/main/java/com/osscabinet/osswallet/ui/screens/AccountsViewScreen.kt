@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
+import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
+import kotlinx.serialization.json.Json
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
@@ -98,7 +102,8 @@ fun AccountsViewScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
     accountsViewViewModel: AccountsViewViewModel,
-    cardManagerViewModel: CardManagerViewModel
+    cardManagerViewModel: CardManagerViewModel,
+    filterContext: String? = null
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -108,6 +113,30 @@ fun AccountsViewScreen(
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
+    }
+
+    // Apply initial filter when screen opens with context
+    LaunchedEffect(filterContext) {
+        filterContext?.let { contextString ->
+            try {
+                val decodedContext = URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
+                val context = Json.decodeFromString<AccountsFilterContext>(decodedContext)
+                accountsViewViewModel.initializeAccountsFilter(context)
+            } catch (e: Exception) {
+                // If context is invalid, use default
+                accountsViewViewModel.initializeAccountsFilter(AccountsFilterContext.None)
+            }
+        } ?: run {
+            // If no context provided, ensure filter is cleared
+            accountsViewViewModel.clearAccountsFilter()
+        }
+    }
+
+    // Clear filter when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            accountsViewViewModel.clearAccountsFilter()
+        }
     }
 
     val navigate: (() -> Unit) -> Unit = { action ->

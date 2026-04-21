@@ -67,6 +67,7 @@ fun <T> CardReorderableList(
     state: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
+    animateCards: Boolean = true,
     itemContent: @Composable LazyItemScope.(item: T, isDragging: Boolean, dragModifier: Modifier) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -240,7 +241,7 @@ fun <T> CardReorderableList(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateItem() // Built-in smooth transition for swaps
+                        .then(if (animateCards || draggedKey != null) Modifier.animateItem() else Modifier) // Animate if setting enabled or during reordering
                         .graphicsLayer { this.alpha = alpha }
                 ) {
                     if (isDragging) {

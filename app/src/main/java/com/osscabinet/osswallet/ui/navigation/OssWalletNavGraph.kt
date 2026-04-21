@@ -251,9 +251,7 @@ fun OssWalletNavGraph(
         composable(Screen.AccountsView.route) {
             AccountsViewScreen(
                 onDashboardClick = { 
-                    navController.navigate(Screen.Dashboard.route) { 
-                        popUpTo(Screen.Dashboard.route) { inclusive = true } 
-                    } 
+                    navController.popBackStack()
                 },
                 onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },

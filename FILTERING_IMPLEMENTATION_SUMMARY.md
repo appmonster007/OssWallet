@@ -72,8 +72,10 @@ Created the following new domain models in `domain/model/filter/`:
 #### Unified Text Search
 ```kotlin
 // Single text search that checks both note and payee fields
+// Case-insensitive by default for better user experience
 val textFilter = TextFilter(query = "coffee", isRegex = false)
 // This will find transactions where "coffee" appears in either note or payee
+// Case-insensitive: matches "Coffee", "COFFEE", "coffee", etc.
 ```
 
 #### Filter Stacking
@@ -164,12 +166,13 @@ val convertedBack = newStack.toTransactionFilter()
 ### Problems Solved by New Architecture
 
 1. ✅ **Unified Text Search** - TextFilter searches both note and payee fields with a single input
-2. ✅ **Standard Format** - UnifiedFilter unifies all filter types
-3. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
-4. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
-5. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
-6. ✅ **Type Safety** - Sealed classes prevent invalid combinations
-7. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
+2. ✅ **Case-Insensitive Search** - TextFilter is case-insensitive by default for better UX
+3. ✅ **Standard Format** - UnifiedFilter unifies all filter types
+4. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
+5. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
+6. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
+7. ✅ **Type Safety** - Sealed classes prevent invalid combinations
+8. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
 
 ### Files Created
 

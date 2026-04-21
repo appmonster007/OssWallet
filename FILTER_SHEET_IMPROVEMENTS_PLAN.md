@@ -126,6 +126,31 @@ label = "Category: $categoryId"
 
 ### Issue #7: Currency Filter for Aggregate Currency Balances
 **Status**: ✅ COMPLETED
+
+---
+
+### Issue #8: Filter Dropdowns Show Unfiltered Options
+**Status**: ✅ COMPLETED
+**Root Cause**: Currency dropdown was deriving options from accounts list inline, making the data flow implicit
+**Current State**:
+- Currency dropdown derived from accounts.map { it.currencyCode } inside FilterFields
+- Data flow was implicit and not controllable by parent
+**Resolution**:
+1. ✅ Add allAvailableCurrencies parameter to FilterFields
+2. ✅ Pass explicitly from FilterSheetContent (currently from accounts, can be from transactions later)
+3. ✅ Use parameter instead of deriving inline
+4. ✅ Makes data flow explicit and allows parent to control unfiltered options
+**Files to Modify**:
+- ✅ `ui/components/transactions/FilterComponents.kt`
+  - ✅ Add allAvailableCurrencies parameter
+  - ✅ Use parameter in currency dialog with fallback to accounts
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Pass allAvailableCurrencies derived from accounts
+
+---
+
+### Issue #9: Currency Filter for Aggregate Currency Balances
+**Status**: ✅ COMPLETED
 **Root Cause**: TransactionFilter doesn't support currency filtering
 **Current State**:
 - RecordsFilterContext.ByAccountAndCurrency exists but not implemented in query logic
@@ -160,11 +185,12 @@ label = "Category: $categoryId"
 ### Phase 2: Medium Priority (Feature Enhancements) - ✅ COMPLETED
 4. ⏳ **Issue #1**: Individual context field removal (enhances flexibility) - PENDING
 5. ✅ **Issue #7**: Currency filter implementation (enables complete filtering)
+6. ✅ **Issue #8**: Filter dropdowns show unfiltered options (data flow improvement)
 
 ### Phase 3: Low Priority (Already Done) - ✅ VERIFIED
-6. ✅ **Issue #0**: Verify MVVM pattern (already correct)
-7. ✅ **Issue #3**: Verify reset behavior (already correct)
-8. ✅ **Issue #6**: Verify card navigation (already correct)
+7. ✅ **Issue #0**: Verify MVVM pattern (already correct)
+8. ✅ **Issue #3**: Verify reset behavior (already correct)
+9. ✅ **Issue #6**: Verify card navigation (already correct)
 
 ---
 
@@ -179,7 +205,7 @@ label = "Category: $categoryId"
 
 ## Risk Assessment
 
-- **Low Risk**: ✅ Issues #4 (simple data mapping), #0/#3/#6 (already correct)
+- **Low Risk**: ✅ Issues #4 (simple data mapping), #0/#3/#6 (already correct), #8 (data flow improvement)
 - **Medium Risk**: ✅ Issues #2 (UI state management), #5 (scroll behavior changes - partial)
 - **High Risk**: ✅ Issue #7 (currency filtering may require DB query changes - completed successfully)
 
@@ -192,5 +218,5 @@ label = "Category: $categoryId"
 - Phase 3: ✅ COMPLETED (30 minutes verification)
 - Remaining: Issue #1 (individual context field removal) - 1-2 hours
 - Remaining: Issue #5 (sticky header for timeline) - 30 minutes
-- **Total Completed**: 5-7 hours
+- **Total Completed**: 5.5-7.5 hours
 - **Total Remaining**: 1.5-2.5 hours

@@ -146,27 +146,31 @@ val convertedBack = newStack.toTransactionFilter()
 ### Build Status
 ✅ Build successful - all new models compile correctly
 
-### Next Steps (Phase 3: Use Cases)
+### Next Steps (Phase 4: ViewModels)
 
-**Goal:** Add FilterStack support to use cases layer
+**Goal:** Add FilterStack support to ViewModels
 
 **Tasks:**
-1. Add `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionUseCases ✅ COMPLETED
-2. Add filter composition helpers
-3. Add unit tests
+1. Add `filterStack: StateFlow<FilterStack>` to TransactionViewModel
+2. Add methods to manipulate FilterStack (add, remove, clear, clearInstant)
+3. Gradually migrate screens to use FilterStack
+4. Keep existing filter methods for compatibility
 
-**Estimated Time:** 2 days
+**Estimated Time:** 5-7 days
 
 **Phase 2 Status: ✅ COMPLETED**
+**Phase 3 Status: ✅ COMPLETED**
 
-**Completed Tasks:**
+**Phase 2 Completed Tasks:**
 1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionRepository interface
 2. ✅ Implemented FilterStack methods in TransactionRepositoryImpl (using conversion to TransactionFilter for now)
 3. ✅ Updated SQL query to use COLLATE NOCASE for case-insensitive text search
-4. ✅ Added FilterStack support to TransactionUseCases
-5. ✅ Kept existing methods for backward compatibility
-6. ⏳ Direct SQL query builder for FilterStack (deferred to optimization phase)
-7. ⏳ Unit tests (deferred to testing phase)
+4. ✅ Kept existing methods for backward compatibility
+
+**Phase 3 Completed Tasks:**
+1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionUseCases
+2. ⏳ Filter composition helpers (deferred)
+3. ⏳ Unit tests (deferred to testing phase)
 
 **Implementation Notes:**
 - Current implementation converts FilterStack to TransactionFilter for immediate functionality
@@ -175,10 +179,6 @@ val convertedBack = newStack.toTransactionFilter()
 - Case-insensitive search implemented using SQLite COLLATE NOCASE
 
 ### Remaining Phases
-
-**Phase 3: Use Cases** (2 days)
-- Add FilterStack methods to TransactionUseCases
-- Add filter composition helpers
 
 **Phase 4: ViewModels** (5-7 days)
 - Add filterStack StateFlow alongside existing filters

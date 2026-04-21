@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -41,7 +42,10 @@ fun TransactionFilterSheet(
     onClose: () -> Unit,
     isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    showAccountFilter: Boolean = true
+    showAccountFilter: Boolean = true,
+    // Context-aware parameters
+    initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
+    accountNames: Map<String, String> = emptyMap()
 ) {
     Box(
         modifier = Modifier.wrapContentHeight()
@@ -57,7 +61,9 @@ fun TransactionFilterSheet(
             onClose = onClose,
             isExpanded = isExpanded,
             backgroundColor = backgroundColor,
-            showAccountFilter = showAccountFilter
+            showAccountFilter = showAccountFilter,
+            initialFilterContext = initialFilterContext,
+            accountNames = accountNames
         )
     }
 }

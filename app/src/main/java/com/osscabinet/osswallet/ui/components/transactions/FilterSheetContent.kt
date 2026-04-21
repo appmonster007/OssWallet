@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.toDomain
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -41,11 +42,31 @@ fun FilterSheetContent(
     onClose: () -> Unit,
     isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
-    showAccountFilter: Boolean = true
+    showAccountFilter: Boolean = true,
+    // Context-aware parameters
+    initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
+    accountNames: Map<String, String> = emptyMap()
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterId by remember { mutableStateOf<Long?>(null) }
     var filtersExpanded by remember { mutableStateOf(false) }
+
+    // Determine pre-applied filters from context
+    val preAppliedAccountId = when (initialFilterContext) {
+        is RecordsFilterContext.ByAccount,
+        is RecordsFilterContext.ByAccountAndType,
+        is RecordsFilterContext.ByAccountAndCurrency -> {
+            (initialFilterContext as? RecordsFilterContext.ByAccount)?.accountId
+                ?: (initialFilterContext as? RecordsFilterContext.ByAccountAndType)?.accountId
+                ?: (initialFilterContext as? RecordsFilterContext.ByAccountAndCurrency)?.accountId
+        }
+        else -> null
+    }
+
+    val preAppliedIsIncome = when (initialFilterContext) {
+        is RecordsFilterContext.ByAccountAndType -> (initialFilterContext as RecordsFilterContext.ByAccountAndType).isIncome
+        else -> null
+    }
 
     Column(
         modifier = Modifier
@@ -65,6 +86,45 @@ fun FilterSheetContent(
             showArcTab = true,
             backgroundColor = backgroundColor
         )
+
+        // Context indicator header (if context is not None)
+        if (initialFilterContext != RecordsFilterContext.None) {
+            ContextIndicator(
+                context = initialFilterContext,
+                accountNames = accountNames,
+                onReset = {
+                    // Reset to initial context
+                    localFilter = when (initialFilterContext) {
+                        is RecordsFilterContext.None -> TransactionFilter()
+                        is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf((initialFilterContext as RecordsFilterContext.ByAccount).accountId))
+                        is RecordsFilterContext.ByAccountAndType -> {
+                            val ctx = initialFilterContext as RecordsFilterContext.ByAccountAndType
+                            TransactionFilter(accountIds = listOf(ctx.accountId), isIncome = ctx.isIncome)
+                        }
+                        is RecordsFilterContext.ByAccountAndCurrency -> {
+                            val ctx = initialFilterContext as RecordsFilterContext.ByAccountAndCurrency
+                            TransactionFilter(accountIds = listOf(ctx.accountId))
+                        }
+                        is RecordsFilterContext.Custom -> {
+                            val ctx = initialFilterContext as RecordsFilterContext.Custom
+                            TransactionFilter(
+                                accountIds = ctx.accountIds,
+                                isIncome = ctx.isIncome,
+                                startDate = ctx.startDate,
+                                endDate = ctx.endDate,
+                                categoryIds = ctx.categoryIds.map { it.toLong() },
+                                paymentMethods = ctx.paymentMethods,
+                                queryNote = ctx.queryNote,
+                                minAmount = ctx.minAmount?.let { java.math.BigDecimal(it) },
+                                maxAmount = ctx.maxAmount?.let { java.math.BigDecimal(it) },
+                                queryPayee = ctx.queryPayee
+                            )
+                        }
+                    }
+                }
+            )
+            HorizontalDivider()
+        }
 
         Column(
             modifier = Modifier
@@ -199,6 +259,53 @@ fun FilterSheetContent(
                 Text("Apply Filters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
+    }
+}
+
+@Composable
+fun ContextIndicator(
+    context: RecordsFilterContext,
+    accountNames: Map<String, String>,
+    onReset: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.FilterList,
+                contentDescription = "Applied filter",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = getContextDisplayName(context, accountNames),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        TextButton(onClick = onReset) {
+            Text("Reset")
+        }
+    }
+}
+
+private fun getContextDisplayName(context: RecordsFilterContext, accountNames: Map<String, String>): String {
+    return when (context) {
+        is RecordsFilterContext.None -> "All"
+        is RecordsFilterContext.ByAccount -> "Account: ${accountNames[context.accountId] ?: context.accountId}"
+        is RecordsFilterContext.ByAccountAndType ->
+            "Account: ${accountNames[context.accountId] ?: context.accountId} (${if (context.isIncome) "Income" else "Expense"})"
+        is RecordsFilterContext.ByAccountAndCurrency ->
+            "Account: ${accountNames[context.accountId] ?: context.accountId} (${context.currency})"
+        is RecordsFilterContext.Custom -> "Custom"
     }
 }
 

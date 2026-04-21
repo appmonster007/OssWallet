@@ -52,15 +52,14 @@
       "accountName": "Main Bank",
       "currencyCode": "USD",
       "structureType": "REGULAR",
-      "currentBalance": 11360.00,
-      "currentBalanceConverted": 12723.01,
+      "currentBalance": 12923.06,
       "initialBalance": 5000.00,
-      "netChange": 6360.00,
+      "netChange": 7923.06,
       "transactionCount": 15,
       "cashFlow": {
-        "totalIncome": 7850.00,
-        "totalExpenses": 1490.00,
-        "netCashFlow": 6360.00
+        "totalIncome": 9743.85,
+        "totalExpenses": 1820.79,
+        "netCashFlow": 7923.06
       },
       "multiCurrencyCashFlow": {
         "USD": {
@@ -116,9 +115,9 @@
       "monthlyTrend": [
         {
           "month": "2024-01",
-          "income": 7850.00,
-          "expenses": 1490.00,
-          "balance": 11360.00
+          "income": 9743.85,
+          "expenses": 1820.79,
+          "balance": 12923.06
         }
       ]
     },
@@ -127,15 +126,14 @@
       "accountName": "Savings",
       "currencyCode": "USD",
       "structureType": "SAVINGS",
-      "currentBalance": 15000.00,
-      "currentBalanceConverted": 16807.23,
+      "currentBalance": 16807.50,
       "initialBalance": 15000.00,
-      "netChange": 0.00,
+      "netChange": 1807.50,
       "transactionCount": 2,
       "cashFlow": {
-        "totalIncome": 0.00,
+        "totalIncome": 1807.50,
         "totalExpenses": 0.00,
-        "netCashFlow": 0.00
+        "netCashFlow": 1807.50
       },
       "multiCurrencyCashFlow": {
         "USD": {
@@ -147,7 +145,7 @@
           "totalIncome": 150000.00,
           "totalExpenses": 0.00,
           "netCashFlow": 150000.00,
-          "convertedToUSD": 1807.23
+          "convertedToUSD": 1807.50
         }
       },
       "categoryBreakdown": [
@@ -160,9 +158,9 @@
       "monthlyTrend": [
         {
           "month": "2024-01",
-          "income": 0.00,
+          "income": 1807.50,
           "expenses": 0.00,
-          "balance": 15000.00
+          "balance": 16807.50
         }
       ]
     },
@@ -247,11 +245,10 @@
   ],
   "summary": {
     "totalAccounts": 5,
-    "totalBalance": 42964.72,
-    "totalBalanceConverted": 46335.00,
-    "totalIncome": 7850.00,
-    "totalExpenses": 2085.28,
-    "netCashFlow": 5764.72,
+    "totalBalance": 49812.28,
+    "totalIncome": 9651.35,
+    "totalExpenses": 2321.07,
+    "netCashFlow": 7330.28,
     "activeAccounts": 3,
     "accountsWithTransactions": 3,
     "totalTransactions": 27,
@@ -260,9 +257,9 @@
   },
   "globalCurrencyBreakdown": {
     "USD": {
-      "totalIncome": 7850.00,
-      "totalExpenses": 2085.28,
-      "netCashFlow": 5764.72,
+      "totalIncome": 9651.35,
+      "totalExpenses": 2321.07,
+      "netCashFlow": 7330.28,
       "accountCount": 5
     },
     "INR": {

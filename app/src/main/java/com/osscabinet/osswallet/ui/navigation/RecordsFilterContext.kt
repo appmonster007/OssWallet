@@ -30,7 +30,8 @@ sealed class RecordsFilterContext {
     ) : RecordsFilterContext()
 
     /**
-     * Filter by account and currency
+     * Filter by account and currency (Note: TransactionFilter doesn't support currency filtering directly)
+     * This context is reserved for future enhancement or can be handled via custom filtering
      */
     @Serializable
     data class ByAccountAndCurrency(
@@ -40,18 +41,20 @@ sealed class RecordsFilterContext {
 
     /**
      * Custom filter with arbitrary TransactionFilter criteria
+     * Note: categoryIds are stored as Strings for serialization but converted to Long when applied
+     * Note: minAmount/maxAmount are stored as Double for serialization but converted to BigDecimal when applied
      */
     @Serializable
     data class Custom(
         val accountIds: List<String> = emptyList(),
         val isIncome: Boolean? = null,
-        val currencies: List<String> = emptyList(),
         val startDate: Long? = null,
         val endDate: Long? = null,
         val categoryIds: List<String> = emptyList(),
-        val paymentMethodIds: List<String> = emptyList(),
-        val note: String? = null,
+        val paymentMethods: List<String> = emptyList(),
+        val queryNote: String? = null,
         val minAmount: Double? = null,
-        val maxAmount: Double? = null
+        val maxAmount: Double? = null,
+        val queryPayee: String? = null
     ) : RecordsFilterContext()
 }

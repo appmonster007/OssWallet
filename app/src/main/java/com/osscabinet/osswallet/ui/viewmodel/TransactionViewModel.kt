@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,6 +29,10 @@ class TransactionViewModel(
 
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
+
+    // Track the initial filter context from navigation
+    private val _initialFilterContext = MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
+    val initialFilterContext = _initialFilterContext.asStateFlow()
 
     val savedFilters = filterDao.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -96,6 +101,81 @@ class TransactionViewModel(
 
     fun clearAccountDetailFilters() {
         _accountDetailFilter.value = TransactionFilter()
+    }
+
+    /**
+     * Initialize the filter from a navigation context
+     * This should be called when the screen opens with a context parameter
+     */
+    fun initializeRecordsFilter(context: RecordsFilterContext) {
+        _initialFilterContext.value = context
+        val filter = when (context) {
+            is RecordsFilterContext.None -> TransactionFilter()
+            is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(context.accountId))
+            is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
+                accountIds = listOf(context.accountId),
+                isIncome = context.isIncome
+            )
+            is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
+                accountIds = listOf(context.accountId),
+                // Note: TransactionFilter doesn't have a currencies field, so we skip this for now
+                // This will need to be handled differently based on actual requirements
+            )
+            is RecordsFilterContext.Custom -> TransactionFilter(
+                accountIds = context.accountIds,
+                isIncome = context.isIncome,
+                startDate = context.startDate,
+                endDate = context.endDate,
+                categoryIds = context.categoryIds.map { it.toLong() },
+                paymentMethods = context.paymentMethods,
+                queryNote = context.queryNote,
+                minAmount = context.minAmount?.let { java.math.BigDecimal(it) },
+                maxAmount = context.maxAmount?.let { java.math.BigDecimal(it) },
+                queryPayee = context.queryPayee
+            )
+        }
+        _recordsFilter.value = filter
+    }
+
+    /**
+     * Check if the current filter has been modified from the initial context
+     */
+    fun hasModifiedFilter(): Boolean {
+        val initialFilter = when (_initialFilterContext.value) {
+            is RecordsFilterContext.None -> TransactionFilter()
+            is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf((_initialFilterContext.value as RecordsFilterContext.ByAccount).accountId))
+            is RecordsFilterContext.ByAccountAndType -> {
+                val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndType
+                TransactionFilter(accountIds = listOf(ctx.accountId), isIncome = ctx.isIncome)
+            }
+            is RecordsFilterContext.ByAccountAndCurrency -> {
+                val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndCurrency
+                TransactionFilter(accountIds = listOf(ctx.accountId)) // currencies not supported in TransactionFilter
+            }
+            is RecordsFilterContext.Custom -> {
+                val ctx = _initialFilterContext.value as RecordsFilterContext.Custom
+                TransactionFilter(
+                    accountIds = ctx.accountIds,
+                    isIncome = ctx.isIncome,
+                    startDate = ctx.startDate,
+                    endDate = ctx.endDate,
+                    categoryIds = ctx.categoryIds.map { it.toLong() },
+                    paymentMethods = ctx.paymentMethods,
+                    queryNote = ctx.queryNote,
+                    minAmount = ctx.minAmount?.let { java.math.BigDecimal(it) },
+                    maxAmount = ctx.maxAmount?.let { java.math.BigDecimal(it) },
+                    queryPayee = ctx.queryPayee
+                )
+            }
+        }
+        return _recordsFilter.value != initialFilter
+    }
+
+    /**
+     * Reset the filter to the initial context
+     */
+    fun resetToInitialFilter() {
+        initializeRecordsFilter(_initialFilterContext.value)
     }
 
     fun addTransaction(

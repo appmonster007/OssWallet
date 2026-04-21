@@ -153,6 +153,7 @@ val convertedBack = newStack.toTransactionFilter()
 **Phase 4 Status: ✅ COMPLETED**
 **Phase 5 Status: ✅ COMPLETED**
 **Phase 6 Status: ✅ COMPLETED**
+**Phase 7 Status: ✅ COMPLETED**
 
 **Phase 2 Completed Tasks:**
 1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionRepository interface
@@ -184,16 +185,26 @@ val convertedBack = newStack.toTransactionFilter()
 2. ✅ Marked old StateFlow properties as @Deprecated
 3. ✅ Marked old transactionsWithBalance flow as @Deprecated
 4. ✅ Added ReplaceWith annotations for migration guidance
-5. ⏳ Remove old code after validation period (deferred)
+
+**Phase 7 Completed Tasks:**
+1. ✅ Migrated TransactionListScreen to use transactionsWithBalanceFromStack
+2. ✅ Migrated AccountDetailScreen to use local filter state with FilterStack
+3. ✅ Removed deprecated _recordsFilter and _accountDetailFilter StateFlows
+4. ✅ Removed deprecated transactionsWithBalance flow
+5. ✅ Removed deprecated methods (updateRecordsFilter, updateAccountDetailFilter, etc.)
+6. ✅ Kept TransactionFilter model for UI filter sheet compatibility
+7. ✅ Kept TransactionFilter repository methods for saved filter loading
+8. ✅ Build successful - no compilation errors
 
 **Implementation Notes:**
 - Current implementation converts FilterStack to TransactionFilter for immediate functionality
 - This allows the new system to work without breaking existing code
 - Direct SQL query building from FilterStack can be added later for performance optimization
 - Case-insensitive search implemented using SQLite COLLATE NOCASE
-- ViewModel provides both old and new flows for gradual migration
-- Deprecated warnings guide developers to migrate to new FilterStack methods
-- Existing screens continue to work but show deprecation warnings
+- ViewModel now only uses FilterStack - legacy TransactionFilter ViewModel layer removed
+- UI still uses TransactionFilter for filter sheet (converted to FilterStack at ViewModel)
+- Clean separation between UI model (TransactionFilter) and data layer (FilterStack)
+- Only individual filters saved (no filter combinations)
 
 ### Files Created
 
@@ -203,6 +214,15 @@ val convertedBack = newStack.toTransactionFilter()
 4. `domain/model/filter/UnifiedFilter.kt` - Unified filter sealed class with TextFilter, InstantFilter
 5. `domain/model/filter/FilterStack.kt` - Filter stack with composition and instant filter support
 6. `ui/util/FilterDisplayUtils.kt` - UI utilities for filter display
+
+### Files Modified
+
+1. `domain/repository/TransactionRepository.kt` - Added FilterStack methods
+2. `data/repository/TransactionRepositoryImpl.kt` - Implemented FilterStack methods, added COLLATE NOCASE
+3. `domain/usecase/TransactionUseCases.kt` - Added FilterStack methods
+4. `ui/viewmodel/TransactionViewModel.kt` - Removed legacy filtering, added FilterStack support
+5. `ui/screens/TransactionListScreen.kt` - Migrated to FilterStack
+6. `ui/accountdetail/AccountDetailScreen.kt` - Migrated to FilterStack
 
 ### Current Filtering Systems Identified
 

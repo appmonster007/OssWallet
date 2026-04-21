@@ -90,8 +90,22 @@ class DatabaseSeeder @Inject constructor(
         }
         android.util.Log.d("DatabaseSeeder", "Found ${categories.size} categories")
 
-        // Create a map of category names to IDs
-        val categoryNameToId = categories.associate { it.name to it.id }
+        // Create "Initial Balance" category if it doesn't exist
+        val categoryNameToId = mutableMapOf<String, Long>()
+        categories.forEach { categoryNameToId[it.name] = it.id }
+
+        if (!categoryNameToId.containsKey("Initial Balance")) {
+            val initialBalanceCategory = com.osscabinet.ossWallet.data.local.entity.CategoryEntity(
+                name = "Initial Balance",
+                iconName = "AccountBalance",
+                colorHex = -11751600, // Same color as Salary
+                isDefault = true,
+                parentId = null
+            )
+            val insertedId = categoryDao.insertCategory(initialBalanceCategory)
+            categoryNameToId["Initial Balance"] = insertedId
+            android.util.Log.d("DatabaseSeeder", "Created Initial Balance category with ID $insertedId")
+        }
 
         // Insert transactions with correct category IDs
         var successfulTransactions = 0

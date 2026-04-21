@@ -5,21 +5,21 @@
       "accountName": "Main Bank",
       "currencyCode": "USD",
       "structureType": "REGULAR",
-      "currentBalance": 12844.86,
+      "currentBalance": 12881.29,
       "initialBalance": 0.0,
-      "netChange": 12844.86,
+      "netChange": 12881.29,
       "transactionCount": 18,
       "cashFlow": {
-        "totalIncome": 14657.2,
-        "totalExpenses": 1812.34,
-        "netCashFlow": 12844.86
+        "totalIncome": 14704.63,
+        "totalExpenses": 1823.34,
+        "netCashFlow": 12881.29
       },
       "multiCurrencyCashFlow": {
         "EUR": {
           "totalIncome": 800.0,
           "totalExpenses": 185.5,
           "netCashFlow": 614.5,
-          "convertedToUSD": 687.3601789709172
+          "convertedToUSD": 723.7926972909305
         },
         "INR": {
           "totalIncome": 85000.0,
@@ -78,9 +78,9 @@
       "monthlyTrend": [
         {
           "month": "2024-01",
-          "income": 14657.2,
-          "expenses": 1812.34,
-          "balance": 12844.86
+          "income": 14704.63,
+          "expenses": 1823.34,
+          "balance": 12881.29
         }
       ]
     },
@@ -255,10 +255,10 @@
   ],
   "summary": {
     "totalAccounts": 5,
-    "totalBalance": 39859.6,
-    "totalIncome": 42267.22,
-    "totalExpenses": 2407.62,
-    "netCashFlow": 39859.6,
+    "totalBalance": 39896.03,
+    "totalIncome": 42314.65,
+    "totalExpenses": 2418.62,
+    "netCashFlow": 39896.03,
     "activeAccounts": 5,
     "accountsWithTransactions": 5,
     "totalTransactions": 34,
@@ -283,14 +283,14 @@
       "accountCount": 2
     },
     "USD": {
-      "totalIncome": 42267.23,
-      "totalExpenses": 2407.62,
-      "netCashFlow": 39859.6,
+      "totalIncome": 42314.66,
+      "totalExpenses": 2418.62,
+      "netCashFlow": 39896.04,
       "accountCount": 5
     }
   },
   "exchangeRatesUsed": {
     "INR_to_USD": 0.010733494836652308,
-    "EUR_to_USD": 1.1185682326621924
+    "EUR_to_USD": 1.1778563015312131
   }
 }

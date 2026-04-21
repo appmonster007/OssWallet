@@ -149,7 +149,31 @@ label = "Category: $categoryId"
 
 ---
 
-### Issue #9: Currency Filter for Aggregate Currency Balances
+### Issue #9: Merge Context and Active Filters
+**Status**: ✅ COMPLETED
+**Root Cause**: Two separate sections for context filter and active filters created redundancy
+**Current State**:
+- ContextIndicator showed pre-applied filters separately
+- ActiveFiltersSummary showed current active filters separately
+- Both had reset functionality
+**Resolution**:
+1. ✅ Remove ContextIndicator composable
+2. ✅ Add context information to ActiveFiltersSummary expanded view
+3. ✅ Add Reset button to ActiveFiltersSummary header
+4. ✅ Reset button clears all filters and updates records correctly
+5. ✅ Context shown as filter chip with pre-applied indicator
+6. ✅ Simplifies UI by merging similar sections
+**Files to Modify**:
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Remove ContextIndicator and ContextFilterField composables
+  - ✅ Add initialFilterContext and onResetAll to ActiveFiltersSummary
+  - ✅ Show context as filter chip in expanded view
+  - ✅ Add Reset button in header
+  - ✅ Remove separate ContextIndicator section from LazyColumn
+
+---
+
+### Issue #10: Currency Filter for Aggregate Currency Balances
 **Status**: ✅ COMPLETED
 **Root Cause**: TransactionFilter doesn't support currency filtering
 **Current State**:
@@ -186,11 +210,12 @@ label = "Category: $categoryId"
 4. ⏳ **Issue #1**: Individual context field removal (enhances flexibility) - PENDING
 5. ✅ **Issue #7**: Currency filter implementation (enables complete filtering)
 6. ✅ **Issue #8**: Filter dropdowns show unfiltered options (data flow improvement)
+7. ✅ **Issue #9**: Merge context and active filters (UI simplification)
 
 ### Phase 3: Low Priority (Already Done) - ✅ VERIFIED
-7. ✅ **Issue #0**: Verify MVVM pattern (already correct)
-8. ✅ **Issue #3**: Verify reset behavior (already correct)
-9. ✅ **Issue #6**: Verify card navigation (already correct)
+8. ✅ **Issue #0**: Verify MVVM pattern (already correct)
+9. ✅ **Issue #3**: Verify reset behavior (already correct)
+10. ✅ **Issue #6**: Verify card navigation (already correct)
 
 ---
 
@@ -218,5 +243,5 @@ label = "Category: $categoryId"
 - Phase 3: ✅ COMPLETED (30 minutes verification)
 - Remaining: Issue #1 (individual context field removal) - 1-2 hours
 - Remaining: Issue #5 (sticky header for timeline) - 30 minutes
-- **Total Completed**: 5.5-7.5 hours
+- **Total Completed**: 6-8 hours
 - **Total Remaining**: 1.5-2.5 hours

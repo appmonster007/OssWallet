@@ -1,7 +1,7 @@
 # Records Page Reusability Plan
 
 ## Objective
-Make the TransactionListScreen (Records page) reusable across different contexts with pre-applied filters when opened from various entry points.
+Make the TransactionListScreen (Records page) reusable across different contexts with pre-applied filters when opened from various entry points. Also apply similar patterns to AccountsViewScreen and Dashboard screen for consistent navigation experience.
 
 ## Current State
 - TransactionListScreen uses TransactionFilter from ViewModel
@@ -9,6 +9,7 @@ Make the TransactionListScreen (Records page) reusable across different contexts
 - Each entry point would need to manually set filters after navigation
 - No clear separation between "initial filter" (from context) and "user-applied filter" (from UI)
 - TransactionFilterSheet is the UI component for filter modification
+- AccountsViewScreen and Dashboard screen have similar filtering needs but no context-aware navigation
 
 ## Target State
 - TransactionListScreen accepts navigation arguments for initial filter criteria
@@ -18,6 +19,8 @@ Make the TransactionListScreen (Records page) reusable across different contexts
 - Users can still modify filters via the UI
 - Clean separation between context-provided filters and user-applied modifications
 - Type-safe navigation with clear filter context
+- AccountsViewScreen supports similar context-aware navigation
+- Dashboard screen supports context-aware navigation to filtered views
 
 ## Architecture Design
 
@@ -186,7 +189,7 @@ navController.navigateToRecords(
 )
 ```
 
-### 6. Entry Point Implementations
+### 6. Entry Point Implementations - TransactionListScreen
 
 #### 6.1 Account Hero Card (AccountDetailScreen)
 
@@ -227,7 +230,76 @@ onClick = { currency ->
 }
 ```
 
-### 7. UI Enhancements
+### 7. Entry Point Implementations - AccountsViewScreen
+
+Create similar context-aware navigation for AccountsViewScreen:
+
+```kotlin
+sealed class AccountsFilterContext {
+    data object None : AccountsFilterContext()
+    data class ByType(val accountType: String) : AccountsFilterContext()
+    data class ByCurrency(val currency: String) : AccountsFilterContext()
+    data class Custom(val filter: AccountFilter) : AccountsFilterContext()
+}
+```
+
+#### 7.1 Dashboard Account Type Cards
+
+```kotlin
+// In Dashboard, clicking on account type card (e.g., "Bank Accounts")
+onClick = {
+    navController.navigateToAccountsView(
+        AccountsFilterContext.ByType("Bank")
+    )
+}
+```
+
+#### 7.2 Currency Balance Cards (Dashboard)
+
+```kotlin
+// In Dashboard currency balances section
+onClick = { currency ->
+    navController.navigateToAccountsView(
+        AccountsFilterContext.ByCurrency(currency)
+    )
+}
+```
+
+### 8. Entry Point Implementations - Dashboard Screen
+
+Create context-aware navigation for Dashboard screen to open with specific views focused:
+
+```kotlin
+sealed class DashboardViewContext {
+    data object None : DashboardViewContext()
+    data class FocusCard(val cardId: String) : DashboardViewContext()
+    data class FocusSection(val section: DashboardSection) : DashboardViewContext()
+}
+```
+
+#### 8.1 From Records Screen
+
+```kotlin
+// In Records screen, clicking on account in transaction
+onClick = { accountId ->
+    navController.navigateToDashboard(
+        DashboardViewContext.FocusSection(DashboardSection.ACCOUNTS)
+    )
+}
+```
+
+#### 8.2 From Budgets Screen
+
+```kotlin
+// In Budgets screen, clicking on budget
+onClick = {
+    navController.navigateToDashboard(
+        DashboardViewContext.FocusSection(DashboardSection.BUDGETS)
+    )
+}
+```
+
+### 9. UI Enhancements
 
 Add visual indicator when filter is applied from context:
 
@@ -254,7 +326,7 @@ private fun getContextDisplayName(context: RecordsFilterContext): String {
 }
 ```
 
-### 8. TransactionFilterSheet Updates
+### 10. TransactionFilterSheet Updates
 
 Update TransactionFilterSheet to respect initial filter context and provide appropriate UI:
 
@@ -612,7 +684,7 @@ fun TransactionListScreen(
 }
 ```
 
-### 9. Navigation Graph Update
+### 11. Navigation Graph Update
 
 ```kotlin
 // NavGraph.kt
@@ -640,15 +712,69 @@ composable(
         initialFilterContext = filterContext
     )
 }
+
+// AccountsViewScreen navigation graph
+composable(
+    route = "${NavigationRoutes.ACCOUNTS_VIEW}?filterContext={filterContext}",
+    arguments = listOf(
+        navArgument("filterContext") {
+            type = NavType.StringType
+            defaultValue = null
+            nullable = true
+        }
+    )
+) { backStackEntry ->
+    val filterContextJson = backStackEntry.arguments?.getString("filterContext")
+    val filterContext = if (filterContextJson != null) {
+        Json.decodeFromString<AccountsFilterContext>(
+            URLDecoder.decode(filterContextJson, StandardCharsets.UTF_8.toString())
+        )
+    } else {
+        AccountsFilterContext.None
+    }
+
+    AccountsViewScreen(
+        // ... other params
+        initialFilterContext = filterContext
+    )
+}
+
+// Dashboard navigation graph
+composable(
+    route = "${NavigationRoutes.DASHBOARD}?viewContext={viewContext}",
+    arguments = listOf(
+        navArgument("viewContext") {
+            type = NavType.StringType
+            defaultValue = null
+            nullable = true
+        }
+    )
+) { backStackEntry ->
+    val viewContextJson = backStackEntry.arguments?.getString("viewContext")
+    val viewContext = if (viewContextJson != null) {
+        Json.decodeFromString<DashboardViewContext>(
+            URLDecoder.decode(viewContextJson, StandardCharsets.UTF_8.toString())
+        )
+    } else {
+        DashboardViewContext.None
+    }
+
+    DashboardScreen(
+        // ... other params
+        initialViewContext = viewContext
+    )
+}
 ```
 
 ## Implementation Phases
 
 ### Phase 1: Foundation (1-2 days)
 - [ ] Create RecordsFilterContext sealed class
-- [ ] Add serialization support (kotlinx.serialization)
-- [ ] Add navigation route with argument
-- [ ] Create navigation extensions
+- [ ] Create AccountsFilterContext sealed class
+- [ ] Create DashboardViewContext sealed class
+- [ ] Add serialization support (kotlinx.serialization) for all contexts
+- [ ] Add navigation routes with arguments for all screens
+- [ ] Create navigation extensions for all screens
 
 ### Phase 2: ViewModel Enhancement (1 day)
 - [ ] Add _initialFilterContext StateFlow
@@ -686,7 +812,36 @@ composable(
 - [ ] Add unit tests for filter context logic
 - [ ] Test TransactionFilterSheet locked states
 
-**Total Estimated Time: 6-8 days**
+### Phase 7: AccountsViewScreen Implementation (1-2 days)
+- [ ] Add _initialFilterContext StateFlow to AccountsViewModel
+- [ ] Implement initializeAccountsFilter()
+- [ ] Update AccountsViewScreen signature with context parameter
+- [ ] Add LaunchedEffect for initial filter application
+- [ ] Update account filter UI to show pre-applied indicators
+- [ ] Implement navigation from Dashboard account type cards
+- [ ] Implement navigation from Dashboard currency balance cards
+- [ ] Test AccountsViewScreen context-aware navigation
+
+### Phase 8: Dashboard Screen Implementation (1 day)
+- [ ] Add _initialViewContext StateFlow to DashboardViewModel
+- [ ] Implement initializeDashboardView()
+- [ ] Update DashboardScreen signature with context parameter
+- [ ] Add LaunchedEffect for initial view focus
+- [ ] Implement section/card focus based on context
+- [ ] Implement navigation from Records screen to Dashboard
+- [ ] Implement navigation from Budgets screen to Dashboard
+- [ ] Test Dashboard context-aware navigation
+
+### Phase 9: Cross-Screen Integration & Polish (1 day)
+- [ ] Test navigation flow between all three screens
+- [ ] Ensure consistent UI patterns across screens
+- [ ] Add context indicators to all screens
+- [ ] Test deep linking with context parameters
+- [ ] Verify back stack behavior with contexts
+- [ ] Add unit tests for all context types
+- [ ] Performance testing for context serialization
+
+**Total Estimated Time: 10-13 days**
 
 ## Edge Cases & Considerations
 
@@ -720,6 +875,20 @@ composable(
 - **Issue**: Filter context shows accountId, but UI should show account name
 - **Solution**: Pass account name in context or lookup from ViewModel
 
+### 8. AccountsViewScreen Context Consistency
+- **Issue**: How to handle account type vs currency filtering conflicts?
+- **Solution**: Allow both filters to apply, show combined context indicator
+- **Issue**: Should account type filter be removable?
+- **Solution**: Yes, apply same removable pattern as TransactionListScreen
+
+### 9. Dashboard View Focus
+- **Issue**: How to visually indicate which section/card is focused?
+- **Solution**: Use highlight animation or scroll to position with visual indicator
+- **Issue**: What if focused card is not currently visible?
+- **Solution**: Auto-scroll to focused card/section with smooth animation
+- **Issue**: Should view focus persist when navigating away?
+- **Solution**: Reset on fresh navigation, keep during screen changes
+
 ## Alternative Approaches Considered
 
 ### Approach A: Direct Filter Parameter
@@ -743,23 +912,35 @@ composable(
 
 ### Unit Tests
 - [ ] RecordsFilterContext serialization/deserialization
+- [ ] AccountsFilterContext serialization/deserialization
+- [ ] DashboardViewContext serialization/deserialization
 - [ ] initializeRecordsFilter() for each context type
+- [ ] initializeAccountsFilter() for each context type
+- [ ] initializeDashboardView() for each context type
 - [ ] hasModifiedFilter() edge cases
 - [ ] resetToInitialFilter() behavior
 
 ### Integration Tests
-- [ ] Navigation from hero card → correct filter applied
-- [ ] Navigation from cashflow → correct filter applied
-- [ ] Navigation from currency balance → correct filter applied
+- [ ] Navigation from hero card → correct filter applied (TransactionListScreen)
+- [ ] Navigation from cashflow → correct filter applied (TransactionListScreen)
+- [ ] Navigation from currency balance → correct filter applied (TransactionListScreen)
+- [ ] Navigation from account type card → correct filter applied (AccountsViewScreen)
+- [ ] Navigation from currency balance → correct filter applied (AccountsViewScreen)
+- [ ] Navigation from Records → correct section focused (Dashboard)
+- [ ] Navigation from Budgets → correct section focused (Dashboard)
 - [ ] Filter modification → hasModifiedFilter() returns true
 - [ ] Reset button → returns to initial context
 - [ ] Back navigation → filter state preserved
 
 ### UI Tests
-- [ ] Filter chip displays correct context name
-- [ ] Reset button appears when filter modified
+- [ ] Filter chip displays correct context name (all screens)
+- [ ] Reset button appears when filter modified (all screens)
 - [ ] Filter sheet shows initial values correctly
 - [ ] User can add additional filters on top of initial context
+- [ ] Pre-applied filter indicators show navigation arrow icon
+- [ ] "Remove filter" chip works correctly
+- [ ] Dashboard scrolls to focused section/card
+- [ ] Focused section has visual highlight
 
 ## Performance Considerations
 

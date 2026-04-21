@@ -95,24 +95,6 @@ fun FilterSheetContent(
                 )
             }
 
-            // Context indicator header (if context is not None)
-            if (initialFilterContext != RecordsFilterContext.None) {
-                item {
-                    ContextIndicator(
-                        context = initialFilterContext,
-                        accountNames = accountNames,
-                        onReset = {
-                            // Call the ViewModel's reset method if available
-                            onResetToInitial?.invoke()
-                            // Reset to None (All) - clear all filters
-                            localFilter = TransactionFilter()
-                            onApplyFilter(localFilter)
-                        }
-                    )
-                }
-                item { HorizontalDivider() }
-            }
-
             // Active filters summary (collapsible)
             item {
                 ActiveFiltersSummary(
@@ -121,11 +103,19 @@ fun FilterSheetContent(
                     preAppliedIsIncome = preAppliedIsIncome,
                     accountNames = accountNames,
                     categoryMap = allCategories.associateBy { it.id },
+                    initialFilterContext = initialFilterContext,
                     onRemoveFilter = { field, value ->
                         removeFilter(localFilter, field, value) { updatedFilter ->
                             localFilter = updatedFilter
                             selectedFilterId = null // Clear preset when manually modified
                         }
+                    },
+                    onResetAll = {
+                        // Call the ViewModel's reset method if available
+                        onResetToInitial?.invoke()
+                        // Reset to None (All) - clear all filters
+                        localFilter = TransactionFilter()
+                        onApplyFilter(localFilter)
                     }
                 )
             }
@@ -275,189 +265,6 @@ fun FilterSheetContent(
     }
 }
 
-@Composable
-fun ContextIndicator(
-    context: RecordsFilterContext,
-    accountNames: Map<String, String>,
-    onReset: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = "Applied filter",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = getContextDisplayName(context, accountNames),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                IconButton(
-                    onClick = { expanded = !expanded },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-            TextButton(onClick = onReset) {
-                Text("Reset")
-            }
-        }
-
-        if (expanded) {
-            Column(
-                modifier = Modifier
-                    .padding(start = 24.dp, top = 8.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                when (context) {
-                    is RecordsFilterContext.ByAccount -> {
-                        ContextFilterField(
-                            label = "Account",
-                            value = accountNames[context.accountId] ?: context.accountId
-                        )
-                    }
-                    is RecordsFilterContext.ByAccountAndType -> {
-                        ContextFilterField(
-                            label = "Account",
-                            value = accountNames[context.accountId] ?: context.accountId
-                        )
-                        ContextFilterField(
-                            label = "Type",
-                            value = if (context.isIncome) "Income" else "Expense"
-                        )
-                    }
-                    is RecordsFilterContext.ByAccountAndCurrency -> {
-                        ContextFilterField(
-                            label = "Account",
-                            value = accountNames[context.accountId] ?: context.accountId
-                        )
-                        ContextFilterField(
-                            label = "Currency",
-                            value = context.currency
-                        )
-                    }
-                    is RecordsFilterContext.Custom -> {
-                        if (context.accountIds.isNotEmpty()) {
-                            ContextFilterField(
-                                label = "Accounts",
-                                value = context.accountIds.map { accountNames[it] ?: it }.joinToString(", ")
-                            )
-                        }
-                        if (context.isIncome != null) {
-                            ContextFilterField(
-                                label = "Type",
-                                value = if (context.isIncome) "Income" else "Expense"
-                            )
-                        }
-                        if (context.startDate != null || context.endDate != null) {
-                            ContextFilterField(
-                                label = "Date Range",
-                                value = formatDateRange(context.startDate, context.endDate)
-                            )
-                        }
-                        if (context.categoryIds.isNotEmpty()) {
-                            ContextFilterField(
-                                label = "Categories",
-                                value = context.categoryIds.joinToString(", ")
-                            )
-                        }
-                        if (context.currencies.isNotEmpty()) {
-                            ContextFilterField(
-                                label = "Currencies",
-                                value = context.currencies.joinToString(", ")
-                            )
-                        }
-                        if (context.paymentMethods.isNotEmpty()) {
-                            ContextFilterField(
-                                label = "Payment Methods",
-                                value = context.paymentMethods.joinToString(", ")
-                            )
-                        }
-                        if (context.queryNote != null) {
-                            ContextFilterField(
-                                label = "Note",
-                                value = context.queryNote
-                            )
-                        }
-                        if (context.queryPayee != null) {
-                            ContextFilterField(
-                                label = "Payee",
-                                value = context.queryPayee
-                            )
-                        }
-                        if (context.minAmount != null || context.maxAmount != null) {
-                            val range = buildString {
-                                if (context.minAmount != null) append("≥${context.minAmount}")
-                                if (context.minAmount != null && context.maxAmount != null) append(" - ")
-                                if (context.maxAmount != null) append("≤${context.maxAmount}")
-                            }
-                            ContextFilterField(
-                                label = "Amount",
-                                value = range
-                            )
-                        }
-                    }
-                    is RecordsFilterContext.None -> {
-                        ContextFilterField(
-                            label = "Filter",
-                            value = "All transactions"
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContextFilterField(
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(12.dp)
-        )
-        Text(
-            text = "$label: ",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
 private fun getContextDisplayName(context: RecordsFilterContext, accountNames: Map<String, String>): String {
     return when (context) {
         is RecordsFilterContext.None -> "All"
@@ -477,7 +284,9 @@ fun ActiveFiltersSummary(
     preAppliedIsIncome: Boolean?,
     accountNames: Map<String, String>,
     categoryMap: Map<Long, CategoryEntity>,
-    onRemoveFilter: (String, Any?) -> Unit
+    initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
+    onRemoveFilter: (String, Any?) -> Unit,
+    onResetAll: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -502,11 +311,21 @@ fun ActiveFiltersSummary(
                     style = MaterialTheme.typography.titleSmall
                 )
             }
-            IconButton(onClick = { expanded = !expanded }) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse" else "Expand"
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (countActiveFilters(filter) > 0 || initialFilterContext != RecordsFilterContext.None) {
+                    TextButton(
+                        onClick = onResetAll,
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Text("Reset", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
             }
         }
 
@@ -515,6 +334,20 @@ fun ActiveFiltersSummary(
                 modifier = Modifier.padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Context information
+                if (initialFilterContext != RecordsFilterContext.None) {
+                    FilterGroup(
+                        label = "Context",
+                        chips = listOf(
+                            FilterChipData(
+                                label = getContextDisplayName(initialFilterContext, accountNames),
+                                isPreApplied = true,
+                                onRemove = onResetAll
+                            )
+                        )
+                    )
+                }
+
                 // Account filters
                 if (filter.accountIds.isNotEmpty()) {
                     FilterGroup(

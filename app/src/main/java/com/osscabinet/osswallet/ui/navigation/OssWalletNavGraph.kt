@@ -221,7 +221,17 @@ fun OssWalletNavGraph(
             )
         }
 
-        composable(Screen.Dashboard.route) {
+        composable(
+            Screen.Dashboard.route,
+            arguments = listOf(
+                navArgument("viewContext") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val viewContext = backStackEntry.arguments?.getString("viewContext")
             com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
@@ -244,7 +254,8 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 dashboardViewModel = dashboardViewModel,
                 budgetViewModel = budgetViewModel,
-                cardManagerViewModel = cardManagerViewModel
+                cardManagerViewModel = cardManagerViewModel,
+                viewContext = viewContext
             )
         }
         

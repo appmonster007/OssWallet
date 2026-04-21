@@ -48,6 +48,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import kotlinx.serialization.json.Json
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
@@ -128,7 +132,8 @@ fun DashboardScreen(
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
     budgetViewModel: BudgetViewModel,
-    cardManagerViewModel: CardManagerViewModel
+    cardManagerViewModel: CardManagerViewModel,
+    viewContext: String? = null
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -138,6 +143,30 @@ fun DashboardScreen(
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
+    }
+
+    // Apply initial view focus when screen opens with context
+    LaunchedEffect(viewContext) {
+        viewContext?.let { contextString ->
+            try {
+                val decodedContext = URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
+                val context = Json.decodeFromString<DashboardViewContext>(decodedContext)
+                dashboardViewModel.initializeDashboardView(context)
+            } catch (e: Exception) {
+                // If context is invalid, use default
+                dashboardViewModel.initializeDashboardView(DashboardViewContext.None)
+            }
+        } ?: run {
+            // If no context provided, ensure view focus is cleared
+            dashboardViewModel.clearViewFocus()
+        }
+    }
+
+    // Clear view focus when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            dashboardViewModel.clearViewFocus()
+        }
     }
 
     val navigate: (() -> Unit) -> Unit = { action ->

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.dashboard
 
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,6 +50,18 @@ class DashboardViewModel(
     private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
 
+    // View context for dashboard navigation
+    private val _initialViewContext = MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
+    val initialViewContext: StateFlow<DashboardViewContext> = _initialViewContext.asStateFlow()
+
+    data class ViewFocus(
+        val focusedCardId: String? = null,
+        val focusedSection: DashboardSection? = null
+    )
+
+    private val _viewFocus = MutableStateFlow(ViewFocus())
+    val viewFocus: StateFlow<ViewFocus> = _viewFocus.asStateFlow()
+
     init {
         viewModelScope.launch {
             settingsDataStore.dashboardSettings.collect { settings ->
@@ -94,6 +107,53 @@ class DashboardViewModel(
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
         }
+    }
+
+    /**
+     * Initialize the dashboard view from a navigation context
+     */
+    fun initializeDashboardView(context: DashboardViewContext) {
+        _initialViewContext.value = context
+        val focus = when (context) {
+            is DashboardViewContext.None -> ViewFocus()
+            is DashboardViewContext.FocusCard -> ViewFocus(focusedCardId = context.cardId)
+            is DashboardViewContext.FocusSection -> ViewFocus(focusedSection = context.section)
+        }
+        _viewFocus.value = focus
+    }
+
+    /**
+     * Update the view focus
+     */
+    fun updateViewFocus(focus: ViewFocus) {
+        _viewFocus.value = focus
+    }
+
+    /**
+     * Reset the view focus to the initial context
+     */
+    fun resetToInitialView() {
+        initializeDashboardView(_initialViewContext.value)
+    }
+
+    /**
+     * Check if the current view focus has been modified from the initial context
+     */
+    fun hasModifiedView(): Boolean {
+        val initialFocus = when (_initialViewContext.value) {
+            is DashboardViewContext.None -> ViewFocus()
+            is DashboardViewContext.FocusCard -> ViewFocus(focusedCardId = (_initialViewContext.value as DashboardViewContext.FocusCard).cardId)
+            is DashboardViewContext.FocusSection -> ViewFocus(focusedSection = (_initialViewContext.value as DashboardViewContext.FocusSection).section)
+        }
+        return _viewFocus.value != initialFocus
+    }
+
+    /**
+     * Clear the view focus (reset to default)
+     */
+    fun clearViewFocus() {
+        _viewFocus.value = ViewFocus()
+        _initialViewContext.value = DashboardViewContext.None
     }
 
     fun updateNetWorthFontSize(fontSize: String) {

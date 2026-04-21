@@ -13,7 +13,8 @@ Make the TransactionListScreen (Records page) reusable across different contexts
 ## Target State
 - TransactionListScreen accepts navigation arguments for initial filter criteria
 - Filters are automatically applied when screen opens
-- TransactionFilterSheet respects initial context and shows appropriate UI
+- TransactionFilterSheet respects initial context and shows pre-applied indicators
+- Pre-applied filters are REMOVABLE - users can remove them if they choose
 - Users can still modify filters via the UI
 - Clean separation between context-provided filters and user-applied modifications
 - Type-safe navigation with clear filter context
@@ -257,6 +258,8 @@ private fun getContextDisplayName(context: RecordsFilterContext): String {
 
 Update TransactionFilterSheet to respect initial filter context and provide appropriate UI:
 
+**Key Design Change:** Pre-applied filters are NOT locked - users can remove them if they choose. The UI shows which filters were pre-applied via navigation context with a navigation arrow icon, and provides a "Remove filter" chip for easy removal.
+
 ```kotlin
 @Composable
 fun TransactionFilterSheet(
@@ -275,8 +278,9 @@ fun TransactionFilterSheet(
     accountNames: Map<String, String> = emptyMap(),
     showAccountFilter: Boolean = true
 ) {
-    // Determine which filters should be locked/disabled based on context
-    val lockAccountId = when (initialFilterContext) {
+    // Determine which filters were pre-applied based on context
+    // These are NOT locked - users can remove them if they choose
+    val preAppliedAccountId = when (initialFilterContext) {
         is RecordsFilterContext.ByAccount,
         is RecordsFilterContext.ByAccountAndType,
         is RecordsFilterContext.ByAccountAndCurrency -> {
@@ -287,12 +291,12 @@ fun TransactionFilterSheet(
         else -> null
     }
 
-    val lockIsIncome = when (initialFilterContext) {
+    val preAppliedIsIncome = when (initialFilterContext) {
         is RecordsFilterContext.ByAccountAndType -> (initialFilterContext as RecordsFilterContext.ByAccountAndType).isIncome
         else -> null
     }
 
-    val lockCurrency = when (initialFilterContext) {
+    val preAppliedCurrency = when (initialFilterContext) {
         is RecordsFilterContext.ByAccountAndCurrency -> (initialFilterContext as RecordsFilterContext.ByAccountAndCurrency).currency
         else -> null
     }
@@ -309,54 +313,35 @@ fun TransactionFilterSheet(
         }
 
         // Account filter section
-        if (showAccountFilter && lockAccountId == null) {
-            // Show interactive account selector
+        if (showAccountFilter) {
+            // Show interactive account selector with pre-applied indicator
             AccountFilterSelector(
                 selectedAccounts = filter.accountIds,
+                preAppliedAccountId = preAppliedAccountId,
                 accounts = accounts,
                 onAccountsChanged = { accountIds ->
                     onUpdateFilter(filter.copy(accountIds = accountIds))
                 }
             )
-        } else if (showAccountFilter && lockAccountId != null) {
-            // Show locked account indicator
-            LockedAccountIndicator(
-                accountId = lockAccountId,
-                accountName = accountNames[lockAccountId] ?: lockAccountId
-            )
         }
 
         // Income/Expense filter section
-        if (lockIsIncome == null) {
-            // Show interactive income/expense toggle
-            IncomeExpenseToggle(
-                selectedType = filter.isIncome,
-                onTypeChanged = { isIncome ->
-                    onUpdateFilter(filter.copy(isIncome = isIncome))
-                }
-            )
-        } else {
-            // Show locked type indicator
-            LockedTypeIndicator(
-                isIncome = lockIsIncome
-            )
-        }
+        IncomeExpenseToggle(
+            selectedType = filter.isIncome,
+            preAppliedIsIncome = preAppliedIsIncome,
+            onTypeChanged = { isIncome ->
+                onUpdateFilter(filter.copy(isIncome = isIncome))
+            }
+        )
 
         // Currency filter section
-        if (lockCurrency == null) {
-            // Show interactive currency selector
-            CurrencyFilterSelector(
-                selectedCurrencies = filter.currencies,
-                onCurrenciesChanged = { currencies ->
-                    onUpdateFilter(filter.copy(currencies = currencies))
-                }
-            )
-        } else {
-            // Show locked currency indicator
-            LockedCurrencyIndicator(
-                currency = lockCurrency
-            )
-        }
+        CurrencyFilterSelector(
+            selectedCurrencies = filter.currencies,
+            preAppliedCurrency = preAppliedCurrency,
+            onCurrenciesChanged = { currencies ->
+                onUpdateFilter(filter.copy(currencies = currencies))
+            }
+        )
 
         // Other filters (date range, category, payment method, etc.)
         // These remain interactive regardless of context
@@ -397,11 +382,22 @@ fun ContextIndicator(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = getContextDisplayName(context),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.FilterList,
+                contentDescription = "Applied filter",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = getContextDisplayName(context),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         TextButton(onClick = onReset) {
             Text("Reset")
         }
@@ -409,85 +405,169 @@ fun ContextIndicator(
 }
 
 @Composable
-fun LockedAccountIndicator(
-    accountId: String,
-    accountName: String
+fun AccountFilterSelector(
+    selectedAccounts: List<String>,
+    preAppliedAccountId: String?,
+    accounts: List<Account>,
+    onAccountsChanged: (List<String>) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = "Locked",
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Account: $accountName",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Account",
+                style = MaterialTheme.typography.titleSmall
+            )
+            if (preAppliedAccountId != null && selectedAccounts.contains(preAppliedAccountId)) {
+                AssistChip(
+                    onClick = {
+                        // Remove the pre-applied account
+                        onAccountsChanged(selectedAccounts - preAppliedAccountId)
+                    },
+                    label = { Text("Remove filter") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                    }
+                )
+            }
+        }
+
+        // Show account chips
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            accounts.forEach { account ->
+                FilterChip(
+                    selected = selectedAccounts.contains(account.id),
+                    onClick = {
+                        if (selectedAccounts.contains(account.id)) {
+                            onAccountsChanged(selectedAccounts - account.id)
+                        } else {
+                            onAccountsChanged(selectedAccounts + account.id)
+                        }
+                    },
+                    label = { Text(account.name) },
+                    leadingIcon = if (preAppliedAccountId == account.id && selectedAccounts.contains(account.id)) {
+                        {
+                            Icon(
+                                Icons.Default.NavigationArrow,
+                                contentDescription = "Pre-applied",
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    } else null
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun LockedTypeIndicator(
-    isIncome: Boolean
+fun IncomeExpenseToggle(
+    selectedType: Boolean?,
+    preAppliedIsIncome: Boolean?,
+    onTypeChanged: (Boolean?) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = "Locked",
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(16.dp)
-        )
-        FilterChip(
-            selected = isIncome,
-            onClick = { },
-            label = { Text("Income") },
-            enabled = false
-        )
-        FilterChip(
-            selected = !isIncome,
-            onClick = { },
-            label = { Text("Expense") },
-            enabled = false
-        )
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Type",
+                style = MaterialTheme.typography.titleSmall
+            )
+            if (preAppliedIsIncome != null && selectedType == preAppliedIsIncome) {
+                AssistChip(
+                    onClick = {
+                        // Remove the pre-applied type filter
+                        onTypeChanged(null)
+                    },
+                    label = { Text("Remove filter") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                    }
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = selectedType == true,
+                onClick = {
+                    onTypeChanged(if (selectedType == true) null else true)
+                },
+                label = { Text("Income") },
+                leadingIcon = if (preAppliedIsIncome == true && selectedType == true) {
+                    {
+                        Icon(
+                            Icons.Default.NavigationArrow,
+                            contentDescription = "Pre-applied",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null
+            )
+            FilterChip(
+                selected = selectedType == false,
+                onClick = {
+                    onTypeChanged(if (selectedType == false) null else false)
+                },
+                label = { Text("Expense") },
+                leadingIcon = if (preAppliedIsIncome == false && selectedType == false) {
+                    {
+                        Icon(
+                            Icons.Default.NavigationArrow,
+                            contentDescription = "Pre-applied",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                } else null
+            )
+        }
     }
 }
 
 @Composable
-fun LockedCurrencyIndicator(
-    currency: String
+fun CurrencyFilterSelector(
+    selectedCurrencies: List<String>,
+    preAppliedCurrency: String?,
+    onCurrenciesChanged: (List<String>) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = "Locked",
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "Currency: $currency",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Currency",
+                style = MaterialTheme.typography.titleSmall
+            )
+            if (preAppliedCurrency != null && selectedCurrencies.contains(preAppliedCurrency)) {
+                AssistChip(
+                    onClick = {
+                        // Remove the pre-applied currency
+                        onCurrenciesChanged(selectedCurrencies - preAppliedCurrency)
+                    },
+                    label = { Text("Remove filter") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
+                    }
+                )
+            }
+        }
+
+        // Show currency chips with pre-applied indicator
+        // Similar to AccountFilterSelector
     }
 }
 ```
@@ -578,12 +658,12 @@ composable(
 
 ### Phase 3: TransactionFilterSheet Updates (1-2 days)
 - [ ] Add context-aware parameters to TransactionFilterSheet
-- [ ] Implement ContextIndicator component
-- [ ] Implement LockedAccountIndicator component
-- [ ] Implement LockedTypeIndicator component
-- [ ] Implement LockedCurrencyIndicator component
-- [ ] Update filter sections to respect locked fields
-- [ ] Test with each context type
+- [ ] Implement ContextIndicator component with filter icon
+- [ ] Implement AccountFilterSelector with pre-applied indicator and remove button
+- [ ] Implement IncomeExpenseToggle with pre-applied indicator and remove button
+- [ ] Implement CurrencyFilterSelector with pre-applied indicator and remove button
+- [ ] Update filter sections to show pre-applied filters (NOT locked)
+- [ ] Test filter removal functionality for each context type
 
 ### Phase 4: Screen Integration (1 day)
 - [ ] Update TransactionListScreen signature
@@ -632,9 +712,9 @@ composable(
 
 ### 6. TransactionFilterSheet UI Consistency
 - **Issue**: How to ensure TransactionFilterSheet shows correct UI for each context?
-- **Solution**: Pass context as parameter, lock relevant filter sections, show locked indicators
-- **Issue**: Should locked filters be visible but disabled, or hidden entirely?
-- **Solution**: Show as locked indicators with lock icon for clarity, users can see what's filtered
+- **Solution**: Pass context as parameter, show pre-applied indicators with navigation arrow icon
+- **Issue**: Should pre-applied filters be removable or locked?
+- **Solution**: Pre-applied filters are REMOVABLE - users can remove them if they choose. Show "Remove filter" chip for easy removal.
 
 ### 7. Account Name Display
 - **Issue**: Filter context shows accountId, but UI should show account name

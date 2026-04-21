@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -34,7 +35,10 @@ fun FilterFields(
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
     allCategories: List<CategoryEntity>,
-    showAccountFilter: Boolean = true
+    showAccountFilter: Boolean = true,
+    // Context-aware parameters
+    preAppliedAccountId: String? = null,
+    preAppliedIsIncome: Boolean? = null
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
@@ -169,6 +173,11 @@ fun FilterFields(
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 val options = listOf("All", "Income", "Expense")
                 options.forEachIndexed { index, label ->
+                    val isPreApplied = when (index) {
+                        1 -> preAppliedIsIncome == true
+                        2 -> preAppliedIsIncome == false
+                        else -> preAppliedIsIncome == null
+                    }
                     SegmentedButton(
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                         onClick = {
@@ -188,10 +197,21 @@ fun FilterFields(
                             else -> filter.isIncome == null
                         },
                         icon = {
-                            when (index) {
-                                0 -> if (filter.isIncome == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                                1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
-                                2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                // Show pre-applied indicator if type was pre-applied
+                                if (isPreApplied && filter.isIncome != null) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Pre-applied",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
+                                when (index) {
+                                    0 -> if (filter.isIncome == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                    1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
+                                    2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
+                                }
                             }
                         }
                     ) {
@@ -224,6 +244,15 @@ fun FilterFields(
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.AccountBalance, null, modifier = Modifier.size(18.dp))
+                                // Show pre-applied indicator if account was pre-applied
+                                if (preAppliedAccountId != null && preAppliedAccountId in filter.accountIds) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Pre-applied",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                }
                                 if (filter.accountIds.isNotEmpty()) {
                                     Spacer(Modifier.width(4.dp))
                                     Text("${filter.accountIds.size}", style = MaterialTheme.typography.labelSmall)

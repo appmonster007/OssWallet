@@ -1,0 +1,191 @@
+{
+  "accountMetrics": [
+    {
+      "accountId": "acc_cash",
+      "accountName": "Cash Wallet",
+      "currencyCode": "USD",
+      "structureType": "REGULAR",
+      "currentBalance": 1000.00,
+      "initialBalance": 1000.00,
+      "netChange": 0.00,
+      "transactionCount": 6,
+      "cashFlow": {
+        "totalIncome": 0.00,
+        "totalExpenses": 359.49,
+        "netCashFlow": -359.49
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Groceries",
+          "amount": 206.25,
+          "transactionCount": 2
+        },
+        {
+          "category": "Dining Out",
+          "amount": 100.75,
+          "transactionCount": 2
+        },
+        {
+          "category": "Shopping",
+          "amount": 29.99,
+          "transactionCount": 1
+        },
+        {
+          "category": "Personal",
+          "amount": 22.50,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 0.00,
+          "expenses": 359.49,
+          "balance": 640.51
+        }
+      ]
+    },
+    {
+      "accountId": "acc_bank",
+      "accountName": "Main Bank",
+      "currencyCode": "USD",
+      "structureType": "REGULAR",
+      "currentBalance": 5000.00,
+      "initialBalance": 5000.00,
+      "netChange": 0.00,
+      "transactionCount": 6,
+      "cashFlow": {
+        "totalIncome": 7850.00,
+        "totalExpenses": 1488.50,
+        "netCashFlow": 6361.50
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Salary",
+          "amount": 7850.00,
+          "transactionCount": 3
+        },
+        {
+          "category": "Housing",
+          "amount": 1445.00,
+          "transactionCount": 3
+        },
+        {
+          "category": "Fuel",
+          "amount": 45.00,
+          "transactionCount": 1
+        },
+        {
+          "category": "Work",
+          "amount": -1.50,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 7850.00,
+          "expenses": 1488.50,
+          "balance": 11361.50
+        }
+      ]
+    },
+    {
+      "accountId": "acc_savings",
+      "accountName": "Savings",
+      "currencyCode": "USD",
+      "structureType": "SAVINGS",
+      "currentBalance": 15000.00,
+      "initialBalance": 15000.00,
+      "netChange": 0.00,
+      "transactionCount": 0,
+      "cashFlow": {
+        "totalIncome": 0.00,
+        "totalExpenses": 0.00,
+        "netCashFlow": 0.00
+      },
+      "categoryBreakdown": [],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 0.00,
+          "expenses": 0.00,
+          "balance": 15000.00
+        }
+      ]
+    },
+    {
+      "accountId": "acc_credit",
+      "accountName": "Credit Card",
+      "currencyCode": "USD",
+      "structureType": "CREDIT",
+      "currentBalance": -500.00,
+      "initialBalance": 0.00,
+      "netChange": -500.00,
+      "transactionCount": 4,
+      "cashFlow": {
+        "totalIncome": 0.00,
+        "totalExpenses": 235.79,
+        "netCashFlow": -235.79
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Shopping",
+          "amount": 156.30,
+          "transactionCount": 1
+        },
+        {
+          "category": "Entertainment",
+          "amount": 60.99,
+          "transactionCount": 2
+        },
+        {
+          "category": "Transport",
+          "amount": 18.50,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 0.00,
+          "expenses": 235.79,
+          "balance": -735.79
+        }
+      ]
+    },
+    {
+      "accountId": "acc_invest",
+      "accountName": "Investment",
+      "currencyCode": "USD",
+      "structureType": "INVESTMENT",
+      "currentBalance": 20000.00,
+      "initialBalance": 10000.00,
+      "netChange": 10000.00,
+      "transactionCount": 0,
+      "cashFlow": {
+        "totalIncome": 0.00,
+        "totalExpenses": 0.00,
+        "netCashFlow": 0.00
+      },
+      "categoryBreakdown": [],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 0.00,
+          "expenses": 0.00,
+          "balance": 20000.00
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalAccounts": 5,
+    "totalBalance": 35500.00,
+    "totalIncome": 7850.00,
+    "totalExpenses": 2083.78,
+    "netCashFlow": 5766.22,
+    "activeAccounts": 3,
+    "accountsWithTransactions": 3
+  }
+}

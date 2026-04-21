@@ -18,9 +18,10 @@ Use this checklist to completely remove database seeding functionality from the 
   - Open: `app/build.gradle.kts`
   - Delete line 30: `buildConfigField("boolean", "ENABLE_SEEDING", "true")`
 
-- [ ] **Step 4**: Remove CSV assets
+- [ ] **Step 4**: Remove CSV and JSON assets
   ```bash
   rm app/src/main/assets/seed_data.csv
+  rm app/src/main/assets/account_metrics.json
   ```
 
 - [ ] **Step 5**: Clean and rebuild
@@ -36,6 +37,7 @@ After completing all steps, verify:
 - [ ] No references to `SeedingConfig` in the codebase
 - [ ] No references to `DatabaseSeeder` in the codebase
 - [ ] No `seed_data.csv` file exists
+- [ ] No `account_metrics.json` file exists
 - [ ] App launches without attempting to seed database
 
 ## Alternative: Disable Without Removal

@@ -182,7 +182,6 @@ class DatabaseSeeder @Inject constructor(
     private data class AccountSeedRow(
         val id: String,
         val name: String,
-        val initialBalance: BigDecimal,
         val currencyCode: String,
         val structureType: String,
         val colorHex: String,
@@ -194,8 +193,7 @@ class DatabaseSeeder @Inject constructor(
             return AccountEntity(
                 id = id,
                 name = name,
-                balance = initialBalance,
-                initialBalance = initialBalance,
+                balance = BigDecimal.ZERO,
                 currencyCode = currencyCode,
                 structureType = structureType,
                 colorHex = colorHex,
@@ -211,13 +209,12 @@ class DatabaseSeeder @Inject constructor(
                 return AccountSeedRow(
                     id = parts.getOrNull(0) ?: "",
                     name = parts.getOrNull(1) ?: "",
-                    initialBalance = parts.getOrNull(2)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                    currencyCode = parts.getOrNull(3) ?: "USD",
-                    structureType = parts.getOrNull(4) ?: "REGULAR",
-                    colorHex = parts.getOrNull(5) ?: "#000000",
-                    icon = parts.getOrNull(6) ?: "",
-                    allowedCurrencies = parts.getOrNull(7) ?: "USD",
-                    profileId = parts.getOrNull(8)?.toIntOrNull() ?: 1
+                    currencyCode = parts.getOrNull(2) ?: "USD",
+                    structureType = parts.getOrNull(3) ?: "REGULAR",
+                    colorHex = parts.getOrNull(4) ?: "#000000",
+                    icon = parts.getOrNull(5) ?: "",
+                    allowedCurrencies = parts.getOrNull(6) ?: "USD",
+                    profileId = parts.getOrNull(7)?.toIntOrNull() ?: 1
                 )
             }
         }

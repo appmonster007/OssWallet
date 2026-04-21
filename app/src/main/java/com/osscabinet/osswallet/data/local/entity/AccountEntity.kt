@@ -13,7 +13,6 @@ data class AccountEntity(
     @PrimaryKey val id: String,
     val name: String,
     val balance: BigDecimal,
-    val initialBalance: BigDecimal = BigDecimal.ZERO,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,

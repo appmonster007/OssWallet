@@ -50,8 +50,7 @@ data class CurrencyAggregationItem(
  */
 private data class FilteredTransactionData(
     val filteredTransactions: List<Transaction>,
-    val transactionsByAccount: Map<String, List<Transaction>>,
-    val includeInitialBalance: Boolean
+    val transactionsByAccount: Map<String, List<Transaction>>
 )
 
 class FinancialUseCases(
@@ -67,28 +66,23 @@ class FinancialUseCases(
     ): FilteredTransactionData {
         val filteredTransactions = TimelineService.filterByTimelineRange(allTransactions, timelineRange)
         val transactionsByAccount = filteredTransactions.groupBy { it.accountId }
-        val includeInitialBalance = timelineRange is TimelineRange.AllTime
-        return FilteredTransactionData(filteredTransactions, transactionsByAccount, includeInitialBalance)
+        return FilteredTransactionData(filteredTransactions, transactionsByAccount)
     }
 
     /**
      * Calculates the currency breakdown for a single account based on its transactions
-     * Always starts with initial balance and applies filtered transactions for proper timeline filtering
+     * Starts with zero balance and applies filtered transactions for proper timeline filtering
      * @param account The account to calculate breakdown for
      * @param accountTransactions List of transactions for this account (already filtered by timeline)
-     * @param includeInitialBalance Whether to include the account's initial balance (for AllTime timeline)
      * @return Map of currency code to balance amount
      */
     private fun calculateAccountCurrencyBreakdown(
         account: Account,
-        accountTransactions: List<Transaction>,
-        includeInitialBalance: Boolean
+        accountTransactions: List<Transaction>
     ): Map<String, BigDecimal> {
         val breakdown = mutableMapOf<String, BigDecimal>()
 
-        // Always start with initial balance as the baseline
-        breakdown[account.currencyCode] = account.initialBalance
-
+        // Start with zero balance
         // Apply filtered transactions to calculate the balance for the selected timeline
         accountTransactions.forEach { tx ->
             val current = breakdown[tx.currency] ?: BigDecimal.ZERO
@@ -167,7 +161,7 @@ class FinancialUseCases(
 
         val accountBreakdowns = accounts.map { account ->
             val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
-            calculateAccountCurrencyBreakdown(account, accountTransactions, transactionData.includeInitialBalance)
+            calculateAccountCurrencyBreakdown(account, accountTransactions)
         }
 
         val globalCurrencyTotals = aggregateCurrencyBreakdowns(accountBreakdowns)
@@ -233,7 +227,7 @@ class FinancialUseCases(
 
         return accounts.associate { account ->
             val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
-            val breakdown = calculateAccountCurrencyBreakdown(account, accountTransactions, transactionData.includeInitialBalance)
+            val breakdown = calculateAccountCurrencyBreakdown(account, accountTransactions)
             val (incomeBreakdown, expenseBreakdown) = calculateIncomeExpenseBreakdown(accountTransactions)
 
             val incomeInAccountCurrency = CurrencyService.calculateTotalInCurrency(incomeBreakdown, account.currencyCode, exchangeRates, precision)
@@ -262,7 +256,7 @@ class FinancialUseCases(
 
         val accountBreakdowns = accounts.map { account ->
             val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
-            calculateAccountCurrencyBreakdown(account, accountTransactions, transactionData.includeInitialBalance)
+            calculateAccountCurrencyBreakdown(account, accountTransactions)
         }
 
         val globalCurrencyTotals = aggregateCurrencyBreakdowns(accountBreakdowns)
@@ -287,7 +281,7 @@ class FinancialUseCases(
 
         return accounts.map { account ->
             val accountTransactions = transactionData.transactionsByAccount[account.id] ?: emptyList()
-            val breakdown = calculateAccountCurrencyBreakdown(account, accountTransactions, transactionData.includeInitialBalance)
+            val breakdown = calculateAccountCurrencyBreakdown(account, accountTransactions)
 
             val totalInAccountCurrency = CurrencyService.calculateTotalInCurrency(
                 currencyTotals = breakdown,

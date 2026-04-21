@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -225,15 +226,17 @@ fun AccountDetailScreen(
                             }
                             1 -> {
                         // Transactions tab content (same as original)
-                        val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.initialBalance) {
-                            var currentBalance = state.account.initialBalance
-                            state.cashFlowTransactions.sortedBy { it.timestamp }.map { tx ->
-                                val balanceBefore = currentBalance
-                                val balanceAfter = if (tx.isIncome) currentBalance.add(tx.amount) else currentBalance.subtract(tx.amount)
-                                currentBalance = balanceAfter
+                        val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.balance) {
+                            // Calculate running balance from transactions
+                            // Start from zero and apply transactions in reverse order
+                            var currentBalance = BigDecimal.ZERO
+                            state.cashFlowTransactions.sortedByDescending { it.timestamp }.map { tx ->
+                                val balanceAfter = currentBalance
+                                val balanceBefore = if (tx.isIncome) currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
+                                currentBalance = balanceBefore
                                 TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                            }.sortedByDescending { it.transaction.timestamp }
-                        }
+                            }.reversed()
+                        }.sortedByDescending { it.transaction.timestamp }
 
                         if (transactionsWithBalanceList.isEmpty()) {
                             Box(
@@ -257,8 +260,7 @@ fun AccountDetailScreen(
                                 }
                             }
                         } else {
-                            // Local filter state for UI filter sheet (still uses TransactionFilter)
-                            var filter by remember { mutableStateOf(com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))) }
+                            val filter by transactionViewModel.accountDetailFilter.collectAsStateWithLifecycle()
                             val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
                             val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -273,18 +275,17 @@ fun AccountDetailScreen(
                                 )
                             )
 
-                            // Initialize filter with this account and update FilterStack
+                            // Apply account filter automatically if not already set specifically for this account
                             LaunchedEffect(accountId) {
-                                val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
-                                transactionViewModel.clearAccountDetailFilterStack()
-                                filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
+                                if (!filter.accountIds.contains(accountId)) {
+                                    transactionViewModel.updateAccountDetailFilter(filter.copy(accountIds = listOf(accountId)))
+                                }
                             }
 
                             // Reset filters when leaving the transactions tab or the screen
                             DisposableEffect(Unit) {
                                 onDispose {
-                                    transactionViewModel.clearAccountDetailFilterStack()
-                                    filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))
+                                    transactionViewModel.clearAccountDetailFilters()
                                 }
                             }
 
@@ -308,20 +309,10 @@ fun AccountDetailScreen(
                                         accounts = accounts,
                                         categories = categoriesList,
                                         savedFilters = savedFilters,
-                                        onSetDateRange = { start, end ->
-                                            filter = filter.copy(startDate = start, endDate = end)
-                                            // Convert to FilterStack and update ViewModel
-                                            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
-                                            transactionViewModel.clearAccountDetailFilterStack()
-                                            filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
-                                        },
+                                        onSetDateRange = { start, end -> transactionViewModel.setAccountDetailDateRangeFilter(start, end) },
                                         onUpdateFilter = { updatedFilter ->
                                             // Ensure we always stay filtered by this account
-                                            filter = updatedFilter.copy(accountIds = listOf(accountId))
-                                            // Convert to FilterStack and update ViewModel
-                                            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
-                                            transactionViewModel.clearAccountDetailFilterStack()
-                                            filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
+                                            transactionViewModel.updateAccountDetailFilter(updatedFilter.copy(accountIds = listOf(accountId)))
                                         },
                                         onToggleExpand = {
                                             scope.launch {
@@ -480,7 +471,7 @@ fun DynamicAccountDetailCards(
                     AccountHeroCard(
                         account = state.account,
                         balance = state.account.balance,
-                        netBalance = state.account.balance.subtract(state.account.initialBalance),
+                        netBalance = state.account.balance,
                         baseCurrency = state.baseCurrency,
                         exchangeRates = state.exchangeRates,
                         precision = state.decimalPrecision,

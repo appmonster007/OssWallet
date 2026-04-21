@@ -1776,7 +1776,7 @@ private fun TransactionTransferAmountOverflowPreview() {
 @Composable
 fun TransactionEntryWithLongLinkPreview() {
     val sampleAccounts = listOf(
-        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), BigDecimal("1000.00"), "USD", "Bank", "#FF0000", "account_balance"),
+        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), "USD", "Bank", "#FF0000", "account_balance", listOf("account_balance")),
     )
 
     val sampleCategories = listOf(
@@ -1827,8 +1827,8 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
 @Composable
 fun TransactionEntryPreview() {
     val sampleAccounts = listOf(
-        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), BigDecimal("1000.00"), "USD", "Bank", "#FF0000", "account_balance"),
-        Account("2", "Cash Wallet", BigDecimal("45.00"), BigDecimal("50.00"), "USD", "Cash", "#00FF00", "wallet")
+        Account("1", "Aeon Prime Savings", BigDecimal("1250.50"), "USD", "Bank", "#FF0000", "account_balance", listOf("account_balance")),
+        Account("2", "Cash Wallet", BigDecimal("45.00"), "USD", "Cash", "#00FF00", "wallet", listOf("wallet"))
     )
 
     val sampleCategories = listOf(

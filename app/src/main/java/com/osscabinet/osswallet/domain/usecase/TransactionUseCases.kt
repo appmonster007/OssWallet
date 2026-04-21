@@ -73,7 +73,7 @@ class TransactionUseCases(
                 val account = accountMap[accId]
                 val accountCurrency = account?.currencyCode ?: "USD"
 
-                var runningBalance = account?.initialBalance ?: BigDecimal.ZERO
+                var runningBalance = BigDecimal.ZERO
                 accountTransactions.map { transaction ->
                     val txAmountInAccountCurrency = convertAmount(
                         amount = transaction.amount,

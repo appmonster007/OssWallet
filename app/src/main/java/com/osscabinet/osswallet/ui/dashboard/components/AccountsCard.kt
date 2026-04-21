@@ -449,11 +449,11 @@ private fun AeonAddAccountCardContent(
         "empty",
         "GET STARTED",
         BigDecimal.ZERO,
-        BigDecimal.ZERO,
         baseCurrency,
         "Default",
         "#808080",
-        "Add"
+        "Add",
+        listOf("Add")
     )
 
     when (gridColumns) {

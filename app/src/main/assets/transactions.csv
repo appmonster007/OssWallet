@@ -1,4 +1,9 @@
 title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
+Initial Balance,1000.00,Initial Balance,0,1735603200000,USD,true,acc_cash,Cash,Self,Opening balance,Personal,,1
+Initial Balance,5000.00,Initial Balance,0,1735603200000,USD,true,acc_bank,Bank Transfer,Self,Opening balance,Personal,,1
+Initial Balance,15000.00,Initial Balance,0,1735603200000,USD,true,acc_savings,Bank Transfer,Self,Opening balance,Personal,,1
+Initial Balance,0.00,Initial Balance,0,1735603200000,USD,true,acc_credit,Credit Card,Self,Opening balance,Personal,,1
+Initial Balance,10000.00,Initial Balance,0,1735603200000,USD,true,acc_invest,Bank Transfer,Self,Opening balance,Personal,,1
 Grocery shopping at Walmart,85.50,Groceries,1,1735689600000,USD,false,acc_cash,Debit Card,Walmart,Weekly grocery run,Personal,,1
 Coffee at Starbucks,5.75,Dining Out,1,1735776000000,USD,false,acc_cash,Cash,Starbucks,Morning coffee,Personal,,1
 Fuel purchase at Shell,45.00,Fuel,2,1735862400000,USD,false,acc_bank,Credit Card,Shell,Full tank gas,Work,,1

@@ -51,7 +51,6 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
-    val initialFilterContext by viewModel.initialFilterContext.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -111,7 +110,6 @@ fun TransactionListScreen(
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
-        initialFilterContext = initialFilterContext,
         accountNames = accountMap,
         onResetToInitial = { viewModel.resetToInitialFilter() }
     )

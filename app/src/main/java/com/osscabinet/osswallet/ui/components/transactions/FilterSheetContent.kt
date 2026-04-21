@@ -335,18 +335,161 @@ fun ActiveFiltersSummary(
                 modifier = Modifier.padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Context information
+                // Context information - expanded into individual fields
                 if (initialFilterContext != RecordsFilterContext.None) {
-                    FilterGroup(
-                        label = "Context",
-                        chips = listOf(
-                            FilterChipData(
-                                label = getContextDisplayName(initialFilterContext, accountNames),
-                                isPreApplied = true,
-                                onRemove = onResetAll
+                    when (initialFilterContext) {
+                        is RecordsFilterContext.ByAccount -> {
+                            FilterGroup(
+                                label = "Context",
+                                chips = listOf(
+                                    FilterChipData(
+                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
+                                    )
+                                )
                             )
-                        )
-                    )
+                        }
+                        is RecordsFilterContext.ByAccountAndType -> {
+                            FilterGroup(
+                                label = "Context",
+                                chips = listOf(
+                                    FilterChipData(
+                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
+                                    ),
+                                    FilterChipData(
+                                        label = "Type: ${if (initialFilterContext.isIncome) "Income" else "Expense"}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("isIncome", null) }
+                                    )
+                                )
+                            )
+                        }
+                        is RecordsFilterContext.ByAccountAndCurrency -> {
+                            FilterGroup(
+                                label = "Context",
+                                chips = listOf(
+                                    FilterChipData(
+                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
+                                    ),
+                                    FilterChipData(
+                                        label = "Currency: ${initialFilterContext.currency}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("currencies", initialFilterContext.currency) }
+                                    )
+                                )
+                            )
+                        }
+                        is RecordsFilterContext.Custom -> {
+                            val contextChips = mutableListOf<FilterChipData>()
+                            if (initialFilterContext.accountIds.isNotEmpty()) {
+                                initialFilterContext.accountIds.forEach { accountId ->
+                                    contextChips.add(
+                                        FilterChipData(
+                                            label = "Account: ${accountNames[accountId] ?: accountId}",
+                                            isPreApplied = true,
+                                            onRemove = { onRemoveFilter("accountIds", accountId) }
+                                        )
+                                    )
+                                }
+                            }
+                            if (initialFilterContext.isIncome != null) {
+                                contextChips.add(
+                                    FilterChipData(
+                                        label = "Type: ${if (initialFilterContext.isIncome) "Income" else "Expense"}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("isIncome", null) }
+                                    )
+                                )
+                            }
+                            if (initialFilterContext.startDate != null || initialFilterContext.endDate != null) {
+                                contextChips.add(
+                                    FilterChipData(
+                                        label = "Date: ${formatDateRange(initialFilterContext.startDate, initialFilterContext.endDate)}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("dateRange", null) }
+                                    )
+                                )
+                            }
+                            if (initialFilterContext.categoryIds.isNotEmpty()) {
+                                initialFilterContext.categoryIds.forEach { categoryId ->
+                                    val categoryName = categoryMap[categoryId.toLong()]?.name ?: categoryId
+                                    contextChips.add(
+                                        FilterChipData(
+                                            label = "Category: $categoryName",
+                                            isPreApplied = true,
+                                            onRemove = { onRemoveFilter("categoryIds", categoryId.toLong()) }
+                                        )
+                                    )
+                                }
+                            }
+                            if (initialFilterContext.currencies.isNotEmpty()) {
+                                initialFilterContext.currencies.forEach { currency ->
+                                    contextChips.add(
+                                        FilterChipData(
+                                            label = "Currency: $currency",
+                                            isPreApplied = true,
+                                            onRemove = { onRemoveFilter("currencies", currency) }
+                                        )
+                                    )
+                                }
+                            }
+                            if (initialFilterContext.paymentMethods.isNotEmpty()) {
+                                initialFilterContext.paymentMethods.forEach { method ->
+                                    contextChips.add(
+                                        FilterChipData(
+                                            label = "Method: $method",
+                                            isPreApplied = true,
+                                            onRemove = { onRemoveFilter("paymentMethods", method) }
+                                        )
+                                    )
+                                }
+                            }
+                            if (initialFilterContext.queryNote != null) {
+                                contextChips.add(
+                                    FilterChipData(
+                                        label = "Note: ${initialFilterContext.queryNote}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("queryNote", null) }
+                                    )
+                                )
+                            }
+                            if (initialFilterContext.queryPayee != null) {
+                                contextChips.add(
+                                    FilterChipData(
+                                        label = "Payee: ${initialFilterContext.queryPayee}",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("queryPayee", null) }
+                                    )
+                                )
+                            }
+                            if (initialFilterContext.minAmount != null || initialFilterContext.maxAmount != null) {
+                                val range = buildString {
+                                    if (initialFilterContext.minAmount != null) append("≥${initialFilterContext.minAmount}")
+                                    if (initialFilterContext.minAmount != null && initialFilterContext.maxAmount != null) append(" - ")
+                                    if (initialFilterContext.maxAmount != null) append("≤${initialFilterContext.maxAmount}")
+                                }
+                                contextChips.add(
+                                    FilterChipData(
+                                        label = "Amount: $range",
+                                        isPreApplied = true,
+                                        onRemove = { onRemoveFilter("amountRange", null) }
+                                    )
+                                )
+                            }
+                            if (contextChips.isNotEmpty()) {
+                                FilterGroup(
+                                    label = "Context",
+                                    chips = contextChips
+                                )
+                            }
+                        }
+                        is RecordsFilterContext.None -> {}
+                    }
                 }
 
                 // Account filters

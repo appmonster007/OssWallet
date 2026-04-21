@@ -335,288 +335,198 @@ fun ActiveFiltersSummary(
                 modifier = Modifier.padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Context information - expanded into individual fields
-                if (initialFilterContext != RecordsFilterContext.None) {
-                    when (initialFilterContext) {
-                        is RecordsFilterContext.ByAccount -> {
-                            FilterGroup(
-                                label = "Context",
-                                chips = listOf(
-                                    FilterChipData(
-                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
-                                    )
-                                )
-                            )
-                        }
-                        is RecordsFilterContext.ByAccountAndType -> {
-                            FilterGroup(
-                                label = "Context",
-                                chips = listOf(
-                                    FilterChipData(
-                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
-                                    ),
-                                    FilterChipData(
-                                        label = "Type: ${if (initialFilterContext.isIncome) "Income" else "Expense"}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("isIncome", null) }
-                                    )
-                                )
-                            )
-                        }
-                        is RecordsFilterContext.ByAccountAndCurrency -> {
-                            FilterGroup(
-                                label = "Context",
-                                chips = listOf(
-                                    FilterChipData(
-                                        label = "Account: ${accountNames[initialFilterContext.accountId] ?: initialFilterContext.accountId}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("accountIds", initialFilterContext.accountId) }
-                                    ),
-                                    FilterChipData(
-                                        label = "Currency: ${initialFilterContext.currency}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("currencies", initialFilterContext.currency) }
-                                    )
-                                )
-                            )
-                        }
-                        is RecordsFilterContext.Custom -> {
-                            val contextChips = mutableListOf<FilterChipData>()
-                            if (initialFilterContext.accountIds.isNotEmpty()) {
-                                initialFilterContext.accountIds.forEach { accountId ->
-                                    contextChips.add(
-                                        FilterChipData(
-                                            label = "Account: ${accountNames[accountId] ?: accountId}",
-                                            isPreApplied = true,
-                                            onRemove = { onRemoveFilter("accountIds", accountId) }
-                                        )
-                                    )
-                                }
-                            }
-                            if (initialFilterContext.isIncome != null) {
-                                contextChips.add(
-                                    FilterChipData(
-                                        label = "Type: ${if (initialFilterContext.isIncome) "Income" else "Expense"}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("isIncome", null) }
-                                    )
-                                )
-                            }
-                            if (initialFilterContext.startDate != null || initialFilterContext.endDate != null) {
-                                contextChips.add(
-                                    FilterChipData(
-                                        label = "Date: ${formatDateRange(initialFilterContext.startDate, initialFilterContext.endDate)}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("dateRange", null) }
-                                    )
-                                )
-                            }
-                            if (initialFilterContext.categoryIds.isNotEmpty()) {
-                                initialFilterContext.categoryIds.forEach { categoryId ->
-                                    val categoryName = categoryMap[categoryId.toLong()]?.name ?: categoryId
-                                    contextChips.add(
-                                        FilterChipData(
-                                            label = "Category: $categoryName",
-                                            isPreApplied = true,
-                                            onRemove = { onRemoveFilter("categoryIds", categoryId.toLong()) }
-                                        )
-                                    )
-                                }
-                            }
-                            if (initialFilterContext.currencies.isNotEmpty()) {
-                                initialFilterContext.currencies.forEach { currency ->
-                                    contextChips.add(
-                                        FilterChipData(
-                                            label = "Currency: $currency",
-                                            isPreApplied = true,
-                                            onRemove = { onRemoveFilter("currencies", currency) }
-                                        )
-                                    )
-                                }
-                            }
-                            if (initialFilterContext.paymentMethods.isNotEmpty()) {
-                                initialFilterContext.paymentMethods.forEach { method ->
-                                    contextChips.add(
-                                        FilterChipData(
-                                            label = "Method: $method",
-                                            isPreApplied = true,
-                                            onRemove = { onRemoveFilter("paymentMethods", method) }
-                                        )
-                                    )
-                                }
-                            }
-                            if (initialFilterContext.queryNote != null) {
-                                contextChips.add(
-                                    FilterChipData(
-                                        label = "Note: ${initialFilterContext.queryNote}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("queryNote", null) }
-                                    )
-                                )
-                            }
-                            if (initialFilterContext.queryPayee != null) {
-                                contextChips.add(
-                                    FilterChipData(
-                                        label = "Payee: ${initialFilterContext.queryPayee}",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("queryPayee", null) }
-                                    )
-                                )
-                            }
-                            if (initialFilterContext.minAmount != null || initialFilterContext.maxAmount != null) {
-                                val range = buildString {
-                                    if (initialFilterContext.minAmount != null) append("≥${initialFilterContext.minAmount}")
-                                    if (initialFilterContext.minAmount != null && initialFilterContext.maxAmount != null) append(" - ")
-                                    if (initialFilterContext.maxAmount != null) append("≤${initialFilterContext.maxAmount}")
-                                }
-                                contextChips.add(
-                                    FilterChipData(
-                                        label = "Amount: $range",
-                                        isPreApplied = true,
-                                        onRemove = { onRemoveFilter("amountRange", null) }
-                                    )
-                                )
-                            }
-                            if (contextChips.isNotEmpty()) {
-                                FilterGroup(
-                                    label = "Context",
-                                    chips = contextChips
-                                )
-                            }
-                        }
-                        is RecordsFilterContext.None -> {}
-                    }
+                // Extract context fields to merge with regular filters
+                val contextAccounts = when (initialFilterContext) {
+                    is RecordsFilterContext.ByAccount -> listOf(initialFilterContext.accountId)
+                    is RecordsFilterContext.ByAccountAndType -> listOf(initialFilterContext.accountId)
+                    is RecordsFilterContext.ByAccountAndCurrency -> listOf(initialFilterContext.accountId)
+                    is RecordsFilterContext.Custom -> initialFilterContext.accountIds
+                    else -> emptyList()
                 }
 
-                // Account filters
-                if (filter.accountIds.isNotEmpty()) {
+                val contextType = when (initialFilterContext) {
+                    is RecordsFilterContext.ByAccountAndType -> initialFilterContext.isIncome
+                    is RecordsFilterContext.Custom -> initialFilterContext.isIncome
+                    else -> null
+                }
+
+                val contextDateRange = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> Pair(initialFilterContext.startDate, initialFilterContext.endDate)
+                    else -> null
+                }
+
+                val contextCategories = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> initialFilterContext.categoryIds.map { it.toLong() }
+                    else -> emptyList()
+                }
+
+                val contextCurrencies = when (initialFilterContext) {
+                    is RecordsFilterContext.ByAccountAndCurrency -> listOf(initialFilterContext.currency)
+                    is RecordsFilterContext.Custom -> initialFilterContext.currencies
+                    else -> emptyList()
+                }
+
+                val contextPaymentMethods = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> initialFilterContext.paymentMethods
+                    else -> emptyList()
+                }
+
+                val contextQueryNote = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> initialFilterContext.queryNote
+                    else -> null
+                }
+
+                val contextQueryPayee = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> initialFilterContext.queryPayee
+                    else -> null
+                }
+
+                val contextAmountRange = when (initialFilterContext) {
+                    is RecordsFilterContext.Custom -> Pair(initialFilterContext.minAmount, initialFilterContext.maxAmount)
+                    else -> null
+                }
+
+                // Account filters (merged context + manual)
+                val allAccountIds = (filter.accountIds + contextAccounts).distinct()
+                if (allAccountIds.isNotEmpty()) {
                     FilterGroup(
                         label = "Accounts",
-                        chips = filter.accountIds.map { accountId ->
+                        chips = allAccountIds.map { accountId ->
+                            val isContext = accountId in contextAccounts
                             FilterChipData(
                                 label = accountNames[accountId] ?: accountId,
-                                isPreApplied = preAppliedAccountId == accountId,
+                                isPreApplied = isContext || (preAppliedAccountId == accountId),
                                 onRemove = { onRemoveFilter("accountIds", accountId) }
                             )
                         }
                     )
                 }
 
-                // Type filter
-                if (filter.isIncome != null) {
+                // Type filter (merged context + manual)
+                val allType = if (filter.isIncome != null) filter.isIncome else contextType
+                if (allType != null) {
                     FilterGroup(
                         label = "Type",
                         chips = listOf(
                             FilterChipData(
-                                label = if (filter.isIncome == true) "Income" else "Expense",
-                                isPreApplied = preAppliedIsIncome == filter.isIncome,
+                                label = if (allType) "Income" else "Expense",
+                                isPreApplied = contextType == allType || (preAppliedIsIncome == allType),
                                 onRemove = { onRemoveFilter("isIncome", null) }
                             )
                         )
                     )
                 }
 
-                // Date range filter
-                if (filter.startDate != null || filter.endDate != null) {
+                // Date range filter (merged context + manual)
+                val allStartDate = filter.startDate ?: contextDateRange?.first
+                val allEndDate = filter.endDate ?: contextDateRange?.second
+                if (allStartDate != null || allEndDate != null) {
                     FilterGroup(
                         label = "Date Range",
                         chips = listOf(
                             FilterChipData(
-                                label = formatDateRange(filter.startDate, filter.endDate),
-                                isPreApplied = false,
+                                label = formatDateRange(allStartDate, allEndDate),
+                                isPreApplied = contextDateRange?.first == allStartDate && contextDateRange?.second == allEndDate,
                                 onRemove = { onRemoveFilter("dateRange", null) }
                             )
                         )
                     )
                 }
 
-                // Category filters
-                if (filter.categoryIds.isNotEmpty()) {
+                // Category filters (merged context + manual)
+                val allCategoryIds = (filter.categoryIds + contextCategories).distinct()
+                if (allCategoryIds.isNotEmpty()) {
                     FilterGroup(
                         label = "Categories",
-                        chips = filter.categoryIds.map { categoryId ->
+                        chips = allCategoryIds.map { categoryId ->
+                            val isContext = categoryId in contextCategories
                             FilterChipData(
                                 label = categoryMap[categoryId]?.name ?: "Category: $categoryId",
-                                isPreApplied = false,
+                                isPreApplied = isContext,
                                 onRemove = { onRemoveFilter("categoryIds", categoryId) }
                             )
                         }
                     )
                 }
 
-                // Currency filters
-                if (filter.currencies.isNotEmpty()) {
+                // Currency filters (merged context + manual)
+                val allCurrencies = (filter.currencies + contextCurrencies).distinct()
+                if (allCurrencies.isNotEmpty()) {
                     FilterGroup(
                         label = "Currencies",
-                        chips = filter.currencies.map { currency ->
+                        chips = allCurrencies.map { currency ->
+                            val isContext = currency in contextCurrencies
                             FilterChipData(
                                 label = currency,
-                                isPreApplied = false,
+                                isPreApplied = isContext,
                                 onRemove = { onRemoveFilter("currencies", currency) }
                             )
                         }
                     )
                 }
 
-                // Payment method filters
-                if (filter.paymentMethods.isNotEmpty()) {
+                // Payment method filters (merged context + manual)
+                val allPaymentMethods = (filter.paymentMethods + contextPaymentMethods).distinct()
+                if (allPaymentMethods.isNotEmpty()) {
                     FilterGroup(
                         label = "Payment Methods",
-                        chips = filter.paymentMethods.map { method ->
+                        chips = allPaymentMethods.map { method ->
+                            val isContext = method in contextPaymentMethods
                             FilterChipData(
                                 label = method,
-                                isPreApplied = false,
+                                isPreApplied = isContext,
                                 onRemove = { onRemoveFilter("paymentMethods", method) }
                             )
                         }
                     )
                 }
 
-                // Note filter
-                if (!filter.queryNote.isNullOrBlank()) {
+                // Note filter (merged context + manual)
+                val allQueryNote = filter.queryNote ?: contextQueryNote
+                if (!allQueryNote.isNullOrBlank()) {
                     FilterGroup(
                         label = "Note",
                         chips = listOf(
                             FilterChipData(
-                                label = filter.queryNote,
-                                isPreApplied = false,
+                                label = allQueryNote,
+                                isPreApplied = contextQueryNote == allQueryNote,
                                 onRemove = { onRemoveFilter("queryNote", null) }
                             )
                         )
                     )
                 }
 
-                // Payee filter
-                if (!filter.queryPayee.isNullOrBlank()) {
+                // Payee filter (merged context + manual)
+                val allQueryPayee = filter.queryPayee ?: contextQueryPayee
+                if (!allQueryPayee.isNullOrBlank()) {
                     FilterGroup(
                         label = "Payee",
                         chips = listOf(
                             FilterChipData(
-                                label = filter.queryPayee,
-                                isPreApplied = false,
+                                label = allQueryPayee,
+                                isPreApplied = contextQueryPayee == allQueryPayee,
                                 onRemove = { onRemoveFilter("queryPayee", null) }
                             )
                         )
                     )
                 }
 
-                // Amount range filters
-                if (filter.minAmount != null || filter.maxAmount != null) {
+                // Amount range filter (merged context + manual)
+                val allMinAmount = filter.minAmount ?: contextAmountRange?.first?.let { java.math.BigDecimal(it) }
+                val allMaxAmount = filter.maxAmount ?: contextAmountRange?.second?.let { java.math.BigDecimal(it) }
+                if (allMinAmount != null || allMaxAmount != null) {
                     val range = buildString {
-                        if (filter.minAmount != null) append("≥${filter.minAmount}")
-                        if (filter.minAmount != null && filter.maxAmount != null) append(" - ")
-                        if (filter.maxAmount != null) append("≤${filter.maxAmount}")
+                        if (allMinAmount != null) append("≥${allMinAmount}")
+                        if (allMinAmount != null && allMaxAmount != null) append(" - ")
+                        if (allMaxAmount != null) append("≤${allMaxAmount}")
                     }
                     FilterGroup(
                         label = "Amount",
                         chips = listOf(
                             FilterChipData(
                                 label = range,
-                                isPreApplied = false,
+                                isPreApplied = contextAmountRange?.first?.let { java.math.BigDecimal(it) } == allMinAmount &&
+                                              contextAmountRange?.second?.let { java.math.BigDecimal(it) } == allMaxAmount,
                                 onRemove = { onRemoveFilter("amountRange", null) }
                             )
                         )

@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -125,6 +126,22 @@ fun FilterSheetContent(
             )
             HorizontalDivider()
         }
+
+        // Active filters summary (collapsible)
+        ActiveFiltersSummary(
+            filter = localFilter,
+            preAppliedAccountId = preAppliedAccountId,
+            preAppliedIsIncome = preAppliedIsIncome,
+            accountNames = accountNames,
+            onRemoveFilter = { field, value ->
+                removeFilter(localFilter, field, value) { updatedFilter ->
+                    localFilter = updatedFilter
+                    selectedFilterId = null // Clear preset when manually modified
+                }
+            }
+        )
+
+        HorizontalDivider()
 
         Column(
             modifier = Modifier
@@ -307,6 +324,212 @@ private fun getContextDisplayName(context: RecordsFilterContext, accountNames: M
             "Account: ${accountNames[context.accountId] ?: context.accountId} (${context.currency})"
         is RecordsFilterContext.Custom -> "Custom"
     }
+}
+
+@Composable
+fun ActiveFiltersSummary(
+    filter: TransactionFilter,
+    preAppliedAccountId: String?,
+    preAppliedIsIncome: Boolean?,
+    accountNames: Map<String, String>,
+    onRemoveFilter: (String, Any?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterAlt,
+                    contentDescription = "Active filters",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "${countActiveFilters(filter)} filters active",
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+            IconButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Collapse" else "Expand"
+                )
+            }
+        }
+
+        if (expanded) {
+            Column(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Account filters
+                filter.accountIds.forEach { accountId ->
+                    ActiveFilterChip(
+                        label = accountNames[accountId] ?: accountId,
+                        isPreApplied = preAppliedAccountId == accountId,
+                        onRemove = { onRemoveFilter("accountIds", accountId) }
+                    )
+                }
+
+                // Type filter
+                if (filter.isIncome != null) {
+                    ActiveFilterChip(
+                        label = if (filter.isIncome == true) "Income" else "Expense",
+                        isPreApplied = preAppliedIsIncome == filter.isIncome,
+                        onRemove = { onRemoveFilter("isIncome", null) }
+                    )
+                }
+
+                // Date range filter
+                if (filter.startDate != null || filter.endDate != null) {
+                    ActiveFilterChip(
+                        label = formatDateRange(filter.startDate, filter.endDate),
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("dateRange", null) }
+                    )
+                }
+
+                // Category filters
+                filter.categoryIds.forEach { categoryId ->
+                    ActiveFilterChip(
+                        label = "Category: $categoryId",
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("categoryIds", categoryId) }
+                    )
+                }
+
+                // Payment method filters
+                filter.paymentMethods.forEach { method ->
+                    ActiveFilterChip(
+                        label = method,
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("paymentMethods", method) }
+                    )
+                }
+
+                // Note filter
+                if (!filter.queryNote.isNullOrBlank()) {
+                    ActiveFilterChip(
+                        label = "Note: ${filter.queryNote}",
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("queryNote", null) }
+                    )
+                }
+
+                // Payee filter
+                if (!filter.queryPayee.isNullOrBlank()) {
+                    ActiveFilterChip(
+                        label = "Payee: ${filter.queryPayee}",
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("queryPayee", null) }
+                    )
+                }
+
+                // Amount range filters
+                if (filter.minAmount != null || filter.maxAmount != null) {
+                    val range = buildString {
+                        if (filter.minAmount != null) append("≥${filter.minAmount}")
+                        if (filter.minAmount != null && filter.maxAmount != null) append(" - ")
+                        if (filter.maxAmount != null) append("≤${filter.maxAmount}")
+                    }
+                    ActiveFilterChip(
+                        label = "Amount: $range",
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("amountRange", null) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActiveFilterChip(
+    label: String,
+    isPreApplied: Boolean,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (isPreApplied) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Pre-applied",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove filter",
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+fun countActiveFilters(filter: TransactionFilter): Int {
+    var count = 0
+    count += filter.accountIds.size
+    if (filter.isIncome != null) count++
+    count += filter.categoryIds.size
+    if (filter.startDate != null || filter.endDate != null) count++
+    count += filter.paymentMethods.size
+    if (!filter.queryNote.isNullOrBlank()) count++
+    if (!filter.queryPayee.isNullOrBlank()) count++
+    if (filter.minAmount != null || filter.maxAmount != null) count++
+    return count
+}
+
+fun removeFilter(
+    filter: TransactionFilter,
+    field: String,
+    value: Any?,
+    onUpdateFilter: (TransactionFilter) -> Unit
+) {
+    val updatedFilter = when (field) {
+        "accountIds" -> filter.copy(accountIds = filter.accountIds - (value as String))
+        "isIncome" -> filter.copy(isIncome = null)
+        "dateRange" -> filter.copy(startDate = null, endDate = null)
+        "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as Long))
+        "paymentMethods" -> filter.copy(paymentMethods = filter.paymentMethods - (value as String))
+        "queryNote" -> filter.copy(queryNote = null)
+        "queryPayee" -> filter.copy(queryPayee = null)
+        "amountRange" -> filter.copy(minAmount = null, maxAmount = null)
+        else -> filter
+    }
+    onUpdateFilter(updatedFilter)
+}
+
+private fun formatDateRange(startDate: Long?, endDate: Long?): String {
+    val start = startDate?.let { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()).format(java.util.Date(it)) } ?: "Start"
+    val end = endDate?.let { java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault()).format(java.util.Date(it)) } ?: "End"
+    return "$start - $end"
 }
 
 @Preview(showBackground = true)

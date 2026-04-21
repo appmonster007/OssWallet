@@ -74,7 +74,8 @@ fun TransactionListContent(
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
     // Context-aware parameters
     initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
-    accountNames: Map<String, String> = emptyMap()
+    accountNames: Map<String, String> = emptyMap(),
+    onResetToInitial: (() -> Unit)? = null
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -128,7 +129,8 @@ fun TransactionListContent(
 //                backgroundColor = MaterialTheme.colorScheme.primaryContainer
                     backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     initialFilterContext = initialFilterContext,
-                    accountNames = accountNames
+                    accountNames = accountNames,
+                    onResetToInitial = onResetToInitial
                 )
             }
         ) { innerPadding ->

@@ -46,7 +46,8 @@ fun FilterSheetContent(
     showAccountFilter: Boolean = true,
     // Context-aware parameters
     initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
-    accountNames: Map<String, String> = emptyMap()
+    accountNames: Map<String, String> = emptyMap(),
+    onResetToInitial: (() -> Unit)? = null
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterId by remember { mutableStateOf<Long?>(null) }
@@ -94,6 +95,8 @@ fun FilterSheetContent(
                 context = initialFilterContext,
                 accountNames = accountNames,
                 onReset = {
+                    // Call the ViewModel's reset method if available
+                    onResetToInitial?.invoke()
                     // Reset to initial context
                     localFilter = when (initialFilterContext) {
                         is RecordsFilterContext.None -> TransactionFilter()
@@ -122,6 +125,7 @@ fun FilterSheetContent(
                             )
                         }
                     }
+                    onApplyFilter(localFilter)
                 }
             )
             HorizontalDivider()

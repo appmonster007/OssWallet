@@ -97,34 +97,8 @@ fun FilterSheetContent(
                 onReset = {
                     // Call the ViewModel's reset method if available
                     onResetToInitial?.invoke()
-                    // Reset to initial context
-                    localFilter = when (initialFilterContext) {
-                        is RecordsFilterContext.None -> TransactionFilter()
-                        is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf((initialFilterContext as RecordsFilterContext.ByAccount).accountId))
-                        is RecordsFilterContext.ByAccountAndType -> {
-                            val ctx = initialFilterContext as RecordsFilterContext.ByAccountAndType
-                            TransactionFilter(accountIds = listOf(ctx.accountId), isIncome = ctx.isIncome)
-                        }
-                        is RecordsFilterContext.ByAccountAndCurrency -> {
-                            val ctx = initialFilterContext as RecordsFilterContext.ByAccountAndCurrency
-                            TransactionFilter(accountIds = listOf(ctx.accountId))
-                        }
-                        is RecordsFilterContext.Custom -> {
-                            val ctx = initialFilterContext as RecordsFilterContext.Custom
-                            TransactionFilter(
-                                accountIds = ctx.accountIds,
-                                isIncome = ctx.isIncome,
-                                startDate = ctx.startDate,
-                                endDate = ctx.endDate,
-                                categoryIds = ctx.categoryIds.map { it.toLong() },
-                                paymentMethods = ctx.paymentMethods,
-                                queryNote = ctx.queryNote,
-                                minAmount = ctx.minAmount?.let { java.math.BigDecimal(it) },
-                                maxAmount = ctx.maxAmount?.let { java.math.BigDecimal(it) },
-                                queryPayee = ctx.queryPayee
-                            )
-                        }
-                    }
+                    // Reset to None (All) - clear all filters
+                    localFilter = TransactionFilter()
                     onApplyFilter(localFilter)
                 }
             )
@@ -166,8 +140,10 @@ fun FilterSheetContent(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 TextButton(
-                    onClick = { 
-                        localFilter = TransactionFilter() 
+                    onClick = {
+                        // Call the ViewModel's reset method if available
+                        onResetToInitial?.invoke()
+                        localFilter = TransactionFilter()
                         selectedFilterId = null
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp)
@@ -291,32 +267,174 @@ fun ContextIndicator(
     accountNames: Map<String, String>,
     onReset: () -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "Applied filter",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = getContextDisplayName(context, accountNames),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            TextButton(onClick = onReset) {
+                Text("Reset")
+            }
+        }
+
+        if (expanded) {
+            Column(
+                modifier = Modifier
+                    .padding(start = 24.dp, top = 8.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                when (context) {
+                    is RecordsFilterContext.ByAccount -> {
+                        ContextFilterField(
+                            label = "Account",
+                            value = accountNames[context.accountId] ?: context.accountId
+                        )
+                    }
+                    is RecordsFilterContext.ByAccountAndType -> {
+                        ContextFilterField(
+                            label = "Account",
+                            value = accountNames[context.accountId] ?: context.accountId
+                        )
+                        ContextFilterField(
+                            label = "Type",
+                            value = if (context.isIncome) "Income" else "Expense"
+                        )
+                    }
+                    is RecordsFilterContext.ByAccountAndCurrency -> {
+                        ContextFilterField(
+                            label = "Account",
+                            value = accountNames[context.accountId] ?: context.accountId
+                        )
+                        ContextFilterField(
+                            label = "Currency",
+                            value = context.currency
+                        )
+                    }
+                    is RecordsFilterContext.Custom -> {
+                        if (context.accountIds.isNotEmpty()) {
+                            ContextFilterField(
+                                label = "Accounts",
+                                value = context.accountIds.map { accountNames[it] ?: it }.joinToString(", ")
+                            )
+                        }
+                        if (context.isIncome != null) {
+                            ContextFilterField(
+                                label = "Type",
+                                value = if (context.isIncome) "Income" else "Expense"
+                            )
+                        }
+                        if (context.startDate != null || context.endDate != null) {
+                            ContextFilterField(
+                                label = "Date Range",
+                                value = formatDateRange(context.startDate, context.endDate)
+                            )
+                        }
+                        if (context.categoryIds.isNotEmpty()) {
+                            ContextFilterField(
+                                label = "Categories",
+                                value = context.categoryIds.joinToString(", ")
+                            )
+                        }
+                        if (context.paymentMethods.isNotEmpty()) {
+                            ContextFilterField(
+                                label = "Payment Methods",
+                                value = context.paymentMethods.joinToString(", ")
+                            )
+                        }
+                        if (context.queryNote != null) {
+                            ContextFilterField(
+                                label = "Note",
+                                value = context.queryNote
+                            )
+                        }
+                        if (context.queryPayee != null) {
+                            ContextFilterField(
+                                label = "Payee",
+                                value = context.queryPayee
+                            )
+                        }
+                        if (context.minAmount != null || context.maxAmount != null) {
+                            val range = buildString {
+                                if (context.minAmount != null) append("≥${context.minAmount}")
+                                if (context.minAmount != null && context.maxAmount != null) append(" - ")
+                                if (context.maxAmount != null) append("≤${context.maxAmount}")
+                            }
+                            ContextFilterField(
+                                label = "Amount",
+                                value = range
+                            )
+                        }
+                    }
+                    is RecordsFilterContext.None -> {
+                        ContextFilterField(
+                            label = "Filter",
+                            value = "All transactions"
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContextFilterField(
+    label: String,
+    value: String
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.FilterList,
-                contentDescription = "Applied filter",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = getContextDisplayName(context, accountNames),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-        TextButton(onClick = onReset) {
-            Text("Reset")
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(12.dp)
+        )
+        Text(
+            text = "$label: ",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -374,68 +492,103 @@ fun ActiveFiltersSummary(
         if (expanded) {
             Column(
                 modifier = Modifier.padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Account filters
-                filter.accountIds.forEach { accountId ->
-                    ActiveFilterChip(
-                        label = accountNames[accountId] ?: accountId,
-                        isPreApplied = preAppliedAccountId == accountId,
-                        onRemove = { onRemoveFilter("accountIds", accountId) }
+                if (filter.accountIds.isNotEmpty()) {
+                    FilterGroup(
+                        label = "Accounts",
+                        chips = filter.accountIds.map { accountId ->
+                            FilterChipData(
+                                label = accountNames[accountId] ?: accountId,
+                                isPreApplied = preAppliedAccountId == accountId,
+                                onRemove = { onRemoveFilter("accountIds", accountId) }
+                            )
+                        }
                     )
                 }
 
                 // Type filter
                 if (filter.isIncome != null) {
-                    ActiveFilterChip(
-                        label = if (filter.isIncome == true) "Income" else "Expense",
-                        isPreApplied = preAppliedIsIncome == filter.isIncome,
-                        onRemove = { onRemoveFilter("isIncome", null) }
+                    FilterGroup(
+                        label = "Type",
+                        chips = listOf(
+                            FilterChipData(
+                                label = if (filter.isIncome == true) "Income" else "Expense",
+                                isPreApplied = preAppliedIsIncome == filter.isIncome,
+                                onRemove = { onRemoveFilter("isIncome", null) }
+                            )
+                        )
                     )
                 }
 
                 // Date range filter
                 if (filter.startDate != null || filter.endDate != null) {
-                    ActiveFilterChip(
-                        label = formatDateRange(filter.startDate, filter.endDate),
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("dateRange", null) }
+                    FilterGroup(
+                        label = "Date Range",
+                        chips = listOf(
+                            FilterChipData(
+                                label = formatDateRange(filter.startDate, filter.endDate),
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("dateRange", null) }
+                            )
+                        )
                     )
                 }
 
                 // Category filters
-                filter.categoryIds.forEach { categoryId ->
-                    ActiveFilterChip(
-                        label = "Category: $categoryId",
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("categoryIds", categoryId) }
+                if (filter.categoryIds.isNotEmpty()) {
+                    FilterGroup(
+                        label = "Categories",
+                        chips = filter.categoryIds.map { categoryId ->
+                            FilterChipData(
+                                label = "Category: $categoryId",
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("categoryIds", categoryId) }
+                            )
+                        }
                     )
                 }
 
                 // Payment method filters
-                filter.paymentMethods.forEach { method ->
-                    ActiveFilterChip(
-                        label = method,
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("paymentMethods", method) }
+                if (filter.paymentMethods.isNotEmpty()) {
+                    FilterGroup(
+                        label = "Payment Methods",
+                        chips = filter.paymentMethods.map { method ->
+                            FilterChipData(
+                                label = method,
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("paymentMethods", method) }
+                            )
+                        }
                     )
                 }
 
                 // Note filter
                 if (!filter.queryNote.isNullOrBlank()) {
-                    ActiveFilterChip(
-                        label = "Note: ${filter.queryNote}",
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("queryNote", null) }
+                    FilterGroup(
+                        label = "Note",
+                        chips = listOf(
+                            FilterChipData(
+                                label = filter.queryNote,
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("queryNote", null) }
+                            )
+                        )
                     )
                 }
 
                 // Payee filter
                 if (!filter.queryPayee.isNullOrBlank()) {
-                    ActiveFilterChip(
-                        label = "Payee: ${filter.queryPayee}",
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("queryPayee", null) }
+                    FilterGroup(
+                        label = "Payee",
+                        chips = listOf(
+                            FilterChipData(
+                                label = filter.queryPayee,
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("queryPayee", null) }
+                            )
+                        )
                     )
                 }
 
@@ -446,16 +599,51 @@ fun ActiveFiltersSummary(
                         if (filter.minAmount != null && filter.maxAmount != null) append(" - ")
                         if (filter.maxAmount != null) append("≤${filter.maxAmount}")
                     }
-                    ActiveFilterChip(
-                        label = "Amount: $range",
-                        isPreApplied = false,
-                        onRemove = { onRemoveFilter("amountRange", null) }
+                    FilterGroup(
+                        label = "Amount",
+                        chips = listOf(
+                            FilterChipData(
+                                label = range,
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("amountRange", null) }
+                            )
+                        )
                     )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun FilterGroup(
+    label: String,
+    chips: List<FilterChipData>
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+        chips.forEach { chipData ->
+            ActiveFilterChip(
+                label = chipData.label,
+                isPreApplied = chipData.isPreApplied,
+                onRemove = chipData.onRemove
+            )
+        }
+    }
+}
+
+private data class FilterChipData(
+    val label: String,
+    val isPreApplied: Boolean,
+    val onRemove: () -> Unit
+)
 
 @Composable
 fun ActiveFilterChip(

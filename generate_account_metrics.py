@@ -14,8 +14,8 @@ from datetime import datetime
 
 # Exchange rates
 EXCHANGE_RATES = {
-    "INR_to_USD": 1/93.1663,
-    "EUR_to_USD": 1/0.8490
+    "INR_to_USD": 0.01205,
+    "EUR_to_USD": 1.087
 }
 
 
@@ -53,13 +53,13 @@ def load_accounts(csv_path: str) -> Dict[str, Dict[str, Any]]:
             account = {
                 'id': row[0],
                 'name': row[1],
-                'initialBalance': float(row[2]),
-                'currencyCode': row[3],
-                'structureType': row[4],
-                'colorHex': row[5],
-                'icon': row[6],
-                'allowedCurrencies': row[7].strip('"'),
-                'profileId': int(row[8])
+                'initialBalance': 0.0,  # Accounts start with zero balance
+                'currencyCode': row[2],
+                'structureType': row[3],
+                'colorHex': row[4],
+                'icon': row[5],
+                'allowedCurrencies': row[6].strip('"'),
+                'profileId': int(row[7])
             }
             accounts[account['id']] = account
     
@@ -169,9 +169,11 @@ def calculate_account_metrics(account: Dict[str, Any],
         if currency != 'USD':
             multi_currency_cash_flow[currency]['convertedToUSD'] = data['convertedToUSD']
     
-    # Build category breakdown
+    # Build category breakdown (exclude Initial Balance)
     category_breakdown_list = []
     for category, data in sorted(category_breakdown.items()):
+        if category == 'Initial Balance':
+            continue  # Skip initial balance transactions
         category_breakdown_list.append({
             'category': category,
             'amount': data['amount'],

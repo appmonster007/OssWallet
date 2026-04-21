@@ -35,7 +35,8 @@ fun TransactionListScreen(
     onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel
 ) {
-    val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
+    // Use new FilterStack-based flow
+    val transactionsWithBalance by viewModel.transactionsWithBalanceFromStack.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val accountMap = accounts.associate { it.id to it.name }
     val accountCurrencyMap = accounts.associate { it.id to it.currencyCode }
@@ -43,13 +44,15 @@ fun TransactionListScreen(
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
-    val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
+    // Local filter state for UI filter sheet (still uses TransactionFilter)
+    var filter by remember { mutableStateOf(TransactionFilter()) }
+
     var navTriggered by remember { mutableStateOf(false) }
-    
+
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
@@ -65,7 +68,8 @@ fun TransactionListScreen(
     // Reset filters when entering or leaving the screen
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.clearRecordsFilters()
+            viewModel.clearRecordsFilterStack()
+            filter = TransactionFilter()
         }
     }
 
@@ -86,8 +90,19 @@ fun TransactionListScreen(
         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
         onBackClick = { navigate { onBackClick() } },
         onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
-        onUpdateFilter = { viewModel.updateRecordsFilter(it) },
-        onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
+        onUpdateFilter = { newFilter ->
+            filter = newFilter
+            // Convert TransactionFilter to FilterStack and update ViewModel
+            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(newFilter)
+            viewModel.clearRecordsFilterStack()
+            filterStack.activeFilters.forEach { viewModel.addRecordsFilterStack(it) }
+        },
+        onSetDateRange = { start, end ->
+            filter = filter.copy(startDate = start, endDate = end)
+            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
+            viewModel.clearRecordsFilterStack()
+            filterStack.activeFilters.forEach { viewModel.addRecordsFilterStack(it) }
+        },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } }
     )
 }

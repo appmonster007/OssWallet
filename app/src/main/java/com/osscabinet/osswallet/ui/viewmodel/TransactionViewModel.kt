@@ -26,15 +26,7 @@ class TransactionViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    private val _recordsFilter = MutableStateFlow(TransactionFilter())
-    @Deprecated("Use recordsFilterStack instead for better filter composition.", ReplaceWith("recordsFilterStack"))
-    val recordsFilter = _recordsFilter.asStateFlow()
-
-    private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
-    @Deprecated("Use accountDetailFilterStack instead for better filter composition.", ReplaceWith("accountDetailFilterStack"))
-    val accountDetailFilter = _accountDetailFilter.asStateFlow()
-
-    // New FilterStack support for unified filtering
+    // FilterStack support for unified filtering
     private val _recordsFilterStack = MutableStateFlow(FilterStack.Empty)
     val recordsFilterStack = _recordsFilterStack.asStateFlow()
 
@@ -53,34 +45,7 @@ class TransactionViewModel(
     val recordsSettings: StateFlow<TransactionSectionSettings> = settingsDataStore.recordsSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
-    @Deprecated("Use transactionsWithBalanceFromStack instead for FilterStack support.", ReplaceWith("transactionsWithBalanceFromStack"))
-    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
-        .flatMapLatest { profileId ->
-            combine(
-                _recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
-                accountRepository.getAllAccounts(profileId),
-                analyticsViewModel.uiState,
-                _recordsFilter
-            ) { filteredTransactions, accounts, analyticsState, currentFilter ->
-                val rates = analyticsState.exchangeRates
-                val precision = analyticsState.decimalPrecision
-
-                transactionUseCases.getRecentTransactions(
-                    allTransactions = filteredTransactions,
-                    accounts = accounts,
-                    exchangeRates = rates,
-                    precision = precision,
-                    limit = Int.MAX_VALUE // Use MAX_VALUE for the full list with balances
-                )
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    // New FilterStack-based flow for unified filtering
-    // Screens can migrate to use this flow gradually
+    // FilterStack-based flow for unified filtering
     val transactionsWithBalanceFromStack: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -105,44 +70,9 @@ class TransactionViewModel(
             initialValue = emptyList()
         )
 
-    val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
+    val transactions: StateFlow<List<Transaction>> = transactionsWithBalanceFromStack
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() for better filter composition.", ReplaceWith("addRecordsFilterStack()"))
-    fun updateRecordsFilter(newFilter: TransactionFilter) {
-        _recordsFilter.value = newFilter
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to addAccountDetailFilterStack() for better filter composition.", ReplaceWith("addAccountDetailFilterStack()"))
-    fun updateAccountDetailFilter(newFilter: TransactionFilter) {
-        _accountDetailFilter.value = newFilter
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() with AccountFilter.", ReplaceWith("addRecordsFilterStack(AccountFilter(...))"))
-    fun setRecordsAccountFilter(accountId: String?) {
-        _recordsFilter.value = _recordsFilter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to addRecordsFilterStack() with DateRangeFilter.", ReplaceWith("addRecordsFilterStack(DateRangeFilter(...))"))
-    fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        _recordsFilter.value = _recordsFilter.value.copy(startDate = start, endDate = end)
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to addAccountDetailFilterStack() with DateRangeFilter.", ReplaceWith("addAccountDetailFilterStack(DateRangeFilter(...))"))
-    fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
-        _accountDetailFilter.value = _accountDetailFilter.value.copy(startDate = start, endDate = end)
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to clearRecordsFilterStack().", ReplaceWith("clearRecordsFilterStack()"))
-    fun clearRecordsFilters() {
-        _recordsFilter.value = TransactionFilter()
-    }
-
-    @Deprecated("Use FilterStack-based methods instead. Migrate to clearAccountDetailFilterStack().", ReplaceWith("clearAccountDetailFilterStack()"))
-    fun clearAccountDetailFilters() {
-        _accountDetailFilter.value = TransactionFilter()
-    }
 
     // ========== FilterStack Manipulation Methods ==========
 

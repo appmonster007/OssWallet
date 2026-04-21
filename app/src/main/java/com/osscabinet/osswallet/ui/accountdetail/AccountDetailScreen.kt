@@ -257,7 +257,8 @@ fun AccountDetailScreen(
                                 }
                             }
                         } else {
-                            val filter by transactionViewModel.accountDetailFilter.collectAsStateWithLifecycle()
+                            // Local filter state for UI filter sheet (still uses TransactionFilter)
+                            var filter by remember { mutableStateOf(com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))) }
                             val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
                             val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -272,17 +273,18 @@ fun AccountDetailScreen(
                                 )
                             )
 
-                            // Apply account filter automatically if not already set specifically for this account
+                            // Initialize filter with this account and update FilterStack
                             LaunchedEffect(accountId) {
-                                if (!filter.accountIds.contains(accountId)) {
-                                    transactionViewModel.updateAccountDetailFilter(filter.copy(accountIds = listOf(accountId)))
-                                }
+                                val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
+                                transactionViewModel.clearAccountDetailFilterStack()
+                                filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
                             }
 
                             // Reset filters when leaving the transactions tab or the screen
                             DisposableEffect(Unit) {
                                 onDispose {
-                                    transactionViewModel.clearAccountDetailFilters()
+                                    transactionViewModel.clearAccountDetailFilterStack()
+                                    filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))
                                 }
                             }
 
@@ -306,10 +308,20 @@ fun AccountDetailScreen(
                                         accounts = accounts,
                                         categories = categoriesList,
                                         savedFilters = savedFilters,
-                                        onSetDateRange = { start, end -> transactionViewModel.setAccountDetailDateRangeFilter(start, end) },
+                                        onSetDateRange = { start, end ->
+                                            filter = filter.copy(startDate = start, endDate = end)
+                                            // Convert to FilterStack and update ViewModel
+                                            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
+                                            transactionViewModel.clearAccountDetailFilterStack()
+                                            filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
+                                        },
                                         onUpdateFilter = { updatedFilter ->
                                             // Ensure we always stay filtered by this account
-                                            transactionViewModel.updateAccountDetailFilter(updatedFilter.copy(accountIds = listOf(accountId)))
+                                            filter = updatedFilter.copy(accountIds = listOf(accountId))
+                                            // Convert to FilterStack and update ViewModel
+                                            val filterStack = com.osscabinet.ossWallet.domain.model.filter.FilterStack.fromTransactionFilter(filter)
+                                            transactionViewModel.clearAccountDetailFilterStack()
+                                            filterStack.activeFilters.forEach { transactionViewModel.addAccountDetailFilterStack(it) }
                                         },
                                         onToggleExpand = {
                                             scope.launch {

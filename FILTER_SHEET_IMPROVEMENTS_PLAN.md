@@ -190,6 +190,46 @@ label = "Category: $categoryId"
 
 ---
 
+### Issue #12: Instant Filter Application
+**Status**: ✅ COMPLETED
+**Root Cause**: User had to click \"Apply Filters\" button to see results
+**Current State**:
+- Filters require explicit \"Apply Filters\" button click
+- Extra step in filtering workflow
+- Not aligned with modern UX patterns
+**Resolution**:
+1. ✅ Add debouncing mechanism to prevent excessive updates
+2. ✅ Filters apply automatically as soon as changes are made
+3. ✅ Remove explicit \"Apply Filters\" button
+4. ✅ Special handling for search fields (500ms debounce)
+5. ✅ Immediate apply for dropdown selections (0ms debounce)
+6. ✅ Immediate apply for filter removal (0ms debounce)
+7. ✅ Filter sheet stays open for continuous filtering
+**Files to Modify**:
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Add debouncing mechanism with Job and coroutine scope
+  - ✅ Add applyFilterWithDebounce function
+  - ✅ Update AeonPeriodSelector to apply immediately on date range change
+  - ✅ Update ActiveFiltersSummary onRemove to apply immediately
+  - ✅ Update onResetAll to apply immediately
+  - ✅ Update FilterFields onFilterChange to use debounced apply
+  - ✅ Update \"Reset All\" button to apply immediately
+  - ✅ Update saved filter selection to apply immediately
+  - ✅ Remove \"Apply Filters\" button
+- ✅ `ui/components/transactions/FilterComponents.kt`
+  - ✅ Add onImmediateApply callback parameter
+  - ✅ Update search fields (Note/Payee) to use 500ms debounce
+  - ✅ Pass onImmediateApply callback from parent
+
+**Debounce Strategy**:
+- Search fields (Note/Payee): 500ms - wait for typing to pause
+- Dropdown selections: 0ms - immediate feedback
+- Date range: 0ms - immediate feedback
+- Filter removal: 0ms - immediate feedback
+- Other filter changes: 300ms - balanced
+
+---
+
 ### Issue #10: Currency Filter for Aggregate Currency Balances
 **Status**: ✅ COMPLETED
 **Root Cause**: TransactionFilter doesn't support currency filtering
@@ -229,11 +269,12 @@ label = "Category: $categoryId"
 6. ✅ **Issue #8**: Filter dropdowns show unfiltered options (data flow improvement)
 7. ✅ **Issue #9**: Merge context and active filters (UI simplification)
 8. ✅ **Issue #11**: Currency dropdown shows all supported currencies (multi-currency support)
+9. ✅ **Issue #12**: Instant filter application (UX improvement)
 
 ### Phase 3: Low Priority (Already Done) - ✅ VERIFIED
-9. ✅ **Issue #0**: Verify MVVM pattern (already correct)
-10. ✅ **Issue #3**: Verify reset behavior (already correct)
-11. ✅ **Issue #6**: Verify card navigation (already correct)
+10. ✅ **Issue #0**: Verify MVVM pattern (already correct)
+11. ✅ **Issue #3**: Verify reset behavior (already correct)
+12. ✅ **Issue #6**: Verify card navigation (already correct)
 
 ---
 

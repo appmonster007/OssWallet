@@ -20,7 +20,8 @@ Use this checklist to completely remove database seeding functionality from the 
 
 - [ ] **Step 4**: Remove CSV and JSON assets
   ```bash
-  rm app/src/main/assets/seed_data.csv
+  rm app/src/main/assets/accounts.csv
+  rm app/src/main/assets/transactions.csv
   rm app/src/main/assets/account_metrics.json
   ```
 
@@ -36,7 +37,8 @@ After completing all steps, verify:
 - [ ] Project builds successfully without errors
 - [ ] No references to `SeedingConfig` in the codebase
 - [ ] No references to `DatabaseSeeder` in the codebase
-- [ ] No `seed_data.csv` file exists
+- [ ] No `accounts.csv` file exists
+- [ ] No `transactions.csv` file exists
 - [ ] No `account_metrics.json` file exists
 - [ ] App launches without attempting to seed database
 

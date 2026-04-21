@@ -1,0 +1,30 @@
+title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
+Grocery shopping at Walmart,85.50,Groceries,1,1735689600000,USD,false,acc_cash,Debit Card,Walmart,Weekly grocery run,Personal,,1
+Coffee at Starbucks,5.75,Dining Out,1,1735776000000,USD,false,acc_cash,Cash,Starbucks,Morning coffee,Personal,,1
+Fuel purchase at Shell,45.00,Fuel,2,1735862400000,USD,false,acc_bank,Credit Card,Shell,Full tank gas,Work,,1
+Netflix subscription,15.99,Entertainment,5,1735948800000,USD,false,acc_credit,Credit Card,Netflix,Monthly subscription,Subscription,,1
+Salary deposit,5000.00,Salary,6,1736035200000,USD,true,acc_bank,Bank Transfer,Employer,Monthly salary,Work,,1
+Rent payment,1200.00,Rent,4,1736121600000,USD,false,acc_bank,Bank Transfer,Landlord,Monthly rent,Housing,,1
+Online shopping at Amazon,156.30,Shopping,3,1736208000000,USD,false,acc_credit,Credit Card,Amazon,Electronics purchase,Personal,,1
+Freelance payment,850.00,Salary,6,1736294400000,USD,true,acc_bank,Bank Transfer,Freelance Client,Web development project,Work,,1
+Lunch at local restaurant,22.50,Dining Out,1,1736380800000,USD,false,acc_cash,Debit Card,Local Restaurant,Business lunch,Work,,1
+Utility bill payment,180.00,Housing,4,1736467200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly utilities,Housing,,1
+Gym membership,45.00,Entertainment,5,1736553600000,USD,false,acc_credit,Credit Card,Gym,Monthly membership,Subscription,,1
+Book purchase,29.99,Shopping,3,1736640000000,USD,false,acc_cash,Credit Card,Bookstore,Technical book,Personal,,1
+Bonus payment,2000.00,Salary,6,1736726400000,USD,true,acc_bank,Bank Transfer,Employer,Performance bonus,Work,,1
+Grocery shopping at Whole Foods,120.75,Groceries,1,1736812800000,USD,false,acc_cash,Debit Card,Whole Foods,Organic groceries,Personal,,1
+Uber ride,18.50,Transport,2,1736899200000,USD,false,acc_credit,Credit Card,Uber,Airport transfer,Work,,1
+Phone bill,65.00,Housing,4,1736985600000,USD,false,acc_bank,Bank Transfer,Phone Company,Monthly plan,Housing,,1
+Dinner with family,95.00,Dining Out,1,1737072000000,USD,false,acc_cash,Credit Card,Restaurant,Family dinner,Family,,1
+Indian restaurant dinner,1500.00,Dining Out,1,1737158400000,INR,false,acc_bank,Debit Card,Indian Bistro,Family dinner in India,Family,,1
+Salary deposit in INR,85000.00,Salary,6,1737244800000,INR,true,acc_bank,Bank Transfer,Indian Client,Monthly salary in INR,Work,,1
+Grocery shopping in INR,3500.00,Groceries,1,1737331200000,INR,false,acc_bank,Cash,Local Market,Weekly groceries in India,Personal,,1
+Transfer to savings,50000.00,Salary,6,1737417600000,INR,true,acc_savings,Bank Transfer,Self,Monthly savings transfer,Personal,,1
+European hotel booking,120.00,Housing,4,1737504000000,EUR,false,acc_bank,Credit Card,Hotel Paris,Hotel booking for vacation,Travel,,1
+Train ticket in Europe,45.00,Transport,2,1737590400000,EUR,false,acc_bank,Debit Card,SNCF,Train ticket Paris to Lyon,Travel,,1
+Museum admission,15.00,Entertainment,5,1737676800000,EUR,false,acc_bank,Cash,Louvre Museum,Entry ticket,Travel,,1
+Coffee in Paris,5.50,Dining Out,1,1737763200000,EUR,false,acc_bank,Cash,Cafe de Flore,Morning coffee in Paris,Travel,,1
+Indian phone bill,1200.00,Housing,4,1737849600000,INR,false,acc_bank,Bank Transfer,Jio,Monthly phone plan India,Housing,,1
+Electric bill in INR,4500.00,Housing,4,1737936000000,INR,false,acc_bank,Bank Transfer,BESCOM,Monthly electricity India,Housing,,1
+Freelance payment EUR,800.00,Salary,6,1738022400000,EUR,true,acc_bank,Bank Transfer,European Client,Web development payment,Work,,1
+Savings deposit,100000.00,Salary,6,1738108800000,INR,true,acc_savings,Bank Transfer,Self,Bonus savings,Personal,,1

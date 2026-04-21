@@ -43,7 +43,7 @@ fun RecentActivitiesCard(
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, CategoryEntity>,
     decimalPrecision: Int,
-    onRecordsClick: () -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
@@ -72,7 +72,7 @@ fun RecentActivitiesCard(
                 title = "RECENT ACTIVITIES",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 trailing = {
-                    TextButton(onClick = onRecordsClick) {
+                    TextButton(onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) }) {
                         Text(
                             "View all",
                             style = MaterialTheme.typography.labelSmall.copy(

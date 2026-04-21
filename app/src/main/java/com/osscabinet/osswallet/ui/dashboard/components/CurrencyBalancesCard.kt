@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -48,7 +49,8 @@ fun CurrencyBalancesCard(
     onLayoutChange: (String, String) -> Unit = { _, _ -> },
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
     onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onCurrencyClick: (String) -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -122,6 +124,7 @@ fun CurrencyBalancesCard(
                                         baseCurrency = baseCurrency,
                                         precision = precision,
                                         showBaseConversion = showBaseConversion,
+                                        onClick = { onCurrencyClick(item.currency) },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -145,7 +148,8 @@ fun CurrencyBalancesCard(
                                 inBase = item.amountInBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision,
-                                showBaseConversion = showBaseConversion
+                                showBaseConversion = showBaseConversion,
+                                onClick = { onCurrencyClick(item.currency) }
                             )
                         }
                     }
@@ -239,6 +243,7 @@ fun CurrencyBalanceItem(
     baseCurrency: String,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
 
@@ -246,7 +251,7 @@ fun CurrencyBalanceItem(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-        modifier = modifier
+        modifier = modifier.clickable { onClick() }
     ) {
         Column(
             modifier = Modifier

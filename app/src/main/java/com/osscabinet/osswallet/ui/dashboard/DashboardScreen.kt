@@ -114,7 +114,7 @@ private fun calculateScrollBottomPadding(): Dp {
 @Composable
 fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
-    onRecordsClick: () -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
@@ -225,7 +225,7 @@ fun DashboardScreen(
                     selectedDestination = "dashboard",
                     onDashboardClick = { scope.launch { drawerState.close() } },
                     onAccountsViewClick = { navigate(onAccountsViewClick) },
-                    onRecordsClick = { navigate(onRecordsClick) },
+                    onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
                     onAnalyticsClick = { navigate(onAnalyticsClick) },
                     onBudgetsClick = { navigate(onBudgetsClick) },
                     onLoansClick = { navigate(onLoansClick) },
@@ -280,7 +280,7 @@ fun DashboardScreen(
                                 onManageAccountsClick = { navigate(onManageAccountsClick) },
                                 onAccountsViewClick = { navigate(onAccountsViewClick) },
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                onRecordsClick = { navigate(onRecordsClick) },
+                                onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
                                 onBudgetsClick = { navigate(onBudgetsClick) },
                                 onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
@@ -330,7 +330,7 @@ fun DashboardContent(
     onManageAccountsClick: () -> Unit,
     onAccountsViewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: () -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     transactionViewModel: TransactionViewModel,
@@ -467,7 +467,10 @@ fun DashboardContent(
                                         onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
                                         onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show) },
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
-                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
+                                        onCurrencyClick = { currency ->
+                                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None)
+                                        }
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }

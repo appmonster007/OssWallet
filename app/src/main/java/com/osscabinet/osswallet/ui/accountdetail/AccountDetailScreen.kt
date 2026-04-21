@@ -73,7 +73,8 @@ fun AccountDetailScreen(
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
-    onAddTransactionClick: (String, Int?, String?) -> Unit
+    onAddTransactionClick: (String, Int?, String?) -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -212,8 +213,9 @@ fun AccountDetailScreen(
                                         cardsConfig = accountDetailCardsConfig,
                                         cardManagerViewModel = cardManagerViewModel,
                                         accountDetailViewModel = accountDetailViewModel,
-                                        currentTheme = currentTheme,
+                                        onRecordsClick = onRecordsClick,
                                         accountId = accountId,
+                                        currentTheme = currentTheme,
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .padding(horizontal = 16.dp),
@@ -436,8 +438,9 @@ fun DynamicAccountDetailCards(
     cardsConfig: com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardsConfig,
     cardManagerViewModel: CardManagerViewModel,
     accountDetailViewModel: AccountDetailViewModel,
-    currentTheme: String,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     accountId: String,
+    currentTheme: String,
     modifier: Modifier = Modifier,
     screenPadding: PaddingValues = PaddingValues(),
     showAddCardDialog: Boolean,
@@ -480,7 +483,7 @@ fun DynamicAccountDetailCards(
                         onShowCurrencyBadgesChange = { show ->
                             accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardConfig.cardId, show)
                         },
-                        onClick = null,
+                        onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccount(accountId)) },
                         onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
@@ -513,7 +516,9 @@ fun DynamicAccountDetailCards(
                             onTimelineRangeChange = { _, it ->
                                 accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, it)
                             },
-                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) },
+                            onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = true)) },
+                            onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = false)) }
                         )
                     } ?: Box(modifier = Modifier.size(0.dp))
                 }
@@ -549,7 +554,10 @@ fun DynamicAccountDetailCards(
                             onTimelineRangeChange = { _, it ->
                                 accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, it)
                             },
-                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
+                            onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) },
+                            onCurrencyClick = { currency ->
+                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndCurrency(accountId, currency))
+                            }
                         )
                     } ?: Box(modifier = Modifier.size(0.dp))
                 }

@@ -234,7 +234,7 @@ fun OssWalletNavGraph(
             val viewContext = backStackEntry.arguments?.getString("viewContext")
             com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
-                onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
+                onRecordsClick = { context -> navController.navigateToRecords(context) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onAddClick = { type, template ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
@@ -536,7 +536,8 @@ fun OssWalletNavGraph(
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                 onAddTransactionClick = { accId, type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
-                }
+                },
+                onRecordsClick = { context -> navController.navigateToRecords(context) }
             )
         }
 

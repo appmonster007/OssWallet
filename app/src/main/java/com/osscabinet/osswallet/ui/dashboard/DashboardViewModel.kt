@@ -21,9 +21,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+@Serializable
 enum class DashboardSection {
     NET_WORTH,
     CURRENCY_BALANCES,

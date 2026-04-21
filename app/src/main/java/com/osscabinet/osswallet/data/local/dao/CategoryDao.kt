@@ -10,7 +10,7 @@ interface CategoryDao {
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCategory(category: CategoryEntity): Long
+    suspend fun insertCategory(category: CategoryEntity)
 
     @Delete
     suspend fun deleteCategory(category: CategoryEntity)

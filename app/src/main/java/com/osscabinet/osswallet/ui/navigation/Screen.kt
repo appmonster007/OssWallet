@@ -1,12 +1,24 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Dashboard : Screen("dashboard")
-    object AccountsView : Screen("accounts_view")
+    object Dashboard : Screen("dashboard?viewContext={viewContext}") {
+        fun createRoute(viewContext: String? = null): String {
+            return if (viewContext != null) "dashboard?viewContext=$viewContext" else "dashboard"
+        }
+    }
+    object AccountsView : Screen("accounts_view?filterContext={filterContext}") {
+        fun createRoute(filterContext: String? = null): String {
+            return if (filterContext != null) "accounts_view?filterContext=$filterContext" else "accounts_view"
+        }
+    }
     object Settings : Screen("settings")
     object Loans : Screen("loans")
     object Budgets : Screen("budgets")
-    object TransactionList : Screen("list")
+    object TransactionList : Screen("list?filterContext={filterContext}") {
+        fun createRoute(filterContext: String? = null): String {
+            return if (filterContext != null) "list?filterContext=$filterContext" else "list"
+        }
+    }
     object AddTransaction : Screen("add?accountId={accountId}&type={type}&template={template}") {
         fun createRoute(accountId: String? = null, type: Int? = null, template: String? = null): String {
             val params = mutableListOf<String>()

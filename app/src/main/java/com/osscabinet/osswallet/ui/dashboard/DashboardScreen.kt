@@ -177,6 +177,8 @@ fun DashboardScreen(
     }
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    val viewFocus by dashboardViewModel.viewFocus.collectAsStateWithLifecycle()
+    val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val cardsConfig by cardManagerViewModel.cardsConfig.collectAsStateWithLifecycle()
@@ -254,6 +256,14 @@ fun DashboardScreen(
                     )
                 }
             ) { innerPadding ->
+                // Context indicator banner (if view focus is applied)
+                if (initialViewContext != DashboardViewContext.None) {
+                    DashboardViewIndicator(
+                        context = initialViewContext,
+                        onReset = { dashboardViewModel.resetToInitialView() }
+                    )
+                }
+
                 when (val state = dashboardUiState) {
                     is DashboardUiState.Loading -> {
                         AeonShimmer(innerPadding = innerPadding)
@@ -626,4 +636,47 @@ fun AddCardDialog(
             )
         )
     )
+}
+
+@Composable
+fun DashboardViewIndicator(
+    context: DashboardViewContext,
+    onReset: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Visibility,
+                contentDescription = "View focus",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = getDashboardContextDisplayName(context),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        TextButton(onClick = onReset) {
+            Text("Reset")
+        }
+    }
+}
+
+private fun getDashboardContextDisplayName(context: DashboardViewContext): String {
+    return when (context) {
+        is DashboardViewContext.None -> "Default"
+        is DashboardViewContext.FocusCard -> "Card: ${context.cardId}"
+        is DashboardViewContext.FocusSection -> "Section: ${context.section.name}"
+    }
 }

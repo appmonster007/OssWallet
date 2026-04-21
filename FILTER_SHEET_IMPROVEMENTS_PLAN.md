@@ -170,6 +170,26 @@ label = "Category: $categoryId"
 
 ---
 
+### Issue #11: Currency Dropdown Shows All Supported Currencies
+**Status**: ✅ COMPLETED
+**Root Cause**: Implementation used account.currencyCode instead of account.allowedCurrencies
+**Current State**:
+- Currency dropdown only showed primary currency of each account
+- Users could not filter by currencies in allowedCurrencies but not set as currencyCode
+**Resolution**:
+1. ✅ Changed from currencyCode to allowedCurrencies for currency derivation
+2. ✅ Use flatMap to get union of all allowedCurrencies from all accounts
+3. ✅ Fallback to currencyCode if allowedCurrencies is empty for an account
+4. ✅ Updated both FilterSheetContent and FilterComponents
+**Files to Modify**:
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Change accounts.map { it.currencyCode } to accounts.flatMap { it.allowedCurrencies }
+  - ✅ Add fallback logic for empty allowedCurrencies
+- ✅ `ui/components/transactions/FilterComponents.kt`
+  - ✅ Update fallback logic to use allowedCurrencies
+
+---
+
 ### Issue #10: Currency Filter for Aggregate Currency Balances
 **Status**: ✅ COMPLETED
 **Root Cause**: TransactionFilter doesn't support currency filtering
@@ -208,11 +228,12 @@ label = "Category: $categoryId"
 5. ✅ **Issue #7**: Currency filter implementation (enables complete filtering)
 6. ✅ **Issue #8**: Filter dropdowns show unfiltered options (data flow improvement)
 7. ✅ **Issue #9**: Merge context and active filters (UI simplification)
+8. ✅ **Issue #11**: Currency dropdown shows all supported currencies (multi-currency support)
 
 ### Phase 3: Low Priority (Already Done) - ✅ VERIFIED
-8. ✅ **Issue #0**: Verify MVVM pattern (already correct)
-9. ✅ **Issue #3**: Verify reset behavior (already correct)
-10. ✅ **Issue #6**: Verify card navigation (already correct)
+9. ✅ **Issue #0**: Verify MVVM pattern (already correct)
+10. ✅ **Issue #3**: Verify reset behavior (already correct)
+11. ✅ **Issue #6**: Verify card navigation (already correct)
 
 ---
 

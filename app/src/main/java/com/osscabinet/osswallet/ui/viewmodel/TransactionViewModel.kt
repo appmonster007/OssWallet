@@ -118,8 +118,7 @@ class TransactionViewModel(
             )
             is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
                 accountIds = listOf(context.accountId),
-                // Note: TransactionFilter doesn't have a currencies field, so we skip this for now
-                // This will need to be handled differently based on actual requirements
+                currencies = listOf(context.currency)
             )
             is RecordsFilterContext.Custom -> TransactionFilter(
                 accountIds = context.accountIds,
@@ -127,6 +126,7 @@ class TransactionViewModel(
                 startDate = context.startDate,
                 endDate = context.endDate,
                 categoryIds = context.categoryIds.map { it.toLong() },
+                currencies = context.currencies,
                 paymentMethods = context.paymentMethods,
                 queryNote = context.queryNote,
                 minAmount = context.minAmount?.let { java.math.BigDecimal(it) },
@@ -150,7 +150,7 @@ class TransactionViewModel(
             }
             is RecordsFilterContext.ByAccountAndCurrency -> {
                 val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndCurrency
-                TransactionFilter(accountIds = listOf(ctx.accountId)) // currencies not supported in TransactionFilter
+                TransactionFilter(accountIds = listOf(ctx.accountId), currencies = listOf(ctx.currency))
             }
             is RecordsFilterContext.Custom -> {
                 val ctx = _initialFilterContext.value as RecordsFilterContext.Custom
@@ -160,6 +160,7 @@ class TransactionViewModel(
                     startDate = ctx.startDate,
                     endDate = ctx.endDate,
                     categoryIds = ctx.categoryIds.map { it.toLong() },
+                    currencies = ctx.currencies,
                     paymentMethods = ctx.paymentMethods,
                     queryNote = ctx.queryNote,
                     minAmount = ctx.minAmount?.let { java.math.BigDecimal(it) },

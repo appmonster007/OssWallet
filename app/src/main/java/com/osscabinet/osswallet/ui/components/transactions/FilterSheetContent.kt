@@ -247,14 +247,16 @@ fun FilterSheetContent(
             // Shared Filter Fields
             FilterFields(
                 filter = localFilter,
-                onFilterChange = { 
+                onFilterChange = {
                     localFilter = it
                     // Clear preset selection when a field is manually modified
                     selectedFilterId = null
                 },
                 accounts = accounts,
                 allCategories = allCategories,
-                showAccountFilter = showAccountFilter
+                showAccountFilter = showAccountFilter,
+                preAppliedAccountId = preAppliedAccountId,
+                preAppliedIsIncome = preAppliedIsIncome
             )
 
             // Apply Button

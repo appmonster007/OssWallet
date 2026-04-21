@@ -27,23 +27,32 @@ Created the following new domain models in `domain/model/filter/`:
 
 **UnifiedFilter.kt**
 - Sealed class defining all filter types:
-  - **Atomic Filters:** TextFilter (searches both note and payee), CategoryFilter, AccountFilter, DateRangeFilter, AmountFilter, PaymentMethodFilter, CurrencyFilter, IncomeTypeFilter, WarrantyFilter
+  - **Atomic Filters:** TextFilter (searches both note and payee, case-insensitive), CategoryFilter, AccountFilter, DateRangeFilter, AmountFilter, PaymentMethodFilter, CurrencyFilter, IncomeTypeFilter, WarrantyFilter
   - **Composite Filter:** Combines multiple filters with logical operators
   - **Saved Filter Reference:** References saved filters by ID for composition
+  - **Instant Filter:** Wraps any filter to mark it as transient (not persisted)
 - Type-safe and extensible design
 
 **FilterStack.kt**
 - Data class managing a stack of filters with logical operators
 - Methods:
   - `addFilter()` - Add filter to stack
+  - `addInstantFilter()` - Add transient filter (not persisted)
   - `removeFilter()` - Remove filter from stack
   - `removeFiltersOfType()` - Remove all filters of a specific type
+  - `clearInstantFilters()` - Clear only transient filters, keep permanent
   - `clear()` - Clear all filters
   - `isEmpty()` - Check if stack is empty
+  - `getPermanentFilters()` - Get only permanent (non-transient) filters
+  - `getInstantFilters()` - Get only transient filters
+  - `hasInstantFilters()` - Check if stack has transient filters
   - `combineWith()` - Combine two filter stacks with logical operator
   - `toTransactionFilter()` - Convert to legacy TransactionFilter (backward compatibility)
   - `fromTransactionFilter()` - Create from legacy TransactionFilter (migration)
-- Companion object with `Empty` static instance
+- Companion object with:
+  - `Empty` static instance
+  - `instant()` - Create instant-only filter stack
+- Automatic unwrapping of instant filters for conversion
 
 ### Key Design Decisions
 
@@ -76,6 +85,23 @@ Created the following new domain models in `domain/model/filter/`:
 val textFilter = TextFilter(query = "coffee", isRegex = false)
 // This will find transactions where "coffee" appears in either note or payee
 // Case-insensitive: matches "Coffee", "COFFEE", "coffee", etc.
+```
+
+#### Instant/Transient Filters
+```kotlin
+// Create a quick temporary filter that won't be saved
+val instantStack = FilterStack.instant(
+    TextFilter(query = "coffee")
+)
+// Clear when navigating away from screen
+instantStack.clearInstantFilters()
+
+// Mix permanent and instant filters
+val permanentFilter = CategoryFilter(listOf(1L))
+val instantFilter = TextFilter(query = "coffee")
+val stack = FilterStack(listOf(permanentFilter, UnifiedFilter.InstantFilter(instantFilter)))
+// Keep permanent, clear instant on screen change
+val permanentOnly = stack.clearInstantFilters()
 ```
 
 #### Filter Stacking
@@ -167,12 +193,13 @@ val convertedBack = newStack.toTransactionFilter()
 
 1. ✅ **Unified Text Search** - TextFilter searches both note and payee fields with a single input
 2. ✅ **Case-Insensitive Search** - TextFilter is case-insensitive by default for better UX
-3. ✅ **Standard Format** - UnifiedFilter unifies all filter types
-4. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
-5. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
-6. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
-7. ✅ **Type Safety** - Sealed classes prevent invalid combinations
-8. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
+3. ✅ **Instant/Transient Filters** - InstantFilter enables quick temporary filtering without persistence
+4. ✅ **Standard Format** - UnifiedFilter unifies all filter types
+5. ✅ **Filter Stacking** - FilterStack enables stacking multiple filters
+6. ✅ **Composition** - CompositeFilter enables complex AND/OR logic
+7. ✅ **Operator Support** - FilterOperator enables precise matching (NOT, BETWEEN, etc.)
+8. ✅ **Type Safety** - Sealed classes prevent invalid combinations
+9. ✅ **Backward Compatibility** - Conversion methods maintain compatibility
 
 ### Files Created
 

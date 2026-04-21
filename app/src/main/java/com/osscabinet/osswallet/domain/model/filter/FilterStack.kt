@@ -21,6 +21,13 @@ data class FilterStack(
         copy(activeFilters = activeFilters + filter)
     
     /**
+     * Adds a new instant/transient filter to the stack.
+     * Instant filters are not persisted and only exist until screen changes.
+     */
+    fun addInstantFilter(filter: UnifiedFilter): FilterStack =
+        copy(activeFilters = activeFilters + UnifiedFilter.InstantFilter(filter))
+    
+    /**
      * Removes a filter from the stack.
      */
     fun removeFilter(filter: UnifiedFilter): FilterStack =
@@ -33,9 +40,56 @@ data class FilterStack(
         copy(activeFilters = activeFilters.filterNot { it::class == filterClass })
     
     /**
+     * Clears all instant/transient filters from the stack.
+     * Keeps permanent (non-instant) filters intact.
+     */
+    fun clearInstantFilters(): FilterStack {
+        val permanentFilters = activeFilters.filterNot { it is UnifiedFilter.InstantFilter }
+        return copy(activeFilters = permanentFilters)
+    }
+    
+    /**
      * Clears all filters from the stack.
      */
     fun clear(): FilterStack = FilterStack(emptyList())
+    
+    /**
+     * Returns only the permanent (non-instant) filters.
+     */
+    fun getPermanentFilters(): List<UnifiedFilter> =
+        activeFilters.filterNot { it is UnifiedFilter.InstantFilter }
+    
+    /**
+     * Returns only the instant/transient filters.
+     */
+    fun getInstantFilters(): List<UnifiedFilter> =
+        activeFilters.filter { it is UnifiedFilter.InstantFilter }
+    
+    /**
+     * Checks if the stack has any instant/transient filters.
+     */
+    fun hasInstantFilters(): Boolean =
+        activeFilters.any { it is UnifiedFilter.InstantFilter }
+    
+    /**
+     * Unwraps InstantFilter wrappers to get the actual filters.
+     * This is useful when converting to TransactionFilter or for query building.
+     */
+    private fun unwrapInstantFilters(filters: List<UnifiedFilter>): List<UnifiedFilter> {
+        return filters.map { filter ->
+            when (filter) {
+                is UnifiedFilter.InstantFilter -> filter.filter
+                is UnifiedFilter.CompositeFilter -> {
+                    // Recursively unwrap composite filters
+                    UnifiedFilter.CompositeFilter(
+                        filters = unwrapInstantFilters(filter.filters),
+                        operator = filter.operator
+                    )
+                }
+                else -> filter
+            }
+        }
+    }
     
     /**
      * Checks if the stack is empty.
@@ -57,11 +111,15 @@ data class FilterStack(
     /**
      * Converts this FilterStack to a legacy TransactionFilter for backward compatibility.
      * This allows the new system to work with existing code.
+     * Instant filters are unwrapped and included in the conversion.
      */
     fun toTransactionFilter(): TransactionFilter {
         var result = TransactionFilter()
         
-        for (filter in activeFilters) {
+        // Unwrap instant filters before conversion
+        val unwrappedFilters = unwrapInstantFilters(activeFilters)
+        
+        for (filter in unwrappedFilters) {
             result = when (filter) {
                 is UnifiedFilter.TextFilter -> {
                     // TextFilter searches both note and payee fields
@@ -151,6 +209,10 @@ data class FilterStack(
                     // Return as-is - caller should resolve the reference first
                     result
                 }
+                is UnifiedFilter.InstantFilter -> {
+                    // Should be unwrapped by unwrapInstantFilters, but handle just in case
+                    result
+                }
             }
         }
         
@@ -162,6 +224,20 @@ data class FilterStack(
          * Empty filter stack with no filters.
          */
         val Empty = FilterStack(emptyList())
+        
+        /**
+         * Creates a FilterStack with a single instant/transient filter.
+         * Useful for quick, temporary filtering without saving.
+         */
+        fun instant(filter: UnifiedFilter): FilterStack =
+            FilterStack(listOf(UnifiedFilter.InstantFilter(filter)))
+        
+        /**
+         * Creates a FilterStack with multiple instant/transient filters.
+         * Useful for quick, temporary filtering without saving.
+         */
+        fun instant(filters: List<UnifiedFilter>, operator: LogicalOperator = LogicalOperator.AND): FilterStack =
+            FilterStack(filters.map { UnifiedFilter.InstantFilter(it) }, operator)
         
         /**
          * Creates a FilterStack from a legacy TransactionFilter.

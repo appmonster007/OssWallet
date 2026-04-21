@@ -46,6 +46,7 @@ fun SettingsScreen(
     val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
+    val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -285,6 +286,25 @@ fun SettingsScreen(
                         Switch(
                             checked = autoSaveExchangeRates,
                             onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        )
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                SettingsItem(
+                    title = "Card Animations",
+                    subtitle = if (cardAnimationEnabled) "Animate cards on screen load" else "Disable card animations",
+                    icon = if (cardAnimationEnabled) Icons.Rounded.Animation else Icons.Rounded.Block,
+                    trailingContent = {
+                        Switch(
+                            checked = cardAnimationEnabled,
+                            onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,

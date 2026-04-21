@@ -128,6 +128,7 @@ fun AccountsViewScreen(
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -271,7 +272,8 @@ fun AccountsViewScreen(
                                 onReorder = { cardManagerViewModel.reorderAccountsViewCards(it) },
                                 modifier = Modifier.fillMaxWidth(),
                                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                animateCards = cardAnimationEnabled
                             ) { cardConfig, isDragging, dragModifier ->
                             when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig -> {

@@ -79,6 +79,9 @@ class SettingsViewModel(
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val cardAnimationEnabled: StateFlow<Boolean> = settingsDataStore.cardAnimationEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsDataStore.isOnboardingCompleted
         .map { it as Boolean? }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -182,6 +185,12 @@ class SettingsViewModel(
     fun setAutoSaveExchangeRates(autoSave: Boolean) {
         viewModelScope.launch {
             settingsDataStore.saveAutoSaveExchangeRates(autoSave)
+        }
+    }
+
+    fun setCardAnimationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsDataStore.saveCardAnimationEnabled(enabled)
         }
     }
 

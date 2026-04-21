@@ -65,6 +65,7 @@ class SettingsDataStore(private val context: Context) {
         val DECIMAL_PRECISION_KEY = intPreferencesKey("decimal_precision")
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
+        val CARD_ANIMATION_ENABLED_KEY = booleanPreferencesKey("card_animation_enabled")
         
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
@@ -97,6 +98,10 @@ class SettingsDataStore(private val context: Context) {
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[IS_ONBOARDING_COMPLETED_KEY] ?: false
+    }
+
+    val cardAnimationEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[CARD_ANIMATION_ENABLED_KEY] ?: true
     }
 
     val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
@@ -184,6 +189,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveOnboardingCompleted(completed: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_ONBOARDING_COMPLETED_KEY] = completed
+        }
+    }
+
+    suspend fun saveCardAnimationEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[CARD_ANIMATION_ENABLED_KEY] = enabled
         }
     }
 

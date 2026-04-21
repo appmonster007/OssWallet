@@ -155,6 +155,7 @@ fun DashboardScreen(
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val budgets by budgetViewModel.budgets.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     
     var showAddCardDialog by remember { mutableStateOf(false) }
 
@@ -249,7 +250,8 @@ fun DashboardScreen(
                                 cardManagerViewModel = cardManagerViewModel,
                                 cardsConfig = cardsConfig,
                                 showAddCardDialog = showAddCardDialog,
-                                onShowAddCardDialogChange = { showAddCardDialog = it }
+                                onShowAddCardDialogChange = { showAddCardDialog = it },
+                                cardAnimationEnabled = cardAnimationEnabled
                             )
                     }
                     is DashboardUiState.Error -> {
@@ -298,7 +300,8 @@ fun DashboardContent(
     cardManagerViewModel: CardManagerViewModel,
     cardsConfig: DashboardCardsConfig,
     showAddCardDialog: Boolean,
-    onShowAddCardDialogChange: (Boolean) -> Unit
+    onShowAddCardDialogChange: (Boolean) -> Unit,
+    cardAnimationEnabled: Boolean
 ) {
     remember(state.recentTransactions) {
         state.recentTransactions.map { it.transaction }
@@ -350,7 +353,8 @@ fun DashboardContent(
                         },
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        animateCards = cardAnimationEnabled
                     ) { cardConfig, isDragging, dragModifier ->
                         when (cardConfig) {
                             is NetWorthCardConfig -> {

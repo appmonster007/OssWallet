@@ -75,6 +75,7 @@ fun AccountDetailScreen(
     onAddTransactionClick: (String, Int?, String?) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -217,7 +218,8 @@ fun AccountDetailScreen(
                                             .padding(horizontal = 16.dp),
                                         screenPadding = PaddingValues(),
                                         showAddCardDialog = showAddCardDialog,
-                                        onShowAddCardDialogChange = { showAddCardDialog = it }
+                                        onShowAddCardDialogChange = { showAddCardDialog = it },
+                                        cardAnimationEnabled = cardAnimationEnabled
                                     )
                                 }
                             }
@@ -436,7 +438,8 @@ fun DynamicAccountDetailCards(
     modifier: Modifier = Modifier,
     screenPadding: PaddingValues = PaddingValues(),
     showAddCardDialog: Boolean,
-    onShowAddCardDialogChange: (Boolean) -> Unit
+    onShowAddCardDialogChange: (Boolean) -> Unit,
+    cardAnimationEnabled: Boolean
 ) {
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
     
@@ -457,7 +460,8 @@ fun DynamicAccountDetailCards(
                 top = screenPadding.calculateTopPadding() + 24.dp,
                 bottom = calculateScrollBottomPadding()
             ),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            animateCards = cardAnimationEnabled
         ) { cardConfig, isDragging, dragModifier ->
             when (cardConfig) {
                 is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> {

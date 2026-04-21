@@ -51,6 +51,11 @@ fun FilterSheetContent(
     var selectedFilterId by remember { mutableStateOf<Long?>(null) }
     var filtersExpanded by remember { mutableStateOf(false) }
 
+    // Sync localFilter with filter prop when it changes (e.g., context filters applied by ViewModel)
+    LaunchedEffect(filter) {
+        localFilter = filter
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()

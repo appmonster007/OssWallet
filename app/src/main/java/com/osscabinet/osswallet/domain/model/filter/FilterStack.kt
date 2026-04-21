@@ -65,6 +65,7 @@ data class FilterStack(
             result = when (filter) {
                 is UnifiedFilter.TextFilter -> {
                     // TextFilter searches both note and payee fields
+                    // Note: isCaseInsensitive will be handled in repository layer SQL query builder
                     result.copy(
                         queryNote = filter.query,
                         isNoteRegex = filter.isRegex,
@@ -171,13 +172,15 @@ data class FilterStack(
             
             // Unified text search - if either note or payee query is set, create a TextFilter
             // This searches both fields for a better user experience
+            // Default to case-insensitive search for better UX
             if (!filter.queryNote.isNullOrBlank() || !filter.queryPayee.isNullOrBlank()) {
                 val query = filter.queryNote ?: filter.queryPayee ?: ""
                 val isRegex = filter.isNoteRegex || filter.isPayeeRegex
                 filters.add(
                     UnifiedFilter.TextFilter(
                         query = query,
-                        isRegex = isRegex
+                        isRegex = isRegex,
+                        isCaseInsensitive = true // Default to case-insensitive
                     )
                 )
             }

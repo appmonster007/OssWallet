@@ -14,10 +14,12 @@ sealed class UnifiedFilter {
     /**
      * Filter transactions by text content (searches both note and payee fields).
      * This provides a unified search experience without requiring users to specify which field to search.
+     * By default, the search is case-insensitive for better user experience.
      */
     data class TextFilter(
         val query: String,
         val isRegex: Boolean = false,
+        val isCaseInsensitive: Boolean = true,
         val operator: FilterOperator = FilterOperator.CONTAINS
     ) : UnifiedFilter()
     

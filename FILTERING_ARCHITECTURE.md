@@ -81,8 +81,9 @@ sealed class UnifiedFilter {
     data class TextFilter(
         val query: String,
         val isRegex: Boolean = false,
+        val isCaseInsensitive: Boolean = true,
         val operator: FilterOperator = FilterOperator.CONTAINS
-    ) : UnifiedFilter() // Searches both note and payee fields
+    ) : UnifiedFilter() // Searches both note and payee fields, case-insensitive by default
     
     data class CategoryFilter(
         val categoryIds: List<Long>,

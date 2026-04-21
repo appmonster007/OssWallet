@@ -59,7 +59,6 @@ class AccountViewModel(
                 id = accountId,
                 name = name,
                 balance = BigDecimal.ZERO, // Will be updated by transactions
-                initialBalance = BigDecimal.ZERO, // We use transactions for initial balance now
                 currencyCode = currency,
                 structureType = structureType,
                 colorHex = colorHex,
@@ -104,7 +103,6 @@ class AccountViewModel(
                 id = accountId,
                 name = name,
                 balance = BigDecimal.ZERO, // Will be updated by transactions
-                initialBalance = BigDecimal.ZERO, // We use transactions for initial balance now
                 currencyCode = currency,
                 structureType = structureType,
                 colorHex = colorHex,

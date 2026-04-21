@@ -14,8 +14,8 @@ from datetime import datetime
 
 # Exchange rates
 EXCHANGE_RATES = {
-    "INR_to_USD": 0.01205,
-    "EUR_to_USD": 1.087
+    "INR_to_USD": 1/93.1663,
+    "EUR_to_USD": 1/0.8940
 }
 
 

@@ -146,83 +146,42 @@ val convertedBack = newStack.toTransactionFilter()
 ### Build Status
 ✅ Build successful - all new models compile correctly
 
-### Implementation Complete ✅
+### Next Steps (Phase 2: Repository Layer)
 
-**Phase 2 Status: ✅ COMPLETED**
-**Phase 3 Status: ✅ COMPLETED**
-**Phase 4 Status: ✅ COMPLETED**
-**Phase 5 Status: ✅ COMPLETED**
-**Phase 6 Status: ✅ COMPLETED**
-**Phase 7 Status: ✅ COMPLETED**
+**Goal:** Add FilterStack support to the repository layer
 
-**Phase 2 Completed Tasks:**
-1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionRepository interface
-2. ✅ Implemented FilterStack methods in TransactionRepositoryImpl (using conversion to TransactionFilter for now)
-3. ✅ Updated SQL query to use COLLATE NOCASE for case-insensitive text search
-4. ✅ Kept existing methods for backward compatibility
+**Tasks:**
+1. Add `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionRepository interface
+2. Implement SQL query builder for FilterStack in TransactionRepositoryImpl
+3. Handle composite filters (AND/OR logic)
+4. Handle saved filter references (load from database)
+5. Keep existing `getFilteredTransactions(profileId, filter: TransactionFilter)` for compatibility
+6. Add unit tests for the query builder
+7. Test with various filter combinations
 
-**Phase 3 Completed Tasks:**
-1. ✅ Added `getFilteredTransactions(profileId, filterStack: FilterStack)` to TransactionUseCases
-2. ⏳ Filter composition helpers (deferred)
-3. ⏳ Unit tests (deferred to testing phase)
+**Estimated Time:** 3-4 days
 
-**Phase 4 Completed Tasks:**
-1. ✅ Added `filterStack: StateFlow<FilterStack>` to TransactionViewModel (records and account detail)
-2. ✅ Added methods to manipulate FilterStack (add, remove, clear, clearInstant)
-3. ✅ Added FilterStack-based transactions flow (transactionsWithBalanceFromStack)
-4. ✅ Kept existing filter methods for compatibility
-5. ✅ Existing flows continue to work (backward compatible)
+### Remaining Phases
 
-**Phase 5 Completed Tasks:**
-1. ✅ Created FilterDisplayUtils for UI filter display
-2. ✅ Added methods to load saved filters into FilterStack
-3. ✅ Added filter display name and description utilities
-4. ✅ Added filter count utilities (total, instant, permanent)
-5. ⏳ Full UI components (deferred to screen migration)
+**Phase 3: Use Cases** (2 days)
+- Add FilterStack methods to TransactionUseCases
+- Add filter composition helpers
 
-**Phase 6 Completed Tasks:**
-1. ✅ Marked old TransactionFilter methods as @Deprecated
-2. ✅ Marked old StateFlow properties as @Deprecated
-3. ✅ Marked old transactionsWithBalance flow as @Deprecated
-4. ✅ Added ReplaceWith annotations for migration guidance
+**Phase 4: ViewModels** (5-7 days)
+- Add filterStack StateFlow alongside existing filters
+- Add methods to manipulate FilterStack
+- Gradually migrate screens to use FilterStack
 
-**Phase 7 Completed Tasks:**
-1. ✅ Migrated TransactionListScreen to use transactionsWithBalanceFromStack
-2. ✅ Migrated AccountDetailScreen to use local filter state with FilterStack
-3. ✅ Removed deprecated _recordsFilter and _accountDetailFilter StateFlows
-4. ✅ Removed deprecated transactionsWithBalance flow
-5. ✅ Removed deprecated methods (updateRecordsFilter, updateAccountDetailFilter, etc.)
-6. ✅ Kept TransactionFilter model for UI filter sheet compatibility
-7. ✅ Kept TransactionFilter repository methods for saved filter loading
-8. ✅ Build successful - no compilation errors
+**Phase 5: UI Components** (3-5 days)
+- Add FilterStack-aware UI components
+- Add filter stack visualization
+- Add UI to load multiple saved filters into a stack
+- No UI for saving filter combinations (only individual filters)
 
-**Implementation Notes:**
-- Current implementation converts FilterStack to TransactionFilter for immediate functionality
-- This allows the new system to work without breaking existing code
-- Direct SQL query building from FilterStack can be added later for performance optimization
-- Case-insensitive search implemented using SQLite COLLATE NOCASE
-- ViewModel now only uses FilterStack - legacy TransactionFilter ViewModel layer removed
-- UI still uses TransactionFilter for filter sheet (converted to FilterStack at ViewModel)
-- Clean separation between UI model (TransactionFilter) and data layer (FilterStack)
-- Only individual filters saved (no filter combinations)
-
-### Files Created
-
-1. `FILTERING_ARCHITECTURE.md` - Comprehensive architecture document
-2. `domain/model/filter/FilterOperator.kt` - Filter operator enum
-3. `domain/model/filter/LogicalOperator.kt` - Logical operator enum
-4. `domain/model/filter/UnifiedFilter.kt` - Unified filter sealed class with TextFilter, InstantFilter
-5. `domain/model/filter/FilterStack.kt` - Filter stack with composition and instant filter support
-6. `ui/util/FilterDisplayUtils.kt` - UI utilities for filter display
-
-### Files Modified
-
-1. `domain/repository/TransactionRepository.kt` - Added FilterStack methods
-2. `data/repository/TransactionRepositoryImpl.kt` - Implemented FilterStack methods, added COLLATE NOCASE
-3. `domain/usecase/TransactionUseCases.kt` - Added FilterStack methods
-4. `ui/viewmodel/TransactionViewModel.kt` - Removed legacy filtering, added FilterStack support
-5. `ui/screens/TransactionListScreen.kt` - Migrated to FilterStack
-6. `ui/accountdetail/AccountDetailScreen.kt` - Migrated to FilterStack
+**Phase 6: Deprecation** (After validation)
+- Mark old methods as @Deprecated
+- Provide migration path
+- Remove old code after validation period
 
 ### Current Filtering Systems Identified
 

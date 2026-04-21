@@ -93,7 +93,7 @@ After removal, the app should:
 
 ## Assets Files
 
-- `accounts.csv` - Account seed data (id, name, initial balance, currency, structure type, color, icon, allowed currencies)
+- `accounts.csv` - Account seed data (id, name, currency, structure type, color, icon, allowed currencies, profile ID)
 - `transactions.csv` - Transaction seed data (title, amount, category, timestamp, currency, income/expense, account ID, payment method, payee, note, tags, recurring, profile ID)
 - `account_metrics.json` - Pre-calculated account metrics for testing
 
@@ -111,10 +111,10 @@ The seeding logic is intentionally isolated to make it easy to remove:
 
 ### accounts.csv
 ```
-id,name,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId
+id,name,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId
 ```
 
-Note: Account balance is calculated from transactions during seeding.
+Note: Accounts start with zero balance. Initial balances are represented as "Initial Balance" transactions in transactions.csv.
 
 ### transactions.csv
 ```
@@ -124,6 +124,7 @@ title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMe
 - Fields with commas (like `allowedCurrencies`) must be quoted
 - Transactions reference accounts by `accountId`
 - Account balances are updated as transactions are inserted
+- Initial balances are represented as income transactions with category "Initial Balance"
 
 ## Seeding Behavior
 

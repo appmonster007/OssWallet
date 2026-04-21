@@ -24,9 +24,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
+
         val currencyApiKey = localProps.getProperty("CURRENCY_API_KEY") ?: ""
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
+        buildConfigField("boolean", "ENABLE_SEEDING", "true")
     }
 
     packaging {

@@ -11,6 +11,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -35,12 +36,21 @@ class MainActivity : FragmentActivity() {
         // Initialize dependency container
         appContainer = (application as OssWalletApp).container
 
-//        // Seed database in debug mode
-//        if (BuildConfig.DEBUG) {
-//            lifecycleScope.launch {
-//                appContainer.databaseSeeder.seed()
-//            }
-//        }
+        // Seed database if enabled (only in debug builds)
+        // TO DISABLE SEEDING: Set ENABLE_SEEDING = false in app/build.gradle.kts
+        // TO REMOVE SEEDING: Delete the entire block below and the /data/seed package
+        if (SeedingConfig.shouldSeed()) {
+            val seeder = SeedingConfig.createSeeder(
+                database = appContainer.db,
+                settingsDataStore = appContainer.settingsDataStore,
+                context = this
+            )
+            seeder?.let {
+                lifecycleScope.launch {
+                    it.seed()
+                }
+            }
+        }
 
         setContent {
             OssWalletApp(

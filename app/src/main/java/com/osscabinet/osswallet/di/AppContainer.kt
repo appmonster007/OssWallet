@@ -5,7 +5,6 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
-import com.osscabinet.ossWallet.data.seed.DatabaseSeeder
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
 import com.osscabinet.ossWallet.domain.usecase.*
@@ -60,10 +59,6 @@ class AppContainer(private val context: Context) {
 
     val tagRepository: TagRepositoryImpl by lazy {
         TagRepositoryImpl(db.tagDao(), db.transactionDao())
-    }
-
-    val databaseSeeder: DatabaseSeeder by lazy {
-        DatabaseSeeder(db.accountDao(), db.categoryDao(), db.transactionDao(), context)
     }
 
     // Consolidated Use Cases

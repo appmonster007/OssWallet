@@ -1,0 +1,23 @@
+type,id,name,balance,initialBalance,currencyCode,structureType,colorHex,icon,allowedCurrencies,title,amount,category,categoryId,timestamp,currency,isIncome,accountId,paymentMethod,payee,note,tags,recurring,profileId
+account,acc_cash,Cash Wallet,1000.00,1000.00,USD,REGULAR,#4CAF50,AccountBalanceWallet,"USD",,,,,,,,,,1
+account,acc_bank,Main Bank,5000.00,5000.00,USD,REGULAR,#2196F3,AccountBalance,"USD,INR,EUR",,,,,,,,,,1
+account,acc_savings,Savings,15000.00,15000.00,USD,SAVINGS,#9C27B0,Savings,"USD,INR",,,,,,,,,,1
+account,acc_credit,Credit Card,-500.00,0.00,USD,CREDIT,#F44336,CreditCard,"USD",,,,,,,,,,1
+account,acc_invest,Investment,20000.00,10000.00,USD,INVESTMENT,#FF9800,TrendingUp,"USD",,,,,,,,,,1
+transaction,,Grocery shopping at Walmart,85.50,Groceries,1,1735689600000,USD,false,acc_cash,Debit Card,Walmart,Weekly grocery run,Personal,,1
+transaction,,Coffee at Starbucks,5.75,Dining Out,1,1735776000000,USD,false,acc_cash,Cash,Starbucks,Morning coffee,Personal,,1
+transaction,,Fuel purchase at Shell,45.00,Fuel,2,1735862400000,USD,false,acc_bank,Credit Card,Shell,Full tank gas,Work,,1
+transaction,,Netflix subscription,15.99,Entertainment,5,1735948800000,USD,false,acc_credit,Credit Card,Netflix,Monthly subscription,Subscription,,1
+transaction,,Salary deposit,5000.00,Salary,6,1736035200000,USD,true,acc_bank,Bank Transfer,Employer,Monthly salary,Work,,1
+transaction,,Rent payment,1200.00,Rent,4,1736121600000,USD,false,acc_bank,Bank Transfer,Landlord,Monthly rent,Housing,,1
+transaction,,Online shopping at Amazon,156.30,Shopping,3,1736208000000,USD,false,acc_credit,Credit Card,Amazon,Electronics purchase,Personal,,1
+transaction,,Freelance payment,850.00,Salary,6,1736294400000,USD,true,acc_bank,Bank Transfer,Freelance Client,Web development project,Work,,1
+transaction,,Lunch at local restaurant,22.50,Dining Out,1,1736380800000,USD,false,acc_cash,Debit Card,Local Restaurant,Business lunch,Work,,1
+transaction,,Utility bill payment,180.00,Housing,4,1736467200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly utilities,Housing,,1
+transaction,,Gym membership,45.00,Entertainment,5,1736553600000,USD,false,acc_credit,Credit Card,Gym,Monthly membership,Subscription,,1
+transaction,,Book purchase,29.99,Shopping,3,1736640000000,USD,false,acc_cash,Credit Card,Bookstore,Technical book,Personal,,1
+transaction,,Bonus payment,2000.00,Salary,6,1736726400000,USD,true,acc_bank,Bank Transfer,Employer,Performance bonus,Work,,1
+transaction,,Grocery shopping at Whole Foods,120.75,Groceries,1,1736812800000,USD,false,acc_cash,Debit Card,Whole Foods,Organic groceries,Personal,,1
+transaction,,Uber ride,18.50,Transport,2,1736899200000,USD,false,acc_credit,Credit Card,Uber,Airport transfer,Work,,1
+transaction,,Phone bill,65.00,Housing,4,1736985600000,USD,false,acc_bank,Bank Transfer,Phone Company,Monthly plan,Housing,,1
+transaction,,Dinner with family,95.00,Dining Out,1,1737072000000,USD,false,acc_cash,Credit Card,Restaurant,Family dinner,Family,,1

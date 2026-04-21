@@ -230,7 +230,7 @@ fun AccountHeroCard(
                 }
             },
             shape = RoundedCornerShape(32.dp),
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
         )
     }
 }

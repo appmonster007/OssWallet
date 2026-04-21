@@ -85,7 +85,7 @@ private fun calculateScrollBottomPadding(): Dp {
 @Composable
 fun AccountsViewScreen(
     onDashboardClick: () -> Unit,
-    onRecordsClick: () -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onAnalyticsClick: () -> Unit,
     onBudgetsClick: () -> Unit,
     onLoansClick: () -> Unit,
@@ -212,7 +212,7 @@ fun AccountsViewScreen(
                     selectedDestination = "accounts_view",
                     onDashboardClick = { navigate(onDashboardClick) },
                     onAccountsViewClick = { scope.launch { drawerState.close() } },
-                    onRecordsClick = { navigate(onRecordsClick) },
+                    onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
                     onAnalyticsClick = { navigate(onAnalyticsClick) },
                     onBudgetsClick = { navigate(onBudgetsClick) },
                     onLoansClick = { navigate(onLoansClick) },
@@ -380,6 +380,9 @@ fun AccountsViewScreen(
                                             onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
                                             onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
+                                            onCurrencyClick = { currency ->
+                                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None)
+                                            },
                                             headerModifier = dragModifier,
                                             modifier = Modifier.fillMaxWidth()
                                         )
@@ -411,7 +414,9 @@ fun AccountsViewScreen(
                                             timelineRange = cardConfig.timelineRange,
                                             onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
-                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
+                                            onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
+                                            onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
                                         )
                                     } ?: Box(modifier = Modifier.size(0.dp))
                                 }

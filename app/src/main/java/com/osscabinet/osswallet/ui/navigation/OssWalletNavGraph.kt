@@ -274,7 +274,7 @@ fun OssWalletNavGraph(
                 onDashboardClick = { 
                     navController.popBackStack()
                 },
-                onRecordsClick = { navController.navigate(Screen.TransactionList.route) },
+                onRecordsClick = { context -> navController.navigateToRecords(context) },
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },

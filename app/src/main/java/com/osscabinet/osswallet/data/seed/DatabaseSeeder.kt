@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.seed
 
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
@@ -7,130 +8,201 @@ import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.BuildConfig
 import android.content.Context
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.math.BigDecimal
-import java.math.RoundingMode
-import java.util.*
 import javax.inject.Inject
-import kotlin.random.Random
+import kotlinx.coroutines.flow.first
 
 class DatabaseSeeder @Inject constructor(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
-    private val context: Context
+    private val context: Context,
+    private val settingsDataStore: SettingsDataStore
 ) {
     suspend fun seed() {
         if (!BuildConfig.DEBUG) return
 
+        // Check if already seeded
+        val isSeeded = settingsDataStore.isDatabaseSeeded.first()
+        if (isSeeded) {
+            return
+        }
+
         // Clear existing data for a fresh start in dev
         accountDao.clearAll()
         transactionDao.clearAll()
-        // Categories are mostly seeded by AppDatabase callback, but we can ensure they exist
 
-        val accounts = listOf(
-            AccountEntity(
-                id = "acc_cash",
-                name = "Cash Wallet",
-                balance = BigDecimal("1000.00"),
-                initialBalance = BigDecimal("1000.00"),
-                currencyCode = "USD",
-                structureType = "REGULAR",
-                colorHex = "#4CAF50",
-                icon = "AccountBalanceWallet",
-                allowedCurrencies = "USD"
-            ),
-            AccountEntity(
-                id = "acc_bank",
-                name = "Main Bank",
-                balance = BigDecimal("5000.00"),
-                initialBalance = BigDecimal("5000.00"),
-                currencyCode = "USD",
-                structureType = "REGULAR",
-                colorHex = "#2196F3",
-                icon = "AccountBalance",
-                allowedCurrencies = "USD,INR,EUR"
-            ),
-            AccountEntity(
-                id = "acc_savings",
-                name = "Savings",
-                balance = BigDecimal("15000.00"),
-                initialBalance = BigDecimal("15000.00"),
-                currencyCode = "USD",
-                structureType = "SAVINGS",
-                colorHex = "#9C27B0",
-                icon = "Savings",
-                allowedCurrencies = "USD,INR"
-            ),
-            AccountEntity(
-                id = "acc_credit",
-                name = "Credit Card",
-                balance = BigDecimal("-500.00"),
-                initialBalance = BigDecimal("0.00"),
-                currencyCode = "USD",
-                structureType = "CREDIT",
-                colorHex = "#F44336",
-                icon = "CreditCard",
-                allowedCurrencies = "USD"
-            ),
-            AccountEntity(
-                id = "acc_invest",
-                name = "Investment",
-                balance = BigDecimal("20000.00"),
-                initialBalance = BigDecimal("10000.00"),
-                currencyCode = "USD",
-                structureType = "INVESTMENT",
-                colorHex = "#FF9800",
-                icon = "TrendingUp",
-                allowedCurrencies = "USD"
-            )
-        )
+        // Load seed data from CSV
+        val seedData = loadSeedDataFromCsv()
+        val accounts = seedData.filter { it.type == "account" }.map { it.toAccountEntity() }
+        val transactions = seedData.filter { it.type == "transaction" }.map { it.toTransactionEntity() }
 
+        // Insert accounts
         accountDao.upsertAccounts(accounts)
 
+        // Ensure categories exist
         val categories = categoryDao.getAllCategoriesSync()
         if (categories.isEmpty()) return // Should be seeded by DB callback
 
-        val payees = listOf("Starbucks", "Walmart", "Amazon", "Shell", "Netflix", "Landlord", "Employer", "Freelance Client")
-        val paymentMethods = listOf("Cash", "Credit Card", "Bank Transfer", "Debit Card")
-        val calendar = Calendar.getInstance()
+        // Create a map of category names to IDs
+        val categoryNameToId = categories.associate { it.name to it.id }
 
-        repeat(20) { // Increased to 100 for better multi-currency visibility
-            val account = accounts.random()
-            val category = categories.random()
-            val isIncome = Random.nextBoolean()
+        // Insert transactions with correct category IDs
+        transactions.forEach { transaction ->
+            val categoryId = categoryNameToId[transaction.category]
+            val transactionWithCategoryId = transaction.copy(categoryId = categoryId)
+            transactionDao.insertTransaction(transactionWithCategoryId)
+
+            // Update account balance
+            val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+            accountDao.updateBalance(transaction.accountId, updateAmount)
+        }
+
+        // Mark as seeded
+        settingsDataStore.saveDatabaseSeeded(true)
+    }
+
+    private fun loadSeedDataFromCsv(): List<SeedDataRow> {
+        val rows = mutableListOf<SeedDataRow>()
+        try {
+            val inputStream = context.assets.open("seed_data.csv")
+            val reader = BufferedReader(InputStreamReader(inputStream))
             
-            // Handle multi-currency
-            val allowedCurrencies = account.allowedCurrencies.split(",").map { it.trim() }
-            val selectedCurrency = allowedCurrencies.random()
+            // Skip header
+            reader.readLine()
             
-            val amount = BigDecimal(Random.nextDouble(25.0, 100.0)).setScale(2, RoundingMode.HALF_UP)
-            
-            // Random date within last 3 months
-            calendar.time = Date()
-            calendar.add(Calendar.DAY_OF_YEAR, -Random.nextInt(0, 90))
-            
-            val transaction = TransactionEntity(
-                title = if (isIncome) "Income from ${payees.random()}" else "Purchase at ${payees.random()}",
-                amount = amount,
-                category = category.name,
-                categoryId = category.id,
-                timestamp = calendar.timeInMillis,
-                currency = selectedCurrency,
-                isIncome = isIncome,
-                accountId = account.id,
-                paymentMethod = paymentMethods.random(),
-                payee = payees.random(),
-                note = "Randomly generated transaction for testing ($selectedCurrency)",
-                profileId = 1
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotBlank()) {
+                        rows.add(SeedDataRow.fromCsv(line))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return rows
+    }
+
+    private data class SeedDataRow(
+        val type: String,
+        val id: String?,
+        val name: String?,
+        val balance: BigDecimal?,
+        val initialBalance: BigDecimal?,
+        val currencyCode: String?,
+        val structureType: String?,
+        val colorHex: String?,
+        val icon: String?,
+        val allowedCurrencies: String?,
+        val title: String?,
+        val amount: BigDecimal?,
+        val category: String?,
+        val categoryId: Long?,
+        val timestamp: Long?,
+        val currency: String?,
+        val isIncome: Boolean?,
+        val accountId: String?,
+        val paymentMethod: String?,
+        val payee: String?,
+        val note: String?,
+        val tags: String?,
+        val recurring: String?,
+        val profileId: Int?
+    ) {
+        fun toAccountEntity(): AccountEntity {
+            return AccountEntity(
+                id = id ?: "",
+                name = name ?: "",
+                balance = balance ?: BigDecimal.ZERO,
+                initialBalance = initialBalance ?: BigDecimal.ZERO,
+                currencyCode = currencyCode ?: "USD",
+                structureType = structureType ?: "REGULAR",
+                colorHex = colorHex ?: "#000000",
+                icon = icon ?: "",
+                allowedCurrencies = allowedCurrencies ?: "USD",
+                profileId = profileId ?: 1
             )
-            
-            transactionDao.insertTransaction(transaction)
-            
-            // Update account balance (simplified: assume 1:1 for seeding purposes or only update if same currency)
-            // In a real app, we'd convert using exchange rates. 
-            // Here, we just update the base balance to ensure the UI shows something.
-            val updateAmount = if (isIncome) amount else amount.negate()
-            accountDao.updateBalance(account.id, updateAmount)
+        }
+
+        fun toTransactionEntity(): TransactionEntity {
+            return TransactionEntity(
+                title = title ?: "",
+                amount = amount ?: BigDecimal.ZERO,
+                category = category ?: "",
+                timestamp = timestamp ?: System.currentTimeMillis(),
+                currency = currency ?: "USD",
+                isIncome = isIncome ?: false,
+                accountId = accountId ?: "",
+                categoryId = categoryId,
+                paymentMethod = paymentMethod ?: "Cash",
+                payee = payee ?: "",
+                note = note ?: "",
+                tags = tags ?: "",
+                recurring = recurring,
+                profileId = profileId ?: 1
+            )
+        }
+
+        companion object {
+            fun fromCsv(line: String): SeedDataRow {
+                val parts = parseCsvLine(line)
+                return SeedDataRow(
+                    type = parts.getOrNull(0) ?: "",
+                    id = parts.getOrNull(1),
+                    name = parts.getOrNull(2),
+                    balance = parts.getOrNull(3)?.toBigDecimalOrNull(),
+                    initialBalance = parts.getOrNull(4)?.toBigDecimalOrNull(),
+                    currencyCode = parts.getOrNull(5),
+                    structureType = parts.getOrNull(6),
+                    colorHex = parts.getOrNull(7),
+                    icon = parts.getOrNull(8),
+                    allowedCurrencies = parts.getOrNull(9)?.removeSurrounding("\""),
+                    title = parts.getOrNull(10),
+                    amount = parts.getOrNull(11)?.toBigDecimalOrNull(),
+                    category = parts.getOrNull(12),
+                    categoryId = parts.getOrNull(13)?.toLongOrNull(),
+                    timestamp = parts.getOrNull(14)?.toLongOrNull(),
+                    currency = parts.getOrNull(15),
+                    isIncome = parts.getOrNull(16)?.toBoolean(),
+                    accountId = parts.getOrNull(17),
+                    paymentMethod = parts.getOrNull(18),
+                    payee = parts.getOrNull(19),
+                    note = parts.getOrNull(20),
+                    tags = parts.getOrNull(21),
+                    recurring = parts.getOrNull(22),
+                    profileId = parts.getOrNull(23)?.toIntOrNull()
+                )
+            }
+
+            private fun parseCsvLine(line: String): List<String> {
+                val result = mutableListOf<String>()
+                var current = StringBuilder()
+                var inQuotes = false
+
+                for (char in line) {
+                    when (char) {
+                        '"' -> {
+                            inQuotes = !inQuotes
+                        }
+                        ',' -> {
+                            if (inQuotes) {
+                                current.append(char)
+                            } else {
+                                result.add(current.toString())
+                                current = StringBuilder()
+                            }
+                        }
+                        else -> {
+                            current.append(char)
+                        }
+                    }
+                }
+                result.add(current.toString())
+                return result
+            }
         }
     }
 }

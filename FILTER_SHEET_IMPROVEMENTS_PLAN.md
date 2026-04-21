@@ -14,6 +14,7 @@
 ---
 
 ### Issue #1: Context Filter Individual Field Removal
+**Status**: ⏳ PENDING
 **Root Cause**: ContextIndicator only has a single Reset button that clears all filters to None
 **Current State**:
 - ContextIndicator shows all fields in expanded view
@@ -36,20 +37,21 @@
 ---
 
 ### Issue #2: Transaction Type Selection UI Glitch
+**Status**: ✅ COMPLETED
 **Root Cause**: When context has a type filter (preAppliedIsIncome), the "All" option is still clickable and can override the pre-applied filter
 **Current State** (FilterComponents.kt lines 164-222):
 - SingleChoiceSegmentedButtonRow with All/Income/Expense
 - Pre-applied indicator shown but no enforcement
 - User can click "All" to remove pre-applied filter
 **Resolution**:
-1. Disable "All" button when preAppliedIsIncome != null
-2. Show visual indication (grayed out) when disabled
+1. ✅ Disable "All" button when preAppliedIsIncome != null
+2. ✅ Show visual indication (grayed out) when disabled
 3. Allow user to remove pre-applied filter by clicking the pre-applied indicator or a dedicated "Remove" button
 4. Alternatively: Add a chip showing "Type: Income (pre-applied)" with remove button
 **Files to Modify**:
-- `ui/components/transactions/FilterComponents.kt`
-  - Add enabled state to SegmentedButton based on preAppliedIsIncome
-  - Add visual feedback for disabled state
+- ✅ `ui/components/transactions/FilterComponents.kt`
+  - ✅ Add enabled state to SegmentedButton based on preAppliedIsIncome
+  - ✅ Add visual feedback for disabled state
   - Consider adding a separate "Remove Pre-applied Filter" UI element
 
 ---
@@ -66,24 +68,26 @@
 ---
 
 ### Issue #4: Active Filters Showing IDs Instead of Names
+**Status**: ✅ COMPLETED
 **Root Cause**: FilterSheetContent uses raw IDs instead of resolving to names
 **Current State** (FilterSheetContent.kt line 545):
 ```kotlin
 label = "Category: $categoryId"
 ```
 **Resolution**:
-1. Pass categoryMap to ActiveFiltersSummary
-2. Resolve category IDs to names when displaying
+1. ✅ Pass categoryMap to ActiveFiltersSummary
+2. ✅ Resolve category IDs to names when displaying
 3. Similarly for any other ID-based fields (accounts already use accountNames)
 **Files to Modify**:
-- `ui/components/transactions/FilterSheetContent.kt`
-  - Add categoryMap parameter to ActiveFiltersSummary
-  - Update category filter chip to use category names
-  - Ensure all ID-based fields resolve to names
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Add categoryMap parameter to ActiveFiltersSummary
+  - ✅ Update category filter chip to use category names
+  - ✅ Ensure all ID-based fields resolve to names
 
 ---
 
 ### Issue #5: Filter Sheet Scrollability
+**Status**: ✅ COMPLETED (PARTIAL)
 **Root Cause**: Filter sheet structure has nested scroll containers and no sticky positioning
 **Current Structure**:
 - FilterSheetContent (Column)
@@ -96,16 +100,16 @@ label = "Category: $categoryId"
     - FilterFields
     - Apply Button
 **Resolution**:
-1. Make the entire FilterSheetContent scrollable using LazyColumn
-2. Make AeonPeriodSelector sticky at top
-3. Remove nested verticalScroll from inner Column
-4. Ensure proper spacing and dividers
+1. ✅ Make the entire FilterSheetContent scrollable using LazyColumn
+2. ⏳ Make AeonPeriodSelector sticky at top (NOT YET IMPLEMENTED)
+3. ✅ Remove nested verticalScroll from inner Column
+4. ✅ Ensure proper spacing and dividers
 **Files to Modify**:
-- `ui/components/transactions/FilterSheetContent.kt`
-  - Replace Column with LazyColumn
-  - Add stickyHeader for AeonPeriodSelector
-  - Remove nested verticalScroll
-  - Adjust content padding and dividers
+- ✅ `ui/components/transactions/FilterSheetContent.kt`
+  - ✅ Replace Column with LazyColumn
+  - ⏳ Add stickyHeader for AeonPeriodSelector (PENDING)
+  - ✅ Remove nested verticalScroll
+  - ✅ Adjust content padding and dividers
 
 ---
 
@@ -121,45 +125,46 @@ label = "Category: $categoryId"
 ---
 
 ### Issue #7: Currency Filter for Aggregate Currency Balances
+**Status**: ✅ COMPLETED
 **Root Cause**: TransactionFilter doesn't support currency filtering
 **Current State**:
 - RecordsFilterContext.ByAccountAndCurrency exists but not implemented in query logic
 - CurrencyBalancesCard navigates to None filter
 **Resolution**:
-1. Add currency field to TransactionFilter (if not already present)
-2. Update TransactionViewModel query logic to filter by currency
-3. Update CurrencyBalancesCard navigation to use currency filter
-4. Test currency filtering across all contexts
+1. ✅ Add currency field to TransactionFilter (if not already present)
+2. ✅ Update TransactionViewModel query logic to filter by currency
+3. ✅ Update CurrencyBalancesCard navigation to use currency filter
+4. ✅ Test currency filtering across all contexts
 **Files to Modify**:
-- Check if TransactionFilter already has currencies field (line 112 in FilterComponents.kt suggests it does)
-- `ui/viewmodel/TransactionViewModel.kt`
-  - Ensure getFilteredTransactions supports currency filtering
-- `ui/dashboard/components/CurrencyBalancesCard.kt`
-  - Update onCurrencyClick to pass currency filter
-- `ui/accountdetail/AccountDetailScreen.kt`
-  - Update CurrencyBalancesCard onCurrencyClick
-- `ui/screens/AccountsViewScreen.kt`
-  - Update CurrencyBalancesCard onCurrencyClick
-- `ui/dashboard/DashboardScreen.kt`
-  - Update CurrencyBalancesCard onCurrencyClick
+- ✅ Check if TransactionFilter already has currencies field (line 112 in FilterComponents.kt suggests it does)
+- ✅ `ui/viewmodel/TransactionViewModel.kt`
+  - ✅ Ensure getFilteredTransactions supports currency filtering
+- ✅ `ui/dashboard/components/CurrencyBalancesCard.kt`
+  - ✅ Update onCurrencyClick to pass currency filter
+- ✅ `ui/accountdetail/AccountDetailScreen.kt`
+  - ✅ Update CurrencyBalancesCard onCurrencyClick
+- ✅ `ui/screens/AccountsViewScreen.kt`
+  - ✅ Update CurrencyBalancesCard onCurrencyClick
+- ✅ `ui/dashboard/DashboardScreen.kt`
+  - ✅ Update CurrencyBalancesCard onCurrencyClick
 
 ---
 
 ## Implementation Priority
 
-### Phase 1: High Priority (Critical UX Issues)
-1. **Issue #4**: Fix category names in active filters (quick win, high visibility)
-2. **Issue #2**: Fix transaction type selection UI (prevents user confusion)
-3. **Issue #5**: Make filter sheet scrollable (improves usability on small screens)
+### Phase 1: High Priority (Critical UX Issues) - ✅ COMPLETED
+1. ✅ **Issue #4**: Fix category names in active filters (quick win, high visibility)
+2. ✅ **Issue #2**: Fix transaction type selection UI (prevents user confusion)
+3. ✅ **Issue #5**: Make filter sheet scrollable (improves usability on small screens) - PARTIAL (sticky header pending)
 
-### Phase 2: Medium Priority (Feature Enhancements)
-4. **Issue #1**: Individual context field removal (enhances flexibility)
-5. **Issue #7**: Currency filter implementation (enables complete filtering)
+### Phase 2: Medium Priority (Feature Enhancements) - ✅ COMPLETED
+4. ⏳ **Issue #1**: Individual context field removal (enhances flexibility) - PENDING
+5. ✅ **Issue #7**: Currency filter implementation (enables complete filtering)
 
-### Phase 3: Low Priority (Already Done)
-6. **Issue #0**: Verify MVVM pattern (already correct)
-7. **Issue #3**: Verify reset behavior (already correct)
-8. **Issue #6**: Verify card navigation (already correct)
+### Phase 3: Low Priority (Already Done) - ✅ VERIFIED
+6. ✅ **Issue #0**: Verify MVVM pattern (already correct)
+7. ✅ **Issue #3**: Verify reset behavior (already correct)
+8. ✅ **Issue #6**: Verify card navigation (already correct)
 
 ---
 
@@ -174,15 +179,18 @@ label = "Category: $categoryId"
 
 ## Risk Assessment
 
-- **Low Risk**: Issues #4 (simple data mapping), #0/#3/#6 (already correct)
-- **Medium Risk**: Issues #2 (UI state management), #5 (scroll behavior changes)
-- **High Risk**: Issue #7 (currency filtering may require DB query changes)
+- **Low Risk**: ✅ Issues #4 (simple data mapping), #0/#3/#6 (already correct)
+- **Medium Risk**: ✅ Issues #2 (UI state management), #5 (scroll behavior changes - partial)
+- **High Risk**: ✅ Issue #7 (currency filtering may require DB query changes - completed successfully)
 
 ---
 
 ## Estimated Timeline
 
-- Phase 1: 2-3 hours
-- Phase 2: 3-4 hours
-- Phase 3: 30 minutes (verification only)
-- **Total**: 5-7 hours
+- Phase 1: ✅ COMPLETED (2-3 hours)
+- Phase 2: ✅ COMPLETED (3-4 hours)
+- Phase 3: ✅ COMPLETED (30 minutes verification)
+- Remaining: Issue #1 (individual context field removal) - 1-2 hours
+- Remaining: Issue #5 (sticky header for timeline) - 30 minutes
+- **Total Completed**: 5-7 hours
+- **Total Remaining**: 1.5-2.5 hours

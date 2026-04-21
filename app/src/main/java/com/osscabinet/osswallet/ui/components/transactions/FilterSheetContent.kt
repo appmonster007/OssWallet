@@ -16,6 +16,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +54,18 @@ fun FilterSheetContent(
     var selectedFilterId by remember { mutableStateOf<Long?>(null) }
     var filtersExpanded by remember { mutableStateOf(false) }
 
+    // Debouncing mechanism for instant filter application
+    val filterSheetScope = rememberCoroutineScope()
+    val debounceJob = remember { mutableStateOf<Job?>(null) }
+
+    fun applyFilterWithDebounce(newFilter: TransactionFilter, debounceMs: Long = 300) {
+        debounceJob.value?.cancel()
+        debounceJob.value = filterSheetScope.launch {
+            delay(debounceMs)
+            onApplyFilter(newFilter)
+        }
+    }
+
     // Sync localFilter with filter prop when it changes (e.g., context filters applied by ViewModel)
     LaunchedEffect(filter) {
         localFilter = filter
@@ -73,6 +88,7 @@ fun FilterSheetContent(
                     onSetDateRange = { start, end ->
                         localFilter = localFilter.copy(startDate = start, endDate = end)
                         onSetDateRange(start, end)
+                        applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                     },
                     onClick = onToggleExpand,
                     isExpanded = isExpanded,
@@ -91,6 +107,7 @@ fun FilterSheetContent(
                         removeFilter(localFilter, field, value) { updatedFilter ->
                             localFilter = updatedFilter
                             selectedFilterId = null // Clear preset when manually modified
+                            applyFilterWithDebounce(updatedFilter, debounceMs = 0)  // Immediate apply
                         }
                     },
                     onResetAll = {
@@ -98,7 +115,7 @@ fun FilterSheetContent(
                         onResetToInitial?.invoke()
                         // Reset to None (All) - clear all filters
                         localFilter = TransactionFilter()
-                        onApplyFilter(localFilter)
+                        applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                     }
                 )
             }
@@ -129,6 +146,7 @@ fun FilterSheetContent(
                                 onResetToInitial?.invoke()
                                 localFilter = TransactionFilter()
                                 selectedFilterId = null
+                                applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
@@ -197,6 +215,7 @@ fun FilterSheetContent(
                                                 localFilter = savedFilter.toDomain()
                                                 selectedFilterId = savedFilter.id
                                                 filtersExpanded = false
+                                                applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                                             },
                                             trailingIcon = if (selectedFilterId == savedFilter.id) {
                                                 { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
@@ -215,6 +234,7 @@ fun FilterSheetContent(
                             localFilter = it
                             // Clear preset selection when a field is manually modified
                             selectedFilterId = null
+                            applyFilterWithDebounce(it, debounceMs = 300)  // Debounced apply
                         },
                         accounts = accounts,
                         allCategories = allCategories,
@@ -225,27 +245,11 @@ fun FilterSheetContent(
                             } else {
                                 account.allowedCurrencies
                             }
-                        }.distinct().sorted()
+                        }.distinct().sorted(),
+                        onImmediateApply = { newFilter, debounceMs ->
+                            applyFilterWithDebounce(newFilter, debounceMs)
+                        }
                     )
-
-                    // Apply Button
-                    Button(
-                        onClick = {
-                            onApplyFilter(localFilter)
-                            onClose()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                            .padding(vertical = 8.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4A5D88),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("Apply Filters", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    }
                 }
             }
         }

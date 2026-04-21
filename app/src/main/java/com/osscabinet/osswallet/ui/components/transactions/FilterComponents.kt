@@ -37,7 +37,9 @@ fun FilterFields(
     allCategories: List<CategoryEntity>,
     showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
-    allAvailableCurrencies: List<String> = emptyList()
+    allAvailableCurrencies: List<String> = emptyList(),
+    // Callback for immediate apply with custom debounce time
+    onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
@@ -155,14 +157,22 @@ fun FilterFields(
         ) {
             CompactTextField(
                 value = filter.queryNote ?: "",
-                onValueChange = { onFilterChange(filter.copy(queryNote = it.ifBlank { null })) },
+                onValueChange = {
+                    val newFilter = filter.copy(queryNote = it.ifBlank { null })
+                    onFilterChange(newFilter)
+                    onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                },
                 placeholder = "Note...",
                 modifier = Modifier.weight(1f),
                 leadingIcon = Icons.Default.Search
             )
             CompactTextField(
                 value = filter.queryPayee ?: "",
-                onValueChange = { onFilterChange(filter.copy(queryPayee = it.ifBlank { null })) },
+                onValueChange = {
+                    val newFilter = filter.copy(queryPayee = it.ifBlank { null })
+                    onFilterChange(newFilter)
+                    onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                },
                 placeholder = "Payee...",
                 modifier = Modifier.weight(1f),
                 leadingIcon = Icons.Default.Search

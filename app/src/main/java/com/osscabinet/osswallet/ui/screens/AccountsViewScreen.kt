@@ -150,10 +150,14 @@ fun AccountsViewScreen(
     val accountsUiState by accountsViewViewModel.uiState.collectAsStateWithLifecycle()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsStateWithLifecycle()
     val accountsViewCardsConfig by cardManagerViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
+    val accountFilter by accountsViewViewModel.accountFilter.collectAsStateWithLifecycle()
+    val initialFilterContext by accountsViewViewModel.initialFilterContext.collectAsStateWithLifecycle()
     var showAddCardDialog by remember { mutableStateOf(false) }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
+    val accountMap = remember(accounts) { accounts.associateBy { it.id to it.name } }
+    val accountNameMap = remember(accounts) { accounts.associate { it.id to it.name } }
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -241,6 +245,15 @@ fun AccountsViewScreen(
                     )
                 }
             ) { innerPadding ->
+                // Context indicator banner (if filter is applied)
+                if (initialFilterContext != AccountsFilterContext.None) {
+                    AccountFilterIndicator(
+                        context = initialFilterContext,
+                        accountNames = accountNameMap,
+                        onReset = { accountsViewViewModel.resetToInitialFilter() }
+                    )
+                }
+
                 when (val state = accountsUiState) {
                     is AccountsViewUiState.Loading -> {
                         AeonShimmer(
@@ -661,6 +674,59 @@ fun AccountsViewScreen(
                 showAddCardDialog = false
             }
         )
+    }
+}
+
+@Composable
+fun AccountFilterIndicator(
+    context: AccountsFilterContext,
+    accountNames: Map<String, String>,
+    onReset: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.FilterList,
+                contentDescription = "Applied filter",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = getAccountContextDisplayName(context, accountNames),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        TextButton(onClick = onReset) {
+            Text("Reset")
+        }
+    }
+}
+
+private fun getAccountContextDisplayName(context: AccountsFilterContext, accountNames: Map<String, String>): String {
+    return when (context) {
+        is AccountsFilterContext.None -> "All"
+        is AccountsFilterContext.ByType -> "Type: ${context.accountType}"
+        is AccountsFilterContext.ByCurrency -> "Currency: ${context.currency}"
+        is AccountsFilterContext.Custom -> {
+            val parts = mutableListOf<String>()
+            if (context.accountTypes.isNotEmpty()) parts += "Types: ${context.accountTypes.joinToString()}"
+            if (context.currencies.isNotEmpty()) parts += "Currencies: ${context.currencies.joinToString()}"
+            if (context.minBalance != null || context.maxBalance != null) {
+                parts += "Balance: ${context.minBalance ?: "0"} - ${context.maxBalance ?: "∞"}"
+            }
+            if (parts.isEmpty()) "Custom" else parts.joinToString(", ")
+        }
     }
 }
 

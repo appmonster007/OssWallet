@@ -4,8 +4,10 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.dao.FilterDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.BuildConfig
 import android.content.Context
 import java.io.BufferedReader
@@ -45,6 +47,7 @@ class DatabaseSeeder @Inject constructor(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
+    private val filterDao: FilterDao,
     private val context: Context,
     private val settingsDataStore: SettingsDataStore
 ) {
@@ -141,9 +144,37 @@ class DatabaseSeeder @Inject constructor(
 
         android.util.Log.d("DatabaseSeeder", "Inserted $successfulTransactions transactions successfully, $failedTransactions failed")
 
+        // Seed preset filters
+        seedPresetFilters(categoryNameToId)
+        android.util.Log.d("DatabaseSeeder", "Seeded preset filters")
+
         // Mark as seeded
         settingsDataStore.saveDatabaseSeeded(true)
         android.util.Log.d("DatabaseSeeder", "Database seeding completed successfully")
+    }
+
+    private suspend fun seedPresetFilters(categoryNameToId: Map<String, Long>) {
+        val presetFilters = listOf(
+            FilterEntity(
+                name = "Shopping Expense",
+                categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
+                isIncome = false
+            ),
+            FilterEntity(
+                name = "Food & Dining Expense",
+                categoryIds = categoryNameToId["Food"]?.toString() ?: "1",
+                isIncome = false
+            )
+        )
+
+        presetFilters.forEach { filter ->
+            try {
+                filterDao.insertFilter(filter)
+                android.util.Log.d("DatabaseSeeder", "Inserted preset filter: ${filter.name}")
+            } catch (e: Exception) {
+                android.util.Log.e("DatabaseSeeder", "Failed to insert preset filter '${filter.name}': ${e.message}")
+            }
+        }
     }
 
     private fun loadAccountsFromCsv(): List<AccountEntity> {

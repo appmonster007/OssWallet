@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
 fun OssWalletNavGraph(
@@ -512,9 +513,10 @@ fun OssWalletNavGraph(
                 onBackClick = safePopBackStack,
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
-                onAddTransactionClick = { accId, type, name -> 
+                onAddTransactionClick = { accId, type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
-                }
+                },
+                onRecordsClick = { accId -> navController.navigateToRecords(RecordsFilterContext.ByAccount(accId)) }
             )
         }
 

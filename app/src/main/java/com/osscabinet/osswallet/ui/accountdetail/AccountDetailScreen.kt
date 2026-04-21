@@ -73,7 +73,8 @@ fun AccountDetailScreen(
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
-    onAddTransactionClick: (String, Int?, String?) -> Unit
+    onAddTransactionClick: (String, Int?, String?) -> Unit,
+    onRecordsClick: ((String) -> Unit)? = null
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -480,6 +481,7 @@ fun DynamicAccountDetailCards(
                         onShowCurrencyBadgesChange = { show ->
                             accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardConfig.cardId, show)
                         },
+                        onClick = null,
                         onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }

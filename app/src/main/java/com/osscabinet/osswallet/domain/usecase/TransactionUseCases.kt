@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.filter.FilterStack
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.ui.util.convertAmount
@@ -21,6 +22,10 @@ class TransactionUseCases(
 
     fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
         return repository.getFilteredTransactions(profileId, filter)
+    }
+
+    fun getFilteredTransactions(profileId: Int, filterStack: FilterStack): Flow<List<Transaction>> {
+        return repository.getFilteredTransactions(profileId, filterStack)
     }
 
     suspend fun insertTransaction(transaction: Transaction, profileId: Int = 1): Long {

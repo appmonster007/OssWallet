@@ -112,7 +112,8 @@ fun TransactionListScreen(
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
         initialFilterContext = initialFilterContext,
-        accountNames = accountMap
+        accountNames = accountMap,
+        onResetToInitial = { viewModel.resetToInitialFilter() }
     )
 }
 

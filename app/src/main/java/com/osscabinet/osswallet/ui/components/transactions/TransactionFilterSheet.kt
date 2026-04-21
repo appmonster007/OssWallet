@@ -45,7 +45,8 @@ fun TransactionFilterSheet(
     showAccountFilter: Boolean = true,
     // Context-aware parameters
     initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
-    accountNames: Map<String, String> = emptyMap()
+    accountNames: Map<String, String> = emptyMap(),
+    onResetToInitial: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier.wrapContentHeight()
@@ -63,7 +64,8 @@ fun TransactionFilterSheet(
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
             initialFilterContext = initialFilterContext,
-            accountNames = accountNames
+            accountNames = accountNames,
+            onResetToInitial = onResetToInitial
         )
     }
 }

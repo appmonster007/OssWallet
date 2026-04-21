@@ -26,7 +26,6 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -43,8 +42,6 @@ fun TransactionFilterSheet(
     isExpanded: Boolean,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     showAccountFilter: Boolean = true,
-    // Context-aware parameters
-    initialFilterContext: RecordsFilterContext = RecordsFilterContext.None,
     accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null
 ) {
@@ -63,7 +60,6 @@ fun TransactionFilterSheet(
             isExpanded = isExpanded,
             backgroundColor = backgroundColor,
             showAccountFilter = showAccountFilter,
-            initialFilterContext = initialFilterContext,
             accountNames = accountNames,
             onResetToInitial = onResetToInitial
         )

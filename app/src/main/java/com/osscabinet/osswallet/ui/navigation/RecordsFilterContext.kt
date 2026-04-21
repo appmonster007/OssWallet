@@ -51,6 +51,7 @@ sealed class RecordsFilterContext {
         val startDate: Long? = null,
         val endDate: Long? = null,
         val categoryIds: List<String> = emptyList(),
+        val currencies: List<String> = emptyList(),
         val paymentMethods: List<String> = emptyList(),
         val queryNote: String? = null,
         val minAmount: Double? = null,

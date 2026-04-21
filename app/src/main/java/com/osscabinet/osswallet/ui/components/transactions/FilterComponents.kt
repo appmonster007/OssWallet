@@ -178,24 +178,32 @@ fun FilterFields(
                         2 -> preAppliedIsIncome == false
                         else -> preAppliedIsIncome == null
                     }
+                    // Disable All button when type is pre-applied
+                    val enabled = when (index) {
+                        0 -> preAppliedIsIncome == null
+                        else -> true
+                    }
                     SegmentedButton(
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                         onClick = {
-                            onFilterChange(
-                                filter.copy(
-                                    isIncome = when (index) {
-                                        1 -> true
-                                        2 -> false
-                                        else -> null
-                                    }
+                            if (enabled) {
+                                onFilterChange(
+                                    filter.copy(
+                                        isIncome = when (index) {
+                                            1 -> true
+                                            2 -> false
+                                            else -> null
+                                        }
+                                    )
                                 )
-                            )
+                            }
                         },
                         selected = when (index) {
                             1 -> filter.isIncome == true
                             2 -> filter.isIncome == false
                             else -> filter.isIncome == null
                         },
+                        enabled = enabled,
                         icon = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 // Show pre-applied indicator if type was pre-applied

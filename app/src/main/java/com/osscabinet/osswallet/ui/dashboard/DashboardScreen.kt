@@ -469,7 +469,9 @@ fun DashboardContent(
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
                                         onCurrencyClick = { currency ->
-                                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None)
+                                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                                currencies = listOf(currency)
+                                            ))
                                         }
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))

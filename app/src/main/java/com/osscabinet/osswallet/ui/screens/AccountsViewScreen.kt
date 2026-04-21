@@ -381,7 +381,9 @@ fun AccountsViewScreen(
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
                                             onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
                                             onCurrencyClick = { currency ->
-                                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None)
+                                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                                    currencies = listOf(currency)
+                                                ))
                                             },
                                             headerModifier = dragModifier,
                                             modifier = Modifier.fillMaxWidth()

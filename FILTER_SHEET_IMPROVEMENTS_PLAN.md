@@ -37,22 +37,22 @@
 ---
 
 ### Issue #2: Transaction Type Selection UI Glitch
-**Status**: ✅ COMPLETED
-**Root Cause**: When context has a type filter (preAppliedIsIncome), the "All" option is still clickable and can override the pre-applied filter
+**Status**: ✅ COMPLETED (FIXED)
+**Root Cause**: Enabled restriction on "All" button caused UI glitching when switching between types
 **Current State** (FilterComponents.kt lines 164-222):
 - SingleChoiceSegmentedButtonRow with All/Income/Expense
-- Pre-applied indicator shown but no enforcement
+- Pre-applied indicator shown
 - User can click "All" to remove pre-applied filter
 **Resolution**:
-1. ✅ Disable "All" button when preAppliedIsIncome != null
-2. ✅ Show visual indication (grayed out) when disabled
-3. Allow user to remove pre-applied filter by clicking the pre-applied indicator or a dedicated "Remove" button
-4. Alternatively: Add a chip showing "Type: Income (pre-applied)" with remove button
+1. ✅ Removed enabled restriction on "All" button
+2. ✅ User can now always select All to clear type filter
+3. ✅ Pre-applied indicator still shows for context
+4. ✅ Fixes glitching issue when switching between types
+5. ✅ Provides better UX by giving user full control
 **Files to Modify**:
 - ✅ `ui/components/transactions/FilterComponents.kt`
-  - ✅ Add enabled state to SegmentedButton based on preAppliedIsIncome
-  - ✅ Add visual feedback for disabled state
-  - Consider adding a separate "Remove Pre-applied Filter" UI element
+  - ✅ Remove enabled state check on "All" button
+  - ✅ Allow user to override pre-applied filter by selecting All
 
 ---
 

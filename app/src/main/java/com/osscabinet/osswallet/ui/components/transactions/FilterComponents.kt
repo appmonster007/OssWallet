@@ -111,7 +111,13 @@ fun FilterFields(
             val availableCurrencies = if (allAvailableCurrencies.isNotEmpty()) {
                 allAvailableCurrencies
             } else {
-                accounts.map { it.currencyCode }.distinct().sorted()
+                accounts.flatMap { account ->
+                    if (account.allowedCurrencies.isEmpty()) {
+                        listOf(account.currencyCode)
+                    } else {
+                        account.allowedCurrencies
+                    }
+                }.distinct().sorted()
             }
             MultiSelectionDialog(
                 title = "Select Currencies",

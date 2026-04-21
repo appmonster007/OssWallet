@@ -219,7 +219,13 @@ fun FilterSheetContent(
                         accounts = accounts,
                         allCategories = allCategories,
                         showAccountFilter = showAccountFilter,
-                        allAvailableCurrencies = accounts.map { it.currencyCode }.distinct().sorted()
+                        allAvailableCurrencies = accounts.flatMap { account ->
+                            if (account.allowedCurrencies.isEmpty()) {
+                                listOf(account.currencyCode)
+                            } else {
+                                account.allowedCurrencies
+                            }
+                        }.distinct().sorted()
                     )
 
                     // Apply Button

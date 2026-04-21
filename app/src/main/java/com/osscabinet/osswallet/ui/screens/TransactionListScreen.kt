@@ -18,10 +18,12 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +35,9 @@ fun TransactionListScreen(
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit,
-    templateViewModel: TemplateViewModel
+    templateViewModel: TemplateViewModel,
+    // Context-aware parameter
+    filterContext: String? = null
 ) {
     val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
@@ -47,9 +51,10 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val initialFilterContext by viewModel.initialFilterContext.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
-    
+
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
@@ -62,7 +67,24 @@ fun TransactionListScreen(
         }
     }
 
-    // Reset filters when entering or leaving the screen
+    // Initialize filter from context when screen opens
+    LaunchedEffect(filterContext) {
+        if (filterContext != null) {
+            try {
+                val context = Json.decodeFromString<RecordsFilterContext>(
+                    java.net.URLDecoder.decode(filterContext, "UTF-8")
+                )
+                viewModel.initializeRecordsFilter(context)
+            } catch (e: Exception) {
+                // If context is invalid, use None
+                viewModel.initializeRecordsFilter(RecordsFilterContext.None)
+            }
+        } else {
+            viewModel.initializeRecordsFilter(RecordsFilterContext.None)
+        }
+    }
+
+    // Reset filters when leaving the screen
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearRecordsFilters()
@@ -88,7 +110,9 @@ fun TransactionListScreen(
         onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
-        onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } }
+        onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
+        initialFilterContext = initialFilterContext,
+        accountNames = accountMap
     )
 }
 

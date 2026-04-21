@@ -38,7 +38,9 @@ fun FilterFields(
     showAccountFilter: Boolean = true,
     // Context-aware parameters
     preAppliedAccountId: String? = null,
-    preAppliedIsIncome: Boolean? = null
+    preAppliedIsIncome: Boolean? = null,
+    // Unfiltered data for dropdowns
+    allAvailableCurrencies: List<String> = emptyList()
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
@@ -109,7 +111,11 @@ fun FilterFields(
             )
         }
         "Currencies" -> {
-            val availableCurrencies = accounts.map { it.currencyCode }.distinct().sorted()
+            val availableCurrencies = if (allAvailableCurrencies.isNotEmpty()) {
+                allAvailableCurrencies
+            } else {
+                accounts.map { it.currencyCode }.distinct().sorted()
+            }
             MultiSelectionDialog(
                 title = "Select Currencies",
                 items = availableCurrencies,

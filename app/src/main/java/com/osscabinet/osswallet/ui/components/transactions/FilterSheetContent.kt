@@ -247,7 +247,8 @@ fun FilterSheetContent(
                         allCategories = allCategories,
                         showAccountFilter = showAccountFilter,
                         preAppliedAccountId = preAppliedAccountId,
-                        preAppliedIsIncome = preAppliedIsIncome
+                        preAppliedIsIncome = preAppliedIsIncome,
+                        allAvailableCurrencies = accounts.map { it.currencyCode }.distinct().sorted()
                     )
 
                     // Apply Button

@@ -7,6 +7,8 @@ import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.filter.FilterStack
+import com.osscabinet.ossWallet.domain.model.filter.UnifiedFilter
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -28,6 +30,13 @@ class TransactionViewModel(
 
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
+
+    // New FilterStack support for unified filtering
+    private val _recordsFilterStack = MutableStateFlow(FilterStack.Empty)
+    val recordsFilterStack = _recordsFilterStack.asStateFlow()
+
+    private val _accountDetailFilterStack = MutableStateFlow(FilterStack.Empty)
+    val accountDetailFilterStack = _accountDetailFilterStack.asStateFlow()
 
     val savedFilters = filterDao.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -66,6 +75,32 @@ class TransactionViewModel(
             initialValue = emptyList()
         )
 
+    // New FilterStack-based flow for unified filtering
+    // Screens can migrate to use this flow gradually
+    val transactionsWithBalanceFromStack: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
+        .flatMapLatest { profileId ->
+            combine(
+                _recordsFilterStack.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
+                accountRepository.getAllAccounts(profileId),
+                analyticsViewModel.uiState
+            ) { filteredTransactions, accounts, analyticsState ->
+                val rates = analyticsState.exchangeRates
+                val precision = analyticsState.decimalPrecision
+
+                transactionUseCases.getRecentTransactions(
+                    allTransactions = filteredTransactions,
+                    accounts = accounts,
+                    exchangeRates = rates,
+                    precision = precision,
+                    limit = Int.MAX_VALUE
+                )
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -96,6 +131,48 @@ class TransactionViewModel(
 
     fun clearAccountDetailFilters() {
         _accountDetailFilter.value = TransactionFilter()
+    }
+
+    // ========== FilterStack Manipulation Methods ==========
+
+    fun addRecordsFilterStack(filter: UnifiedFilter) {
+        _recordsFilterStack.value = _recordsFilterStack.value.addFilter(filter)
+    }
+
+    fun addRecordsInstantFilter(filter: UnifiedFilter) {
+        _recordsFilterStack.value = _recordsFilterStack.value.addInstantFilter(filter)
+    }
+
+    fun removeRecordsFilterStack(filter: UnifiedFilter) {
+        _recordsFilterStack.value = _recordsFilterStack.value.removeFilter(filter)
+    }
+
+    fun clearRecordsFilterStack() {
+        _recordsFilterStack.value = FilterStack.Empty
+    }
+
+    fun clearRecordsInstantFilters() {
+        _recordsFilterStack.value = _recordsFilterStack.value.clearInstantFilters()
+    }
+
+    fun addAccountDetailFilterStack(filter: UnifiedFilter) {
+        _accountDetailFilterStack.value = _accountDetailFilterStack.value.addFilter(filter)
+    }
+
+    fun addAccountDetailInstantFilter(filter: UnifiedFilter) {
+        _accountDetailFilterStack.value = _accountDetailFilterStack.value.addInstantFilter(filter)
+    }
+
+    fun removeAccountDetailFilterStack(filter: UnifiedFilter) {
+        _accountDetailFilterStack.value = _accountDetailFilterStack.value.removeFilter(filter)
+    }
+
+    fun clearAccountDetailFilterStack() {
+        _accountDetailFilterStack.value = FilterStack.Empty
+    }
+
+    fun clearAccountDetailInstantFilters() {
+        _accountDetailFilterStack.value = _accountDetailFilterStack.value.clearInstantFilters()
     }
 
     fun addTransaction(

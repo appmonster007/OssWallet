@@ -332,6 +332,31 @@ Update TransactionFilterSheet to respect initial filter context and provide appr
 
 **Key Design Change:** Pre-applied filters are NOT locked - users can remove them if they choose. The UI shows which filters were pre-applied via navigation context with a navigation arrow icon, and provides a "Remove filter" chip for easy removal.
 
+**Applied Filters Display Strategy:**
+
+The TransactionFilterSheet should display applied filters in a clear, hierarchical manner:
+
+1. **Context Header (Top)** - Shows the navigation context that brought user to this screen
+   - Icon: FilterList icon
+   - Text: Context description (e.g., "Account: Savings (Income)")
+   - Action: Reset button to return to initial context
+
+2. **Active Filters Summary** - Collapsible section showing all currently active filters
+   - Shows count of active filters (e.g., "3 filters active")
+   - Lists each active filter with its value
+   - Distinguishes between pre-applied (with arrow icon) and user-applied filters
+   - Each filter has a clear button to remove it individually
+
+3. **Filter Sections (Interactive)** - Each filter type has its own section
+   - Account Filter - Shows selected accounts with pre-applied indicator
+   - Type Filter - Shows income/expense selection with pre-applied indicator
+   - Currency Filter - Shows selected currencies with pre-applied indicator
+   - Date Range Filter - Shows selected date range
+   - Category Filter - Shows selected categories
+   - Payment Method Filter - Shows selected payment methods
+   - Note/Text Filter - Shows text search query
+   - Amount Range Filter - Shows min/max amounts
+
 ```kotlin
 @Composable
 fun TransactionFilterSheet(
@@ -373,6 +398,9 @@ fun TransactionFilterSheet(
         else -> null
     }
 
+    // Count active filters
+    val activeFilterCount = countActiveFilters(filter)
+
     Column(modifier = Modifier.background(backgroundColor)) {
         // Context indicator header
         if (initialFilterContext != RecordsFilterContext.None) {
@@ -383,6 +411,20 @@ fun TransactionFilterSheet(
             )
             HorizontalDivider()
         }
+
+        // Active filters summary (collapsible)
+        ActiveFiltersSummary(
+            filter = filter,
+            preAppliedAccountId = preAppliedAccountId,
+            preAppliedIsIncome = preAppliedIsIncome,
+            preAppliedCurrency = preAppliedCurrency,
+            accountNames = accountNames,
+            onRemoveFilter = { filterField, value ->
+                removeFilter(filter, filterField, value, onUpdateFilter)
+            }
+        )
+
+        HorizontalDivider()
 
         // Account filter section
         if (showAccountFilter) {
@@ -435,6 +477,183 @@ fun TransactionFilterSheet(
 
         // ... other filter sections
     }
+}
+```
+
+**New Component: ActiveFiltersSummary**
+
+```kotlin
+@Composable
+fun ActiveFiltersSummary(
+    filter: TransactionFilter,
+    preAppliedAccountId: String?,
+    preAppliedIsIncome: Boolean?,
+    preAppliedCurrency: String?,
+    accountNames: Map<String, String>,
+    onRemoveFilter: (String, Any?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FilterAlt,
+                    contentDescription = "Active filters",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "${countActiveFilters(filter)} filters active",
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+            IconButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Collapse" else "Expand"
+                )
+            }
+        }
+
+        if (expanded) {
+            Column(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Account filters
+                filter.accountIds.forEach { accountId ->
+                    ActiveFilterChip(
+                        label = accountNames[accountId] ?: accountId,
+                        isPreApplied = preAppliedAccountId == accountId,
+                        onRemove = { onRemoveFilter("accountIds", accountId) }
+                    )
+                }
+
+                // Type filter
+                if (filter.isIncome != null) {
+                    ActiveFilterChip(
+                        label = if (filter.isIncome == true) "Income" else "Expense",
+                        isPreApplied = preAppliedIsIncome == filter.isIncome,
+                        onRemove = { onRemoveFilter("isIncome", null) }
+                    )
+                }
+
+                // Currency filters
+                filter.currencies.forEach { currency ->
+                    ActiveFilterChip(
+                        label = currency,
+                        isPreApplied = preAppliedCurrency == currency,
+                        onRemove = { onRemoveFilter("currencies", currency) }
+                    )
+                }
+
+                // Date range filter
+                if (filter.startDate != null || filter.endDate != null) {
+                    ActiveFilterChip(
+                        label = formatDateRange(filter.startDate, filter.endDate),
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("dateRange", null) }
+                    )
+                }
+
+                // Category filters
+                filter.categoryIds.forEach { categoryId ->
+                    ActiveFilterChip(
+                        label = "Category: $categoryId",
+                        isPreApplied = false,
+                        onRemove = { onRemoveFilter("categoryIds", categoryId) }
+                    )
+                }
+
+                // Other filters...
+            }
+        }
+    }
+}
+
+@Composable
+fun ActiveFilterChip(
+    label: String,
+    isPreApplied: Boolean,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (isPreApplied) {
+                Icon(
+                    imageVector = Icons.Default.NavigationArrow,
+                    contentDescription = "Pre-applied",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove filter",
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+fun countActiveFilters(filter: TransactionFilter): Int {
+    var count = 0
+    count += filter.accountIds.size
+    if (filter.isIncome != null) count++
+    count += filter.currencies.size
+    if (filter.startDate != null || filter.endDate != null) count++
+    count += filter.categoryIds.size
+    count += filter.paymentMethodIds.size
+    if (filter.note != null) count++
+    if (filter.minAmount != null) count++
+    if (filter.maxAmount != null) count++
+    return count
+}
+
+fun removeFilter(
+    filter: TransactionFilter,
+    field: String,
+    value: Any?,
+    onUpdateFilter: (TransactionFilter) -> Unit
+) {
+    val updatedFilter = when (field) {
+        "accountIds" -> filter.copy(accountIds = filter.accountIds - (value as String))
+        "isIncome" -> filter.copy(isIncome = null)
+        "currencies" -> filter.copy(currencies = filter.currencies - (value as String))
+        "dateRange" -> filter.copy(startDate = null, endDate = null)
+        "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as String))
+        "paymentMethodIds" -> filter.copy(paymentMethodIds = filter.paymentMethodIds - (value as String))
+        "note" -> filter.copy(note = null)
+        "minAmount" -> filter.copy(minAmount = null)
+        "maxAmount" -> filter.copy(maxAmount = null)
+        else -> filter
+    }
+    onUpdateFilter(updatedFilter)
 }
 ```
 
@@ -785,11 +1004,16 @@ composable(
 ### Phase 3: TransactionFilterSheet Updates (1-2 days)
 - [ ] Add context-aware parameters to TransactionFilterSheet
 - [ ] Implement ContextIndicator component with filter icon
+- [ ] Implement ActiveFiltersSummary component (collapsible)
+- [ ] Implement ActiveFilterChip component with pre-applied indicator
+- [ ] Implement countActiveFilters() helper function
+- [ ] Implement removeFilter() helper function
 - [ ] Implement AccountFilterSelector with pre-applied indicator and remove button
 - [ ] Implement IncomeExpenseToggle with pre-applied indicator and remove button
 - [ ] Implement CurrencyFilterSelector with pre-applied indicator and remove button
 - [ ] Update filter sections to show pre-applied filters (NOT locked)
 - [ ] Test filter removal functionality for each context type
+- [ ] Test ActiveFiltersSummary expansion and filter removal
 
 ### Phase 4: Screen Integration (1 day)
 - [ ] Update TransactionListScreen signature
@@ -939,6 +1163,10 @@ composable(
 - [ ] User can add additional filters on top of initial context
 - [ ] Pre-applied filter indicators show navigation arrow icon
 - [ ] "Remove filter" chip works correctly
+- [ ] ActiveFiltersSummary shows correct filter count
+- [ ] ActiveFiltersSummary expands/collapses correctly
+- [ ] ActiveFilterChip shows pre-applied indicator correctly
+- [ ] Individual filter removal from summary works
 - [ ] Dashboard scrolls to focused section/card
 - [ ] Focused section has visual highlight
 

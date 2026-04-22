@@ -160,6 +160,7 @@ fun RecentActivitiesCard(
                     icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
                     iconBg = categoryEntity?.let { Color(it.colorHex) },
                     precision = decimalPrecision,
+                    status = transaction.status,
                     onClick = { onTransactionClick(transaction.id) }
                 )
             }

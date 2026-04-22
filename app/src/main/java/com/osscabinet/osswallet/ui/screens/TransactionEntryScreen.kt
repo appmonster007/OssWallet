@@ -108,7 +108,7 @@ fun TransactionEntryScreen(
         dbTemplates = dbTemplates,
         allTags = allTags,
         onAddTag = { tagViewModel.addTag(it) },
-        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp ->
+        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp, status ->
             val isEditMode = transactionId != null && transactionId != -1L
             val finalTimestamp = if (!isEditMode && timestamp == initialTimestamp) System.currentTimeMillis() else timestamp
             if (isEditMode) {
@@ -138,7 +138,8 @@ fun TransactionEntryScreen(
                             linkedTransactionId = null,
                             latitude = coords?.first,
                             longitude = coords?.second,
-                            warrantyExpiration = warrantyExp
+                            warrantyExpiration = warrantyExp,
+                            status = status
                         )
                     } else if (!wasTransfer && isTransfer) {
                         // Changed from Income/Expense to Transfer
@@ -157,9 +158,10 @@ fun TransactionEntryScreen(
                                 note = note,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp
+                                warrantyExpiration = warrantyExp,
+                                status = status
                             )
-                            
+
                             val targetTx = Transaction(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = amountValue.multiply(rate),
@@ -174,9 +176,10 @@ fun TransactionEntryScreen(
                                 note = note,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp
+                                warrantyExpiration = warrantyExp,
+                                status = status
                             )
-                            
+
                             viewModel.saveTransfer(sourceTx, targetTx)
                         }
                     } else if (wasTransfer && isTransfer) {
@@ -197,7 +200,8 @@ fun TransactionEntryScreen(
                                 linkedTransactionId = linkedId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp
+                                warrantyExpiration = warrantyExp,
+                                status = status
                             )
                             
                             val existingLinkedTx = transactions.find { it.id == linkedId }
@@ -216,7 +220,8 @@ fun TransactionEntryScreen(
                                 linkedTransactionId = transactionId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp
+                                warrantyExpiration = warrantyExp,
+                                status = status
                             ) ?: Transaction(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = amountValue.multiply(rate),
@@ -232,7 +237,8 @@ fun TransactionEntryScreen(
                                 linkedTransactionId = transactionId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
-                                warrantyExpiration = warrantyExp
+                                warrantyExpiration = warrantyExp,
+                                status = status
                             )
                             
                             viewModel.saveTransfer(sourceTx, targetTx)
@@ -255,7 +261,8 @@ fun TransactionEntryScreen(
                             linkedTransactionId = linkedId,
                             latitude = coords?.first,
                             longitude = coords?.second,
-                            warrantyExpiration = warrantyExp
+                            warrantyExpiration = warrantyExp,
+                            status = status
                         )
                     }
                 }
@@ -276,7 +283,8 @@ fun TransactionEntryScreen(
                             note = note,
                             latitude = coords?.first,
                             longitude = coords?.second,
-                            warrantyExpiration = warrantyExp
+                            warrantyExpiration = warrantyExp,
+                            status = status
                         )
                         
                         val targetTx = Transaction(
@@ -293,7 +301,8 @@ fun TransactionEntryScreen(
                             note = note,
                             latitude = coords?.first,
                             longitude = coords?.second,
-                            warrantyExpiration = warrantyExp
+                            warrantyExpiration = warrantyExp,
+                            status = status
                         )
                         
                         viewModel.saveTransfer(sourceTx, targetTx)
@@ -315,7 +324,8 @@ fun TransactionEntryScreen(
                         linkedTransactionId = linkedId,
                         latitude = coords?.first,
                         longitude = coords?.second,
-                        warrantyExpiration = warrantyExp
+                        warrantyExpiration = warrantyExp,
+                        status = status
                     )
                 }
             }
@@ -346,7 +356,7 @@ fun TransactionEntryContent(
     dbTemplates: List<TemplateEntity> = emptyList(),
     allTags: List<TagEntity> = emptyList(),
     onAddTag: (String) -> Unit = {},
-    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?) -> Unit,
+    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
     onDelete: (Long) -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -370,6 +380,7 @@ fun TransactionEntryContent(
     var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     var paymentMethod by remember { mutableStateOf("Cash") }
+    var status by remember { mutableStateOf(com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) }
     var transactionType by remember { mutableIntStateOf(initialType) } // 0: Expense, 1: Income, 2: Transfer
     var selectedDateMillis by remember { mutableLongStateOf(initialTimestamp) }
     var payee by remember { mutableStateOf("") }
@@ -403,6 +414,7 @@ fun TransactionEntryContent(
             selectedCategoryId = existingTransaction.categoryId
             selectedTags = existingTransaction.tags
             paymentMethod = existingTransaction.paymentMethod
+            status = existingTransaction.status
             transactionType = when {
                 existingTransaction.category == "Transfer" -> 2
                 existingTransaction.transactionType == "income" -> 1
@@ -499,6 +511,7 @@ fun TransactionEntryContent(
     var showLinkedTransactionSheet by remember { mutableStateOf(false) }
     var showLabelSheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
+    var showStatusSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -538,7 +551,8 @@ fun TransactionEntryContent(
                                 targetCurrency,
                                 exchangeRate,
                                 locationCoords,
-                                if (isWarrantyEnabled) warrantyExpirationMillis else null
+                                if (isWarrantyEnabled) warrantyExpirationMillis else null,
+                                status
                             )
                         }
                     ) {
@@ -1015,6 +1029,21 @@ fun TransactionEntryContent(
                     )
                 }
 
+                // Status
+                RecordFieldCard(
+                    icon = Icons.Rounded.CheckCircle,
+                    label = "STATUS",
+                    value = status.displayName,
+                    onClick = { showStatusSheet = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    iconContainerColor = when (status) {
+                        com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50).copy(alpha = 0.2f)
+                        com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3).copy(alpha = 0.2f)
+                        com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color(0xFFFF9800).copy(alpha = 0.2f)
+                    },
+                    isSlim = true
+                )
+
                 // Map/Location Card
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(160.dp),
@@ -1183,6 +1212,85 @@ fun TransactionEntryContent(
                 onMethodSelected = { paymentMethod = it },
                 onDismiss = { showPaymentMethodSheet = false }
             )
+        }
+
+        if (showStatusSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showStatusSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                    AeonFlowSectionHeader(title = "SELECT STATUS")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        com.osscabinet.ossWallet.domain.model.TransactionStatus.values().forEach { statusOption ->
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (status == statusOption) {
+                                    when (statusOption) {
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50).copy(alpha = 0.2f)
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3).copy(alpha = 0.2f)
+                                        com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color(0xFFFF9800).copy(alpha = 0.2f)
+                                    }
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                },
+                                onClick = {
+                                    status = statusOption
+                                    showStatusSheet = false
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = when (statusOption) {
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Icons.Rounded.CheckCircle
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Icons.Rounded.Sync
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Icons.Rounded.Schedule
+                                        },
+                                        contentDescription = null,
+                                        tint = when (statusOption) {
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50)
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3)
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color(0xFFFF9800)
+                                        }
+                                    )
+                                    Text(
+                                        text = statusOption.displayName,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (status == statusOption) {
+                                            when (statusOption) {
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50)
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3)
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color(0xFFFF9800)
+                                            }
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                    if (status == statusOption) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Icon(
+                                            imageVector = Icons.Rounded.Check,
+                                            contentDescription = "Selected",
+                                            tint = when (statusOption) {
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50)
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3)
+                                                com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color(0xFFFF9800)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if (showCategorySheet) {
@@ -1793,7 +1901,8 @@ fun TransactionEntryWithLongLinkPreview() {
             accountId = "1",
             currency = "USD",
             timestamp = System.currentTimeMillis(),
-            note = "Very long note that might push the close button off screen if not handled properly in the UI layout"
+            note = "Very long note that might push the close button off screen if not handled properly in the UI layout",
+            status = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
         ),
         Transaction(
             id = 1L,
@@ -1804,7 +1913,8 @@ fun TransactionEntryWithLongLinkPreview() {
             accountId = "1",
             currency = "USD",
             timestamp = System.currentTimeMillis(),
-            linkedTransactionId = 100L
+            linkedTransactionId = 100L,
+            status = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
         )
     )
 
@@ -1814,7 +1924,7 @@ fun TransactionEntryWithLongLinkPreview() {
             accounts = sampleAccounts,
             categories = sampleCategories,
             transactions = sampleTransactions,
-            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
             onDelete = {},
             onBackClick = {}
         )
@@ -1848,7 +1958,7 @@ fun TransactionEntryPreview() {
             accounts = sampleAccounts,
             categories = sampleCategories,
             allTags = sampleTags,
-            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onSave = { _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
             onDelete = {},
             onBackClick = {}
         )

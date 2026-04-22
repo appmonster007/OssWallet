@@ -24,7 +24,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TemplateEntity::class,
         FilterEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -158,7 +158,7 @@ abstract class AppDatabase : RoomDatabase() {
                 // Migrate data: isIncome = 1 -> "income", isIncome = 0 -> "expense", NULL -> NULL
                 database.execSQL("""
                     UPDATE transaction_filters
-                    SET transactionType = CASE 
+                    SET transactionType = CASE
                         WHEN isIncome = 1 THEN 'income'
                         WHEN isIncome = 0 THEN 'expense'
                         ELSE NULL
@@ -203,7 +203,20 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE transaction_filters_new RENAME TO transaction_filters")
             }
         }
-                
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add status column to transactions with default value 'cleared'
+                database.execSQL("ALTER TABLE transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'cleared'")
+
+                // Create index for status
+                database.execSQL("CREATE INDEX index_transactions_status ON transactions (status)")
+
+                // Add statuses column to transaction_filters with default value ''
+                database.execSQL("ALTER TABLE transaction_filters ADD COLUMN statuses TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -234,7 +247,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Rent', 'Key', -769226, 1, 4)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

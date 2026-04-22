@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.filter.FilterStack
 import com.osscabinet.ossWallet.domain.model.filter.LogicalOperator
 import com.osscabinet.ossWallet.domain.model.filter.UnifiedFilter
@@ -128,6 +129,11 @@ class TransactionRepositoryImpl(
             queryBuilder.append(" AND payee LIKE ? COLLATE NOCASE")
             args.add("%${filter.queryPayee}%")
         }
+        if (filter.statuses.isNotEmpty()) {
+            val placeholders = filter.statuses.joinToString(",") { "?" }
+            queryBuilder.append(" AND status IN ($placeholders)")
+            args.addAll(filter.statuses.map { it.name })
+        }
         queryBuilder.append(" ORDER BY timestamp DESC")
         return Pair(queryBuilder.toString(), args)
     }
@@ -235,7 +241,8 @@ class TransactionRepositoryImpl(
             linkedTransactionId = linkedTransactionId,
             latitude = latitude,
             longitude = longitude,
-            warrantyExpiration = warrantyExpiration
+            warrantyExpiration = warrantyExpiration,
+            status = TransactionStatus.fromString(status)
         )
     }
 
@@ -259,7 +266,8 @@ class TransactionRepositoryImpl(
             linkedTransactionId = linkedTransactionId,
             latitude = latitude,
             longitude = longitude,
-            warrantyExpiration = warrantyExpiration
+            warrantyExpiration = warrantyExpiration,
+            status = status.name
         )
     }
 }

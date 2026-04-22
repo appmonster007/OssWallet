@@ -26,7 +26,8 @@ import java.math.BigDecimal
         Index(value = ["accountId"]),
         Index(value = ["categoryId"]),
         Index(value = ["profileId"]),
-        Index(value = ["timestamp"])
+        Index(value = ["timestamp"]),
+        Index(value = ["status"])
     ]
 )
 data class TransactionEntity(
@@ -49,5 +50,6 @@ data class TransactionEntity(
     val profileId: Int = 1,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    val warrantyExpiration: Long? = null
+    val warrantyExpiration: Long? = null,
+    val status: String = "cleared"
 )

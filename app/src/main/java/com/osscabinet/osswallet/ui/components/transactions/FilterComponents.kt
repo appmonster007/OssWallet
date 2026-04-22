@@ -223,6 +223,42 @@ fun FilterFields(
             }
         }
 
+        // Status
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "STATUS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+            MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val statusOptions = com.osscabinet.ossWallet.domain.model.TransactionStatus.values()
+                statusOptions.forEachIndexed { index, status ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = statusOptions.size),
+                        checked = status in filter.statuses,
+                        onCheckedChange = {
+                            val newStatuses = if (it) {
+                                filter.statuses + status
+                            } else {
+                                filter.statuses - status
+                            }
+                            onFilterChange(filter.copy(statuses = newStatuses))
+                        },
+                        icon = {
+                            if (status in filter.statuses) {
+                                Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                            } else null
+                        }
+                    ) {
+                        Text(status.displayName, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+
         // Collection Filters
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(

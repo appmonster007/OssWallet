@@ -24,7 +24,8 @@ data class Transaction(
     val linkedTransactionId: Long? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
-    val warrantyExpiration: Long? = null
+    val warrantyExpiration: Long? = null,
+    val status: TransactionStatus = TransactionStatus.CLEARED
 ) : Timestamped
 
 data class TransactionWithBalance(

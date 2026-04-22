@@ -235,7 +235,6 @@ fun OssWalletNavGraph(
             com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) },
                 onAddClick = { type, template ->
@@ -291,7 +290,6 @@ fun OssWalletNavGraph(
                     navController.popBackStack()
                 },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) },
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
@@ -570,8 +568,7 @@ fun OssWalletNavGraph(
                 onAddTransactionClick = { accId, type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
                 },
-                onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) }
+                onRecordsClick = { context -> navController.navigateToRecords(context) }
             )
         }
 

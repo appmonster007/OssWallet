@@ -86,7 +86,7 @@ fun TransactionListScreen(
     LaunchedEffect(initialFilterStack) {
         if (initialFilterStack != null) {
             val transactionFilter = initialFilterStack.toTransactionFilter()
-            viewModel.setRecordsFilter(transactionFilter)
+            viewModel.updateRecordsFilter(transactionFilter)
         }
     }
 

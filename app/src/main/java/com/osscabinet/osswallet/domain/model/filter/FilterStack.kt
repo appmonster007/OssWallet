@@ -195,12 +195,12 @@ data class FilterStack(
                                 accountIds = (orResult.accountIds + subResult.accountIds).distinct(),
                                 paymentMethods = (orResult.paymentMethods + subResult.paymentMethods).distinct(),
                                 currencies = (orResult.currencies + subResult.currencies).distinct(),
-                                // Special handling for isIncome: if both true and false, show all (null)
-                                isIncome = when {
-                                    orResult.isIncome == null && subResult.isIncome == null -> null
-                                    orResult.isIncome == true && subResult.isIncome == false -> null
-                                    orResult.isIncome == false && subResult.isIncome == true -> null
-                                    else -> orResult.isIncome ?: subResult.isIncome
+                                // For isIncome: if combining income and expense, show all (null)
+                                isIncome = if (orResult.isIncome == true && subResult.isIncome == false ||
+                                             orResult.isIncome == false && subResult.isIncome == true) {
+                                    null // Show both income and expense (All)
+                                } else {
+                                    orResult.isIncome ?: subResult.isIncome
                                 },
                                 // For date ranges: use min start date and max end date
                                 startDate = listOfNotNull(orResult.startDate, subResult.startDate).minOrNull(),

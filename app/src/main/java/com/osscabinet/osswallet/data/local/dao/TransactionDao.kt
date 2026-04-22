@@ -34,7 +34,7 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
         val id = _insertTransaction(transaction)
-        val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+        val updateAmount = if (transaction.transactionType == "income") transaction.amount else transaction.amount.negate()
         accountDao.updateBalance(transaction.accountId, updateAmount)
         return id
     }
@@ -51,29 +51,29 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
         _deleteTransaction(transaction)
-        val updateAmount = if (transaction.isIncome) transaction.amount.negate() else transaction.amount
+        val updateAmount = if (transaction.transactionType == "income") transaction.amount.negate() else transaction.amount
         accountDao.updateBalance(transaction.accountId, updateAmount)
     }
 
     @Transaction
     open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
         // Reverse old transaction impact
-        val reverseAmount = if (oldTransaction.isIncome) oldTransaction.amount.negate() else oldTransaction.amount
+        val reverseAmount = if (oldTransaction.transactionType == "income") oldTransaction.amount.negate() else oldTransaction.amount
         accountDao.updateBalance(oldTransaction.accountId, reverseAmount)
 
         // Apply new transaction impact
         insertTransaction(newTransaction)
-        val applyAmount = if (newTransaction.isIncome) newTransaction.amount else newTransaction.amount.negate()
+        val applyAmount = if (newTransaction.transactionType == "income") newTransaction.amount else newTransaction.amount.negate()
         accountDao.updateBalance(newTransaction.accountId, applyAmount)
     }
 
     @Query("SELECT * FROM transactions WHERE profileId = :profileId")
     abstract suspend fun getAllTransactionsSync(profileId: Int): List<TransactionEntity>
 
-    @Query("SELECT currency, SUM(CASE WHEN isIncome = 1 THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN isIncome = 0 THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId GROUP BY currency")
+    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId GROUP BY currency")
     abstract suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
 
-    @Query("SELECT currency, SUM(CASE WHEN isIncome = 1 THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN isIncome = 0 THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
+    @Query("SELECT currency, SUM(CASE WHEN transactionType = 'income' THEN amount ELSE 0 END) as totalIncome, SUM(CASE WHEN transactionType = 'expense' THEN amount ELSE 0 END) as totalExpense FROM transactions WHERE profileId = :profileId AND timestamp >= :start AND timestamp <= :end GROUP BY currency")
     abstract suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
 
     @Query("SELECT * FROM transactions")

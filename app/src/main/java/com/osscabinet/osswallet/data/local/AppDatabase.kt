@@ -24,7 +24,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TemplateEntity::class,
         FilterEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -71,24 +71,138 @@ abstract class AppDatabase : RoomDatabase() {
                                 displayOrder INTEGER NOT NULL DEFAULT 0
                             )
                         """)
-                        
+
                         // Copy data from old table to new table (excluding initialBalance)
                         database.execSQL("""
                             INSERT INTO accounts_new (id, name, balance, currencyCode, structureType, colorHex, icon, allowedCurrencies, profileId, isArchived, displayOrder)
                             SELECT id, name, balance, currencyCode, structureType, colorHex, icon, allowedCurrencies, profileId, isArchived, displayOrder
                             FROM accounts
                         """)
-                        
+
                         // Drop old table
                         database.execSQL("DROP TABLE accounts")
-                        
+
                         // Rename new table to accounts
                         database.execSQL("ALTER TABLE accounts_new RENAME TO accounts")
-                        
+
                         // Recreate index
                         database.execSQL("CREATE INDEX index_accounts_profileId ON accounts (profileId)")
                     }
                 }
+
+                // Migration from version 5 to 6: Replace isIncome with transactionType
+                val MIGRATION_5_6 = object : Migration(5, 6) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        // Add new transactionType column
+                        database.execSQL("ALTER TABLE transactions ADD COLUMN transactionType TEXT")
+
+                        // Migrate data: isIncome = 1 -> "income", isIncome = 0 -> "expense"
+                        database.execSQL("""
+                            UPDATE transactions
+                            SET transactionType = CASE WHEN isIncome = 1 THEN 'income' ELSE 'expense' END
+                        """)
+
+                        // Drop old isIncome column (SQLite doesn't support DROP COLUMN directly, need to recreate table)
+                        database.execSQL("""
+                            CREATE TABLE transactions_new (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL,
+                                amount TEXT NOT NULL,
+                                category TEXT NOT NULL,
+                                timestamp INTEGER NOT NULL,
+                                currency TEXT NOT NULL,
+                                transactionType TEXT NOT NULL,
+                                accountId TEXT NOT NULL,
+                                categoryId INTEGER,
+                                tags TEXT NOT NULL,
+                                paymentMethod TEXT NOT NULL,
+                                payee TEXT NOT NULL,
+                                note TEXT NOT NULL,
+                                recurring TEXT,
+                                linkedTransactionId INTEGER,
+                                profileId INTEGER NOT NULL,
+                                latitude REAL,
+                                longitude REAL,
+                                warrantyExpiration INTEGER,
+                                FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE,
+                                FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE SET NULL
+                            )
+                        """)
+
+                        // Copy data from old table to new table (excluding isIncome)
+                        database.execSQL("""
+                            INSERT INTO transactions_new (id, title, amount, category, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, linkedTransactionId, profileId, latitude, longitude, warrantyExpiration)
+                            SELECT id, title, amount, category, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, linkedTransactionId, profileId, latitude, longitude, warrantyExpiration
+                            FROM transactions
+                        """)
+
+                        // Drop old table
+                        database.execSQL("DROP TABLE transactions")
+
+                        // Rename new table to transactions
+                        database.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
+
+                        // Recreate indexes
+                        database.execSQL("CREATE INDEX index_transactions_accountId ON transactions (accountId)")
+                        database.execSQL("CREATE INDEX index_transactions_categoryId ON transactions (categoryId)")
+                        database.execSQL("CREATE INDEX index_transactions_profileId ON transactions (profileId)")
+                        database.execSQL("CREATE INDEX index_transactions_timestamp ON transactions (timestamp)")
+                    }
+                }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add new transactionType column
+                database.execSQL("ALTER TABLE transaction_filters ADD COLUMN transactionType TEXT")
+
+                // Migrate data: isIncome = 1 -> "income", isIncome = 0 -> "expense", NULL -> NULL
+                database.execSQL("""
+                    UPDATE transaction_filters
+                    SET transactionType = CASE 
+                        WHEN isIncome = 1 THEN 'income'
+                        WHEN isIncome = 0 THEN 'expense'
+                        ELSE NULL
+                    END
+                """)
+
+                // Drop old isIncome column (SQLite doesn't support DROP COLUMN directly, need to recreate table)
+                database.execSQL("""
+                    CREATE TABLE transaction_filters_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        queryNote TEXT,
+                        isNoteRegex INTEGER NOT NULL DEFAULT 0,
+                        queryPayee TEXT,
+                        isPayeeRegex INTEGER NOT NULL DEFAULT 0,
+                        categoryIds TEXT NOT NULL,
+                        accountIds TEXT NOT NULL,
+                        startDate INTEGER,
+                        endDate INTEGER,
+                        paymentMethods TEXT NOT NULL,
+                        hasWarranty INTEGER,
+                        warrantyExpirationStart INTEGER,
+                        warrantyExpirationEnd INTEGER,
+                        minAmount TEXT,
+                        maxAmount TEXT,
+                        transactionType TEXT,
+                        currencies TEXT NOT NULL
+                    )
+                """)
+
+                // Copy data from old table to new table (excluding isIncome)
+                database.execSQL("""
+                    INSERT INTO transaction_filters_new (id, name, queryNote, isNoteRegex, queryPayee, isPayeeRegex, categoryIds, accountIds, startDate, endDate, paymentMethods, hasWarranty, warrantyExpirationStart, warrantyExpirationEnd, minAmount, maxAmount, transactionType, currencies)
+                    SELECT id, name, queryNote, isNoteRegex, queryPayee, isPayeeRegex, categoryIds, accountIds, startDate, endDate, paymentMethods, hasWarranty, warrantyExpirationStart, warrantyExpirationEnd, minAmount, maxAmount, transactionType, currencies
+                    FROM transaction_filters
+                """)
+
+                // Drop old table
+                database.execSQL("DROP TABLE transaction_filters")
+
+                // Rename new table to transaction_filters
+                database.execSQL("ALTER TABLE transaction_filters_new RENAME TO transaction_filters")
+            }
+        }
                 
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
@@ -120,7 +234,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Rent', 'Key', -769226, 1, 4)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

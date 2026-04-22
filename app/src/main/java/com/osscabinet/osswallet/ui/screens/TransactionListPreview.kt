@@ -35,7 +35,7 @@ fun TransactionListFilteredPreview() {
                 categoryId = 1,
                 timestamp = System.currentTimeMillis(),
                 currency = "USD",
-                isIncome = false,
+                transactionType = "expense",
                 accountId = "1",
                 paymentMethod = "Credit Card",
                 payee = "Burger King",

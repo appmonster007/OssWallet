@@ -18,7 +18,7 @@ fun FilterEntity.toDomain(): TransactionFilter {
         warrantyExpirationEnd = warrantyExpirationEnd,
         minAmount = minAmount,
         maxAmount = maxAmount,
-        isIncome = isIncome,
+        transactionType = transactionType,
         currencies = if (currencies.isEmpty()) emptyList() else currencies.split(",")
     )
 }
@@ -41,7 +41,7 @@ fun TransactionFilter.toEntity(name: String, id: Long = 0): FilterEntity {
         warrantyExpirationEnd = warrantyExpirationEnd,
         minAmount = minAmount,
         maxAmount = maxAmount,
-        isIncome = isIncome,
+        transactionType = transactionType,
         currencies = currencies.joinToString(",")
     )
 }

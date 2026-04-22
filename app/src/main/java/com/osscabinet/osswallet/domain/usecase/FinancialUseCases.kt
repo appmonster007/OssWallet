@@ -86,7 +86,7 @@ class FinancialUseCases(
         // Apply filtered transactions to calculate the balance for the selected timeline
         accountTransactions.forEach { tx ->
             val current = breakdown[tx.currency] ?: BigDecimal.ZERO
-            breakdown[tx.currency] = if (tx.isIncome) current.add(tx.amount) else current.subtract(tx.amount)
+            breakdown[tx.currency] = if (tx.transactionType == "income") current.add(tx.amount) else current.subtract(tx.amount)
         }
 
         return breakdown.toMap()
@@ -123,7 +123,7 @@ class FinancialUseCases(
         val expenseBreakdown = mutableMapOf<String, BigDecimal>()
 
         accountTransactions.forEach { tx ->
-            if (tx.isIncome) {
+            if (tx.transactionType == "income") {
                 incomeBreakdown[tx.currency] = (incomeBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
             } else {
                 expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
@@ -137,15 +137,15 @@ class FinancialUseCases(
      * Sums transactions by currency and type (income/expense)
      * @param transactions List of transactions to sum
      * @param currency The currency to filter by
-     * @param isIncome Whether to sum income or expense transactions
+     * @param transactionType Whether to sum income or expense transactions
      * @return Total amount for the specified currency and type
      */
     private fun sumTransactionsByCurrencyAndType(
         transactions: List<Transaction>,
         currency: String,
-        isIncome: Boolean
+        transactionType: String
     ): BigDecimal {
-        return transactions.filter { it.currency == currency && it.isIncome == isIncome }
+        return transactions.filter { it.currency == currency && it.transactionType == transactionType }
             .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
     }
 
@@ -181,8 +181,8 @@ class FinancialUseCases(
         val currencies = filteredTransactions.map { it.currency }.distinct().sorted()
 
         val breakdown = currencies.mapNotNull { curr ->
-            val income = sumTransactionsByCurrencyAndType(filteredTransactions, curr, isIncome = true)
-            val expense = sumTransactionsByCurrencyAndType(filteredTransactions, curr, isIncome = false)
+            val income = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "income")
+            val expense = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "expense")
 
             if (income.signum() == 0 && expense.signum() == 0) null
             else {
@@ -323,7 +323,7 @@ class FinancialUseCases(
      */
     private fun calculateNetFlow(transactions: List<Transaction>): BigDecimal {
         return transactions.fold(BigDecimal.ZERO) { acc, t ->
-            if (t.isIncome) acc.add(t.amount) else acc.subtract(t.amount)
+            if (t.transactionType == "income") acc.add(t.amount) else acc.subtract(t.amount)
         }
     }
 

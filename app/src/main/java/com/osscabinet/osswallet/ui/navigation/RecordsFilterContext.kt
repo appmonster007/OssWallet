@@ -26,7 +26,7 @@ sealed class RecordsFilterContext {
     @Serializable
     data class ByAccountAndType(
         val accountId: String,
-        val isIncome: Boolean
+        val isIncome: Boolean // Kept for backward compatibility, will be converted to transactionType
     ) : RecordsFilterContext()
 
     /**
@@ -47,7 +47,7 @@ sealed class RecordsFilterContext {
     @Serializable
     data class Custom(
         val accountIds: List<String> = emptyList(),
-        val isIncome: Boolean? = null,
+        val isIncome: Boolean? = null, // Kept for backward compatibility, will be converted to transactionType
         val startDate: Long? = null,
         val endDate: Long? = null,
         val categoryIds: List<String> = emptyList(),

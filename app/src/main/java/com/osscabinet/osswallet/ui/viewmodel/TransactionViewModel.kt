@@ -114,7 +114,7 @@ class TransactionViewModel(
             is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(context.accountId))
             is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
                 accountIds = listOf(context.accountId),
-                isIncome = context.isIncome
+                transactionType = if (context.isIncome) "income" else "expense"
             )
             is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
                 accountIds = listOf(context.accountId),
@@ -122,7 +122,7 @@ class TransactionViewModel(
             )
             is RecordsFilterContext.Custom -> TransactionFilter(
                 accountIds = context.accountIds,
-                isIncome = context.isIncome,
+                transactionType = context.isIncome?.let { if (it) "income" else "expense" },
                 startDate = context.startDate,
                 endDate = context.endDate,
                 categoryIds = context.categoryIds.map { it.toLong() },
@@ -146,7 +146,7 @@ class TransactionViewModel(
             is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf((_initialFilterContext.value as RecordsFilterContext.ByAccount).accountId))
             is RecordsFilterContext.ByAccountAndType -> {
                 val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndType
-                TransactionFilter(accountIds = listOf(ctx.accountId), isIncome = ctx.isIncome)
+                TransactionFilter(accountIds = listOf(ctx.accountId), transactionType = if (ctx.isIncome) "income" else "expense")
             }
             is RecordsFilterContext.ByAccountAndCurrency -> {
                 val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndCurrency
@@ -156,7 +156,7 @@ class TransactionViewModel(
                 val ctx = _initialFilterContext.value as RecordsFilterContext.Custom
                 TransactionFilter(
                     accountIds = ctx.accountIds,
-                    isIncome = ctx.isIncome,
+                    transactionType = ctx.isIncome?.let { if (it) "income" else "expense" },
                     startDate = ctx.startDate,
                     endDate = ctx.endDate,
                     categoryIds = ctx.categoryIds.map { it.toLong() },
@@ -183,7 +183,7 @@ class TransactionViewModel(
         title: String,
         amount: BigDecimal,
         category: String,
-        isIncome: Boolean,
+        transactionType: String,
         accountId: String,
         currency: String,
         categoryId: Long? = null,
@@ -206,7 +206,7 @@ class TransactionViewModel(
                 category = category,
                 timestamp = timestamp,
                 currency = currency,
-                isIncome = isIncome,
+                transactionType = transactionType,
                 accountId = accountId,
                 categoryId = categoryId,
                 tags = tags,
@@ -228,7 +228,7 @@ class TransactionViewModel(
         title: String,
         amount: BigDecimal,
         category: String,
-        isIncome: Boolean,
+        transactionType: String,
         accountId: String,
         currency: String,
         categoryId: Long? = null,
@@ -250,7 +250,7 @@ class TransactionViewModel(
                 category = category,
                 timestamp = timestamp,
                 currency = currency,
-                isIncome = isIncome,
+                transactionType = transactionType,
                 accountId = accountId,
                 categoryId = categoryId,
                 tags = tags,

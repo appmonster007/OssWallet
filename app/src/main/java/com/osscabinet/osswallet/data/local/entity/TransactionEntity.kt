@@ -37,7 +37,7 @@ data class TransactionEntity(
     val category: String,
     val timestamp: Long,
     val currency: String,
-    val isIncome: Boolean,
+    val transactionType: String, // "income" or "expense"
     val accountId: String,
     val categoryId: Long? = null,
     val tags: String = "", // Comma-separated tags

@@ -381,14 +381,14 @@ fun ActiveFiltersSummary(
                 }
 
                 // Type filter
-                if (filter.isIncome != null) {
+                if (filter.transactionType != null) {
                     FilterGroup(
                         label = "Type",
                         chips = listOf(
                             FilterChipData(
-                                label = if (filter.isIncome == true) "Income" else "Expense",
+                                label = if (filter.transactionType == "income") "Income" else "Expense",
                                 isPreApplied = false,
-                                onRemove = { onRemoveFilter("isIncome", null) }
+                                onRemove = { onRemoveFilter("transactionType", null) }
                             )
                         )
                     )
@@ -576,7 +576,7 @@ fun ActiveFilterChip(
 fun countActiveFilters(filter: TransactionFilter): Int {
     var count = 0
     count += filter.accountIds.size
-    if (filter.isIncome != null) count++
+    if (filter.transactionType != null) count++
     count += filter.categoryIds.size
     count += filter.currencies.size
     if (filter.startDate != null || filter.endDate != null) count++
@@ -595,7 +595,7 @@ fun removeFilter(
 ) {
     val updatedFilter = when (field) {
         "accountIds" -> filter.copy(accountIds = filter.accountIds - (value as String))
-        "isIncome" -> filter.copy(isIncome = null)
+        "transactionType" -> filter.copy(transactionType = null)
         "dateRange" -> filter.copy(startDate = null, endDate = null)
         "categoryIds" -> filter.copy(categoryIds = filter.categoryIds - (value as Long))
         "currencies" -> filter.copy(currencies = filter.currencies - (value as String))

@@ -132,7 +132,7 @@ class DatabaseSeeder @Inject constructor(
                 transactionDao.insertTransaction(transactionWithCategoryId)
 
                 // Update account balance
-                val updateAmount = if (transaction.isIncome) transaction.amount else transaction.amount.negate()
+                val updateAmount = if (transaction.transactionType == "income") transaction.amount else transaction.amount.negate()
                 accountDao.updateBalance(transaction.accountId, updateAmount)
 
                 successfulTransactions++
@@ -158,17 +158,17 @@ class DatabaseSeeder @Inject constructor(
             FilterEntity(
                 name = "Shopping Expense",
                 categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
-                isIncome = false
+                transactionType = "expense"
             ),
             FilterEntity(
                 name = "Food & Dining Expense",
                 categoryIds = categoryNameToId["Food"]?.toString() ?: "1",
-                isIncome = false
+                transactionType = "expense"
             ),
             FilterEntity(
                 name = "Salary",
                 categoryIds = categoryNameToId["Salary"]?.toString() ?: "1",
-                isIncome = true
+                transactionType = "income"
             )
         )
 
@@ -282,7 +282,7 @@ class DatabaseSeeder @Inject constructor(
         val categoryId: Long?,
         val timestamp: Long?,
         val currency: String,
-        val isIncome: Boolean,
+        val transactionType: String,
         val accountId: String,
         val paymentMethod: String,
         val payee: String,
@@ -298,7 +298,7 @@ class DatabaseSeeder @Inject constructor(
                 category = category,
                 timestamp = timestamp ?: System.currentTimeMillis(),
                 currency = currency,
-                isIncome = isIncome,
+                transactionType = transactionType,
                 accountId = accountId,
                 categoryId = categoryId,
                 paymentMethod = paymentMethod,
@@ -320,7 +320,7 @@ class DatabaseSeeder @Inject constructor(
                     categoryId = parts.getOrNull(3)?.toLongOrNull(),
                     timestamp = parts.getOrNull(4)?.toLongOrNull(),
                     currency = parts.getOrNull(5) ?: "USD",
-                    isIncome = parts.getOrNull(6)?.toBoolean() ?: false,
+                    transactionType = if (parts.getOrNull(6)?.toBoolean() == true) "income" else "expense",
                     accountId = parts.getOrNull(7) ?: "",
                     paymentMethod = parts.getOrNull(8) ?: "Cash",
                     payee = parts.getOrNull(9) ?: "",

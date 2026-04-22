@@ -234,7 +234,7 @@ fun AccountDetailScreen(
                             var currentBalance = BigDecimal.ZERO
                             state.cashFlowTransactions.sortedByDescending { it.timestamp }.map { tx ->
                                 val balanceAfter = currentBalance
-                                val balanceBefore = if (tx.isIncome) currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
+                                val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
                                 currentBalance = balanceBefore
                                 TransactionWithBalance(tx, balanceBefore, balanceAfter)
                             }.reversed()
@@ -367,8 +367,8 @@ fun AccountDetailScreen(
                                             val currencies = filter.currencies
                                             val matchesCurrency = currencies.isEmpty() || tx.currency in currencies
                                             
-                                            val isIncome = filter.isIncome
-                                            val matchesIncome = isIncome == null || tx.isIncome == isIncome
+                                            val transactionType = filter.transactionType
+                                            val matchesIncome = transactionType == null || tx.transactionType == transactionType
                                             
                                             val paymentMethods = filter.paymentMethods
                                             val matchesPaymentMethod = paymentMethods.isEmpty() || tx.paymentMethod in paymentMethods

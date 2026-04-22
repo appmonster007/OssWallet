@@ -196,22 +196,22 @@ fun FilterFields(
                         onClick = {
                             onFilterChange(
                                 filter.copy(
-                                    isIncome = when (index) {
-                                        1 -> true
-                                        2 -> false
+                                    transactionType = when (index) {
+                                        1 -> "income"
+                                        2 -> "expense"
                                         else -> null
                                     }
                                 )
                             )
                         },
                         selected = when (index) {
-                            1 -> filter.isIncome == true
-                            2 -> filter.isIncome == false
-                            else -> filter.isIncome == null
+                            1 -> filter.transactionType == "income"
+                            2 -> filter.transactionType == "expense"
+                            else -> filter.transactionType == null
                         },
                         icon = {
                             when (index) {
-                                0 -> if (filter.isIncome == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                0 -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
                                 1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
                                 2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
                             }

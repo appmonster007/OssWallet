@@ -23,13 +23,13 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Surface(
             modifier = Modifier.size(64.dp),
             shape = CircleShape,
-            color = if (isSelected) Color(0xFF004D56) else Color(0xFFF1F3F4)
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
                     contentDescription = name,
-                    tint = if (isSelected) Color.White else Color(0xFF546E7A),
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -38,7 +38,7 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
         Text(
             name,
             style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) Color(0xFF004D56) else Color(0xFF546E7A)
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

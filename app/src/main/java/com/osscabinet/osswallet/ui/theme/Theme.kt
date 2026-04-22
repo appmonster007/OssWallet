@@ -37,6 +37,13 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = OnBackgroundDark,
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
+    outlineVariant = OutlineVariantDark,
+    inverseSurface = InverseSurfaceDark,
+    inverseOnSurface = InverseOnSurfaceDark,
+    scrim = ScrimDark
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -60,6 +67,13 @@ private val LightColorScheme = lightColorScheme(
     onBackground = OnBackgroundLight,
     surface = SurfaceLight,
     onSurface = OnSurfaceLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineLight,
+    outlineVariant = OutlineVariantLight,
+    inverseSurface = InverseSurfaceLight,
+    inverseOnSurface = InverseOnSurfaceLight,
+    scrim = ScrimLight
 )
 
 private val AmoledColorScheme = darkColorScheme(
@@ -83,8 +97,13 @@ private val AmoledColorScheme = darkColorScheme(
     onBackground = OnBackgroundDark,
     surface = Color.Black,
     onSurface = OnSurfaceDark,
-    surfaceVariant = Color(0xFF121212),
-    onSurfaceVariant = OnSurfaceDark
+    surfaceVariant = Color(0xFF1A1D1A),
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
+    outlineVariant = Color(0xFF1A1D1A),
+    inverseSurface = InverseSurfaceDark,
+    inverseOnSurface = InverseOnSurfaceDark,
+    scrim = ScrimDark
 )
 
 @Composable
@@ -99,9 +118,12 @@ fun OssWalletTheme(
         else -> isSystemInDarkTheme()
     }
 
+    // Dynamic color is available on Android 12+
+    val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
     val colorScheme = when {
         theme == "Amoled" -> AmoledColorScheme
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicColor && dynamicColorAvailable -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

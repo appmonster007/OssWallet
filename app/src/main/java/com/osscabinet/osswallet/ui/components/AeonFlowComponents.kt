@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 import androidx.compose.ui.tooling.preview.Preview
@@ -188,8 +190,8 @@ fun AeonFlowBadge(
     type: CashFlowType,
     currency: String,
     modifier: Modifier = Modifier,
-    incomeColor: Color = Color(0xFF4CAF50),
-    expenseColor: Color = Color(0xFFF44336),
+    incomeColor: Color = PositiveAmountColor,
+    expenseColor: Color = NegativeAmountColor,
     precision: Int = 2
 ) {
     Surface(

@@ -21,6 +21,8 @@ import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import kotlinx.serialization.Serializable
@@ -159,7 +161,7 @@ private fun NetWorthContent(
                         amount = netIncome,
                         currency = baseCurrency,
                         precision = precision,
-                        color = Color(0xFF4CAF50),
+                        color = PositiveAmountColor,
                         isIncome = true
                     )
                     FlowBadge(
@@ -167,7 +169,7 @@ private fun NetWorthContent(
                         amount = netExpense,
                         currency = baseCurrency,
                         precision = precision,
-                        color = Color(0xFFF44336),
+                        color = NegativeAmountColor,
                         isIncome = false
                     )
                 }

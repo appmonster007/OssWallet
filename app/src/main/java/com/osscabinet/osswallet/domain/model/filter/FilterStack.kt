@@ -14,6 +14,7 @@ import java.math.BigDecimal
  * - OR logic: Union of all matching criteria (e.g., category A OR category B)
  * - AND logic: Intersection of all matching criteria (e.g., category A AND date range)
  * - Conflicting values: When combining with OR, conflicting values (e.g., true vs false) result in "all" (null)
+ * - Date/Amount/Warranty ranges: Use min/max for simplified range combination
  */
 data class FilterStack(
     val activeFilters: List<UnifiedFilter>,
@@ -201,16 +202,16 @@ data class FilterStack(
                                     orResult.isIncome == false && subResult.isIncome == true -> null
                                     else -> orResult.isIncome ?: subResult.isIncome
                                 },
-                                // For date ranges: if different ranges, show all (null)
-                                startDate = if (orResult.startDate != subResult.startDate) null else (orResult.startDate ?: subResult.startDate),
-                                endDate = if (orResult.endDate != subResult.endDate) null else (orResult.endDate ?: subResult.endDate),
-                                // For amount ranges: if different ranges, show all (null)
-                                minAmount = if (orResult.minAmount != subResult.minAmount) null else (orResult.minAmount ?: subResult.minAmount),
-                                maxAmount = if (orResult.maxAmount != subResult.maxAmount) null else (orResult.maxAmount ?: subResult.maxAmount),
-                                // For warranty: if different ranges, show all (null)
+                                // For date ranges: use min start date and max end date
+                                startDate = listOfNotNull(orResult.startDate, subResult.startDate).minOrNull(),
+                                endDate = listOfNotNull(orResult.endDate, subResult.endDate).maxOrNull(),
+                                // For amount ranges: use min min amount and max max amount
+                                minAmount = listOfNotNull(orResult.minAmount, subResult.minAmount).minOrNull(),
+                                maxAmount = listOfNotNull(orResult.maxAmount, subResult.maxAmount).maxOrNull(),
+                                // For warranty: use min start and max end
                                 hasWarranty = if (orResult.hasWarranty != subResult.hasWarranty) null else (orResult.hasWarranty ?: subResult.hasWarranty),
-                                warrantyExpirationStart = if (orResult.warrantyExpirationStart != subResult.warrantyExpirationStart) null else (orResult.warrantyExpirationStart ?: subResult.warrantyExpirationStart),
-                                warrantyExpirationEnd = if (orResult.warrantyExpirationEnd != subResult.warrantyExpirationEnd) null else (orResult.warrantyExpirationEnd ?: subResult.warrantyExpirationEnd),
+                                warrantyExpirationStart = listOfNotNull(orResult.warrantyExpirationStart, subResult.warrantyExpirationStart).minOrNull(),
+                                warrantyExpirationEnd = listOfNotNull(orResult.warrantyExpirationEnd, subResult.warrantyExpirationEnd).maxOrNull(),
                                 // For note/payee: OR logic - combine with space
                                 queryNote = listOfNotNull(orResult.queryNote, subResult.queryNote).filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
                                 queryPayee = listOfNotNull(orResult.queryPayee, subResult.queryPayee).filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },

@@ -266,6 +266,22 @@ fun DashboardScreen(
                             }
                         }
                     )
+                },
+                bottomBar = {
+                    ExpressiveNavigationBar(
+                        selectedTab = pagerState.currentPage,
+                        onTabSelected = { index ->
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        tabs = tabs
+                    )
+                },
+                floatingActionButton = {
+                    AeonExpandableFab(
+                        onAddClick = { type, name -> navigate { onAddClick(type, name) } },
+                        templates = allTemplates,
+                        modifier = Modifier.padding(bottom = 80.dp)
+                    )
                 }
             ) { innerPadding ->
                 // Context indicator banner (if view focus is applied)
@@ -314,21 +330,6 @@ fun DashboardScreen(
                 }
             }
         }
-
-        ExpressiveNavigationBar(
-            selectedTab = pagerState.currentPage,
-            onTabSelected = { index ->
-                scope.launch { pagerState.animateScrollToPage(index) }
-            },
-            tabs = tabs,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-
-        AeonExpandableFab(
-            onAddClick = { type, name -> navigate { onAddClick(type, name) } },
-            templates = allTemplates,
-            fabPaddingBottom = 96.dp
-        )
     }
 }
 

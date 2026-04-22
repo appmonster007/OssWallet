@@ -9,6 +9,11 @@ import java.math.BigDecimal
 /**
  * A stack of filters that can be combined with logical operators.
  * This enables stacking multiple filters in sequence and creating complex filter combinations.
+ *
+ * Redesigned for intuitive filter combination:
+ * - OR logic: Union of all matching criteria (e.g., category A OR category B)
+ * - AND logic: Intersection of all matching criteria (e.g., category A AND date range)
+ * - Conflicting values: When combining with OR, conflicting values (e.g., true vs false) result in "all" (null)
  */
 data class FilterStack(
     val activeFilters: List<UnifiedFilter>,

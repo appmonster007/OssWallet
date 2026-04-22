@@ -77,9 +77,11 @@ import com.osscabinet.ossWallet.ui.viewmodel.DashboardCardType
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
+import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
@@ -88,7 +90,6 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.components.NavigationPill
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import java.math.BigDecimal
@@ -198,8 +199,18 @@ fun DashboardScreen(
         }
     }
     val tabs = listOf(
-        Icons.Rounded.Dashboard to "Glance",
-        Icons.Rounded.History to "Recent Activities"
+        NavigationTab(
+            icon = Icons.Rounded.Dashboard,
+            selectedIcon = Icons.Rounded.Dashboard,
+            label = "Glance",
+            contentDescription = "Glance tab"
+        ),
+        NavigationTab(
+            icon = Icons.Rounded.History,
+            selectedIcon = Icons.Rounded.History,
+            label = "Recent Activities",
+            contentDescription = "Recent Activities tab"
+        )
     )
 
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -304,8 +315,11 @@ fun DashboardScreen(
             }
         }
 
-        NavigationPill(
-            pagerState = pagerState,
+        ExpressiveNavigationBar(
+            selectedTab = pagerState.currentPage,
+            onTabSelected = { index ->
+                scope.launch { pagerState.animateScrollToPage(index) }
+            },
             tabs = tabs,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -313,7 +327,7 @@ fun DashboardScreen(
         AeonExpandableFab(
             onAddClick = { type, name -> navigate { onAddClick(type, name) } },
             templates = allTemplates,
-            fabPaddingBottom = 24.dp
+            fabPaddingBottom = 96.dp
         )
     }
 }
@@ -324,7 +338,7 @@ fun DashboardScreen(
 fun DashboardContent(
     innerPadding: PaddingValues,
     pagerState: androidx.compose.foundation.pager.PagerState,
-    tabs: List<Pair<ImageVector, String>>,
+    tabs: List<NavigationTab>,
     state: DashboardUiState.Success,
     currentTheme: String,
     gridColumns: Int,

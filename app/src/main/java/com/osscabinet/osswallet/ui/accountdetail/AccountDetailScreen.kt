@@ -36,8 +36,9 @@ import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
-import com.osscabinet.ossWallet.ui.components.NavigationPill
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
@@ -81,6 +82,7 @@ fun AccountDetailScreen(
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -102,9 +104,19 @@ fun AccountDetailScreen(
 
     val pageCount = 2
     val pagerState = rememberPagerState(initialPage = 0) { pageCount }
-    val tabs: List<Pair<ImageVector, String>> = listOf(
-        Icons.Rounded.Dashboard to "Overview",
-        Icons.Rounded.Receipt to "Transactions"
+    val tabs = listOf(
+        NavigationTab(
+            icon = Icons.Rounded.Dashboard,
+            selectedIcon = Icons.Rounded.Dashboard,
+            label = "Overview",
+            contentDescription = "Overview tab"
+        ),
+        NavigationTab(
+            icon = Icons.Rounded.Receipt,
+            selectedIcon = Icons.Rounded.Receipt,
+            label = "Transactions",
+            contentDescription = "Transactions tab"
+        )
     )
 
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -183,114 +195,117 @@ fun AccountDetailScreen(
         }
     ) { screenPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            when (val state = uiState) {
-                is AccountDetailUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+        when (val state = uiState) {
+            is AccountDetailUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-                is AccountDetailUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message)
-                    }
+            }
+            is AccountDetailUiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(state.message)
                 }
-                is AccountDetailUiState.Success -> {
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(screenPadding),
-                        verticalAlignment = Alignment.Top
-                    ) { page ->
-                        when (page) {
-                            0 -> {
-                                Box(
+            }
+            is AccountDetailUiState.Success -> {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(screenPadding),
+                    verticalAlignment = Alignment.Top
+                ) { page ->
+                    when (page) {
+                        0 -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                DynamicAccountDetailCards(
+                                    state = state,
+                                    cardsConfig = accountDetailCardsConfig,
+                                    cardManagerViewModel = cardManagerViewModel,
+                                    accountDetailViewModel = accountDetailViewModel,
+                                    onRecordsClick = onRecordsClick,
+                                    accountId = accountId,
+                                    currentTheme = currentTheme,
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(MaterialTheme.colorScheme.background)
+                                        .padding(horizontal = 16.dp),
+                                    screenPadding = PaddingValues(),
+                                    showAddCardDialog = showAddCardDialog,
+                                    onShowAddCardDialogChange = { showAddCardDialog = it },
+                                    cardAnimationEnabled = cardAnimationEnabled
+                                )
+                            }
+                        }
+                        1 -> {
+                            // Transactions tab content using RecentActivitiesCard
+                            val transactionsWithBalanceList = remember(state.recentTransactions, state.account.balance) {
+                                // Calculate running balance from transactions
+                                // Start from zero and apply transactions in reverse order
+                                var currentBalance = BigDecimal.ZERO
+                                state.recentTransactions.sortedByDescending { it.timestamp }.map { tx ->
+                                    val balanceAfter = currentBalance
+                                    val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
+                                    currentBalance = balanceBefore
+                                    TransactionWithBalance(tx, balanceBefore, balanceAfter)
+                                }.reversed()
+                            }.sortedByDescending { it.transaction.timestamp }
+
+                            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                            val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
+                            val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
+                            val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+                            val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
+
+                            if (transactionsWithBalanceList.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    DynamicAccountDetailCards(
-                                        state = state,
-                                        cardsConfig = accountDetailCardsConfig,
-                                        cardManagerViewModel = cardManagerViewModel,
-                                        accountDetailViewModel = accountDetailViewModel,
-                                        onRecordsClick = onRecordsClick,
-                                        accountId = accountId,
-                                        currentTheme = currentTheme,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(horizontal = 16.dp),
-                                        screenPadding = PaddingValues(),
-                                        showAddCardDialog = showAddCardDialog,
-                                        onShowAddCardDialogChange = { showAddCardDialog = it },
-                                        cardAnimationEnabled = cardAnimationEnabled
-                                    )
-                                }
-                            }
-                            1 -> {
-                                // Transactions tab content using RecentActivitiesCard
-                                val transactionsWithBalanceList = remember(state.recentTransactions, state.account.balance) {
-                                    // Calculate running balance from transactions
-                                    // Start from zero and apply transactions in reverse order
-                                    var currentBalance = BigDecimal.ZERO
-                                    state.recentTransactions.sortedByDescending { it.timestamp }.map { tx ->
-                                        val balanceAfter = currentBalance
-                                        val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
-                                        currentBalance = balanceBefore
-                                        TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                                    }.reversed()
-                                }.sortedByDescending { it.transaction.timestamp }
-
-                                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-                                val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-                                val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
-                                val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-                                val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
-
-                                if (transactionsWithBalanceList.isEmpty()) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Icon(
-                                                Icons.Rounded.History,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(64.dp),
-                                                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                            )
-                                            Spacer(modifier = Modifier.height(16.dp))
-                                            Text(
-                                                "No transactions yet",
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                        }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Rounded.History,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            "No transactions yet",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
                                     }
-                                } else {
-                                    RecentActivitiesCard(
-                                        recentTransactions = transactionsWithBalanceList,
-                                        accountNamesMap = accountNamesMap,
-                                        categoryMap = categoryMap,
-                                        decimalPrecision = state.decimalPrecision,
-                                        onRecordsClick = { context -> navigate { onRecordsClick(context) } },
-                                        onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
-                                        baseCurrency = state.baseCurrency,
-                                        exchangeRates = state.exchangeRates,
-                                        accountCurrencyMap = accountCurrencyMap,
-                                        contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
-                                        modifier = Modifier.fillMaxSize()
-                                    )
                                 }
+                            } else {
+                                RecentActivitiesCard(
+                                    recentTransactions = transactionsWithBalanceList,
+                                    accountNamesMap = accountNamesMap,
+                                    categoryMap = categoryMap,
+                                    decimalPrecision = state.decimalPrecision,
+                                    onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                                    onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
+                                    baseCurrency = state.baseCurrency,
+                                    exchangeRates = state.exchangeRates,
+                                    accountCurrencyMap = accountCurrencyMap,
+                                    contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
+                        }
                     }
                 }
             }
         }
 
-        NavigationPill(
-            pagerState = pagerState,
+        ExpressiveNavigationBar(
+            selectedTab = pagerState.currentPage,
+            onTabSelected = { index ->
+                scope.launch { pagerState.animateScrollToPage(index) }
+            },
             tabs = tabs,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -298,7 +313,7 @@ fun AccountDetailScreen(
         AeonExpandableFab(
             onAddClick = { type, name -> navigate { onAddTransactionClick(accountId, type, name) } },
             templates = allTemplates,
-            fabPaddingBottom = if (pagerState.currentPage == 1) 100.dp else 16.dp
+            fabPaddingBottom = 96.dp
         )
         }
 

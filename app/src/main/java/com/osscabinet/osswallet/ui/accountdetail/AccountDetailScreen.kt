@@ -74,8 +74,7 @@ fun AccountDetailScreen(
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onAddTransactionClick: (String, Int?, String?) -> Unit,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
-    onRecordsClickWithFilterStack: (com.osscabinet.ossWallet.domain.model.filter.FilterStack) -> Unit = {}
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -484,7 +483,7 @@ fun DynamicAccountDetailCards(
                         onShowCurrencyBadgesChange = { show ->
                             accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardConfig.cardId, show)
                         },
-                        onClick = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forAccount(accountId)) },
+                        onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccount(accountId)) },
                         onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                     )
                 }
@@ -518,8 +517,8 @@ fun DynamicAccountDetailCards(
                                 accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, it)
                             },
                             onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) },
-                            onClickIncome = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forAccountAndType(accountId, isIncome = true)) },
-                            onClickExpense = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forAccountAndType(accountId, isIncome = false)) }
+                            onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = true)) },
+                            onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = false)) }
                         )
                     } ?: Box(modifier = Modifier.size(0.dp))
                 }
@@ -557,7 +556,7 @@ fun DynamicAccountDetailCards(
                             },
                             onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) },
                             onCurrencyClick = { currency ->
-                                onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forAccountAndCurrency(accountId, currency))
+                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndCurrency(accountId, currency))
                             }
                         )
                     } ?: Box(modifier = Modifier.size(0.dp))

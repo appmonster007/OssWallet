@@ -1,8 +1,35 @@
 package com.osscabinet.ossWallet.domain.model.filter
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.encoding.decodeStructure
 import java.math.BigDecimal
+
+/**
+ * Custom serializer for BigDecimal to preserve precision during serialization.
+ * Serializes BigDecimal as string and deserializes back to BigDecimal.
+ */
+object BigDecimalSerializer : KSerializer<BigDecimal> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("BigDecimal")
+
+    override fun serialize(encoder: Encoder, value: BigDecimal) {
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.toPlainString())
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): BigDecimal {
+        return decoder.decodeStructure(descriptor) {
+            decodeStringElement(descriptor, 0).let { BigDecimal(it) }
+        }
+    }
+}
 
 /**
  * Unified filter model that supports atomic filters, composite filters, and saved filter references.
@@ -58,7 +85,9 @@ sealed class UnifiedFilter {
      */
     @Serializable
     data class AmountFilter(
+        @Serializable(with = BigDecimalSerializer::class)
         val min: BigDecimal? = null,
+        @Serializable(with = BigDecimalSerializer::class)
         val max: BigDecimal? = null
     ) : UnifiedFilter()
 

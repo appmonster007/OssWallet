@@ -196,8 +196,8 @@ data class FilterStack(
                                 paymentMethods = (orResult.paymentMethods + subResult.paymentMethods).distinct(),
                                 currencies = (orResult.currencies + subResult.currencies).distinct(),
                                 // For isIncome: if combining income and expense, show all (null)
-                                isIncome = if (orResult.isIncome == true && subResult.isIncome == false ||
-                                             orResult.isIncome == false && subResult.isIncome == true) {
+                                isIncome = if (orResult.isIncome != null && subResult.isIncome != null &&
+                                             orResult.isIncome != subResult.isIncome) {
                                     null // Show both income and expense (All)
                                 } else {
                                     orResult.isIncome ?: subResult.isIncome

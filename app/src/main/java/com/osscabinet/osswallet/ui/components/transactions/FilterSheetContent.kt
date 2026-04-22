@@ -51,7 +51,7 @@ fun FilterSheetContent(
     onResetToInitial: (() -> Unit)? = null
 ) {
     var localFilter by remember { mutableStateOf(filter) }
-    var selectedFilterId by remember { mutableStateOf<Long?>(null) }
+    var selectedFilterIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var filtersExpanded by remember { mutableStateOf(false) }
 
     // Debouncing mechanism for instant filter application
@@ -64,6 +64,82 @@ fun FilterSheetContent(
             delay(debounceMs)
             onApplyFilter(newFilter)
         }
+    }
+
+    // Combine multiple filters from selected presets
+    fun combineFilters(filters: List<TransactionFilter>): TransactionFilter {
+        if (filters.isEmpty()) return TransactionFilter()
+        if (filters.size == 1) return filters[0]
+
+        // Combine category IDs (union)
+        val combinedCategoryIds = filters.flatMap { it.categoryIds }.distinct()
+
+        // Combine account IDs (union)
+        val combinedAccountIds = filters.flatMap { it.accountIds }.distinct()
+
+        // Combine payment methods (union)
+        val combinedPaymentMethods = filters.flatMap { it.paymentMethods }.distinct()
+
+        // Combine currencies (union)
+        val combinedCurrencies = filters.flatMap { it.currencies }.distinct()
+
+        // Combine isIncome - if both true and false present, show all (null)
+        val hasIncome = filters.any { it.isIncome == true }
+        val hasExpense = filters.any { it.isIncome == false }
+        val combinedIsIncome = if (hasIncome && hasExpense) null else filters.firstOrNull { it.isIncome != null }?.isIncome
+
+        // Combine date ranges - if different ranges, show all (null)
+        val startDates = filters.mapNotNull { it.startDate }.distinct()
+        val endDates = filters.mapNotNull { it.endDate }.distinct()
+        val combinedStartDate = if (startDates.size == 1) startDates.first() else null
+        val combinedEndDate = if (endDates.size == 1) endDates.first() else null
+
+        // Combine amount ranges - if different ranges, show all (null)
+        val minAmounts = filters.mapNotNull { it.minAmount }.distinct()
+        val maxAmounts = filters.mapNotNull { it.maxAmount }.distinct()
+        val combinedMinAmount = if (minAmounts.size == 1) minAmounts.first() else null
+        val combinedMaxAmount = if (maxAmounts.size == 1) maxAmounts.first() else null
+
+        // Combine warranty expiration - if different ranges, show all (null)
+        val warrantyStartDates = filters.mapNotNull { it.warrantyExpirationStart }.distinct()
+        val warrantyEndDates = filters.mapNotNull { it.warrantyExpirationEnd }.distinct()
+        val combinedWarrantyStart = if (warrantyStartDates.size == 1) warrantyStartDates.first() else null
+        val combinedWarrantyEnd = if (warrantyEndDates.size == 1) warrantyEndDates.first() else null
+
+        // Combine hasWarranty - if both true and false present, show all (null)
+        val hasWarrantyTrue = filters.any { it.hasWarranty == true }
+        val hasWarrantyFalse = filters.any { it.hasWarranty == false }
+        val combinedHasWarranty = if (hasWarrantyTrue && hasWarrantyFalse) null else filters.firstOrNull { it.hasWarranty != null }?.hasWarranty
+
+        // For note and payee, use OR logic - combine with space if multiple
+        val notes = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }
+        val payees = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }
+        val combinedNote = if (notes.isEmpty()) null else notes.joinToString(" ")
+        val combinedPayee = if (payees.isEmpty()) null else payees.joinToString(" ")
+
+        return TransactionFilter(
+            categoryIds = combinedCategoryIds,
+            accountIds = combinedAccountIds,
+            paymentMethods = combinedPaymentMethods,
+            currencies = combinedCurrencies,
+            isIncome = combinedIsIncome,
+            startDate = combinedStartDate,
+            endDate = combinedEndDate,
+            minAmount = combinedMinAmount,
+            maxAmount = combinedMaxAmount,
+            warrantyExpirationStart = combinedWarrantyStart,
+            warrantyExpirationEnd = combinedWarrantyEnd,
+            hasWarranty = combinedHasWarranty,
+            queryNote = combinedNote,
+            queryPayee = combinedPayee
+        )
+    }
+
+    fun updateFilterFromSelectedPresets() {
+        val selectedFilters = savedFilters.filter { it.id in selectedFilterIds }
+        val combinedFilter = combineFilters(selectedFilters.map { it.toDomain() })
+        localFilter = combinedFilter
+        applyFilterWithDebounce(combinedFilter, debounceMs = 0)
     }
 
     // Sync localFilter with filter prop when it changes (e.g., context filters applied by ViewModel)
@@ -88,6 +164,7 @@ fun FilterSheetContent(
                     onSetDateRange = { start, end ->
                         localFilter = localFilter.copy(startDate = start, endDate = end)
                         onSetDateRange(start, end)
+                        selectedFilterIds = emptySet()  // Clear presets when manually modified
                         applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                     },
                     onClick = onToggleExpand,
@@ -106,7 +183,7 @@ fun FilterSheetContent(
                     onRemoveFilter = { field, value ->
                         removeFilter(localFilter, field, value) { updatedFilter ->
                             localFilter = updatedFilter
-                            selectedFilterId = null // Clear preset when manually modified
+                            selectedFilterIds = emptySet() // Clear presets when manually modified
                             applyFilterWithDebounce(updatedFilter, debounceMs = 0)  // Immediate apply
                         }
                     },
@@ -115,6 +192,7 @@ fun FilterSheetContent(
                         onResetToInitial?.invoke()
                         // Reset to None (All) - clear all filters
                         localFilter = TransactionFilter()
+                        selectedFilterIds = emptySet()
                         applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                     }
                 )
@@ -145,7 +223,7 @@ fun FilterSheetContent(
                                 // Call the ViewModel's reset method if available
                                 onResetToInitial?.invoke()
                                 localFilter = TransactionFilter()
-                                selectedFilterId = null
+                                selectedFilterIds = emptySet()
                                 applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp)
@@ -179,7 +257,7 @@ fun FilterSheetContent(
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (selectedFilterId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                                     ),
                                     onClick = { filtersExpanded = !filtersExpanded }
                                 ) {
@@ -188,11 +266,12 @@ fun FilterSheetContent(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        val selectedName = savedFilters.find { it.id == selectedFilterId }?.name ?: "Select a preset..."
+                                        val selectedNames = savedFilters.filter { it.id in selectedFilterIds }.map { it.name }
+                                        val selectedName = if (selectedNames.isEmpty()) "Select presets..." else selectedNames.joinToString(", ")
                                         Text(
                                             text = selectedName,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedFilterId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1
                                         )
                                         Icon(
@@ -212,12 +291,16 @@ fun FilterSheetContent(
                                         DropdownMenuItem(
                                             text = { Text(savedFilter.name) },
                                             onClick = {
-                                                localFilter = savedFilter.toDomain()
-                                                selectedFilterId = savedFilter.id
-                                                filtersExpanded = false
-                                                applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
+                                                // Toggle selection
+                                                selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
+                                                    selectedFilterIds - savedFilter.id
+                                                } else {
+                                                    selectedFilterIds + savedFilter.id
+                                                }
+                                                // Update filter from selected presets
+                                                updateFilterFromSelectedPresets()
                                             },
-                                            trailingIcon = if (selectedFilterId == savedFilter.id) {
+                                            trailingIcon = if (savedFilter.id in selectedFilterIds) {
                                                 { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
                                             } else null
                                         )
@@ -233,7 +316,7 @@ fun FilterSheetContent(
                         onFilterChange = {
                             localFilter = it
                             // Clear preset selection when a field is manually modified
-                            selectedFilterId = null
+                            selectedFilterIds = emptySet()
                             applyFilterWithDebounce(it, debounceMs = 300)  // Debounced apply
                         },
                         accounts = accounts,

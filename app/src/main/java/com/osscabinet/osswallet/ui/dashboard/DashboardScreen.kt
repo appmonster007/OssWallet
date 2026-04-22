@@ -116,6 +116,7 @@ fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
+    onEditBudgetClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
@@ -282,6 +283,7 @@ fun DashboardScreen(
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
                                 onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
                                 onBudgetsClick = { navigate(onBudgetsClick) },
+                                onEditBudgetClick = { category -> navigate { onEditBudgetClick(category) } },
                                 onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
                                 budgets = budgets,
@@ -332,6 +334,7 @@ fun DashboardContent(
     onAccountClick: (String) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
+    onEditBudgetClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     transactionViewModel: TransactionViewModel,
     budgets: List<Budget>,
@@ -501,7 +504,9 @@ fun DashboardContent(
                                         cardId = cardConfig.cardId,
                                         onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
-                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
+                                        onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
+                                        onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
@@ -547,6 +552,7 @@ fun DashboardContent(
                                 if (budgets.isNotEmpty()) {
                                     BudgetsCard(
                                         onManageClick = onBudgetsClick,
+                                        onBudgetClick = onEditBudgetClick,
                                         budgets = budgets,
                                         baseCurrency = state.baseCurrency,
                                         modifier = Modifier.fillMaxWidth(),

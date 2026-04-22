@@ -236,6 +236,7 @@ fun OssWalletNavGraph(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
+                onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) },
                 onAddClick = { type, template ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                 },

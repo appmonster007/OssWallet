@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.components.CategoryMultiSelectPicker
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -97,16 +98,14 @@ fun FilterFields(
             )
         }
         "Categories" -> {
-            MultiSelectionDialog(
-                title = "Select Categories",
-                items = allCategories,
-                selectedItems = allCategories.filter { it.id in filter.categoryIds },
+            CategorySelectionDialog(
+                categories = allCategories,
+                selectedCategoryIds = filter.categoryIds.toSet(),
                 onDismissRequest = { activeDialog = null },
-                onConfirm = { selected ->
-                    onFilterChange(filter.copy(categoryIds = selected.map { it.id }))
+                onConfirm = { selectedIds ->
+                    onFilterChange(filter.copy(categoryIds = selectedIds.toList()))
                     activeDialog = null
-                },
-                itemLabel = { it.name }
+                }
             )
         }
         "Currencies" -> {
@@ -620,6 +619,67 @@ fun MultiSelectionDialogPreview() {
             itemLabel = { it }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategorySelectionDialog(
+    categories: List<CategoryEntity>,
+    selectedCategoryIds: Set<Long>,
+    onDismissRequest: () -> Unit,
+    onConfirm: (Set<Long>) -> Unit
+) {
+    var tempSelectedIds by remember { mutableStateOf(selectedCategoryIds) }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        modifier = Modifier.fillMaxWidth(0.9f),
+        title = {
+            Text(
+                "Select Categories",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                CategoryMultiSelectPicker(
+                    categories = categories,
+                    selectedCategoryIds = tempSelectedIds,
+                    onCategoryToggle = { categoryId ->
+                        tempSelectedIds = if (categoryId in tempSelectedIds) {
+                            tempSelectedIds - categoryId
+                        } else {
+                            tempSelectedIds + categoryId
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(tempSelectedIds) },
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Confirm Selection", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismissRequest,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

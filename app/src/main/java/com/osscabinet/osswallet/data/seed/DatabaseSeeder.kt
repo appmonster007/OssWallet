@@ -164,6 +164,11 @@ class DatabaseSeeder @Inject constructor(
                 name = "Food & Dining Expense",
                 categoryIds = categoryNameToId["Food"]?.toString() ?: "1",
                 isIncome = false
+            ),
+            FilterEntity(
+                name = "Salary",
+                categoryIds = categoryNameToId["Salary"]?.toString() ?: "1",
+                isIncome = true
             )
         )
 

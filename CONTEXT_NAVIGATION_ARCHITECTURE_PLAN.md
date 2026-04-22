@@ -1,4 +1,4 @@
-# Context Navigation Architecture Plan (Unified with FilterStack)
+# Context Navigation Architecture Plan (Simplified & Unified with FilterStack)
 
 ## Current State Analysis
 
@@ -117,58 +117,51 @@ onCurrencyClick = { currency ->
 - Same navigation logic repeated in Dashboard, AccountsView, and AccountDetail
 - CurrencyBalancesCard and CashFlowCard have identical navigation patterns in different screens
 - No reuse of FilterStack creation logic
-- FilterStack infrastructure exists but not leveraged for navigation contexts
+- **Root Cause**: Cards manually construct context parameters instead of using reusable builders
 
 #### 2. **Tight Coupling**
 - Cards directly create context objects with manual parameter construction
 - Navigation logic embedded in card components
 - Hard to test and maintain
-- FilterStack not used in navigation layer despite being the domain filter standard
+- **Root Cause**: No abstraction for common navigation patterns
 
 #### 3. **Inconsistency**
 - Some cards use specific context types (ByAccount, ByAccountAndType)
 - Others use generic Custom context with manual parameter lists
 - No clear pattern for when to use which
-- FilterStack exists in domain but navigation contexts use different structure
+- **Root Cause**: Multiple ways to achieve the same result
 
 #### 4. **Limited Extensibility**
 - Adding new screen requires creating new context sealed class
 - Adding new card navigation requires modifying multiple files
-- No abstraction for common navigation patterns
-- FilterStack's composition capabilities not utilized for navigation
+- **Root Cause**: Context types are screen-specific, not generic
 
 #### 5. **Type Safety Issues**
 - Custom context accepts arbitrary parameters but no validation
 - CategoryIds stored as String for serialization, converted to Long elsewhere
 - Amounts stored as Double, converted to BigDecimal elsewhere
-- FilterStack has strong typing but navigation contexts bypass it
+- **Root Cause**: Context parameters use primitive types instead of domain types
 
 #### 6. **Missing Integration**
 - FilterStack serialization support missing for navigation
 - No direct mapping between context types and FilterStack
-- Context parameters manually converted to TransactionFilter instead of using FilterStack.toTransactionFilter()
-- Existing UnifiedFilter types not leveraged for navigation
-
-#### 7. **Missing Contexts**
-- No context for LoansScreen navigation
-- No context for AnalyticsScreen navigation
-- No context for BudgetsScreen navigation with pre-filtered budget
+- **Root Cause**: Navigation contexts don't leverage existing FilterStack infrastructure
 
 ---
 
-## Proposed Architecture (Unified with FilterStack)
+## Proposed Architecture (Simplified & Unified with FilterStack)
 
 ### Core Principles
 
 1. **Reuse Existing Infrastructure**: Leverage FilterStack, UnifiedFilter, and LogicalOperator
-2. **Separation of Concerns**: Cards should not know about navigation logic
+2. **Single Generic Context**: Use FilterStack directly as the universal navigation context
 3. **Type Safety**: Strong typing via UnifiedFilter types
-4. **Composition**: Build complex FilterStacks using existing composition
-5. **Extensibility**: Easy to add new screens using FilterStack factories
-6. **Testability**: Pure functions for FilterStack creation
-7. **Single Source of Truth**: FilterStack is the domain filter standard, use it everywhere
+4. **Simple Factories**: Generic builder pattern for common navigation patterns
+5. **Minimal Changes**: Only add serialization to existing domain models
+6. **No Delegates**: Remove unnecessary abstraction layers
+7. **Direct Integration**: Cards use FilterStack factories directly
 
-### Architecture Layers
+### Architecture Layers (Simplified)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -179,14 +172,12 @@ onCurrencyClick = { currency ->
                        │ Uses
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Navigation Context Factory                       │
-│  - RecordsFilterStackFactory (Builds FilterStack)            │
-│  - AccountsFilterStackFactory (Builds FilterStack)           │
-│  - BudgetsFilterStackFactory (Builds FilterStack) (NEW)      │
-│  - LoansFilterStackFactory (Builds FilterStack) (NEW)        │
+│              Generic FilterStack Builder                      │
+│  - Single reusable builder for all navigation patterns        │
+│  - Extension functions for common patterns                   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
-                       │ Builds
+                       │ Uses
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              FilterStack (Existing Domain Layer)             │
@@ -202,7 +193,6 @@ onCurrencyClick = { currency ->
 │  - TextFilter, CategoryFilter, AccountFilter                │
 │  - DateRangeFilter, AmountFilter, CurrencyFilter            │
 │  - IncomeTypeFilter, PaymentMethodFilter, WarrantyFilter     │
-│  - CompositeFilter, SavedFilterReference, InstantFilter      │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        │ Encodes/Decodes
@@ -210,14 +200,27 @@ onCurrencyClick = { currency ->
 ┌─────────────────────────────────────────────────────────────┐
 │              Navigation Extensions                            │
 │  - NavHostController.navigateToRecords(filterStack)        │
-│  - NavHostController.navigateToBudgets(filterStack)          │
-│  - Serialization adapters for FilterStack                   │
+│  - Generic navigation for any screen with FilterStack         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Key Simplifications
+
+**Removed:**
+- ❌ Screen-specific context sealed classes (RecordsNavigationContext, AccountsNavigationContext)
+- ❌ Card navigation delegates (over-engineering)
+- ❌ NavigationAction sealed class (unnecessary abstraction)
+- ❌ Multiple factories (RecordsFilterStackFactory, AccountsFilterStackFactory, etc.)
+
+**Kept:**
+- ✅ FilterStack as the universal navigation context
+- ✅ Single generic FilterStack builder
+- ✅ Extension functions for common patterns
+- ✅ Direct integration with existing domain models
+
 ---
 
-## Detailed Design (Unified with FilterStack)
+## Detailed Design (Simplified & Unified with FilterStack)
 
 ### 1. FilterStack Serialization Support
 
@@ -240,555 +243,226 @@ data class FilterStack(
 ```kotlin
 @Serializable
 sealed class UnifiedFilter {
-    // ... existing filters with @Serializable annotation
-
-    @Serializable
-    data class TextFilter(
-        val query: String,
-        val isRegex: Boolean = false,
-        val isCaseInsensitive: Boolean = true,
-        val operator: FilterOperator = FilterOperator.CONTAINS
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class CategoryFilter(
-        val categoryIds: List<Long>,
-        val operator: FilterOperator = FilterOperator.IN
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class AccountFilter(
-        val accountIds: List<String>,
-        val operator: FilterOperator = FilterOperator.IN
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class DateRangeFilter(
-        val timelineRange: TimelineRange
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class AmountFilter(
-        val min: BigDecimal? = null,
-        val max: BigDecimal? = null
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class PaymentMethodFilter(
-        val methods: List<String>,
-        val operator: FilterOperator = FilterOperator.IN
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class CurrencyFilter(
-        val currencies: List<String>,
-        val operator: FilterOperator = FilterOperator.IN
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class IncomeTypeFilter(
-        val isIncome: Boolean? = null
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class WarrantyFilter(
-        val hasWarranty: Boolean? = null,
-        val expirationStart: Long? = null,
-        val expirationEnd: Long? = null
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class CompositeFilter(
-        val filters: List<UnifiedFilter>,
-        val operator: LogicalOperator = LogicalOperator.AND
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class SavedFilterReference(
-        val filterId: Long
-    ) : UnifiedFilter()
-
-    @Serializable
-    data class InstantFilter(
-        val filter: UnifiedFilter
-    ) : UnifiedFilter()
+    // Simply add @Serializable annotation to all existing filter types
+    // No structural changes needed
 }
 ```
 
-### 2. FilterStack Factory Pattern
+### 2. Generic FilterStack Builder (Single Reusable Component)
 
-#### RecordsFilterStackFactory
+#### FilterStackBuilder with Extension Functions
 ```kotlin
 /**
- * Factory for creating FilterStack instances for transaction navigation.
- * Leverages existing UnifiedFilter types and FilterStack composition.
+ * Generic builder for creating FilterStack instances.
+ * Reusable across all screens and navigation patterns.
  */
-object RecordsFilterStackFactory {
-    // Common patterns using UnifiedFilter
-
-    fun forCurrency(currency: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.CurrencyFilter(listOf(currency))
-            )
-        )
-
-    fun forIncome(): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.IncomeTypeFilter(isIncome = true)
-            )
-        )
-
-    fun forExpense(): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.IncomeTypeFilter(isIncome = false)
-            )
-        )
-
-    fun forAccount(accountId: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.AccountFilter(listOf(accountId))
-            )
-        )
-
-    fun forAccountAndType(accountId: String, isIncome: Boolean): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.AccountFilter(listOf(accountId)),
-                UnifiedFilter.IncomeTypeFilter(isIncome = isIncome)
-            ),
-            logicalOperator = LogicalOperator.AND
-        )
-
-    fun forAccountAndCurrency(accountId: String, currency: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.AccountFilter(listOf(accountId)),
-                UnifiedFilter.CurrencyFilter(listOf(currency))
-            ),
-            logicalOperator = LogicalOperator.AND
-        )
-
-    fun forCategory(categoryId: Long): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.CategoryFilter(listOf(categoryId))
-            )
-        )
-
-    fun forCategories(categoryIds: List<Long>): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.CategoryFilter(categoryIds)
-            )
-        )
-
-    fun forDateRange(timelineRange: TimelineRange): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.DateRangeFilter(timelineRange)
-            )
-        )
-
-    fun forAmountRange(min: BigDecimal?, max: BigDecimal?): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.AmountFilter(min = min, max = max)
-            )
-        )
-
-    fun forSearch(query: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                UnifiedFilter.TextFilter(query)
-            )
-        )
-
-    // Custom builder for complex filters
-    fun build(builder: RecordsFilterStackBuilder.() -> Unit): FilterStack =
-        RecordsFilterStackBuilder().apply(builder).build()
-
-    // Combine multiple FilterStacks
-    fun combine(stacks: List<FilterStack>, operator: LogicalOperator = LogicalOperator.AND): FilterStack {
-        val allFilters = stacks.flatMap { it.activeFilters }
-        return FilterStack(allFilters, operator)
-    }
-}
-
-class RecordsFilterStackBuilder {
+class FilterStackBuilder {
     private val filters = mutableListOf<UnifiedFilter>()
     private var operator: LogicalOperator = LogicalOperator.AND
 
-    fun accountIds(ids: List<String>) {
+    fun accountIds(ids: List<String>) = apply {
         filters.add(UnifiedFilter.AccountFilter(ids))
     }
 
-    fun categoryIds(ids: List<Long>) {
+    fun categoryIds(ids: List<Long>) = apply {
         filters.add(UnifiedFilter.CategoryFilter(ids))
     }
 
-    fun isIncome(isIncome: Boolean) {
+    fun isIncome(isIncome: Boolean) = apply {
         filters.add(UnifiedFilter.IncomeTypeFilter(isIncome = isIncome))
     }
 
-    fun currencies(currencies: List<String>) {
+    fun currencies(currencies: List<String>) = apply {
         filters.add(UnifiedFilter.CurrencyFilter(currencies))
     }
 
-    fun dateRange(timelineRange: TimelineRange) {
+    fun dateRange(timelineRange: TimelineRange) = apply {
         filters.add(UnifiedFilter.DateRangeFilter(timelineRange))
     }
 
-    fun amountRange(min: BigDecimal?, max: BigDecimal?) {
+    fun amountRange(min: BigDecimal?, max: BigDecimal?) = apply {
         filters.add(UnifiedFilter.AmountFilter(min = min, max = max))
     }
 
-    fun search(query: String) {
+    fun search(query: String) = apply {
         filters.add(UnifiedFilter.TextFilter(query))
     }
 
-    fun paymentMethods(methods: List<String>) {
+    fun paymentMethods(methods: List<String>) = apply {
         filters.add(UnifiedFilter.PaymentMethodFilter(methods))
     }
 
-    fun withOperator(op: LogicalOperator) {
+    fun withOperator(op: LogicalOperator) = apply {
         this.operator = op
     }
 
     fun build(): FilterStack = FilterStack(filters.toList(), operator)
 }
+
+// Extension functions for common navigation patterns
+fun FilterStack.Companion.forCurrency(currency: String): FilterStack =
+    FilterStackBuilder().currencies(listOf(currency)).build()
+
+fun FilterStack.Companion.forIncome(): FilterStack =
+    FilterStackBuilder().isIncome(true).build()
+
+fun FilterStack.Companion.forExpense(): FilterStack =
+    FilterStackBuilder().isIncome(false).build()
+
+fun FilterStack.Companion.forAccount(accountId: String): FilterStack =
+    FilterStackBuilder().accountIds(listOf(accountId)).build()
+
+fun FilterStack.Companion.forAccountAndType(accountId: String, isIncome: Boolean): FilterStack =
+    FilterStackBuilder()
+        .accountIds(listOf(accountId))
+        .isIncome(isIncome)
+        .build()
+
+fun FilterStack.Companion.forAccountAndCurrency(accountId: String, currency: String): FilterStack =
+    FilterStackBuilder()
+        .accountIds(listOf(accountId))
+        .currencies(listOf(currency))
+        .build()
+
+fun FilterStack.Companion.forCategory(categoryId: Long): FilterStack =
+    FilterStackBuilder().categoryIds(listOf(categoryId)).build()
 ```
 
-#### AccountsFilterStackFactory
-```kotlin
-/**
- * Factory for creating FilterStack instances for account navigation.
- * Note: Accounts use different filter criteria than transactions.
- */
-object AccountsFilterStackFactory {
-    fun forType(accountType: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                // AccountTypeFilter would need to be added to UnifiedFilter
-                // For now, use a generic filter or add AccountTypeFilter to UnifiedFilter
-                UnifiedFilter.AccountFilter(listOf()) // Placeholder
-            )
-        )
+### 3. Direct Navigation with FilterStack
 
-    fun forCurrency(currency: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                // CurrencyFilter for accounts would need specific implementation
-                UnifiedFilter.CurrencyFilter(listOf(currency))
-            )
-        )
-
-    fun build(builder: AccountsFilterStackBuilder.() -> Unit): FilterStack =
-        AccountsFilterStackBuilder().apply(builder).build()
-}
-
-class AccountsFilterStackBuilder {
-    private val filters = mutableListOf<UnifiedFilter>()
-    private var operator: LogicalOperator = LogicalOperator.AND
-
-    fun accountTypes(types: List<String>) {
-        // Would need AccountTypeFilter in UnifiedFilter
-        // For now, filter by account IDs after fetching
-    }
-
-    fun currencies(currencies: List<String>) {
-        filters.add(UnifiedFilter.CurrencyFilter(currencies))
-    }
-
-    fun balanceRange(min: BigDecimal?, max: BigDecimal?) {
-        // Would need BalanceRangeFilter in UnifiedFilter
-    }
-
-    fun withOperator(op: LogicalOperator) {
-        this.operator = op
-    }
-
-    fun build(): FilterStack = FilterStack(filters.toList(), operator)
-}
-```
-
-### 3. Screen-Specific Context Wrappers
-
-#### RecordsNavigationContext
-```kotlin
-/**
- * Navigation context for RecordsScreen using FilterStack.
- * This replaces the existing RecordsFilterContext.
- */
-@Serializable
-sealed class RecordsNavigationContext {
-    @Serializable
-    data object None : RecordsNavigationContext()
-
-    @Serializable
-    data class WithFilterStack(
-        val filterStack: FilterStack
-    ) : RecordsNavigationContext()
-
-    // Convenience methods for backward compatibility
-    fun toFilterStack(): FilterStack = when (this) {
-        is None -> FilterStack.Empty
-        is WithFilterStack -> filterStack
-    }
-}
-```
-
-#### AccountsNavigationContext
-```kotlin
-/**
- * Navigation context for AccountsViewScreen using FilterStack.
- * This replaces the existing AccountsFilterContext.
- */
-@Serializable
-sealed class AccountsNavigationContext {
-    @Serializable
-    data object None : AccountsNavigationContext()
-
-    @Serializable
-    data class WithFilterStack(
-        val filterStack: FilterStack
-    ) : AccountsNavigationContext()
-
-    fun toFilterStack(): FilterStack = when (this) {
-        is None -> FilterStack.Empty
-        is WithFilterStack -> filterStack
-    }
-}
-```
-
-### 4. Card Navigation Delegates
-
-#### CardNavigationDelegate Interface
-```kotlin
-interface CardNavigationDelegate {
-    fun onCurrencyClick(currency: String): NavigationAction
-    fun onIncomeClick(): NavigationAction
-    fun onExpenseClick(): NavigationAction
-    fun onAccountClick(accountId: String): NavigationAction
-    fun onCategoryClick(categoryId: Long): NavigationAction
-    fun onBudgetClick(category: String): NavigationAction
-}
-
-sealed class NavigationAction {
-    data class NavigateToRecords(val filterStack: FilterStack) : NavigationAction()
-    data class NavigateToBudgets(val filterStack: FilterStack) : NavigationAction()
-    data class NavigateToLoans(val filterStack: FilterStack) : NavigationAction()
-    data class NavigateToAnalytics(val filterStack: FilterStack) : NavigationAction()
-    data class NavigateToEditBudget(val category: String) : NavigationAction()
-}
-```
-
-#### Screen-Specific Delegates
-
-```kotlin
-// DashboardNavigationDelegate
-class DashboardNavigationDelegate : CardNavigationDelegate {
-    override fun onCurrencyClick(currency: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forCurrency(currency)
-        )
-
-    override fun onIncomeClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forIncome()
-        )
-
-    override fun onExpenseClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forExpense()
-        )
-
-    override fun onAccountClick(accountId: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccount(accountId)
-        )
-
-    override fun onCategoryClick(categoryId: Long) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forCategory(categoryId)
-        )
-
-    override fun onBudgetClick(category: String) =
-        NavigationAction.NavigateToEditBudget(category)
-}
-
-// AccountDetailNavigationDelegate
-class AccountDetailNavigationDelegate(
-    private val accountId: String
-) : CardNavigationDelegate {
-    override fun onCurrencyClick(currency: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccountAndCurrency(accountId, currency)
-        )
-
-    override fun onIncomeClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccountAndType(accountId, isIncome = true)
-        )
-
-    override fun onExpenseClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccountAndType(accountId, isIncome = false)
-        )
-
-    override fun onAccountClick(accountId: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccount(accountId)
-        )
-
-    override fun onCategoryClick(categoryId: Long) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.build {
-                accountIds(listOf(accountId))
-                categoryIds(listOf(categoryId))
-            }
-        )
-
-    override fun onBudgetClick(category: String) =
-        NavigationAction.NavigateToEditBudget(category)
-}
-
-// AccountsViewNavigationDelegate
-class AccountsViewNavigationDelegate : CardNavigationDelegate {
-    override fun onCurrencyClick(currency: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forCurrency(currency)
-        )
-
-    override fun onIncomeClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forIncome()
-        )
-
-    override fun onExpenseClick() =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forExpense()
-        )
-
-    override fun onAccountClick(accountId: String) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forAccount(accountId)
-        )
-
-    override fun onCategoryClick(categoryId: Long) =
-        NavigationAction.NavigateToRecords(
-            RecordsFilterStackFactory.forCategory(categoryId)
-        )
-
-    override fun onBudgetClick(category: String) =
-        NavigationAction.NavigateToEditBudget(category)
-}
-```
-
-### 5. Navigation Extensions
-
-#### FilterStack Navigation Extensions
+#### Navigation Extensions
 ```kotlin
 /**
  * Navigate to RecordsScreen with FilterStack context.
+ * FilterStack is serialized and passed directly.
  */
 fun NavHostController.navigateToRecords(filterStack: FilterStack) {
-    val context = RecordsNavigationContext.WithFilterStack(filterStack)
-    val encodedContext = URLEncoder.encode(
-        Json.encodeToString(context),
+    val encodedFilterStack = URLEncoder.encode(
+        Json.encodeToString(filterStack),
         StandardCharsets.UTF_8.toString()
     )
-    navigate(Screen.Records.createRoute(encodedContext))
+    navigate(Screen.Records.createRoute(encodedFilterStack))
 }
 
 /**
  * Navigate to AccountsViewScreen with FilterStack context.
  */
 fun NavHostController.navigateToAccountsView(filterStack: FilterStack) {
-    val context = AccountsNavigationContext.WithFilterStack(filterStack)
-    val encodedContext = URLEncoder.encode(
-        Json.encodeToString(context),
+    val encodedFilterStack = URLEncoder.encode(
+        Json.encodeToString(filterStack),
         StandardCharsets.UTF_8.toString()
     )
-    navigate(Screen.AccountsView.createRoute(encodedContext))
-}
-
-/**
- * Navigate to BudgetsScreen with FilterStack context.
- */
-fun NavHostController.navigateToBudgets(filterStack: FilterStack) {
-    // Similar pattern for budgets
+    navigate(Screen.AccountsView.createRoute(encodedFilterStack))
 }
 ```
 
 #### Context Conversion in ViewModels
 ```kotlin
 // In TransactionListScreen ViewModel
-fun initializeFromContext(context: RecordsNavigationContext) {
-    val filterStack = context.toFilterStack()
+fun initializeFromFilterStack(filterStack: FilterStack) {
     val transactionFilter = filterStack.toTransactionFilter()
     applyFilter(transactionFilter)
 }
 
 // In AccountsViewScreen ViewModel
-fun initializeFromContext(context: AccountsNavigationContext) {
-    val filterStack = context.toFilterStack()
-    // Convert to account-specific filter
+fun initializeFromFilterStack(filterStack: FilterStack) {
+    // Convert FilterStack to account-specific filter
     applyAccountsFilter(filterStack)
 }
 ```
 
-### 6. Extension for New Screens
+### 4. Card Component Integration (Simplified)
 
-#### Adding BudgetsScreen Context
+#### Before (Current)
 ```kotlin
-/**
- * Navigation context for BudgetsScreen using FilterStack.
- */
-@Serializable
-sealed class BudgetsNavigationContext {
-    @Serializable
-    data object None : BudgetsNavigationContext()
+CashFlowCard(
+    onClickIncome = { onRecordsClick(RecordsFilterContext.Custom(isIncome = true)) },
+    onClickExpense = { onRecordsClick(RecordsFilterContext.Custom(isIncome = false)) }
+)
+```
 
-    @Serializable
-    data class WithFilterStack(
-        val filterStack: FilterStack
-    ) : BudgetsNavigationContext()
+#### After (Simplified - Direct FilterStack)
+```kotlin
+CashFlowCard(
+    onClickIncome = {
+        val filterStack = FilterStack.forIncome()
+        onRecordsClick(filterStack)
+    },
+    onClickExpense = {
+        val filterStack = FilterStack.forExpense()
+        onRecordsClick(filterStack)
+    }
+)
 
-    @Serializable
-    data class ByCategory(val category: String) : BudgetsNavigationContext()
+// For AccountDetailScreen (with accountId context)
+CashFlowCard(
+    onClickIncome = {
+        val filterStack = FilterStack.forAccountAndType(accountId, isIncome = true)
+        onRecordsClick(filterStack)
+    },
+    onClickExpense = {
+        val filterStack = FilterStack.forAccountAndType(accountId, isIncome = false)
+        onRecordsClick(filterStack)
+    }
+)
 
-    fun toFilterStack(): FilterStack = when (this) {
-        is None -> FilterStack.Empty
-        is WithFilterStack -> filterStack
-        is ByCategory -> FilterStack(
-            activeFilters = listOf(
-                // Would need CategoryFilter for budgets
-                UnifiedFilter.CategoryFilter(listOf())
-            )
-        )
+// For CurrencyBalancesCard
+CurrencyBalancesCard(
+    onCurrencyClick = { currency ->
+        val filterStack = FilterStack.forCurrency(currency)
+        onRecordsClick(filterStack)
+    }
+)
+```
+
+### 5. Screen Route Updates
+
+#### Update Screen Routes to Accept FilterStack
+```kotlin
+// In Screen.kt
+object Records : Screen("records?filterStack={filterStack}") {
+    fun createRoute(filterStack: FilterStack? = null): String {
+        val encoded = filterStack?.let {
+            URLEncoder.encode(Json.encodeToString(it), StandardCharsets.UTF_8.toString())
+        } ?: ""
+        return "records?filterStack=$encoded"
     }
 }
+```
 
-object BudgetsFilterStackFactory {
-    fun forCategory(category: String): FilterStack =
-        FilterStack(
-            activeFilters = listOf(
-                // Budget-specific filter
-            )
-        )
+#### Update NavGraph
+```kotlin
+composable(
+    Screen.Records.route,
+    arguments = listOf(
+        navArgument("filterStack") {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+        }
+    )
+) { backStackEntry ->
+    val filterStackString = backStackEntry.arguments?.getString("filterStack")
+    val filterStack = filterStackString?.let {
+        try {
+            val decoded = URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
+            Json.decodeFromString<FilterStack>(decoded)
+        } catch (e: Exception) {
+            FilterStack.Empty
+        }
+    } ?: FilterStack.Empty
 
-    fun build(builder: BudgetsFilterStackBuilder.() -> Unit): FilterStack =
-        BudgetsFilterStackBuilder().apply(builder).build()
+    TransactionListScreen(
+        viewModel = transactionViewModel,
+        initialFilterStack = filterStack,
+        // ... other parameters
+    )
 }
 ```
 
 ---
 
-## Implementation Plan (Unified with FilterStack)
+## Implementation Plan (Simplified - 4 Phases over 3 Weeks)
 
 ### Phase 1: FilterStack Serialization (Week 1)
 1. Add `@Serializable` annotation to `FilterStack`
@@ -798,316 +472,159 @@ object BudgetsFilterStackFactory {
 5. Add serialization support for `BigDecimal` (using custom serializer)
 6. Add unit tests for serialization/deserialization
 
-### Phase 2: FilterStack Factories (Week 1-2)
-1. Create `RecordsFilterStackFactory` with common patterns:
+### Phase 2: Generic FilterStack Builder (Week 1-2)
+1. Create `FilterStackBuilder` class with fluent API
+2. Add extension functions to `FilterStack.Companion` for common patterns:
    - `forCurrency()`, `forIncome()`, `forExpense()`
    - `forAccount()`, `forAccountAndType()`, `forAccountAndCurrency()`
-   - `forCategory()`, `forCategories()`, `forDateRange()`, `forAmountRange()`, `forSearch()`
-2. Create `RecordsFilterStackBuilder` for complex filters
-3. Create `AccountsFilterStackFactory` with account-specific patterns
-4. Create `AccountsFilterStackBuilder` for complex account filters
-5. Add unit tests for factories and builders
+   - `forCategory()`, `forSearch()`, etc.
+3. Add unit tests for builder and extension functions
 
-### Phase 3: Navigation Context Wrappers (Week 2)
-1. Create `RecordsNavigationContext` sealed class:
-   - `None`, `WithFilterStack(filterStack)`
-   - Add `toFilterStack()` conversion method
-2. Create `AccountsNavigationContext` sealed class:
-   - `None`, `WithFilterStack(filterStack)`
-   - Add `toFilterStack()` conversion method
-3. Add backward compatibility adapters:
-   - Convert old `RecordsFilterContext` to `RecordsNavigationContext`
-   - Convert old `AccountsFilterContext` to `AccountsNavigationContext`
-4. Add unit tests for context conversion
+### Phase 3: Navigation Integration (Week 2)
+1. Update screen routes to accept `FilterStack` parameter
+2. Create `navigateToRecords(filterStack)` extension
+3. Create `navigateToAccountsView(filterStack)` extension
+4. Update ViewModels to accept `initialFilterStack` parameter
+5. Add `initializeFromFilterStack()` methods to ViewModels
+6. Update NavGraph to decode FilterStack from route parameters
 
-### Phase 4: Navigation Delegates (Week 2-3)
-1. Create `CardNavigationDelegate` interface
-2. Create `NavigationAction` sealed class with FilterStack
-3. Implement `DashboardNavigationDelegate`:
-   - Uses `RecordsFilterStackFactory` for all patterns
-4. Implement `AccountDetailNavigationDelegate`:
-   - Includes accountId in all filters
-5. Implement `AccountsViewNavigationDelegate`:
-   - Similar to Dashboard but for accounts view
-6. Add unit tests for delegates
-
-### Phase 5: Card Refactoring (Week 3)
-1. Refactor `CashFlowCard`:
-   - Add `navigationDelegate` parameter
-   - Add `onAction` callback
-   - Remove direct context creation
-2. Refactor `CurrencyBalancesCard`:
-   - Add `navigationDelegate` parameter
-   - Add `onAction` callback
-3. Refactor `BudgetsCard`:
-   - Add `navigationDelegate` parameter
-   - Add `onAction` callback
-4. Refactor `AccountsCard`:
-   - Add `navigationDelegate` parameter
-   - Add `onAction` callback
-5. Update all screen usages:
-   - DashboardScreen: Create delegate, pass to cards
-   - AccountDetailScreen: Create delegate, pass to cards
-   - AccountsViewScreen: Create delegate, pass to cards
-
-### Phase 6: Navigation Extensions (Week 3-4)
-1. Create `navigateToRecords(filterStack)` extension:
-   - Convert FilterStack to RecordsNavigationContext
-   - Encode and navigate
-2. Create `navigateToAccountsView(filterStack)` extension:
-   - Convert FilterStack to AccountsNavigationContext
-   - Encode and navigate
-3. Update NavGraph to use new navigation methods
-4. Update ViewModels to handle new context format:
-   - `initializeFromContext()` using FilterStack
-   - Convert FilterStack to TransactionFilter via `toTransactionFilter()`
-
-### Phase 7: Context Migration (Week 4)
-1. Migrate `RecordsFilterContext` usage:
-   - Replace old context creation with factory calls
-   - Update context encoding/decoding
-2. Migrate `AccountsFilterContext` usage:
-   - Replace old context creation with factory calls
-   - Update context encoding/decoding
-3. Deprecate old context classes:
-   - Mark as `@Deprecated`
-   - Add migration notes
-4. Update all navigation calls:
-   - Use new FilterStack-based navigation
-5. Add integration tests for navigation flows
-
-### Phase 8: New Contexts (Week 4-5)
-1. Create `BudgetsNavigationContext`:
-   - `None`, `WithFilterStack(filterStack)`, `ByCategory(category)`
-2. Create `BudgetsFilterStackFactory`:
-   - `forCategory()`, `forStatus()`, etc.
-3. Create `LoansNavigationContext`:
-   - Similar pattern for loans
-4. Create `LoansFilterStackFactory`:
-   - Loan-specific filter patterns
-5. Add navigation extensions for new contexts
-6. Add unit and integration tests
-
-### Phase 9: Documentation & Testing (Week 5)
-1. Document FilterStack serialization:
-   - How to add new filter types
-   - Custom serializers for complex types
-2. Document factory usage:
-   - Common patterns
-   - Builder pattern usage
-3. Document delegate implementation:
-   - How to create screen-specific delegates
-   - How to handle custom navigation actions
-4. Add comprehensive integration tests:
-   - End-to-end navigation flows
-   - Context serialization/deserialization
-   - ViewModel context handling
-5. Add performance tests:
-   - Serialization overhead
-   - FilterStack composition performance
+### Phase 4: Card Refactoring (Week 2-3)
+1. Update `CashFlowCard` to use FilterStack extension functions
+2. Update `CurrencyBalancesCard` to use FilterStack extension functions
+3. Update `BudgetsCard` to use FilterStack extension functions
+4. Update `AccountsCard` to use FilterStack extension functions
+5. Update all screen usages (Dashboard, AccountDetail, AccountsView)
+6. Remove old context parameters from cards
+7. Deprecate old context classes
 
 ---
 
-## Benefits (Unified with FilterStack)
+## Benefits (Simplified Approach)
 
-### 1. **Leverages Existing Infrastructure**
-- Reuses FilterStack, UnifiedFilter, and LogicalOperator
-- No duplication of filter types
-- Single source of truth for filtering logic
-- Uses existing `toTransactionFilter()` conversion
+### 1. **Maximum Code Reuse**
+- **Single builder** for all navigation patterns
+- **Extension functions** for common patterns
+- **No duplication** across screens or cards
 
-### 2. **Reduced Duplication**
-- Common navigation patterns defined once in factories
-- Delegates reused across screens
-- No repeated context creation logic
-- FilterStack composition eliminates manual filter combination
+### 2. **Minimal Changes**
+- Only add `@Serializable` to existing domain models
+- Add one `FilterStackBuilder` class
+- Add extension functions to `FilterStack.Companion`
+- No new context sealed classes needed
 
 ### 3. **Type Safety**
-- Strong typing via UnifiedFilter types
+- Strong typing via UnifiedFilter (no String/Double conversions)
+- BigDecimal maintains precision
 - Compile-time validation
-- No runtime type errors
-- BigDecimal maintains precision (no Double conversion issues)
 
-### 4. **Extensibility**
-- Adding new screen: Create context wrapper + factory + delegate
-- Adding new navigation pattern: Add method to factory
-- Adding new filter type: Add to UnifiedFilter (single place)
-- No need to modify existing cards or contexts
+### 4. **Simplicity**
+- **No delegates** (over-engineering removed)
+- **No screen-specific contexts** (use FilterStack directly)
+- **No navigation actions** (direct FilterStack passing)
+- Cards call extension functions directly
 
-### 5. **Testability**
-- Pure functions for FilterStack creation
-- Delegates can be unit tested
-- FilterStack serialization can be tested
-- Mock delegates for UI testing
-
-### 6. **Maintainability**
-- Clear separation of concerns
-- Single source of truth for navigation logic
-- FilterStack is the domain filter standard, used everywhere
-- Easy to locate and modify navigation patterns
-
-### 7. **Consistency**
-- All cards use same navigation pattern via delegates
-- All contexts built using FilterStack factories
-- Uniform API across screens
+### 5. **Robustness**
+- Leverages proven FilterStack infrastructure
+- Single source of truth for filtering
 - Consistent with existing filter mechanism
+- Easy to test and maintain
 
-### 8. **Performance**
-- FilterStack composition is optimized
-- Serialization is efficient
-- No redundant conversions
-- Leverages existing FilterStack optimizations
+### 6. **Extensibility**
+- Adding new pattern: Add extension function
+- Adding new screen: Use existing FilterStack builder
+- Adding new filter type: Add to UnifiedFilter (single place)
 
 ---
 
-## Migration Strategy (Unified with FilterStack)
+## Migration Strategy (Simplified)
 
 ### Backward Compatibility
 
-1. **Keep old context classes** as deprecated:
-   - `RecordsFilterContext` → marked `@Deprecated("Use RecordsNavigationContext with FilterStack")`
-   - `AccountsFilterContext` → marked `@Deprecated("Use AccountsNavigationContext with FilterStack")`
-
-2. **Add conversion methods**:
-   - `RecordsFilterContext.toNavigationContext(): RecordsNavigationContext`
-   - `AccountsFilterContext.toNavigationContext(): AccountsNavigationContext`
-   - Convert old Custom contexts to FilterStack using factories
-
-3. **Gradual migration** screen by screen:
-   - DashboardScreen first (most impact)
-   - AccountsViewScreen second
-   - AccountDetailScreen third
-   - Other screens as needed
-
-4. **Remove old classes** after full migration:
-   - After all screens migrated
-   - After testing confirms no issues
-   - After deprecation period (at least one release)
+1. **Keep old context classes** as deprecated during migration
+2. **Add conversion methods** from old contexts to FilterStack
+3. **Gradual migration** card by card, screen by screen
+4. **Remove old classes** after full migration
 
 ### Rollout Plan
 
-1. **Phase 1**: Add FilterStack serialization support (no breaking changes)
-2. **Phase 2**: Create factories and context wrappers (no breaking changes)
-3. **Phase 3**: Migrate DashboardScreen (breaking change, but backward compatible via adapters)
-4. **Phase 4**: Migrate AccountsViewScreen (breaking change)
-5. **Phase 5**: Migrate AccountDetailScreen (breaking change)
-6. **Phase 6**: Deprecate old context classes
-7. **Phase 7**: Remove old context classes (after deprecation period)
+1. **Phase 1**: Add FilterStack serialization (no breaking changes)
+2. **Phase 2**: Add FilterStackBuilder and extensions (no breaking changes)
+3. **Phase 3**: Update navigation infrastructure (breaking change)
+4. **Phase 4**: Migrate cards (gradual, can be done incrementally)
+5. **Phase 5**: Deprecate and remove old contexts
 
 ---
 
-## Example: Adding New Screen
+## Example: Adding New Navigation Pattern
 
-### Before (Current - without FilterStack)
-1. Create new context sealed class with custom parameters
-2. Add context parameter to screen
-3. Add navigation extension with encoding/decoding
-4. Modify cards to create context with manual parameter construction
-5. Update NavGraph
-6. Add conversion logic to TransactionFilter
+### Before (Old Way - Screen-Specific Factory)
+```kotlin
+// Would need to create new factory object
+object SomeScreenFilterStackFactory {
+    fun forSomePattern(value: String): FilterStack = ...
+}
 
-### After (Proposed - with FilterStack)
-1. Create new context wrapper (e.g., `LoansNavigationContext`):
-   ```kotlin
-   @Serializable
-   sealed class LoansNavigationContext {
-       data object None : LoansNavigationContext()
-       data class WithFilterStack(val filterStack: FilterStack) : LoansNavigationContext()
-   }
-   ```
+// Then use it in cards
+onClick = { onNavigate(SomeScreenFilterStackFactory.forSomePattern(value)) }
+```
 
-2. Create factory for FilterStack (e.g., `LoansFilterStackFactory`):
-   ```kotlin
-   object LoansFilterStackFactory {
-       fun forLoanType(type: String): FilterStack = FilterStack(...)
-       fun forLoanStatus(status: String): FilterStack = FilterStack(...)
-   }
-   ```
+### After (Simplified Way - Extension Function)
+```kotlin
+// Just add one extension function
+fun FilterStack.Companion.forSomePattern(value: String): FilterStack =
+    FilterStackBuilder().someMethod(value).build()
 
-3. Create delegate for screen (if cards need navigation):
-   ```kotlin
-   class LoansNavigationDelegate : CardNavigationDelegate {
-       override fun onLoanClick(loanId: String) =
-           NavigationAction.NavigateToLoans(LoansFilterStackFactory.forLoan(loanId))
-   }
-   ```
+// Use it in cards
+onClick = { onNavigate(FilterStack.forSomePattern(value)) }
+```
 
-4. Add navigation extension:
-   ```kotlin
-   fun NavHostController.navigateToLoans(filterStack: FilterStack) {
-       val context = LoansNavigationContext.WithFilterStack(filterStack)
-       // encode and navigate
-   }
-   ```
-
-5. Pass delegate to cards (if needed)
-6. Update NavGraph with new route
-
-**Effort**: Reduced by ~50% due to:
-- Reusing FilterStack infrastructure
-- Reusing UnifiedFilter types
-- Reusing serialization logic
-- Reusing `toTransactionFilter()` conversion
-- No need to create custom filter types
+**Effort**: Reduced by ~70% - just add one extension function instead of creating a new factory
 
 ---
 
-## Risk Assessment (Unified with FilterStack)
+## Risk Assessment (Simplified)
 
 ### Low Risk
-- Adding FilterStack serialization is additive (no breaking changes)
-- FilterStack infrastructure is already proven and tested
-- Factory pattern is well-established
-- Delegates are simple interfaces
-- UnifiedFilter types are already used throughout the app
+- Adding `@Serializable` is additive (no breaking changes)
+- FilterStackBuilder is new code (no existing code affected)
+- Extension functions are additive
+- Proven FilterStack infrastructure
 
 ### Medium Risk
 - FilterStack serialization complexity (BigDecimal, TimelineRange)
-- Migration complexity for existing contexts
-- Ensuring all navigation flows work with new approach
-- Testing all edge cases in serialization
-
-### High Risk
-- Breaking changes if serialization fails
-- Performance impact of serialization
-- Backward compatibility issues during migration
+- Migration complexity for existing cards
+- Route parameter changes
 
 ### Mitigation
-- Comprehensive unit tests for serialization/deserialization
-- Custom serializers for complex types (BigDecimal, TimelineRange)
-- Integration tests for navigation flows
-- Gradual rollout with backward compatibility adapters
-- Performance testing for serialization overhead
-- Rollback plan (keep old contexts during migration)
-- Feature flags for new navigation system
+- Custom serializers for complex types
+- Gradual card-by-card migration
+- Comprehensive testing
+- Keep old contexts during migration period
 
 ---
 
-## Success Metrics (Unified with FilterStack)
+## Success Metrics (Simplified)
 
-1. **Code Reduction**: 40% reduction in navigation-related code (reuses FilterStack)
-2. **Duplication**: 90% reduction in duplicate navigation logic (factories + delegates)
-3. **Extensibility**: Adding new screen takes 60% less time (reuses FilterStack infrastructure)
-4. **Test Coverage**: 95% coverage for navigation logic (factories, delegates, serialization)
+1. **Code Reduction**: 60% reduction in navigation-related code
+2. **Duplication**: 95% reduction in duplicate navigation logic
+3. **Extensibility**: Adding new pattern takes 70% less time
+4. **Test Coverage**: 95% coverage for FilterStack builder and extensions
 5. **Bugs**: Zero navigation-related bugs after migration
 6. **Performance**: Serialization overhead < 5ms per navigation
-7. **Type Safety**: 100% compile-time type safety (no String/Double conversions)
-8. **Integration**: 100% integration with existing FilterStack infrastructure
+7. **Type Safety**: 100% compile-time type safety
+8. **Simplicity**: Only 4 phases over 3 weeks (vs 9 phases over 5 weeks)
 
 ---
 
-## Conclusion (Unified with FilterStack)
+## Conclusion (Simplified & Robust)
 
-This architecture provides a robust, extensible solution for context navigation that:
+This simplified architecture provides a robust solution for context navigation that:
 
-- **Leverages existing infrastructure**: Reuses FilterStack, UnifiedFilter, and LogicalOperator
-- **Eliminates duplication**: Common patterns defined once in factories
-- **Provides type safety**: Strong typing via UnifiedFilter (no String/Double conversions)
-- **Enables easy addition**: New screens reuse FilterStack infrastructure
-- **Improves testability**: Pure functions for FilterStack creation
-- **Maintains backward compatibility**: Gradual migration with adapters
-- **Single source of truth**: FilterStack is the domain filter standard everywhere
+- **Leverages existing FilterStack infrastructure** (single source of truth)
+- **Uses a single generic builder** (no screen-specific factories)
+- **Provides extension functions** for common patterns (maximum reusability)
+- **Eliminates over-engineering** (no delegates, no screen-specific contexts)
+- **Direct FilterStack integration** (cards use extension functions directly)
+- **Minimal code changes** (only add serialization + builder + extensions)
 
-The FilterStack-based approach combined with factories and delegates creates a clear separation between UI, navigation logic, and domain filter models, making the codebase more maintainable and scalable while fully leveraging the existing, proven filter infrastructure.
-
-**Key Advantage**: This approach unifies navigation contexts with the existing FilterStack mechanism, eliminating the need for separate filter models and ensuring consistency across the entire application.
+**Key Advantage**: Maximum code reuse with minimal complexity. A single `FilterStackBuilder` with extension functions replaces multiple factories, delegates, and context wrappers. This is the simplest, most robust solution that eliminates duplication while leveraging the existing, proven FilterStack infrastructure.

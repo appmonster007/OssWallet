@@ -1,9 +1,12 @@
 package com.osscabinet.ossWallet.domain.model.filter
 
+import kotlinx.serialization.Serializable
+
 /**
  * Operators for atomic filter conditions.
  * Defines how a filter criterion matches against data.
  */
+@Serializable
 enum class FilterOperator {
     EQUALS,
     NOT_EQUALS,

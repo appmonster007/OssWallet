@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.service.TimelineService
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
@@ -16,6 +17,7 @@ import java.math.BigDecimal
  * - Conflicting values: When combining with OR, conflicting values (e.g., true vs false) result in "all" (null)
  * - Date/Amount/Warranty ranges: Use min/max for simplified range combination
  */
+@Serializable
 data class FilterStack(
     val activeFilters: List<UnifiedFilter>,
     val logicalOperator: LogicalOperator = LogicalOperator.AND

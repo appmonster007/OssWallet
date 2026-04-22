@@ -192,6 +192,15 @@ fun AccountDetailScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            ExpressiveNavigationBar(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs
+            )
         }
     ) { screenPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -300,15 +309,6 @@ fun AccountDetailScreen(
                 }
             }
         }
-
-        ExpressiveNavigationBar(
-            selectedTab = pagerState.currentPage,
-            onTabSelected = { index ->
-                scope.launch { pagerState.animateScrollToPage(index) }
-            },
-            tabs = tabs,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
 
         AeonExpandableFab(
             onAddClick = { type, name -> navigate { onAddTransactionClick(accountId, type, name) } },

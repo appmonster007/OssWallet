@@ -177,32 +177,70 @@ data class FilterStack(
                     )
                 }
                 is UnifiedFilter.CompositeFilter -> {
-                    // For composite filters, we merge the conditions
-                    // Note: This is a simplification - proper handling would need to respect logical operators
-                    var compositeResult = result
-                    for (subFilter in filter.filters) {
-                        compositeResult = FilterStack(listOf(subFilter)).toTransactionFilter()
-                        // Merge fields (last one wins for now - this is a limitation of the legacy model)
-                        result = result.copy(
-                            queryNote = compositeResult.queryNote ?: result.queryNote,
-                            isNoteRegex = compositeResult.isNoteRegex || result.isNoteRegex,
-                            queryPayee = compositeResult.queryPayee ?: result.queryPayee,
-                            isPayeeRegex = compositeResult.isPayeeRegex || result.isPayeeRegex,
-                            categoryIds = if (compositeResult.categoryIds.isNotEmpty()) compositeResult.categoryIds else result.categoryIds,
-                            accountIds = if (compositeResult.accountIds.isNotEmpty()) compositeResult.accountIds else result.accountIds,
-                            startDate = compositeResult.startDate ?: result.startDate,
-                            endDate = compositeResult.endDate ?: result.endDate,
-                            paymentMethods = if (compositeResult.paymentMethods.isNotEmpty()) compositeResult.paymentMethods else result.paymentMethods,
-                            hasWarranty = compositeResult.hasWarranty ?: result.hasWarranty,
-                            warrantyExpirationStart = compositeResult.warrantyExpirationStart ?: result.warrantyExpirationStart,
-                            warrantyExpirationEnd = compositeResult.warrantyExpirationEnd ?: result.warrantyExpirationEnd,
-                            minAmount = compositeResult.minAmount ?: result.minAmount,
-                            maxAmount = compositeResult.maxAmount ?: result.maxAmount,
-                            isIncome = compositeResult.isIncome ?: result.isIncome,
-                            currencies = if (compositeResult.currencies.isNotEmpty()) compositeResult.currencies else result.currencies
-                        )
+                    // For composite filters, merge based on logical operator
+                    if (filter.operator == LogicalOperator.OR) {
+                        // OR logic: union for lists, special handling for conflicting values
+                        var orResult = result
+                        for (subFilter in filter.filters) {
+                            val subResult = FilterStack(listOf(subFilter)).toTransactionFilter()
+                            orResult = orResult.copy(
+                                // Union for lists
+                                categoryIds = (orResult.categoryIds + subResult.categoryIds).distinct(),
+                                accountIds = (orResult.accountIds + subResult.accountIds).distinct(),
+                                paymentMethods = (orResult.paymentMethods + subResult.paymentMethods).distinct(),
+                                currencies = (orResult.currencies + subResult.currencies).distinct(),
+                                // Special handling for isIncome: if both true and false, show all (null)
+                                isIncome = when {
+                                    orResult.isIncome == null && subResult.isIncome == null -> null
+                                    orResult.isIncome == true && subResult.isIncome == false -> null
+                                    orResult.isIncome == false && subResult.isIncome == true -> null
+                                    else -> orResult.isIncome ?: subResult.isIncome
+                                },
+                                // For date ranges: if different ranges, show all (null)
+                                startDate = if (orResult.startDate != subResult.startDate) null else (orResult.startDate ?: subResult.startDate),
+                                endDate = if (orResult.endDate != subResult.endDate) null else (orResult.endDate ?: subResult.endDate),
+                                // For amount ranges: if different ranges, show all (null)
+                                minAmount = if (orResult.minAmount != subResult.minAmount) null else (orResult.minAmount ?: subResult.minAmount),
+                                maxAmount = if (orResult.maxAmount != subResult.maxAmount) null else (orResult.maxAmount ?: subResult.maxAmount),
+                                // For warranty: if different ranges, show all (null)
+                                hasWarranty = if (orResult.hasWarranty != subResult.hasWarranty) null else (orResult.hasWarranty ?: subResult.hasWarranty),
+                                warrantyExpirationStart = if (orResult.warrantyExpirationStart != subResult.warrantyExpirationStart) null else (orResult.warrantyExpirationStart ?: subResult.warrantyExpirationStart),
+                                warrantyExpirationEnd = if (orResult.warrantyExpirationEnd != subResult.warrantyExpirationEnd) null else (orResult.warrantyExpirationEnd ?: subResult.warrantyExpirationEnd),
+                                // For note/payee: OR logic - combine with space
+                                queryNote = listOfNotNull(orResult.queryNote, subResult.queryNote).filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
+                                queryPayee = listOfNotNull(orResult.queryPayee, subResult.queryPayee).filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
+                                // For regex flags: OR logic
+                                isNoteRegex = orResult.isNoteRegex || subResult.isNoteRegex,
+                                isPayeeRegex = orResult.isPayeeRegex || subResult.isPayeeRegex
+                            )
+                        }
+                        orResult
+                    } else {
+                        // AND logic: last one wins (intersection is handled in query layer)
+                        var andResult = result
+                        for (subFilter in filter.filters) {
+                            val subResult = FilterStack(listOf(subFilter)).toTransactionFilter()
+                            andResult = andResult.copy(
+                                queryNote = subResult.queryNote ?: andResult.queryNote,
+                                isNoteRegex = subResult.isNoteRegex || andResult.isNoteRegex,
+                                queryPayee = subResult.queryPayee ?: andResult.queryPayee,
+                                isPayeeRegex = subResult.isPayeeRegex || andResult.isPayeeRegex,
+                                categoryIds = if (subResult.categoryIds.isNotEmpty()) subResult.categoryIds else andResult.categoryIds,
+                                accountIds = if (subResult.accountIds.isNotEmpty()) subResult.accountIds else andResult.accountIds,
+                                startDate = subResult.startDate ?: andResult.startDate,
+                                endDate = subResult.endDate ?: andResult.endDate,
+                                paymentMethods = if (subResult.paymentMethods.isNotEmpty()) subResult.paymentMethods else andResult.paymentMethods,
+                                hasWarranty = subResult.hasWarranty ?: andResult.hasWarranty,
+                                warrantyExpirationStart = subResult.warrantyExpirationStart ?: andResult.warrantyExpirationStart,
+                                warrantyExpirationEnd = subResult.warrantyExpirationEnd ?: andResult.warrantyExpirationEnd,
+                                minAmount = subResult.minAmount ?: andResult.minAmount,
+                                maxAmount = subResult.maxAmount ?: andResult.maxAmount,
+                                isIncome = subResult.isIncome ?: andResult.isIncome,
+                                currencies = if (subResult.currencies.isNotEmpty()) subResult.currencies else andResult.currencies
+                            )
+                        }
+                        andResult
                     }
-                    result
                 }
                 is UnifiedFilter.SavedFilterReference -> {
                     // Cannot convert saved filter reference without loading from database

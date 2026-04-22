@@ -58,16 +58,13 @@ class TransactionUseCases(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int,
         limit: Int = 20,
-        days: Int? = null
+        days: Int = 7
     ): List<TransactionWithBalance> {
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
-        
-        val cutoffTime = if (days != null) {
-            System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-        } else null
 
-        return allTransactions.sortedBy { it.timestamp }
+        // Calculate running balances for all transactions
+        val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
             .groupBy { it.accountId }
             .flatMap { (accId, accountTransactions) ->
                 val account = accountMap[accId]
@@ -82,7 +79,7 @@ class TransactionUseCases(
                         exchangeRates = exchangeRates,
                         precision = precision + 4
                     )
-                    
+
                     val balanceBefore = runningBalance
                     runningBalance = if (transaction.transactionType == "income") {
                         runningBalance.add(txAmountInAccountCurrency)
@@ -97,8 +94,20 @@ class TransactionUseCases(
                 }
             }
             .filter { it.transaction.accountId in nonArchivedAccountIds }
-            .filter { cutoffTime == null || it.transaction.timestamp >= cutoffTime }
             .sortedByDescending { it.transaction.timestamp }
-            .take(limit)
+
+        // Get transactions from last 7 days
+        val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+        val transactionsFromLastDays = transactionsWithBalance.filter { it.transaction.timestamp >= cutoffTime }
+
+        // Get last 20 transactions
+        val lastLimitTransactions = transactionsWithBalance.take(limit)
+
+        // Return whichever has more transactions
+        return if (transactionsFromLastDays.size >= lastLimitTransactions.size) {
+            transactionsFromLastDays
+        } else {
+            lastLimitTransactions
+        }
     }
 }

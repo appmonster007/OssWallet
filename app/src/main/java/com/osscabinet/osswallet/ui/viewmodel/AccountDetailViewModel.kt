@@ -234,6 +234,14 @@ class AccountDetailViewModel(
                     precision = precision
                 )
 
+                // Get recent transactions using the same logic as dashboard (last 20 or last 7 days, whichever has more)
+                val recentTransactions = transactionUseCases.getRecentTransactions(
+                    allTransactions = accountTransactions,
+                    accounts = listOf(account),
+                    exchangeRates = rates,
+                    precision = precision
+                ).map { it.transaction }
+
                 val updatedAccount = financialUseCases.getTotalBalances(
                     accounts = listOf(account),
                     allTransactions = allTransactions.filter { it.accountId == accountId },
@@ -244,7 +252,7 @@ class AccountDetailViewModel(
 
                 AccountDetailUiState.Success(
                     account = updatedAccount,
-                    cashFlowTransactions = cashFlowResult.filteredTransactions,
+                    recentTransactions = recentTransactions,
                     currencyTotals = currencyTotals,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -271,7 +279,7 @@ sealed class AccountDetailUiState {
     object Loading : AccountDetailUiState()
     data class Success(
         val account: Account,
-        val cashFlowTransactions: List<Transaction>,
+        val recentTransactions: List<Transaction>,
         val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ data class BudgetSettings(
 @Composable
 fun BudgetsCard(
     onManageClick: () -> Unit,
+    onBudgetClick: (String) -> Unit = {},
     budgets: List<Budget>,
     baseCurrency: String,
     cardId: String,
@@ -70,15 +72,19 @@ fun BudgetsCard(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 budgets.forEach { budget ->
-                    AeonBudgetProgress(
-                        label = budget.category,
-                        current = budget.spent,
-                        total = budget.limit,
-                        color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        baseCurrency = baseCurrency,
-                        precision = precision,
-                        showLabels = showProgressLabels
-                    )
+                    Box(
+                        modifier = Modifier.clickable { onBudgetClick(budget.category) }
+                    ) {
+                        AeonBudgetProgress(
+                            label = budget.category,
+                            current = budget.spent,
+                            total = budget.limit,
+                            color = if (budget.spent > budget.limit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            baseCurrency = baseCurrency,
+                            precision = precision,
+                            showLabels = showProgressLabels
+                        )
+                    }
                 }
             }
         }

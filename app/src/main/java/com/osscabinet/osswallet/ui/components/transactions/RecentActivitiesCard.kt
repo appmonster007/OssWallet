@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.dashboard.components
+package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -28,7 +28,6 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.categoryIcons
-import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
@@ -402,4 +401,3 @@ fun DailyHeader(
         }
     }
 }
-

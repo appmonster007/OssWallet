@@ -42,6 +42,7 @@ import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
@@ -227,181 +228,62 @@ fun AccountDetailScreen(
                                 }
                             }
                             1 -> {
-                        // Transactions tab content (same as original)
-                        val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.balance) {
-                            // Calculate running balance from transactions
-                            // Start from zero and apply transactions in reverse order
-                            var currentBalance = BigDecimal.ZERO
-                            state.cashFlowTransactions.sortedByDescending { it.timestamp }.map { tx ->
-                                val balanceAfter = currentBalance
-                                val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
-                                currentBalance = balanceBefore
-                                TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                            }.reversed()
-                        }.sortedByDescending { it.transaction.timestamp }
+                                // Transactions tab content using RecentActivitiesCard
+                                val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.balance) {
+                                    // Calculate running balance from transactions
+                                    // Start from zero and apply transactions in reverse order
+                                    var currentBalance = BigDecimal.ZERO
+                                    state.cashFlowTransactions.sortedByDescending { it.timestamp }.map { tx ->
+                                        val balanceAfter = currentBalance
+                                        val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
+                                        currentBalance = balanceBefore
+                                        TransactionWithBalance(tx, balanceBefore, balanceAfter)
+                                    }.reversed()
+                                }.sortedByDescending { it.transaction.timestamp }
 
-                        if (transactionsWithBalanceList.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        Icons.Rounded.History,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(64.dp),
-                                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        "No transactions yet",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                            }
-                        } else {
-                            val filter by transactionViewModel.accountDetailFilter.collectAsStateWithLifecycle()
-                            val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-                            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-                            val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-                            val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
-                            val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-                            val analyticsState by analyticsViewModel.uiState.collectAsStateWithLifecycle()
-                            val scope = rememberCoroutineScope()
-                            val scaffoldState = rememberBottomSheetScaffoldState(
-                                bottomSheetState = rememberStandardBottomSheetState(
-                                    initialValue = SheetValue.PartiallyExpanded,
-                                    skipHiddenState = true
-                                )
-                            )
+                                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                                val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
+                                val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
+                                val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+                                val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
 
-                            // Apply account filter automatically if not already set specifically for this account
-                            LaunchedEffect(accountId) {
-                                if (!filter.accountIds.contains(accountId)) {
-                                    transactionViewModel.updateAccountDetailFilter(filter.copy(accountIds = listOf(accountId)))
-                                }
-                            }
-
-                            // Reset filters when leaving the transactions tab or the screen
-                            DisposableEffect(Unit) {
-                                onDispose {
-                                    transactionViewModel.clearAccountDetailFilters()
-                                }
-                            }
-
-                            BottomSheetScaffold(
-                                scaffoldState = scaffoldState,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(top = screenPadding.calculateTopPadding())
-                                    .background(Color.Transparent),
-                                sheetPeekHeight = 90.dp,
-                                sheetContainerColor = Color.Transparent,
-                                sheetContentColor = MaterialTheme.colorScheme.onSurface,
-                                sheetTonalElevation = 0.dp,
-                                sheetShadowElevation = 0.dp,
-                                sheetShape = RectangleShape,
-                                sheetDragHandle = null,
-                                sheetSwipeEnabled = true,
-                                sheetContent = {
-                                    TransactionFilterSheet(
-                                        filter = filter,
-                                        accounts = accounts,
-                                        categories = categoriesList,
-                                        savedFilters = savedFilters,
-                                        onSetDateRange = { start, end -> transactionViewModel.setAccountDetailDateRangeFilter(start, end) },
-                                        onUpdateFilter = { updatedFilter ->
-                                            // Ensure we always stay filtered by this account
-                                            transactionViewModel.updateAccountDetailFilter(updatedFilter.copy(accountIds = listOf(accountId)))
-                                        },
-                                        onToggleExpand = {
-                                            scope.launch {
-                                                if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                                                    scaffoldState.bottomSheetState.expand()
-                                                } else {
-                                                    scaffoldState.bottomSheetState.partialExpand()
-                                                }
-                                            }
-                                        },
-                                        onClose = {
-                                            scope.launch { scaffoldState.bottomSheetState.partialExpand() }
-                                        },
-                                        isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
-                                        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                        showAccountFilter = false
-                                    )
-                                }
-                            ) { sheetPadding ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(top = sheetPadding.calculateTopPadding())
-                                ) {
-                                    val filteredTransactions = remember(transactionsWithBalanceList, filter) {
-                                        transactionsWithBalanceList.filter { item ->
-                                            val tx = item.transaction
-                                            
-                                            // Manual in-memory filtering for account detail screen
-                                            val queryNote = filter.queryNote
-                                            val matchesNote = queryNote == null || 
-                                                (if (filter.isNoteRegex) {
-                                                    try { Regex(queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch(e: Exception) { false }
-                                                } else tx.note.contains(queryNote, ignoreCase = true))
-                                            
-                                            val queryPayee = filter.queryPayee
-                                            val matchesPayee = queryPayee == null || 
-                                                (if (filter.isPayeeRegex) {
-                                                    try { Regex(queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch(e: Exception) { false }
-                                                } else tx.payee.contains(queryPayee, ignoreCase = true))
-                                            
-                                            val categoryIds = filter.categoryIds
-                                            val matchesCategory = categoryIds.isEmpty() || tx.categoryId in categoryIds
-                                            
-                                            val startDate = filter.startDate
-                                            val endDate = filter.endDate
-                                            val matchesDate = (startDate == null || tx.timestamp >= startDate) &&
-                                                              (endDate == null || tx.timestamp <= endDate)
-                                            
-                                            val currencies = filter.currencies
-                                            val matchesCurrency = currencies.isEmpty() || tx.currency in currencies
-                                            
-                                            val transactionType = filter.transactionType
-                                            val matchesIncome = transactionType == null || tx.transactionType == transactionType
-                                            
-                                            val paymentMethods = filter.paymentMethods
-                                            val matchesPaymentMethod = paymentMethods.isEmpty() || tx.paymentMethod in paymentMethods
-                                            
-                                            matchesNote && matchesPayee && matchesCategory && matchesDate && matchesCurrency && matchesIncome && matchesPaymentMethod
+                                if (transactionsWithBalanceList.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(
+                                                Icons.Rounded.History,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(64.dp),
+                                                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                            )
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Text(
+                                                "No transactions yet",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.outline
+                                            )
                                         }
                                     }
-
-                                if (filteredTransactions.isEmpty()) {
-                                    TransactionListEmptyState()
                                 } else {
-                                    AeonTransactionList(
-                                        transactions = filteredTransactions,
-                                        accountMap = accountNamesMap,
+                                    RecentActivitiesCard(
+                                        recentTransactions = transactionsWithBalanceList,
+                                        accountNamesMap = accountNamesMap,
                                         categoryMap = categoryMap,
-                                        onTransactionClick = { tx -> navigate { onEditTransactionClick(tx.id) } },
-                                        contentPadding = PaddingValues(
-                                            bottom = calculateScrollBottomPadding()
-                                        ),
-                                        precision = state.decimalPrecision,
-                                        useNoteAsHeader = state.useNoteAsHeader,
-                                        showOpeningBalance = true, // Force show balances for account details
-                                        showClosingBalance = true,
-                                        baseCurrency = analyticsState.selectedCurrency,
+                                        decimalPrecision = state.decimalPrecision,
+                                        onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                                        onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
+                                        baseCurrency = state.baseCurrency,
                                         exchangeRates = state.exchangeRates,
                                         accountCurrencyMap = accountCurrencyMap,
-                                        filterAccountId = accountId
+                                        contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
-                                }
                             }
-                        }
-                                    }
                     }
                 }
             }

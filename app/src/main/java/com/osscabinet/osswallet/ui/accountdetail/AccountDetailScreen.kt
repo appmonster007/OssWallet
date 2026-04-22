@@ -229,11 +229,11 @@ fun AccountDetailScreen(
                             }
                             1 -> {
                                 // Transactions tab content using RecentActivitiesCard
-                                val transactionsWithBalanceList = remember(state.cashFlowTransactions, state.account.balance) {
+                                val transactionsWithBalanceList = remember(state.recentTransactions, state.account.balance) {
                                     // Calculate running balance from transactions
                                     // Start from zero and apply transactions in reverse order
                                     var currentBalance = BigDecimal.ZERO
-                                    state.cashFlowTransactions.sortedByDescending { it.timestamp }.map { tx ->
+                                    state.recentTransactions.sortedByDescending { it.timestamp }.map { tx ->
                                         val balanceAfter = currentBalance
                                         val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
                                         currentBalance = balanceBefore
@@ -373,7 +373,7 @@ fun DynamicAccountDetailCards(
                     val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
                         value = accountDetailViewModel.computeCashFlowForCard(
                             cardConfig = cardConfig,
-                            accountTransactions = state.cashFlowTransactions,
+                            accountTransactions = state.recentTransactions,
                             baseCurrency = state.account.currencyCode,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
@@ -409,7 +409,7 @@ fun DynamicAccountDetailCards(
                         value = accountDetailViewModel.computeCurrencyTotalsForCard(
                             cardConfig = cardConfig,
                             account = state.account,
-                            accountTransactions = state.cashFlowTransactions,
+                            accountTransactions = state.recentTransactions,
                             baseCurrency = state.baseCurrency,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision

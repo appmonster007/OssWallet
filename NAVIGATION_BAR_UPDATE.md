@@ -73,6 +73,14 @@ Reverted from custom implementation to standard Material 3 `NavigationBar` becau
 
 - `app/src/main/java/com/osscabinet/ossWallet/ui/dashboard/DashboardScreen.kt`
   - Moved ExpressiveNavigationBar to Scaffold's `bottomBar` parameter
-  - Moved AeonExpandableFab to Scaffold's `floatingActionButton` parameter
+  - Moved AeonExpandableFab inside ModalNavigationDrawer but outside Scaffold
   - Removed duplicate navigation bar and FAB that were outside Scaffold
   - **Fixed**: Navigation bar now sits behind left drawer when opened (proper z-index)
+  - **Fixed**: FAB now sits behind left drawer but above navigation bar
+  - **Fixed**: Clicking FAB when drawer is open closes drawer instead of opening FAB menu
+
+- `app/src/main/java/com/osscabinet/ossWallet/ui/accountdetail/AccountDetailScreen.kt`
+  - Moved ExpressiveNavigationBar to Scaffold's `bottomBar` parameter for consistency
+  - Removed duplicate navigation bar that was in Box
+  - FAB remains in Box (outside Scaffold) to hover over whole screen
+  - **Consistent**: Same structure as DashboardScreen (no drawer in AccountDetailScreen, so no z-index issue)

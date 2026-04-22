@@ -275,13 +275,6 @@ fun DashboardScreen(
                         },
                         tabs = tabs
                     )
-                },
-                floatingActionButton = {
-                    AeonExpandableFab(
-                        onAddClick = { type, name -> navigate { onAddClick(type, name) } },
-                        templates = allTemplates,
-                        modifier = Modifier.padding(bottom = 80.dp)
-                    )
                 }
             ) { innerPadding ->
                 // Context indicator banner (if view focus is applied)
@@ -329,6 +322,12 @@ fun DashboardScreen(
                     }
                 }
             }
+
+            AeonExpandableFab(
+                onAddClick = { type, name -> navigate { onAddClick(type, name) } },
+                templates = allTemplates,
+                fabPaddingBottom = 96.dp
+            )
         }
     }
 }

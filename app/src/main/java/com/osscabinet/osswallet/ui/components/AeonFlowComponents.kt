@@ -186,6 +186,7 @@ fun AeonFlowSectionHeader(
 fun AeonFlowBadge(
     amount: BigDecimal,
     type: CashFlowType,
+    currency: String,
     modifier: Modifier = Modifier,
     incomeColor: Color = Color(0xFF4CAF50),
     expenseColor: Color = Color(0xFFF44336),
@@ -198,7 +199,7 @@ fun AeonFlowBadge(
         modifier = modifier
     ) {
         Text(
-            text = (if (type == CashFlowType.INCOME) "+" else "-") + formatCurrencyRight(amount, "", precision).trim(),
+            text = (if (type == CashFlowType.INCOME) "+" else "-") + formatCurrencyRight(amount, currency, precision).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,
@@ -301,11 +302,13 @@ fun AeonFlowBadgePreview() {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AeonFlowBadge(
                     amount = BigDecimal("1500.00"),
-                    type = CashFlowType.INCOME
+                    type = CashFlowType.INCOME,
+                    currency = "USD"
                 )
                 AeonFlowBadge(
                     amount = BigDecimal("450.50"),
-                    type = CashFlowType.EXPENSE
+                    type = CashFlowType.EXPENSE,
+                    currency = "USD"
                 )
             }
         }

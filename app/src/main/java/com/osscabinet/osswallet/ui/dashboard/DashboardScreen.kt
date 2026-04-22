@@ -115,6 +115,7 @@ private fun calculateScrollBottomPadding(): Dp {
 fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onRecordsClickWithFilterStack: (com.osscabinet.ossWallet.domain.model.filter.FilterStack) -> Unit = {},
     onBudgetsClick: () -> Unit,
     onEditBudgetClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
@@ -472,9 +473,7 @@ fun DashboardContent(
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
                                         onCurrencyClick = { currency ->
-                                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                                currencies = listOf(currency)
-                                            ))
+                                            onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forCurrency(currency))
                                         }
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))
@@ -505,8 +504,8 @@ fun DashboardContent(
                                         onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
                                         onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
-                                        onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
-                                        onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
+                                        onClickIncome = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forIncome()) },
+                                        onClickExpense = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forExpense()) }
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }

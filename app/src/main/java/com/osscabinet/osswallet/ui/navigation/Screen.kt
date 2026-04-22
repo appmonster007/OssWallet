@@ -6,17 +6,25 @@ sealed class Screen(val route: String) {
             return if (viewContext != null) "dashboard?viewContext=$viewContext" else "dashboard"
         }
     }
-    object AccountsView : Screen("accounts_view?filterContext={filterContext}") {
+    object AccountsView : Screen("accounts_view?filterContext={filterContext}&filterStack={filterStack}") {
         fun createRoute(filterContext: String? = null): String {
             return if (filterContext != null) "accounts_view?filterContext=$filterContext" else "accounts_view"
+        }
+
+        fun createRouteWithFilterStack(filterStack: String? = null): String {
+            return if (filterStack != null) "accounts_view?filterStack=$filterStack" else "accounts_view"
         }
     }
     object Settings : Screen("settings")
     object Loans : Screen("loans")
     object Budgets : Screen("budgets")
-    object TransactionList : Screen("list?filterContext={filterContext}") {
+    object TransactionList : Screen("list?filterContext={filterContext}&filterStack={filterStack}") {
         fun createRoute(filterContext: String? = null): String {
             return if (filterContext != null) "list?filterContext=$filterContext" else "list"
+        }
+
+        fun createRouteWithFilterStack(filterStack: String? = null): String {
+            return if (filterStack != null) "list?filterStack=$filterStack" else "list"
         }
     }
     object AddTransaction : Screen("add?accountId={accountId}&type={type}&template={template}") {

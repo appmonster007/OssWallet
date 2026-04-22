@@ -235,6 +235,7 @@ fun OssWalletNavGraph(
             com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
+                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) },
                 onAddClick = { type, template ->
@@ -267,15 +268,30 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("filterStack") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val filterContext = backStackEntry.arguments?.getString("filterContext")
+            val filterStackString = backStackEntry.arguments?.getString("filterStack")
+            val filterStack = filterStackString?.let {
+                try {
+                    val decoded = java.net.URLDecoder.decode(it, java.nio.charset.StandardCharsets.UTF_8.toString())
+                    kotlinx.serialization.json.Json.decodeFromString<com.osscabinet.ossWallet.domain.model.filter.FilterStack>(decoded)
+                } catch (e: Exception) {
+                    com.osscabinet.ossWallet.domain.model.filter.FilterStack.Empty
+                }
+            }
             AccountsViewScreen(
-                onDashboardClick = { 
+                onDashboardClick = {
                     navController.popBackStack()
                 },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
+                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) },
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
@@ -295,7 +311,8 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 accountsViewViewModel = accountsViewViewModel,
                 cardManagerViewModel = cardManagerViewModel,
-                filterContext = filterContext
+                filterContext = filterContext,
+                initialFilterStack = filterStack
             )
         }
 
@@ -437,15 +454,30 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("filterStack") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val filterContext = backStackEntry.arguments?.getString("filterContext")
+            val filterStackString = backStackEntry.arguments?.getString("filterStack")
+            val filterStack = filterStackString?.let {
+                try {
+                    val decoded = java.net.URLDecoder.decode(it, java.nio.charset.StandardCharsets.UTF_8.toString())
+                    kotlinx.serialization.json.Json.decodeFromString<com.osscabinet.ossWallet.domain.model.filter.FilterStack>(decoded)
+                } catch (e: Exception) {
+                    com.osscabinet.ossWallet.domain.model.filter.FilterStack.Empty
+                }
+            }
             TransactionListScreen(
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
+                initialFilterStack = filterStack,
                 onAddTransactionClick = { type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
                 },
@@ -538,7 +570,8 @@ fun OssWalletNavGraph(
                 onAddTransactionClick = { accId, type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
                 },
-                onRecordsClick = { context -> navController.navigateToRecords(context) }
+                onRecordsClick = { context -> navController.navigateToRecords(context) },
+                onRecordsClickWithFilterStack = { filterStack -> navController.navigateToRecords(filterStack) }
             )
         }
 

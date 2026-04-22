@@ -86,6 +86,7 @@ private fun calculateScrollBottomPadding(): Dp {
 fun AccountsViewScreen(
     onDashboardClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onRecordsClickWithFilterStack: (com.osscabinet.ossWallet.domain.model.filter.FilterStack) -> Unit = {},
     onAnalyticsClick: () -> Unit,
     onBudgetsClick: () -> Unit,
     onLoansClick: () -> Unit,
@@ -103,7 +104,8 @@ fun AccountsViewScreen(
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
     accountsViewViewModel: AccountsViewViewModel,
     cardManagerViewModel: CardManagerViewModel,
-    filterContext: String? = null
+    filterContext: String? = null,
+    initialFilterStack: com.osscabinet.ossWallet.domain.model.filter.FilterStack? = null
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -129,6 +131,16 @@ fun AccountsViewScreen(
         } ?: run {
             // If no context provided, ensure filter is cleared
             accountsViewViewModel.clearAccountsFilter()
+        }
+    }
+
+    // Initialize filter from FilterStack when screen opens (new approach)
+    LaunchedEffect(initialFilterStack) {
+        if (initialFilterStack != null) {
+            // Convert FilterStack to account-specific filter
+            // For now, we'll handle this by applying the filters to the accounts view
+            // This may need custom logic based on how accountsViewViewModel handles filters
+            // TODO: Implement proper FilterStack to accounts filter conversion
         }
     }
 
@@ -381,9 +393,7 @@ fun AccountsViewScreen(
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
                                             onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
                                             onCurrencyClick = { currency ->
-                                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                                    currencies = listOf(currency)
-                                                ))
+                                                onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forCurrency(currency))
                                             },
                                             headerModifier = dragModifier,
                                             modifier = Modifier.fillMaxWidth()
@@ -417,8 +427,8 @@ fun AccountsViewScreen(
                                             onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
                                             onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
-                                            onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
+                                            onClickIncome = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forIncome()) },
+                                            onClickExpense = { onRecordsClickWithFilterStack(com.osscabinet.ossWallet.domain.model.filter.FilterStack.forExpense()) }
                                         )
                                     } ?: Box(modifier = Modifier.size(0.dp))
                                 }

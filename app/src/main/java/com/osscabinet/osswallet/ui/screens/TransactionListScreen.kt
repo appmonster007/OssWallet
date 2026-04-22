@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.filter.FilterStack
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
@@ -36,8 +37,9 @@ fun TransactionListScreen(
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel,
-    // Context-aware parameter
-    filterContext: String? = null
+    // Context-aware parameters
+    filterContext: String? = null,
+    initialFilterStack: FilterStack? = null
 ) {
     val transactionsWithBalance by viewModel.transactionsWithBalance.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
@@ -75,11 +77,16 @@ fun TransactionListScreen(
                 )
                 viewModel.initializeRecordsFilter(context)
             } catch (e: Exception) {
-                // If context is invalid, use None
-                viewModel.initializeRecordsFilter(RecordsFilterContext.None)
+                // Handle error silently
             }
-        } else {
-            viewModel.initializeRecordsFilter(RecordsFilterContext.None)
+        }
+    }
+
+    // Initialize filter from FilterStack when screen opens (new approach)
+    LaunchedEffect(initialFilterStack) {
+        if (initialFilterStack != null) {
+            val transactionFilter = initialFilterStack.toTransactionFilter()
+            viewModel.setRecordsFilter(transactionFilter)
         }
     }
 

@@ -19,7 +19,8 @@ fun FilterEntity.toDomain(): TransactionFilter {
         minAmount = minAmount,
         maxAmount = maxAmount,
         transactionType = transactionType,
-        currencies = if (currencies.isEmpty()) emptyList() else currencies.split(",")
+        currencies = if (currencies.isEmpty()) emptyList() else currencies.split(","),
+        statuses = if (statuses.isEmpty()) emptyList() else statuses.split(",").map { TransactionStatus.fromString(it) }
     )
 }
 
@@ -42,6 +43,7 @@ fun TransactionFilter.toEntity(name: String, id: Long = 0): FilterEntity {
         minAmount = minAmount,
         maxAmount = maxAmount,
         transactionType = transactionType,
-        currencies = currencies.joinToString(",")
+        currencies = currencies.joinToString(","),
+        statuses = statuses.joinToString(",") { it.name }
     )
 }

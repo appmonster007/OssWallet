@@ -41,7 +41,7 @@ class BackupRepositoryImpl(
                     profileId = it.profileId
                 ) 
             },
-            transactions = transactionDao.getAllTransactionsSync().map { 
+            transactions = transactionDao.getAllTransactionsSync().map {
                 TransactionBackup(
                     id = it.id,
                     title = it.title,
@@ -58,7 +58,8 @@ class BackupRepositoryImpl(
                     note = it.note,
                     recurring = it.recurring,
                     linkedTransactionId = it.linkedTransactionId,
-                    profileId = it.profileId
+                    profileId = it.profileId,
+                    status = it.status
                 )
             },
             categories = categoryDao.getAllCategoriesSync().map { 
@@ -123,7 +124,7 @@ class BackupRepositoryImpl(
                 )
             )
         }
-        backup.transactions.forEach { 
+        backup.transactions.forEach {
             transactionDao.insertTransaction(
                 TransactionEntity(
                     id = it.id,
@@ -141,7 +142,8 @@ class BackupRepositoryImpl(
                     note = it.note,
                     recurring = it.recurring,
                     linkedTransactionId = it.linkedTransactionId,
-                    profileId = it.profileId
+                    profileId = it.profileId,
+                    status = it.status
                 )
             )
         }

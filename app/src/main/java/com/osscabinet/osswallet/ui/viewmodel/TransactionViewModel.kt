@@ -196,6 +196,7 @@ class TransactionViewModel(
         latitude: Double? = null,
         longitude: Double? = null,
         warrantyExpiration: Long? = null,
+        status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
         onComplete: ((Long) -> Unit)? = null
     ) {
         viewModelScope.launch {
@@ -216,7 +217,8 @@ class TransactionViewModel(
                 linkedTransactionId = linkedTransactionId,
                 latitude = latitude,
                 longitude = longitude,
-                warrantyExpiration = warrantyExpiration
+                warrantyExpiration = warrantyExpiration,
+                status = status
             )
             val id = transactionUseCases.insertTransaction(transaction, profileId)
             onComplete?.invoke(id)
@@ -240,7 +242,8 @@ class TransactionViewModel(
         linkedTransactionId: Long? = null,
         latitude: Double? = null,
         longitude: Double? = null,
-        warrantyExpiration: Long? = null
+        warrantyExpiration: Long? = null,
+        status: com.osscabinet.ossWallet.domain.model.TransactionStatus = oldTransaction.status
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
@@ -260,7 +263,8 @@ class TransactionViewModel(
                 linkedTransactionId = linkedTransactionId,
                 latitude = latitude,
                 longitude = longitude,
-                warrantyExpiration = warrantyExpiration
+                warrantyExpiration = warrantyExpiration,
+                status = status
             )
             transactionUseCases.updateTransaction(oldTransaction, newTransaction, profileId)
         }

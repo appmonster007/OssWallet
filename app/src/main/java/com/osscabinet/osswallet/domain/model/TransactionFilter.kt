@@ -16,5 +16,6 @@ data class TransactionFilter(
     val minAmount: java.math.BigDecimal? = null,
     val maxAmount: java.math.BigDecimal? = null,
     val transactionType: String? = null, // null = all, "income" = income only, "expense" = expense only
-    val currencies: List<String> = emptyList()
+    val currencies: List<String> = emptyList(),
+    val statuses: List<TransactionStatus> = emptyList()
 )

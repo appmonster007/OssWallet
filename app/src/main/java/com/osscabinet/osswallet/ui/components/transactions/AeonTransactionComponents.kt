@@ -157,6 +157,7 @@ fun AeonTransactionList(
                     useNoteAsHeader = useNoteAsHeader,
                     showOpeningBalance = showOpeningBalance,
                     showClosingBalance = showClosingBalance,
+                    status = item.transaction.status,
                     onClick = { onTransactionClick(item.transaction) }
                 )
             }
@@ -418,6 +419,7 @@ fun AeonTransactionItem(
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
+    status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -443,18 +445,48 @@ fun AeonTransactionItem(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                icon ?: Icons.Rounded.Category,
-                                contentDescription = null,
-                                tint = iconBg ?: MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                    Box(modifier = Modifier.size(40.dp)) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = CircleShape,
+                            color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    icon ?: Icons.Rounded.Category,
+                                    contentDescription = null,
+                                    tint = iconBg ?: MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        // Status indicator
+                        if (status != com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED) {
+                            Surface(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .align(Alignment.BottomStart),
+                                shape = CircleShape,
+                                color = when (status) {
+                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50)
+                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3)
+                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color.Transparent
+                                }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = when (status) {
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Icons.Rounded.Check
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Icons.Rounded.Sync
+                                            com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Icons.Rounded.Check
+                                        },
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(8.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 

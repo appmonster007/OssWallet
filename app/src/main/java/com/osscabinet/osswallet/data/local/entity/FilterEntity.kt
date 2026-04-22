@@ -23,5 +23,6 @@ data class FilterEntity(
     val minAmount: BigDecimal? = null,
     val maxAmount: BigDecimal? = null,
     val transactionType: String? = null, // "income", "expense", or null for all
-    val currencies: String = "" // Comma-separated currency codes
+    val currencies: String = "", // Comma-separated currency codes
+    val statuses: String = "" // Comma-separated status values
 )

@@ -289,7 +289,8 @@ class DatabaseSeeder @Inject constructor(
         val note: String,
         val tags: String,
         val recurring: String?,
-        val profileId: Int
+        val profileId: Int,
+        val status: String = "cleared"
     ) {
         fun toTransactionEntity(): TransactionEntity {
             return TransactionEntity(
@@ -306,7 +307,8 @@ class DatabaseSeeder @Inject constructor(
                 note = note,
                 tags = tags,
                 recurring = recurring,
-                profileId = profileId
+                profileId = profileId,
+                status = status
             )
         }
 
@@ -327,7 +329,8 @@ class DatabaseSeeder @Inject constructor(
                     note = parts.getOrNull(10) ?: "",
                     tags = parts.getOrNull(11) ?: "",
                     recurring = parts.getOrNull(12),
-                    profileId = parts.getOrNull(13)?.toIntOrNull() ?: 1
+                    profileId = parts.getOrNull(13)?.toIntOrNull() ?: 1,
+                    status = parts.getOrNull(14) ?: "cleared"
                 )
             }
         }

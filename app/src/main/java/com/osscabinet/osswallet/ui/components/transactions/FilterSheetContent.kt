@@ -394,6 +394,20 @@ fun ActiveFiltersSummary(
                     )
                 }
 
+                // Status filter
+                if (filter.statuses.isNotEmpty()) {
+                    FilterGroup(
+                        label = "Status",
+                        chips = filter.statuses.map { status ->
+                            FilterChipData(
+                                label = status.displayName,
+                                isPreApplied = false,
+                                onRemove = { onRemoveFilter("statuses", status) }
+                            )
+                        }
+                    )
+                }
+
                 // Date range filter
                 if (filter.startDate != null || filter.endDate != null) {
                     FilterGroup(
@@ -584,6 +598,7 @@ fun countActiveFilters(filter: TransactionFilter): Int {
     if (!filter.queryNote.isNullOrBlank()) count++
     if (!filter.queryPayee.isNullOrBlank()) count++
     if (filter.minAmount != null || filter.maxAmount != null) count++
+    count += filter.statuses.size
     return count
 }
 
@@ -603,6 +618,7 @@ fun removeFilter(
         "queryNote" -> filter.copy(queryNote = null)
         "queryPayee" -> filter.copy(queryPayee = null)
         "amountRange" -> filter.copy(minAmount = null, maxAmount = null)
+        "statuses" -> filter.copy(statuses = filter.statuses - (value as com.osscabinet.ossWallet.domain.model.TransactionStatus))
         else -> filter
     }
     onUpdateFilter(updatedFilter)

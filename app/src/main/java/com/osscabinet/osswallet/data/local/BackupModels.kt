@@ -61,7 +61,8 @@ data class TransactionBackup(
     val note: String = "",
     val recurring: String? = null,
     val linkedTransactionId: Long? = null,
-    val profileId: Int
+    val profileId: Int,
+    val status: String = "cleared"
 )
 
 @Serializable

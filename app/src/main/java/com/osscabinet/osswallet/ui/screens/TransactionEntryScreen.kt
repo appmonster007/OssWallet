@@ -127,7 +127,7 @@ fun TransactionEntryScreen(
                             title = title.ifBlank { category },
                             amount = amountValue,
                             category = category,
-                            isIncome = isIncome,
+                            transactionType = if (isIncome) "income" else "expense",
                             accountId = accId,
                             currency = currency,
                             categoryId = categoryId,
@@ -147,7 +147,7 @@ fun TransactionEntryScreen(
                                 title = title.ifBlank { "Transfer to ${targetAcc.name}" },
                                 amount = amountValue,
                                 category = "Transfer",
-                                isIncome = false,
+                                transactionType = "expense",
                                 accountId = accId,
                                 currency = currency,
                                 categoryId = null,
@@ -164,7 +164,7 @@ fun TransactionEntryScreen(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = amountValue.multiply(rate),
                                 category = "Transfer",
-                                isIncome = true,
+                                transactionType = "income",
                                 accountId = targetId,
                                 currency = targetCurrency,
                                 tags = tags,
@@ -186,7 +186,7 @@ fun TransactionEntryScreen(
                                 title = title.ifBlank { "Transfer to ${targetAcc.name}" },
                                 amount = amountValue,
                                 category = "Transfer",
-                                isIncome = false,
+                                transactionType = "expense",
                                 accountId = accId,
                                 currency = currency,
                                 categoryId = null,
@@ -205,7 +205,7 @@ fun TransactionEntryScreen(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = amountValue.multiply(rate),
                                 category = "Transfer",
-                                isIncome = true,
+                                transactionType = "income",
                                 accountId = targetId,
                                 currency = targetCurrency,
                                 tags = tags,
@@ -221,7 +221,7 @@ fun TransactionEntryScreen(
                                 title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                                 amount = amountValue.multiply(rate),
                                 category = "Transfer",
-                                isIncome = true,
+                                transactionType = "income",
                                 accountId = targetId,
                                 currency = targetCurrency,
                                 tags = tags,
@@ -244,7 +244,7 @@ fun TransactionEntryScreen(
                             title = title.ifBlank { category },
                             amount = amountValue,
                             category = category,
-                            isIncome = isIncome,
+                            transactionType = if (isIncome) "income" else "expense",
                             accountId = accId,
                             currency = currency,
                             categoryId = categoryId,
@@ -266,7 +266,7 @@ fun TransactionEntryScreen(
                             title = title.ifBlank { "Transfer to ${targetAcc.name}" },
                             amount = amountValue,
                             category = "Transfer",
-                            isIncome = false,
+                            transactionType = "expense",
                             accountId = accId,
                             currency = currency,
                             tags = tags,
@@ -283,7 +283,7 @@ fun TransactionEntryScreen(
                             title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                             amount = amountValue.multiply(rate),
                             category = "Transfer",
-                            isIncome = true,
+                            transactionType = "income",
                             accountId = targetId,
                             currency = targetCurrency,
                             tags = tags,
@@ -304,7 +304,7 @@ fun TransactionEntryScreen(
                         amount = amountValue,
                         category = category,
                         categoryId = categoryId,
-                        isIncome = isIncome,
+                        transactionType = if (isIncome) "income" else "expense",
                         accountId = accId,
                         currency = currency,
                         tags = tags,
@@ -405,7 +405,7 @@ fun TransactionEntryContent(
             paymentMethod = existingTransaction.paymentMethod
             transactionType = when {
                 existingTransaction.category == "Transfer" -> 2
-                existingTransaction.isIncome -> 1
+                existingTransaction.transactionType == "income" -> 1
                 else -> 0
             }
             selectedDateMillis = existingTransaction.timestamp
@@ -860,7 +860,7 @@ fun TransactionEntryContent(
                                     Spacer(modifier = Modifier.width(16.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         val displayTitle = currentLinkedTx.note.ifBlank { currentLinkedTx.category }
-                                        val amountSign = if (currentLinkedTx.isIncome) "+" else "-"
+                                        val amountSign = if (currentLinkedTx.transactionType == "income") "+" else "-"
                                         val formattedAmount = "$amountSign${formatCurrencyRight(currentLinkedTx.amount.abs(), currentLinkedTx.currency, precision = decimalPrecision)}"
                                         
                                         Row(
@@ -1279,7 +1279,7 @@ fun TransactionEntryContent(
                                 amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
                                 balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = decimalPrecision), // Simplified for picker
                                 balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision), // Simplified for picker
-                                type = if (tx.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                type = if (tx.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
                                 timestamp = formatDateTime(tx.timestamp),
                                 note = tx.note,
                                 tags = tx.tags,
@@ -1789,7 +1789,7 @@ fun TransactionEntryWithLongLinkPreview() {
             title = "Very long title for the linked transaction that might push the close button off screen",
             amount = BigDecimal("1234.56"),
             category = "Extremely Long Category Name For Testing Purposes",
-            isIncome = false,
+            transactionType = "expense",
             accountId = "1",
             currency = "USD",
             timestamp = System.currentTimeMillis(),
@@ -1800,7 +1800,7 @@ fun TransactionEntryWithLongLinkPreview() {
             title = "Main Transaction",
             amount = BigDecimal("100.00"),
             category = "Food",
-            isIncome = false,
+            transactionType = "expense",
             accountId = "1",
             currency = "USD",
             timestamp = System.currentTimeMillis(),

@@ -13,7 +13,7 @@ data class Transaction(
     val category: String,
     override val timestamp: Long,
     val currency: String,
-    val isIncome: Boolean,
+    val transactionType: String, // "income" or "expense"
     val accountId: String,
     val categoryId: Long? = null,
     val tags: List<String> = emptyList(),

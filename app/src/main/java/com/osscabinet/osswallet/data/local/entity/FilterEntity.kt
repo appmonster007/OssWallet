@@ -22,6 +22,6 @@ data class FilterEntity(
     val warrantyExpirationEnd: Long? = null,
     val minAmount: BigDecimal? = null,
     val maxAmount: BigDecimal? = null,
-    val isIncome: Boolean? = null,
+    val transactionType: String? = null, // "income", "expense", or null for all
     val currencies: String = "" // Comma-separated currency codes
 )

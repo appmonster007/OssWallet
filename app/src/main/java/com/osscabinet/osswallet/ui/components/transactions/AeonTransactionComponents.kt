@@ -78,12 +78,12 @@ fun AeonTransactionList(
             val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
 
             // Aggregation using CurrencyUtils (CurrencyUtilkit)
-            val incomeByCurrency = weekTransactions.filter { it.transaction.isIncome }
+            val incomeByCurrency = weekTransactions.filter { it.transaction.transactionType == "income" }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val weekIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
 
-            val expenseByCurrency = weekTransactions.filter { !it.transaction.isIncome }
+            val expenseByCurrency = weekTransactions.filter { it.transaction.transactionType == "expense" }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val weekExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
@@ -147,7 +147,7 @@ fun AeonTransactionList(
                     } else null,
                     balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
                     balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
-                    type = if (item.transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                    type = if (item.transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                     note = item.transaction.note,
                     tags = item.transaction.tags,

@@ -144,9 +144,9 @@ fun OssWalletNavGraph(
         }
     )
 
-    val dashboardViewModel: com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel = viewModel(
+    val dashboardViewModel: DashboardViewModel = viewModel(
         factory = GenericViewModelFactory {
-            com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel(
+            DashboardViewModel(
                 appContainer.accountRepository,
                 appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
@@ -185,7 +185,7 @@ fun OssWalletNavGraph(
     val keepSplashOnScreen = when (isOnboardingCompleted) {
         null -> true
         false -> false
-        true -> dashboardUiState is com.osscabinet.ossWallet.ui.dashboard.DashboardUiState.Loading
+        true -> dashboardUiState is DashboardUiState.Loading
     }
 
     SideEffect {
@@ -232,7 +232,7 @@ fun OssWalletNavGraph(
             )
         ) { backStackEntry ->
             val viewContext = backStackEntry.arguments?.getString("viewContext")
-            com.osscabinet.ossWallet.ui.dashboard.DashboardScreen(
+            DashboardScreen(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },

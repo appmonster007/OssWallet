@@ -52,7 +52,7 @@ data class TransactionBackup(
     val category: String,
     val timestamp: Long,
     val currency: String,
-    val isIncome: Boolean,
+    val transactionType: String,
     val accountId: String,
     val categoryId: Long?,
     val tags: String,

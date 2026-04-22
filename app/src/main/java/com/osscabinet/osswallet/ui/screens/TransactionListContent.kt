@@ -196,7 +196,7 @@ fun TransactionListContentPreview() {
         category = "Groceries",
         timestamp = System.currentTimeMillis(),
         currency = "USD",
-        isIncome = false,
+        transactionType = "expense",
         accountId = "1",
         categoryId = 1L
     )

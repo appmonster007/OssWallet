@@ -54,10 +54,11 @@ object FilterDisplayUtils {
                 "${filter.currencies.size} currencies"
             }
             is UnifiedFilter.IncomeTypeFilter -> {
-                when (filter.isIncome) {
-                    true -> "Income only"
-                    false -> "Expense only"
+                when (filter.transactionType) {
+                    "income" -> "Income only"
+                    "expense" -> "Expense only"
                     null -> "All types"
+                    else -> "All types"
                 }
             }
             is UnifiedFilter.WarrantyFilter -> {
@@ -120,10 +121,11 @@ object FilterDisplayUtils {
                 "Filter by ${filter.currencies.size} currenc${if (filter.currencies.size == 1) "y" else "ies"}"
             }
             is UnifiedFilter.IncomeTypeFilter -> {
-                when (filter.isIncome) {
-                    true -> "Show only income transactions"
-                    false -> "Show only expense transactions"
+                when (filter.transactionType) {
+                    "income" -> "Show only income transactions"
+                    "expense" -> "Show only expense transactions"
                     null -> "Show all transaction types"
+                    else -> "Show all transaction types"
                 }
             }
             is UnifiedFilter.WarrantyFilter -> {

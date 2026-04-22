@@ -83,9 +83,9 @@ class TransactionRepositoryImpl(
             queryBuilder.append(" AND categoryId IN ($placeholders)")
             args.addAll(filter.categoryIds)
         }
-        if (filter.isIncome != null) {
-            queryBuilder.append(" AND isIncome = ?")
-            args.add(if (filter.isIncome) 1 else 0)
+        if (filter.transactionType != null) {
+            queryBuilder.append(" AND transactionType = ?")
+            args.add(filter.transactionType)
         }
         if (filter.minAmount != null) {
             queryBuilder.append(" AND amount >= ?")
@@ -224,7 +224,7 @@ class TransactionRepositoryImpl(
             category = category,
             timestamp = timestamp,
             currency = currency,
-            isIncome = isIncome,
+            transactionType = transactionType,
             accountId = accountId,
             categoryId = categoryId,
             tags = if (tags.isEmpty()) emptyList() else tags.split(","),
@@ -247,7 +247,7 @@ class TransactionRepositoryImpl(
             category = category,
             timestamp = timestamp,
             currency = currency,
-            isIncome = isIncome,
+            transactionType = transactionType,
             accountId = accountId,
             categoryId = categoryId,
             tags = tags.joinToString(","),

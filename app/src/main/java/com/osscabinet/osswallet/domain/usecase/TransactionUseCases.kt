@@ -84,7 +84,7 @@ class TransactionUseCases(
                     )
                     
                     val balanceBefore = runningBalance
-                    runningBalance = if (transaction.isIncome) {
+                    runningBalance = if (transaction.transactionType == "income") {
                         runningBalance.add(txAmountInAccountCurrency)
                     } else {
                         runningBalance.subtract(txAmountInAccountCurrency)

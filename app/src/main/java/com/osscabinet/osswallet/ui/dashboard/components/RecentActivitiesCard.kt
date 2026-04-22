@@ -91,12 +91,12 @@ fun RecentActivitiesCard(
             val displayDate = if (isToday) "Today" else date
 
             // Calculate currency breakdown for the day
-            val incomeByCurrency = dayTransactions.filter { it.transaction.isIncome }
+            val incomeByCurrency = dayTransactions.filter { it.transaction.transactionType == "income" }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val dayIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, decimalPrecision)
 
-            val expenseByCurrency = dayTransactions.filter { !it.transaction.isIncome }
+            val expenseByCurrency = dayTransactions.filter { it.transaction.transactionType == "expense" }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val dayExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, decimalPrecision)
@@ -154,7 +154,7 @@ fun RecentActivitiesCard(
                     amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
                     balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
                     balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
-                    type = if (transaction.isIncome) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                    type = if (transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
                     timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                     note = transaction.note,
                     tags = transaction.tags,

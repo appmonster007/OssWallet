@@ -12,7 +12,7 @@ import java.math.BigDecimal
  * val filterStack = FilterStackBuilder()
  *     .accountIds(listOf("acc1", "acc2"))
  *     .categoryIds(listOf(1L, 2L))
- *     .isIncome(true)
+ *     .transactionType("income")
  *     .build()
  * ```
  */
@@ -28,8 +28,8 @@ class FilterStackBuilder {
         filters.add(UnifiedFilter.CategoryFilter(ids))
     }
 
-    fun isIncome(isIncome: Boolean) = apply {
-        filters.add(UnifiedFilter.IncomeTypeFilter(isIncome = isIncome))
+    fun transactionType(type: String) = apply {
+        filters.add(UnifiedFilter.IncomeTypeFilter(transactionType = type))
     }
 
     fun currencies(currencies: List<String>) = apply {
@@ -72,13 +72,13 @@ fun FilterStack.Companion.forCurrency(currency: String): FilterStack =
  * Creates a FilterStack for filtering by income transactions only.
  */
 fun FilterStack.Companion.forIncome(): FilterStack =
-    FilterStackBuilder().isIncome(true).build()
+    FilterStackBuilder().transactionType("income").build()
 
 /**
  * Creates a FilterStack for filtering by expense transactions only.
  */
 fun FilterStack.Companion.forExpense(): FilterStack =
-    FilterStackBuilder().isIncome(false).build()
+    FilterStackBuilder().transactionType("expense").build()
 
 /**
  * Creates a FilterStack for filtering by a specific account.
@@ -92,7 +92,7 @@ fun FilterStack.Companion.forAccount(accountId: String): FilterStack =
 fun FilterStack.Companion.forAccountAndType(accountId: String, isIncome: Boolean): FilterStack =
     FilterStackBuilder()
         .accountIds(listOf(accountId))
-        .isIncome(isIncome)
+        .transactionType(if (isIncome) "income" else "expense")
         .build()
 
 /**

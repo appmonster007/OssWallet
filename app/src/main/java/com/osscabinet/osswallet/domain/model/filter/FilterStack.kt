@@ -187,7 +187,7 @@ data class FilterStack(
                 result.copy(currencies = filter.currencies)
             }
             is UnifiedFilter.IncomeTypeFilter -> {
-                result.copy(isIncome = filter.isIncome)
+                result.copy(transactionType = filter.transactionType)
             }
             is UnifiedFilter.WarrantyFilter -> {
                 result.copy(
@@ -227,12 +227,12 @@ data class FilterStack(
                     accountIds = (result.accountIds + subResult.accountIds).distinct(),
                     paymentMethods = (result.paymentMethods + subResult.paymentMethods).distinct(),
                     currencies = (result.currencies + subResult.currencies).distinct(),
-                    // For isIncome: if combining income and expense, show all (null)
-                    isIncome = if (result.isIncome != null && subResult.isIncome != null &&
-                                 result.isIncome != subResult.isIncome) {
+                    // For transactionType: if combining income and expense, show all (null)
+                    transactionType = if (result.transactionType != null && subResult.transactionType != null &&
+                                         result.transactionType != subResult.transactionType) {
                         null // Show both income and expense (All)
                     } else {
-                        result.isIncome ?: subResult.isIncome
+                        result.transactionType ?: subResult.transactionType
                     },
                     // For date ranges: use min start date and max end date
                     startDate = listOfNotNull(result.startDate, subResult.startDate).minOrNull(),
@@ -271,7 +271,7 @@ data class FilterStack(
                     warrantyExpirationEnd = subResult.warrantyExpirationEnd ?: result.warrantyExpirationEnd,
                     minAmount = subResult.minAmount ?: result.minAmount,
                     maxAmount = subResult.maxAmount ?: result.maxAmount,
-                    isIncome = subResult.isIncome ?: result.isIncome,
+                    transactionType = subResult.transactionType ?: result.transactionType,
                     currencies = if (subResult.currencies.isNotEmpty()) subResult.currencies else result.currencies
                 )
             }
@@ -376,9 +376,9 @@ data class FilterStack(
                 )
             }
             
-            if (filter.isIncome != null) {
+            if (filter.transactionType != null) {
                 filters.add(
-                    UnifiedFilter.IncomeTypeFilter(isIncome = filter.isIncome)
+                    UnifiedFilter.IncomeTypeFilter(transactionType = filter.transactionType)
                 )
             }
             

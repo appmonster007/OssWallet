@@ -180,22 +180,19 @@ class FinancialUseCases(
 
         val currencies = filteredTransactions.map { it.currency }.distinct().sorted()
 
-        val breakdown = currencies.mapNotNull { curr ->
+        val breakdown = currencies.map { curr ->
             val income = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "income")
             val expense = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "expense")
 
-            if (income.signum() == 0 && expense.signum() == 0) null
-            else {
-                val incomeInBase = CurrencyService.convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
-                val expenseInBase = CurrencyService.convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
-                CashFlowBreakdownItem(
-                    currency = curr,
-                    income = income,
-                    incomeInBase = incomeInBase,
-                    expense = expense,
-                    expenseInBase = expenseInBase
-                )
-            }
+            val incomeInBase = CurrencyService.convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
+            val expenseInBase = CurrencyService.convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)
+            CashFlowBreakdownItem(
+                currency = curr,
+                income = income,
+                incomeInBase = incomeInBase,
+                expense = expense,
+                expenseInBase = expenseInBase
+            )
         }
 
         val totalIncomeInBase = breakdown.fold(BigDecimal.ZERO) { acc, item ->

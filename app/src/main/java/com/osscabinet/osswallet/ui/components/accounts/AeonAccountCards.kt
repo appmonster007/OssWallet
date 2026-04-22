@@ -259,11 +259,13 @@ fun AeonAccountCardLarge(
                         AeonFlowBadge(
                             amount = incomeInAccountCurrency,
                             type = CashFlowType.INCOME,
+                            currency = account.currencyCode,
                             precision = precision
                         )
                         AeonFlowBadge(
                             amount = expenseInAccountCurrency,
                             type = CashFlowType.EXPENSE,
+                            currency = account.currencyCode,
                             precision = precision
                         )
                     }

@@ -342,7 +342,7 @@ fun AeonFlowCard(
                         ),
                         color = color
                     )
-                    AeonFlowBadge(totalInBase, type, precision = precision)
+                    AeonFlowBadge(totalInBase, type, baseCurrency, precision = precision)
                 }
 
                 content()

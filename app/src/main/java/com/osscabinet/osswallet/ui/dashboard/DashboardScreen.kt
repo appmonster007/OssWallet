@@ -281,7 +281,7 @@ fun DashboardScreen(
                                 onManageAccountsClick = { navigate(onManageAccountsClick) },
                                 onAccountsViewClick = { navigate(onAccountsViewClick) },
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
+                                onRecordsClick = { context -> navigate { onRecordsClick(context) } },
                                 onBudgetsClick = { navigate(onBudgetsClick) },
                                 onEditBudgetClick = { category -> navigate { onEditBudgetClick(category) } },
                                 onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },

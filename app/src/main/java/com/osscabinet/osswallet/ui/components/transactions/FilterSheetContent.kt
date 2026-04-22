@@ -29,6 +29,8 @@ import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.filter.FilterStack
+import com.osscabinet.ossWallet.domain.model.filter.LogicalOperator
 import com.osscabinet.ossWallet.domain.model.toDomain
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -66,80 +68,27 @@ fun FilterSheetContent(
         }
     }
 
-    // Combine multiple filters from selected presets
-    fun combineFilters(filters: List<TransactionFilter>): TransactionFilter {
-        if (filters.isEmpty()) return TransactionFilter()
-        if (filters.size == 1) return filters[0]
-
-        // Combine category IDs (union)
-        val combinedCategoryIds = filters.flatMap { it.categoryIds }.distinct()
-
-        // Combine account IDs (union)
-        val combinedAccountIds = filters.flatMap { it.accountIds }.distinct()
-
-        // Combine payment methods (union)
-        val combinedPaymentMethods = filters.flatMap { it.paymentMethods }.distinct()
-
-        // Combine currencies (union)
-        val combinedCurrencies = filters.flatMap { it.currencies }.distinct()
-
-        // Combine isIncome - if both true and false present, show all (null)
-        val hasIncome = filters.any { it.isIncome == true }
-        val hasExpense = filters.any { it.isIncome == false }
-        val combinedIsIncome = if (hasIncome && hasExpense) null else filters.firstOrNull { it.isIncome != null }?.isIncome
-
-        // Combine date ranges - if different ranges, show all (null)
-        val startDates = filters.mapNotNull { it.startDate }.distinct()
-        val endDates = filters.mapNotNull { it.endDate }.distinct()
-        val combinedStartDate = if (startDates.size == 1) startDates.first() else null
-        val combinedEndDate = if (endDates.size == 1) endDates.first() else null
-
-        // Combine amount ranges - if different ranges, show all (null)
-        val minAmounts = filters.mapNotNull { it.minAmount }.distinct()
-        val maxAmounts = filters.mapNotNull { it.maxAmount }.distinct()
-        val combinedMinAmount = if (minAmounts.size == 1) minAmounts.first() else null
-        val combinedMaxAmount = if (maxAmounts.size == 1) maxAmounts.first() else null
-
-        // Combine warranty expiration - if different ranges, show all (null)
-        val warrantyStartDates = filters.mapNotNull { it.warrantyExpirationStart }.distinct()
-        val warrantyEndDates = filters.mapNotNull { it.warrantyExpirationEnd }.distinct()
-        val combinedWarrantyStart = if (warrantyStartDates.size == 1) warrantyStartDates.first() else null
-        val combinedWarrantyEnd = if (warrantyEndDates.size == 1) warrantyEndDates.first() else null
-
-        // Combine hasWarranty - if both true and false present, show all (null)
-        val hasWarrantyTrue = filters.any { it.hasWarranty == true }
-        val hasWarrantyFalse = filters.any { it.hasWarranty == false }
-        val combinedHasWarranty = if (hasWarrantyTrue && hasWarrantyFalse) null else filters.firstOrNull { it.hasWarranty != null }?.hasWarranty
-
-        // For note and payee, use OR logic - combine with space if multiple
-        val notes = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }
-        val payees = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }
-        val combinedNote = if (notes.isEmpty()) null else notes.joinToString(" ")
-        val combinedPayee = if (payees.isEmpty()) null else payees.joinToString(" ")
-
-        return TransactionFilter(
-            categoryIds = combinedCategoryIds,
-            accountIds = combinedAccountIds,
-            paymentMethods = combinedPaymentMethods,
-            currencies = combinedCurrencies,
-            isIncome = combinedIsIncome,
-            startDate = combinedStartDate,
-            endDate = combinedEndDate,
-            minAmount = combinedMinAmount,
-            maxAmount = combinedMaxAmount,
-            warrantyExpirationStart = combinedWarrantyStart,
-            warrantyExpirationEnd = combinedWarrantyEnd,
-            hasWarranty = combinedHasWarranty,
-            queryNote = combinedNote,
-            queryPayee = combinedPayee
-        )
-    }
-
+    // Combine multiple filters from selected presets using FilterStack
     fun updateFilterFromSelectedPresets() {
-        val selectedFilters = savedFilters.filter { it.id in selectedFilterIds }
-        val combinedFilter = combineFilters(selectedFilters.map { it.toDomain() })
-        localFilter = combinedFilter
-        applyFilterWithDebounce(combinedFilter, debounceMs = 0)
+        if (selectedFilterIds.isEmpty()) {
+            localFilter = TransactionFilter()
+            applyFilterWithDebounce(localFilter, debounceMs = 0)
+            return
+        }
+
+        // Convert each selected preset to a FilterStack
+        val filterStacks = savedFilters
+            .filter { it.id in selectedFilterIds }
+            .map { FilterStack.fromTransactionFilter(it.toDomain()) }
+
+        // Combine all FilterStacks using OR logic (union of filters)
+        val combinedStack = filterStacks.reduceOrNull { acc, stack ->
+            acc.combineWith(stack, LogicalOperator.OR)
+        } ?: FilterStack.Empty
+
+        // Convert back to TransactionFilter
+        localFilter = combinedStack.toTransactionFilter()
+        applyFilterWithDebounce(localFilter, debounceMs = 0)
     }
 
     // Sync localFilter with filter prop when it changes (e.g., context filters applied by ViewModel)
@@ -243,14 +192,11 @@ fun FilterSheetContent(
                                 ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
-                            ExposedDropdownMenuBox(
-                                expanded = filtersExpanded,
-                                onExpandedChange = { filtersExpanded = !filtersExpanded },
+                            Box(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Surface(
                                     modifier = Modifier
-                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                                         .fillMaxWidth()
                                         .height(48.dp),
                                     shape = RoundedCornerShape(16.dp),
@@ -282,7 +228,7 @@ fun FilterSheetContent(
                                     }
                                 }
 
-                                ExposedDropdownMenu(
+                                DropdownMenu(
                                     expanded = filtersExpanded,
                                     onDismissRequest = { filtersExpanded = false },
                                     modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -299,6 +245,33 @@ fun FilterSheetContent(
                                                 }
                                                 // Update filter from selected presets
                                                 updateFilterFromSelectedPresets()
+                                                // Don't close dropdown - allow multiple selection
+                                            },
+                                            trailingIcon = if (savedFilter.id in selectedFilterIds) {
+                                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                            } else null
+                                        )
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = filtersExpanded,
+                                    onDismissRequest = { filtersExpanded = false },
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                ) {
+                                    savedFilters.forEach { savedFilter ->
+                                        DropdownMenuItem(
+                                            text = { Text(savedFilter.name) },
+                                            onClick = {
+                                                // Toggle selection
+                                                selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
+                                                    selectedFilterIds - savedFilter.id
+                                                } else {
+                                                    selectedFilterIds + savedFilter.id
+                                                }
+                                                // Update filter from selected presets
+                                                updateFilterFromSelectedPresets()
+                                                // Don't close dropdown - allow multiple selection
                                             },
                                             trailingIcon = if (savedFilter.id in selectedFilterIds) {
                                                 { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }

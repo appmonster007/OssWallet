@@ -248,6 +248,10 @@ fun OssWalletNavGraph(
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                onCloneTransactionClick = { transactionId ->
+                    transactionViewModel.setCloneTransactionId(transactionId)
+                    navController.navigate(Screen.AddTransaction.route)
+                },
                 accountViewModel = accountViewModel,
                 transactionViewModel = transactionViewModel,
                 settingsViewModel = settingsViewModel,
@@ -480,6 +484,10 @@ fun OssWalletNavGraph(
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
                 },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                onCloneTransactionClick = { transactionId ->
+                    transactionViewModel.setCloneTransactionId(transactionId)
+                    navController.navigate(Screen.AddTransaction.route)
+                },
                 onBackClick = safePopBackStack,
                 onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                 filterContext = filterContext
@@ -489,7 +497,7 @@ fun OssWalletNavGraph(
         composable(
             Screen.AddTransaction.route,
             arguments = listOf(
-                navArgument("accountId") { 
+                navArgument("accountId") {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
@@ -508,6 +516,7 @@ fun OssWalletNavGraph(
             val accountId = backStackEntry.arguments?.getString("accountId")
             val type = backStackEntry.arguments?.getInt("type") ?: 0
             val template = backStackEntry.arguments?.getString("template")
+
             TransactionEntryScreen(
                 accountId = accountId,
                 initialType = type,
@@ -565,6 +574,10 @@ fun OssWalletNavGraph(
                 onBackClick = safePopBackStack,
                 onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
                 onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                onCloneTransactionClick = { transactionId ->
+                    transactionViewModel.setCloneTransactionId(transactionId)
+                    navController.navigate(Screen.AddTransaction.route)
+                },
                 onAddTransactionClick = { accId, type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
                 },

@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
@@ -37,6 +38,10 @@ class TransactionViewModel(
     // Track revealed card IDs for swipe actions
     private val _revealedCardIdsList = MutableStateFlow<List<Long>>(emptyList())
     val revealedCardIdsList: StateFlow<List<Long>> = _revealedCardIdsList.asStateFlow()
+
+    // Prefill DTO for clone functionality
+    private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
+    val prefillDto: StateFlow<TransactionPrefillDTO?> = _prefillDto.asStateFlow()
 
     val savedFilters = filterDao.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -398,6 +403,30 @@ class TransactionViewModel(
                 onItemCollapsed(transactionId)
             }
         }
+    }
+
+    /**
+     * Set the clone transaction ID and fetch the prefill DTO.
+     * This allows the UI to navigate to the entry screen with prefilled data.
+     * Uses the use case to fetch the transaction directly, bypassing any filters.
+     */
+    fun setCloneTransactionId(transactionId: Long) {
+        viewModelScope.launch {
+            val transaction = transactionUseCases.getTransactionById(transactionId)
+            if (transaction != null) {
+                _prefillDto.value = TransactionPrefillDTO.fromTransaction(transaction, clonedFromTransactionId = transactionId)
+            } else {
+                _prefillDto.value = null
+            }
+        }
+    }
+
+    /**
+     * Clear the prefill DTO.
+     * Call this when opening the entry screen without clone data.
+     */
+    fun clearPrefillDto() {
+        _prefillDto.value = null
     }
 
     fun quickDeleteTransaction(transactionId: Long) {

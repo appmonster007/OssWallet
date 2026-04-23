@@ -32,6 +32,10 @@ class FilterStackBuilder {
         filters.add(UnifiedFilter.IncomeTypeFilter(transactionType = type))
     }
 
+    fun isIncome(isIncome: Boolean) = apply {
+        transactionType(if (isIncome) "income" else "expense")
+    }
+
     fun currencies(currencies: List<String>) = apply {
         filters.add(UnifiedFilter.CurrencyFilter(currencies))
     }

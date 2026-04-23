@@ -106,11 +106,11 @@ class AnalyticsDataModelTest {
             expense = BigDecimal("500.00"),
             colorHex = 0xFFFF5733.toInt(),
             percentage = 0.5f,
-            children = listOf(childData)
+            subcategoryData = listOf(childData)
         )
-        assertNotNull(data.children)
-        assertEquals(1, data.children?.size)
-        assertEquals("Groceries", data.children?.get(0)?.category)
+        assertNotNull(data.subcategoryData)
+        assertEquals(1, data.subcategoryData?.size)
+        assertEquals("Groceries", data.subcategoryData?.get(0)?.category)
     }
 
     @Test

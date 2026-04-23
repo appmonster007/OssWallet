@@ -88,10 +88,10 @@ class FilterSerializationTest {
 
     @Test
     fun `IncomeTypeFilter serialization works`() {
-        val filter = UnifiedFilter.IncomeTypeFilter(isIncome = true)
+        val filter = UnifiedFilter.IncomeTypeFilter(transactionType = "income")
         val serialized = json.encodeToString(filter)
         val deserialized = json.decodeFromString<UnifiedFilter.IncomeTypeFilter>(serialized)
-        assertEquals(filter.isIncome, deserialized.isIncome)
+        assertEquals(filter.transactionType, deserialized.transactionType)
     }
 
     @Test
@@ -111,7 +111,7 @@ class FilterSerializationTest {
         val filter = UnifiedFilter.CompositeFilter(
             filters = listOf(
                 UnifiedFilter.CategoryFilter(listOf(1L)),
-                UnifiedFilter.IncomeTypeFilter(true)
+                UnifiedFilter.IncomeTypeFilter("income")
             ),
             operator = LogicalOperator.AND
         )
@@ -135,7 +135,7 @@ class FilterSerializationTest {
         val filterStack = FilterStack(
             activeFilters = listOf(
                 UnifiedFilter.CategoryFilter(listOf(1L, 2L)),
-                UnifiedFilter.IncomeTypeFilter(true)
+                UnifiedFilter.IncomeTypeFilter("income")
             ),
             logicalOperator = LogicalOperator.AND
         )
@@ -165,7 +165,7 @@ class FilterSerializationTest {
                     ),
                     operator = LogicalOperator.OR
                 ),
-                UnifiedFilter.IncomeTypeFilter(true)
+                UnifiedFilter.IncomeTypeFilter("income")
             ),
             logicalOperator = LogicalOperator.AND
         )

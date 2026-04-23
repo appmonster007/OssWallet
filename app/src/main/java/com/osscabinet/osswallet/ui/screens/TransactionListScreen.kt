@@ -55,6 +55,7 @@ fun TransactionListScreen(
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+    val filterInitialized by viewModel.recordsFilterInitialized.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -70,9 +71,9 @@ fun TransactionListScreen(
         }
     }
 
-    // Initialize filter from context when screen opens
+    // Initialize filter from context when screen opens (only if not already initialized)
     LaunchedEffect(filterContext) {
-        if (filterContext != null) {
+        if (!filterInitialized && filterContext != null) {
             try {
                 val context = Json.decodeFromString<RecordsFilterContext>(
                     java.net.URLDecoder.decode(filterContext, "UTF-8")
@@ -84,20 +85,16 @@ fun TransactionListScreen(
         }
     }
 
-    // Initialize filter from FilterStack when screen opens (new approach)
+    // Initialize filter from FilterStack when screen opens (only if not already initialized)
     LaunchedEffect(initialFilterStack) {
-        if (initialFilterStack != null) {
+        if (!filterInitialized && initialFilterStack != null) {
             val transactionFilter = initialFilterStack.toTransactionFilter()
             viewModel.updateRecordsFilter(transactionFilter)
         }
     }
 
-    // Reset filters when leaving the screen
-    DisposableEffect(Unit) {
-        onDispose {
-            viewModel.clearRecordsFilters()
-        }
-    }
+    // Only clear filters when explicitly navigating back (not when navigating within records context)
+    // Removed automatic filter clearing on screen disposal
 
     TransactionListContent(
         transactionsWithBalance = transactionsWithBalance,
@@ -114,7 +111,12 @@ fun TransactionListScreen(
         templates = allTemplates,
         onAddTransactionClick = { type, template -> navigate { onAddTransactionClick(type, template) } },
         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
-        onBackClick = { navigate { onBackClick() } },
+        onBackClick = {
+            navigate {
+                viewModel.clearRecordsFilters()
+                onBackClick()
+            }
+        },
         onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },

@@ -35,6 +35,10 @@ class TransactionViewModel(
     private val _initialFilterContext = MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
     val initialFilterContext = _initialFilterContext.asStateFlow()
 
+    // Track if records filter has been manually initialized (to prevent reinitialization from navigation)
+    private val _recordsFilterInitialized = MutableStateFlow(false)
+    val recordsFilterInitialized = _recordsFilterInitialized.asStateFlow()
+
     // Track revealed card IDs for swipe actions
     private val _revealedCardIdsList = MutableStateFlow<List<Long>>(emptyList())
     val revealedCardIdsList: StateFlow<List<Long>> = _revealedCardIdsList.asStateFlow()
@@ -86,6 +90,7 @@ class TransactionViewModel(
 
     fun updateRecordsFilter(newFilter: TransactionFilter) {
         _recordsFilter.value = newFilter
+        _recordsFilterInitialized.value = true
     }
 
     fun updateAccountDetailFilter(newFilter: TransactionFilter) {
@@ -106,6 +111,7 @@ class TransactionViewModel(
 
     fun clearRecordsFilters() {
         _recordsFilter.value = TransactionFilter()
+        _recordsFilterInitialized.value = false
     }
 
     fun clearAccountDetailFilters() {
@@ -144,6 +150,7 @@ class TransactionViewModel(
             )
         }
         _recordsFilter.value = filter
+        _recordsFilterInitialized.value = true
     }
 
     /**

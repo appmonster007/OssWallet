@@ -1,10 +1,12 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.animateColor
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -12,26 +14,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import java.math.BigDecimal
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-const val ANIMATION_DURATION = 300
-const val ACTION_ITEM_SIZE = 56
+const val ANIMATION_DURATION = 400
+const val ACTION_ITEM_SIZE = 64
 
 enum class SwipeDirection {
     NONE,
-    LEFT,
-    RIGHT
+    LEFT, // Dragged towards left (reveals right actions)
+    RIGHT // Dragged towards right (reveals left actions)
 }
 
 @Composable
@@ -51,141 +59,151 @@ fun SwipeableTransactionItem(
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var swipeDirection by remember { mutableStateOf(SwipeDirection.NONE) }
-
+    
+    val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    val actionItemSizePx = with(density) { ACTION_ITEM_SIZE.dp.toPx() }
-    val startActionSizePx = with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() }
-    val endActionSizePx = with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() }
+    
+    // Expressive motion configuration
+    val leftSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 3).toPx() } // Revealing right actions
+    val rightSwipeThresholdPx = with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
+    val fullSwipeThresholdPx = with(density) { 220.dp.toPx() }
 
-    // Sync external isRevealed state with local offset
+    // External state synchronization
     LaunchedEffect(isRevealed) {
-        if (isRevealed) {
-            if (swipeDirection == SwipeDirection.RIGHT) {
-                offsetX = endActionSizePx
-            } else if (swipeDirection == SwipeDirection.LEFT) {
-                offsetX = -startActionSizePx
-            }
-        } else {
+        if (!isRevealed) {
             offsetX = 0f
             swipeDirection = SwipeDirection.NONE
         }
     }
 
-    // Animate offset changes smoothly
     val animatedOffset by animateFloatAsState(
         targetValue = offsetX,
-        animationSpec = tween(durationMillis = ANIMATION_DURATION, easing = FastOutSlowInEasing),
-        label = "offsetAnimation"
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "swipeOffset"
     )
 
-    // Background color based on drag progress
+    // Calculate progress for expressive scaling (0 to 1)
     val progress = when {
-        animatedOffset > 0f -> animatedOffset / endActionSizePx
-        animatedOffset < 0f -> animatedOffset / -startActionSizePx
+        animatedOffset > 0f -> (animatedOffset / rightSwipeThresholdPx).coerceIn(0f, 1f)
+        animatedOffset < 0f -> (abs(animatedOffset) / leftSwipeThresholdPx).coerceIn(0f, 1f)
         else -> 0f
-    }.coerceIn(0f, 1f)
-
-    val cardBgColor = when {
-        swipeDirection == SwipeDirection.LEFT && isRevealed -> MaterialTheme.colorScheme.errorContainer
-        swipeDirection == SwipeDirection.RIGHT && isRevealed -> MaterialTheme.colorScheme.primaryContainer
-        animatedOffset > 0f -> androidx.compose.ui.graphics.lerp(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.primaryContainer,
-            progress
-        )
-        animatedOffset < 0f -> androidx.compose.ui.graphics.lerp(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.errorContainer,
-            progress
-        )
-        else -> MaterialTheme.colorScheme.surface
     }
 
     Box(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
-        // Left swipe actions (Split, Clone, Delete) - visible when dragged right
-        if (animatedOffset < -actionItemSizePx || (isRevealed && swipeDirection == SwipeDirection.LEFT)) {
-            TransactionActionsRow(
-                onSplit = onSplit,
-                onClone = onClone,
-                onDelete = onDelete,
-                modifier = Modifier.align(Alignment.CenterEnd)
-            )
+        // Actions Layer (Background)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Right Swipe Content (Reveals Status Actions on the Left)
+            if (animatedOffset > 0) {
+                StatusActionsRow(
+                    currentStatus = transaction.status,
+                    onStatusChange = onStatusChange,
+                    progress = progress,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+            }
+
+            // Left Swipe Content (Reveals Item Actions on the Right)
+            if (animatedOffset < 0) {
+                TransactionActionsRow(
+                    onSplit = onSplit,
+                    onClone = onClone,
+                    onDelete = onDelete,
+                    progress = progress,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
+            }
         }
 
-        // Right swipe actions (Status change) - visible when dragged left
-        if (animatedOffset > actionItemSizePx || (isRevealed && swipeDirection == SwipeDirection.RIGHT)) {
-            StatusActionsRow(
-                currentStatus = transaction.status,
-                onStatusChange = onStatusChange,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
-        }
-
+        // Main Item Layer (Foreground)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
-                        onDragEnd = {
-                            // Check if full swipe was performed
-                            val fullSwipeThreshold = with(density) { 200.dp.toPx() }
-                            if (abs(offsetX) >= fullSwipeThreshold) {
-                                if (offsetX > 0) {
-                                    onFullSwipeRight()
-                                }
+                        onHorizontalDrag = { change, dragAmount ->
+                            val newOffset = offsetX + dragAmount
+                            
+                            // Initialize direction
+                            if (swipeDirection == SwipeDirection.NONE && abs(dragAmount) > 0.5f) {
+                                swipeDirection = if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
                             }
 
-                            // Snap to nearest anchor
-                            val halfThreshold = with(density) { 80.dp.toPx() }
-                            when {
-                                offsetX > halfThreshold -> {
-                                    swipeDirection = SwipeDirection.RIGHT
-                                    offsetX = endActionSizePx
-                                    onExpandRight()
+                            // Constrain and apply offset with resistance
+                            offsetX = when (swipeDirection) {
+                                SwipeDirection.RIGHT -> {
+                                    if (newOffset > fullSwipeThresholdPx) {
+                                        fullSwipeThresholdPx + (newOffset - fullSwipeThresholdPx) * 0.3f
+                                    } else newOffset.coerceAtLeast(0f)
                                 }
-                                offsetX < -halfThreshold -> {
-                                    swipeDirection = SwipeDirection.LEFT
-                                    offsetX = -startActionSizePx
-                                    onExpandLeft()
+                                SwipeDirection.LEFT -> {
+                                    if (newOffset < -leftSwipeThresholdPx) {
+                                        -leftSwipeThresholdPx + (newOffset + leftSwipeThresholdPx) * 0.3f
+                                    } else newOffset.coerceAtMost(0f)
+                                }
+                                else -> newOffset
+                            }
+                        },
+                        onDragEnd = {
+                            when (swipeDirection) {
+                                SwipeDirection.RIGHT -> {
+                                    if (offsetX >= fullSwipeThresholdPx) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onFullSwipeRight()
+                                        offsetX = 0f
+                                        swipeDirection = SwipeDirection.NONE
+                                    } else if (offsetX > rightSwipeThresholdPx / 2) {
+                                        offsetX = rightSwipeThresholdPx
+                                        onExpandRight()
+                                    } else {
+                                        offsetX = 0f
+                                        swipeDirection = SwipeDirection.NONE
+                                        onCollapse()
+                                    }
+                                }
+                                SwipeDirection.LEFT -> {
+                                    if (abs(offsetX) > leftSwipeThresholdPx / 2) {
+                                        offsetX = -leftSwipeThresholdPx
+                                        onExpandLeft()
+                                    } else {
+                                        offsetX = 0f
+                                        swipeDirection = SwipeDirection.NONE
+                                        onCollapse()
+                                    }
                                 }
                                 else -> {
-                                    swipeDirection = SwipeDirection.NONE
                                     offsetX = 0f
                                     onCollapse()
                                 }
                             }
+                        },
+                        onDragCancel = {
+                            offsetX = 0f
+                            swipeDirection = SwipeDirection.NONE
+                            onCollapse()
                         }
-                    ) { change, dragAmount ->
-                        val original = Offset(offsetX, 0f)
-                        val summed = original + Offset(x = dragAmount, y = 0f)
-
-                        // Determine swipe direction based on drag
-                        val newDirection = when {
-                            dragAmount > 0 && swipeDirection == SwipeDirection.NONE -> SwipeDirection.RIGHT
-                            dragAmount < 0 && swipeDirection == SwipeDirection.NONE -> SwipeDirection.LEFT
-                            else -> swipeDirection
-                        }
-
-                        // Coerce offset within bounds
-                        val maxOffset = startActionSizePx
-                        val newValue = Offset(
-                            x = summed.x.coerceIn(-maxOffset, endActionSizePx),
-                            y = 0f
-                        )
-
-                        if (change.positionChange() != Offset.Zero) change.consume()
-                        offsetX = newValue.x
-                        swipeDirection = newDirection
-                    }
+                    )
                 },
-            color = cardBgColor,
-            shape = RoundedCornerShape(12.dp),
-            tonalElevation = if (isRevealed) 4.dp else 1.dp,
-            content = { content() }
-        )
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = if (animatedOffset != 0f) 8.dp else 0.dp,
+            shadowElevation = if (animatedOffset != 0f) 4.dp else 0.dp
+        ) {
+            content()
+        }
     }
 }
 
@@ -193,57 +211,32 @@ fun SwipeableTransactionItem(
 fun StatusActionsRow(
     currentStatus: TransactionStatus,
     onStatusChange: (TransactionStatus) -> Unit,
+    progress: Float,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Show statuses that are NOT currently set
-        val availableStatuses = TransactionStatus.values().filter { it != currentStatus }
-
-        availableStatuses.forEach { status ->
-            val (icon, bgColor, iconColor) = when (status) {
-                TransactionStatus.CLEARED -> Triple(
-                    Icons.Rounded.Check,
-                    Color(0xFF4CAF50),
-                    Color.White
-                )
-                TransactionStatus.RECONCILE -> Triple(
-                    Icons.Rounded.Sync,
-                    Color(0xFF2196F3),
-                    Color.White
-                )
-                TransactionStatus.UNCLEARED -> Triple(
-                    Icons.Rounded.Schedule,
-                    Color(0xFFFF9800),
-                    Color.White
-                )
+        val statuses = TransactionStatus.values().filter { it != currentStatus }
+        statuses.forEachIndexed { index, status ->
+            val (icon, color) = when (status) {
+                TransactionStatus.CLEARED -> Icons.Rounded.CheckCircle to Color(0xFF4CAF50)
+                TransactionStatus.RECONCILE -> Icons.Rounded.AccountBalance to Color(0xFF2196F3)
+                TransactionStatus.UNCLEARED -> Icons.Rounded.Pending to Color(0xFFFF9800)
             }
-
-            Box(
-                modifier = Modifier
-                    .size(ACTION_ITEM_SIZE.dp)
-                    .background(
-                        color = bgColor,
-                        shape = RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                IconButton(
-                    modifier = Modifier.size(ACTION_ITEM_SIZE.dp),
-                    onClick = { onStatusChange(status) }
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = status.displayName,
-                        tint = iconColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            
+            val itemProgress = (progress * 1.5f - (index * 0.2f)).coerceIn(0f, 1f)
+            
+            ExpressiveActionButton(
+                icon = icon,
+                label = status.displayName,
+                containerColor = color.copy(alpha = 0.12f),
+                contentColor = color,
+                scale = itemProgress,
+                onClick = { onStatusChange(status) }
+            )
         }
     }
 }
@@ -253,81 +246,192 @@ fun TransactionActionsRow(
     onSplit: () -> Unit,
     onClone: () -> Unit,
     onDelete: () -> Unit,
+    progress: Float,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Split action
-        Box(
+        val actions = listOf(
+            Triple(Icons.Rounded.CallSplit, "Split", MaterialTheme.colorScheme.primary),
+            Triple(Icons.Rounded.ContentCopy, "Clone", MaterialTheme.colorScheme.tertiary),
+            Triple(Icons.Rounded.DeleteForever, "Delete", MaterialTheme.colorScheme.error)
+        )
+
+        actions.forEachIndexed { index, (icon, label, color) ->
+            val itemProgress = (progress * 1.5f - (index * 0.15f)).coerceIn(0f, 1f)
+            
+            ExpressiveActionButton(
+                icon = icon,
+                label = label,
+                containerColor = color.copy(alpha = 0.12f),
+                contentColor = color,
+                scale = itemProgress,
+                onClick = when (label) {
+                    "Split" -> onSplit
+                    "Clone" -> onClone
+                    else -> onDelete
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ExpressiveActionButton(
+    icon: ImageVector,
+    label: String,
+    containerColor: Color,
+    contentColor: Color,
+    scale: Float,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.scale(scale)
+    ) {
+        Surface(
             modifier = Modifier
-                .size(ACTION_ITEM_SIZE.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .size(44.dp)
+                .clickable { onClick() },
+            shape = CircleShape,
+            color = containerColor,
+            contentColor = contentColor
         ) {
-            IconButton(
-                modifier = Modifier.size(ACTION_ITEM_SIZE.dp),
-                onClick = onSplit
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CallSplit,
-                    contentDescription = "Split transaction",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp))
             }
         }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 10.sp
+            ),
+            color = contentColor.copy(alpha = 0.9f),
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
 
-        // Clone action
-        Box(
-            modifier = Modifier
-                .size(ACTION_ITEM_SIZE.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            IconButton(
-                modifier = Modifier.size(ACTION_ITEM_SIZE.dp),
-                onClick = onClone
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ContentCopy,
-                    contentDescription = "Clone transaction",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+// --- Previews ---
 
-        // Delete action
-        Box(
-            modifier = Modifier
-                .size(ACTION_ITEM_SIZE.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.error,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            IconButton(
-                modifier = Modifier.size(ACTION_ITEM_SIZE.dp),
-                onClick = onDelete
+@Preview(name = "No Swipe", showBackground = true)
+@Composable
+fun PreviewSwipeableTransactionItem_None() {
+    MaterialTheme {
+        Box(Modifier.padding(16.dp)) {
+            SwipeableTransactionItem(
+                transaction = mockTransactionPreview(),
+                isRevealed = false,
+                onExpandLeft = {}, onExpandRight = {}, onCollapse = {}, onFullSwipeRight = {},
+                onStatusChange = {}, onClone = {}, onDelete = {}, onSplit = {}
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Delete transaction",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                MockContentPreview()
             }
         }
     }
 }
+
+@Preview(name = "Left Swipe (Actions)", showBackground = true)
+@Composable
+fun PreviewSwipeableTransactionItem_LeftSwipe() {
+    MaterialTheme {
+        Box(Modifier.padding(16.dp)) {
+            val density = LocalDensity.current
+            val offsetPx = with(density) { -192.dp.toPx() }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            ) {
+                TransactionActionsRow(
+                    onSplit = {}, onClone = {}, onDelete = {},
+                    progress = 1f,
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 12.dp)
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset { IntOffset(offsetPx.roundToInt(), 0) },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 4.dp
+                ) {
+                    MockContentPreview()
+                }
+            }
+        }
+    }
+}
+
+@Preview(name = "Right Swipe (Status)", showBackground = true)
+@Composable
+fun PreviewSwipeableTransactionItem_RightSwipe() {
+    MaterialTheme {
+        Box(Modifier.padding(16.dp)) {
+            val density = LocalDensity.current
+            val offsetPx = with(density) { 128.dp.toPx() }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            ) {
+                StatusActionsRow(
+                    currentStatus = TransactionStatus.CLEARED,
+                    onStatusChange = {},
+                    progress = 1f,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset { IntOffset(offsetPx.roundToInt(), 0) },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 4.dp
+                ) {
+                    MockContentPreview()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MockContentPreview() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(40.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Box(Modifier.size(140.dp, 16.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp)))
+            Spacer(Modifier.height(4.dp))
+            Box(Modifier.size(90.dp, 12.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(4.dp)))
+        }
+        Text("$ 45.00", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.error)
+    }
+}
+
+private fun mockTransactionPreview() = Transaction(
+    id = 1,
+    title = "Mock Transaction",
+    amount = BigDecimal("45.00"),
+    category = "Shopping",
+    timestamp = System.currentTimeMillis(),
+    currency = "USD",
+    transactionType = "expense",
+    accountId = "acc_1"
+)

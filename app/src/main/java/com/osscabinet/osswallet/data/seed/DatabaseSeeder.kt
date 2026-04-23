@@ -156,19 +156,29 @@ class DatabaseSeeder @Inject constructor(
     private suspend fun seedPresetFilters(categoryNameToId: Map<String, Long>) {
         val presetFilters = listOf(
             FilterEntity(
+                name = "Food & Dining Expense",
+                categoryIds = categoryNameToId["Food & Dining"]?.toString() ?: "1",
+                transactionType = "expense"
+            ),
+            FilterEntity(
                 name = "Shopping Expense",
                 categoryIds = categoryNameToId["Shopping"]?.toString() ?: "3",
                 transactionType = "expense"
             ),
             FilterEntity(
-                name = "Food & Dining Expense",
-                categoryIds = categoryNameToId["Food"]?.toString() ?: "1",
+                name = "Salary Income",
+                categoryIds = categoryNameToId["Income"]?.toString() ?: "8",
+                transactionType = "income"
+            ),
+            FilterEntity(
+                name = "Transportation Expense",
+                categoryIds = categoryNameToId["Transportation"]?.toString() ?: "2",
                 transactionType = "expense"
             ),
             FilterEntity(
-                name = "Salary",
-                categoryIds = categoryNameToId["Salary"]?.toString() ?: "1",
-                transactionType = "income"
+                name = "Entertainment Expense",
+                categoryIds = categoryNameToId["Entertainment"]?.toString() ?: "5",
+                transactionType = "expense"
             )
         )
 

@@ -201,7 +201,6 @@ class TransactionViewModel(
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
-        linkedTransactionId: Long? = null,
         latitude: Double? = null,
         longitude: Double? = null,
         warrantyExpiration: Long? = null,
@@ -223,7 +222,6 @@ class TransactionViewModel(
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
-                linkedTransactionId = linkedTransactionId,
                 latitude = latitude,
                 longitude = longitude,
                 warrantyExpiration = warrantyExpiration,
@@ -248,7 +246,6 @@ class TransactionViewModel(
         timestamp: Long = System.currentTimeMillis(),
         payee: String = "",
         note: String = "",
-        linkedTransactionId: Long? = null,
         latitude: Double? = null,
         longitude: Double? = null,
         warrantyExpiration: Long? = null,
@@ -269,7 +266,6 @@ class TransactionViewModel(
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,
-                linkedTransactionId = linkedTransactionId,
                 latitude = latitude,
                 longitude = longitude,
                 warrantyExpiration = warrantyExpiration,
@@ -365,7 +361,6 @@ class TransactionViewModel(
                     timestamp = transaction.timestamp,
                     payee = transaction.payee,
                     note = transaction.note,
-                    linkedTransactionId = transaction.linkedTransactionId,
                     latitude = transaction.latitude,
                     longitude = transaction.longitude,
                     warrantyExpiration = transaction.warrantyExpiration,
@@ -394,7 +389,6 @@ class TransactionViewModel(
                     timestamp = System.currentTimeMillis(),
                     payee = transaction.payee,
                     note = transaction.note,
-                    linkedTransactionId = null,
                     latitude = transaction.latitude,
                     longitude = transaction.longitude,
                     warrantyExpiration = transaction.warrantyExpiration,
@@ -466,7 +460,6 @@ class TransactionViewModel(
                     timestamp = transaction.timestamp,
                     payee = transaction.payee,
                     note = transaction.note,
-                    linkedTransactionId = transaction.linkedTransactionId,
                     latitude = transaction.latitude,
                     longitude = transaction.longitude,
                     warrantyExpiration = transaction.warrantyExpiration,
@@ -475,6 +468,38 @@ class TransactionViewModel(
                 onItemCollapsed(transactionId)
             }
         }
+    }
+
+    // Link management methods
+    fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        println("ViewModel: addTransactionLink called with txId=$transactionId, linkedId=$linkedTransactionId")
+        viewModelScope.launch {
+            transactionUseCases.addTransactionLink(transactionId, linkedTransactionId)
+            println("ViewModel: addTransactionLink completed")
+        }
+    }
+
+    fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        println("ViewModel: removeTransactionLink called with txId=$transactionId, linkedId=$linkedTransactionId")
+        viewModelScope.launch {
+            transactionUseCases.removeTransactionLink(transactionId, linkedTransactionId)
+            println("ViewModel: removeTransactionLink completed")
+        }
+    }
+
+    fun clearTransactionLinks(transactionId: Long) {
+        viewModelScope.launch {
+            transactionUseCases.clearTransactionLinks(transactionId)
+        }
+    }
+
+    fun getLinkedTransactionIds(transactionId: Long): kotlinx.coroutines.flow.Flow<List<Long>> {
+        return transactionUseCases.getLinkedTransactionIds(transactionId)
+    }
+
+    fun getLinkedTransactions(transactionId: Long): kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>> {
+        println("ViewModel: getLinkedTransactions called for txId=$transactionId")
+        return transactionUseCases.getLinkedTransactions(transactionId)
     }
 }
 

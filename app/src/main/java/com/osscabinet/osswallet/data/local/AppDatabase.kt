@@ -8,12 +8,14 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.*
+import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.data.local.entity.*
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
     entities = [
         TransactionEntity::class,
+        TransactionLinkEntity::class,
         CurrencyRateEntity::class,
         BudgetEntity::class,
         LoanEntity::class,
@@ -24,12 +26,13 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TemplateEntity::class,
         FilterEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
+    abstract fun transactionLinkDao(): TransactionLinkDao
     abstract fun currencyDao(): CurrencyDao
     abstract fun budgetDao(): BudgetDao
     abstract fun loanDao(): LoanDao
@@ -217,6 +220,85 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create junction table for transaction links
+                database.execSQL("""
+                    CREATE TABLE transaction_links (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        transactionId INTEGER NOT NULL,
+                        linkedTransactionId INTEGER NOT NULL,
+                        FOREIGN KEY(transactionId) REFERENCES transactions(id) ON DELETE CASCADE,
+                        FOREIGN KEY(linkedTransactionId) REFERENCES transactions(id) ON DELETE CASCADE
+                    )
+                """)
+
+                // Create indexes for junction table
+                database.execSQL("CREATE INDEX index_transaction_links_transactionId ON transaction_links (transactionId)")
+                database.execSQL("CREATE INDEX index_transaction_links_linkedTransactionId ON transaction_links (linkedTransactionId)")
+                database.execSQL("CREATE UNIQUE INDEX index_transaction_links_transactionId_linkedTransactionId ON transaction_links (transactionId, linkedTransactionId)")
+
+                // Migrate existing linkedTransactionId data to junction table
+                database.execSQL("""
+                    INSERT INTO transaction_links (transactionId, linkedTransactionId)
+                    SELECT id, linkedTransactionId
+                    FROM transactions
+                    WHERE linkedTransactionId IS NOT NULL
+                """)
+
+                // For transfers, also create reverse links
+                database.execSQL("""
+                    INSERT INTO transaction_links (transactionId, linkedTransactionId)
+                    SELECT linkedTransactionId, id
+                    FROM transactions
+                    WHERE linkedTransactionId IS NOT NULL AND category = 'Transfer'
+                """)
+
+                // Drop linkedTransactionId column from transactions table
+                database.execSQL("""
+                    CREATE TABLE transactions_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        amount TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        currency TEXT NOT NULL,
+                        transactionType TEXT NOT NULL,
+                        accountId TEXT NOT NULL,
+                        categoryId INTEGER,
+                        tags TEXT NOT NULL,
+                        paymentMethod TEXT NOT NULL,
+                        payee TEXT NOT NULL,
+                        note TEXT NOT NULL,
+                        recurring TEXT,
+                        profileId INTEGER NOT NULL,
+                        latitude REAL,
+                        longitude REAL,
+                        warrantyExpiration INTEGER,
+                        status TEXT NOT NULL,
+                        FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE,
+                        FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE SET NULL
+                    )
+                """)
+
+                database.execSQL("""
+                    INSERT INTO transactions_new (id, title, amount, category, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, profileId, latitude, longitude, warrantyExpiration, status)
+                    SELECT id, title, amount, category, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, profileId, latitude, longitude, warrantyExpiration, status
+                    FROM transactions
+                """)
+
+                database.execSQL("DROP TABLE transactions")
+                database.execSQL("ALTER TABLE transactions_new RENAME TO transactions")
+
+                // Recreate indexes
+                database.execSQL("CREATE INDEX index_transactions_accountId ON transactions (accountId)")
+                database.execSQL("CREATE INDEX index_transactions_categoryId ON transactions (categoryId)")
+                database.execSQL("CREATE INDEX index_transactions_profileId ON transactions (profileId)")
+                database.execSQL("CREATE INDEX index_transactions_timestamp ON transactions (timestamp)")
+                database.execSQL("CREATE INDEX index_transactions_status ON transactions (status)")
+            }
+        }
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -247,7 +329,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Rent', 'Key', -769226, 1, 4)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

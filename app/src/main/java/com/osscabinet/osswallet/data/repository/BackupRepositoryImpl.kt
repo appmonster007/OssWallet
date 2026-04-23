@@ -20,6 +20,7 @@ class BackupRepositoryImpl(
     private val categoryDao: CategoryDao,
     private val tagDao: TagDao,
     private val templateDao: TemplateDao,
+    private val transactionLinkDao: TransactionLinkDao,
     private val context: Context
 ) : BackupRepository {
 
@@ -57,9 +58,15 @@ class BackupRepositoryImpl(
                     payee = it.payee,
                     note = it.note,
                     recurring = it.recurring,
-                    linkedTransactionId = it.linkedTransactionId,
                     profileId = it.profileId,
                     status = it.status
+                )
+            },
+            transactionLinks = transactionLinkDao.getAllLinksSync().map {
+                TransactionLinkBackup(
+                    id = it.id,
+                    transactionId = it.transactionId,
+                    linkedTransactionId = it.linkedTransactionId
                 )
             },
             categories = categoryDao.getAllCategoriesSync().map { 
@@ -141,7 +148,6 @@ class BackupRepositoryImpl(
                     payee = it.payee,
                     note = it.note,
                     recurring = it.recurring,
-                    linkedTransactionId = it.linkedTransactionId,
                     profileId = it.profileId,
                     status = it.status
                 )
@@ -170,6 +176,15 @@ class BackupRepositoryImpl(
                     tags = it.tags,
                     isStarred = it.isStarred,
                     displayOrder = it.displayOrder
+                )
+            )
+        }
+        backup.transactionLinks.forEach {
+            transactionLinkDao.insertLink(
+                TransactionLinkEntity(
+                    id = it.id,
+                    transactionId = it.transactionId,
+                    linkedTransactionId = it.linkedTransactionId
                 )
             )
         }

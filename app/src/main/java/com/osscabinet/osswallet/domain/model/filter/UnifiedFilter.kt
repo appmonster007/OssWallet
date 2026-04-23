@@ -115,7 +115,14 @@ sealed class UnifiedFilter {
     @Serializable
     data class IncomeTypeFilter(
         val transactionType: String? = null // null = all, "income" = income only, "expense" = expense only
-    ) : UnifiedFilter()
+    ) : UnifiedFilter() {
+        val isIncome: Boolean?
+            get() = when (transactionType) {
+                "income" -> true
+                "expense" -> false
+                else -> null
+            }
+    }
 
     /**
      * Filter transactions by warranty status and expiration.

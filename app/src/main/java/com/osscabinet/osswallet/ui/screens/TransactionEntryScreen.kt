@@ -445,10 +445,11 @@ fun TransactionEntryContent(
     // For new transactions: derive from local linkedTransactionIds state
     val displayLinkedTxs = remember(linkedTxs, linkedTransactionIds, transactions, isEditMode) {
         if (isEditMode) {
-            linkedTxs
+            linkedTxs.sortedByDescending { it.timestamp }
         } else {
             // For new transactions, look up the transactions by IDs from the local state
             linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }
+                .sortedByDescending { it.timestamp }
         }
     }
 
@@ -946,15 +947,50 @@ fun TransactionEntryContent(
                             icon = Icons.Rounded.Person
                         )
 
-                        // Linked Transaction Field - Last item
-                        if (displayLinkedTxs.isNotEmpty()) {
-                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "LINKED TRANSACTIONS (${displayLinkedTxs.size})",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                )
+                        // Linked Transaction Field
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Link transaction button - always visible
+                            Surface(
+                                shape = RoundedCornerShape(28.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = { showLinkedTransactionSheet = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                        modifier = Modifier.size(48.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Link,
+                                            contentDescription = null,
+                                            modifier = Modifier.padding(12.dp).size(24.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Text(
+                                        text = "Link Transaction",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Icon(
+                                        Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            // Display linked transactions if any
+                            if (displayLinkedTxs.isNotEmpty()) {
                                 displayLinkedTxs.forEach { currentLinkedTx ->
                                     Surface(
                                         shape = RoundedCornerShape(28.dp),
@@ -1047,16 +1083,36 @@ fun TransactionEntryContent(
                                         }
                                     }
                                 }
+
+                                // Add more button at the end
+                                Surface(
+                                    shape = RoundedCornerShape(28.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { showLinkedTransactionSheet = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Add,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Add More Links",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
                             }
-                        } else {
-                            RecordFieldCard(
-                                icon = Icons.Rounded.Link,
-                                label = "LINK TRANSACTION",
-                                value = if (transactionId != null && transactionId != -1L) "None Linked" else "Add Links (Optional)",
-                                onClick = { showLinkedTransactionSheet = true },
-                                trailingIcon = Icons.Rounded.KeyboardArrowDown,
-                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            )
                         }
 
 

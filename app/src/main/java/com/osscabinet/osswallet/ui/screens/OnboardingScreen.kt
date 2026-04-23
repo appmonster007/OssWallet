@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,15 +20,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,6 +66,21 @@ fun OnboardingScreen(
     val steps = listOf("Currency", "Appearance", "Precision", "Account")
 
     Scaffold(
+        topBar = {
+            if (step > 0) {
+                TopAppBar(
+                    title = { },
+                    navigationIcon = {
+                        IconButton(onClick = { step-- }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
+        },
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -158,7 +178,8 @@ fun OnboardingScreen(
                     onInitialBalancesChange = { initialBalances = it },
                     allowedCurrencies = allowedCurrencies,
                     onAllowedCurrenciesChange = { allowedCurrencies = it },
-                    onCurrencyMenuOpen = { isCurrencyMenuExpanded = true }
+                    onCurrencyMenuOpen = { isCurrencyMenuExpanded = true },
+                    decimalPrecision = precision
                 )
             }
 
@@ -210,6 +231,39 @@ fun CurrencyStep(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Show currently selected currency above search bar
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    getCurrencySymbol(selectedCurrency),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        getCurrencyName(selectedCurrency),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        selectedCurrency,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -261,6 +315,7 @@ fun CurrencyStep(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.width(40.dp)
                             )
+                            Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                                 Text(code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
@@ -397,6 +452,7 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountStep(
     accountName: String,
@@ -405,99 +461,611 @@ fun AccountStep(
     onInitialBalancesChange: (Map<String, String>) -> Unit,
     allowedCurrencies: Set<String>,
     onAllowedCurrenciesChange: (Set<String>) -> Unit,
-    onCurrencyMenuOpen: () -> Unit
+    onCurrencyMenuOpen: () -> Unit,
+    decimalPrecision: Int = 2
 ) {
-    StepHeader(
-        icon = Icons.Rounded.AccountBalanceWallet,
-        title = "First Account",
-        description = "Let's set up your main account. You can add more later."
-    )
+    var activeCurrencyField by remember { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        OutlinedTextField(
-            value = accountName,
-            onValueChange = onAccountNameChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Account Name") },
-            placeholder = { Text("e.g. Cash, Bank, Wallet") },
-            leadingIcon = { Icon(Icons.Rounded.Badge, contentDescription = null) },
-            shape = RoundedCornerShape(16.dp),
-            singleLine = true
+        StepHeader(
+            icon = Icons.Rounded.AccountBalanceWallet,
+            title = "First Account",
+            description = "Let's set up your main account. You can add more later."
         )
 
-        com.osscabinet.ossWallet.ui.components.RecordFieldCard(
-            icon = Icons.Rounded.Payments,
-            label = "ALLOWED CURRENCIES",
-            value = if (allowedCurrencies.isEmpty()) "None selected" else allowedCurrencies.joinToString(", "),
-            onClick = onCurrencyMenuOpen,
-            trailingIcon = Icons.Rounded.KeyboardArrowDown,
-            isSlim = true
-        )
+        // Account Name Section
+        SectionCard(
+            title = "Account Details",
+            icon = Icons.Rounded.Badge
+        ) {
+            OutlinedTextField(
+                value = accountName,
+                onValueChange = onAccountNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Account Name") },
+                placeholder = { Text("e.g. Cash, Bank, Wallet") },
+                leadingIcon = { Icon(Icons.Rounded.Badge, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+        }
 
-        // Initial balance fields for each selected currency
-        if (allowedCurrencies.isNotEmpty()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Initial Balances",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        // Currency Selection Section
+        SectionCard(
+            title = "Supported Currencies",
+            icon = Icons.Rounded.Payments
+        ) {
+            Surface(
+                onClick = onCurrencyMenuOpen,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary
                 )
-                allowedCurrencies.forEach { currencyCode ->
-                    OutlinedTextField(
-                        value = initialBalances[currencyCode] ?: "",
-                        onValueChange = { newBalance ->
-                            onInitialBalancesChange(initialBalances.toMutableMap().apply { put(currencyCode, newBalance) })
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Initial Balance ($currencyCode)") },
-                        placeholder = { Text("0.00") },
-                        leadingIcon = {
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            if (allowedCurrencies.isEmpty()) "No currencies selected"
+                            else "${allowedCurrencies.size} currency/currencies selected",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (allowedCurrencies.isNotEmpty()) {
                             Text(
-                                getCurrencySymbol(currencyCode),
-                                modifier = Modifier.padding(start = 12.dp),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                allowedCurrencies.take(3).joinToString(", ") + 
+                                    if (allowedCurrencies.size > 3) "..." else "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true
+                        }
+                    }
+                    Icon(
+                        Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = "Select currencies",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         }
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                   else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        // Initial Balances Section
+        if (allowedCurrencies.isNotEmpty()) {
+            SectionCard(
+                title = "Initial Balances",
+                icon = Icons.Rounded.AccountBalance,
+                description = "Set initial balances for each currency. Tap a card to edit."
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    allowedCurrencies.forEach { currencyCode ->
+                        BalanceInputCard(
+                            currencyCode = currencyCode,
+                            currentBalance = initialBalances[currencyCode] ?: "",
+                            isActive = activeCurrencyField == currencyCode,
+                            onClick = {
+                                activeCurrencyField = currencyCode
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
+            // Empty state for currencies
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        "Please select at least 1 currency to continue",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+    }
+
+    // Balance Edit Bottom Sheet
+    if (activeCurrencyField != null) {
+        BalanceEditSheet(
+            currencyCode = activeCurrencyField!!,
+            currentBalance = initialBalances[activeCurrencyField] ?: "",
+            onBalanceChange = { newBalance ->
+                onInitialBalancesChange(initialBalances.toMutableMap().apply { 
+                    put(activeCurrencyField!!, newBalance) 
+                })
+            },
+            onDismiss = { activeCurrencyField = null },
+            decimalPrecision = decimalPrecision
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BalanceEditSheet(
+    currencyCode: String,
+    currentBalance: String,
+    onBalanceChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    decimalPrecision: Int
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        tonalElevation = 8.dp,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                ) {}
+            }
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                getCurrencySymbol(currencyCode),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Column {
+                        Text(
+                            getCurrencyName(currencyCode),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            currencyCode,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Close")
+                }
+            }
+
+            // Current balance display
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Initial Balance",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        if (currentBalance.isEmpty()) "0.00" else currentBalance,
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (currentBalance.startsWith("-")) MaterialTheme.colorScheme.error
+                               else MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        if (currentBalance.isEmpty()) "No balance set"
+                        else if (currentBalance.startsWith("-")) "Debt / Expense"
+                        else "Asset / Income",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Compact Numpad
+            CompactNumpad(
+                amount = currentBalance,
+                onAmountChange = onBalanceChange,
+                decimalPrecision = decimalPrecision,
+                onDone = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactNumpad(
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    decimalPrecision: Int,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
+    var operator by remember { mutableStateOf<String?>(null) }
+    var isEnteringSecondOperand by remember { mutableStateOf(false) }
+
+    fun calculateResult() {
+        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
+            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val rawResult = try {
+                when (operator) {
+                    "+" -> firstOperand!!.add(secondOperand)
+                    "−" -> firstOperand!!.subtract(secondOperand)
+                    "×" -> firstOperand!!.multiply(secondOperand)
+                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(
+                        secondOperand,
+                        decimalPrecision,
+                        java.math.RoundingMode.HALF_UP
+                    ) else BigDecimal.ZERO
+                    else -> secondOperand
+                }
+            } catch (e: Exception) {
+                BigDecimal.ZERO
+            }
+
+            val result = rawResult.abs().stripTrailingZeros()
+            onAmountChange(result.toPlainString())
+            firstOperand = null
+            operator = null
+            isEnteringSecondOperand = false
+        }
+    }
+
+    fun handleNumberInput(input: String) {
+        if (isEnteringSecondOperand) {
+            onAmountChange(if (input == ".") "0." else input)
+            isEnteringSecondOperand = false
+        } else {
+            if (input == ".") {
+                if (!amount.contains(".")) {
+                    onAmountChange(if (amount.isEmpty()) "0." else amount + ".")
+                }
+            } else if (input == "00") {
+                if (amount.isNotEmpty() && amount != "0") {
+                    if (amount.contains(".")) {
+                        if (amount.substringAfter(".").length < decimalPrecision) {
+                            onAmountChange(amount + "00")
+                        }
+                    } else {
+                        onAmountChange(amount + "00")
+                    }
+                }
+            } else {
+                onAmountChange(if (amount == "0") input else amount + input)
+            }
+        }
+    }
+
+    fun handleOperatorInput(op: String) {
+        if (amount.isNotEmpty()) {
+            if (operator != null) calculateResult()
+            firstOperand = amount.toBigDecimalOrNull()
+            operator = op
+            isEnteringSecondOperand = true
+        }
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val operators = listOf("+", "−", "×", "÷")
+
+        @Composable
+        fun NumpadKey(
+            key: String,
+            onClick: () -> Unit,
+            modifier: Modifier = Modifier,
+            color: androidx.compose.ui.graphics.Color? = null,
+            contentColor: androidx.compose.ui.graphics.Color? = null
+        ) {
+            val backgroundColor = color ?: when (key) {
+                in operators -> MaterialTheme.colorScheme.primaryContainer
+                "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            }
+            val textColor = contentColor ?: if (key in operators) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+
+            Surface(
+                onClick = onClick,
+                modifier = modifier.height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = backgroundColor
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (key == "DEL") {
+                        Icon(
+                            Icons.Rounded.KeyboardBackspace,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = textColor
+                        )
+                    } else if (key == "DONE") {
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = "Done",
+                            modifier = Modifier.size(24.dp),
+                            tint = textColor
+                        )
+                    } else {
+                        Text(
+                            text = key,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
+                    }
+                }
+            }
+        }
+
+        // Row 1: C, ÷, ×, DEL
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("C", {
+                onAmountChange("")
+                firstOperand = null
+                operator = null
+                isEnteringSecondOperand = false
+            }, Modifier.weight(1f))
+            NumpadKey("÷", { handleOperatorInput("÷") }, Modifier.weight(1f))
+            NumpadKey("×", { handleOperatorInput("×") }, Modifier.weight(1f))
+            NumpadKey("DEL", { if (amount.isNotEmpty()) onAmountChange(amount.dropLast(1)) }, Modifier.weight(1f))
+        }
+        // Row 2: 7, 8, 9, +/-
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("7", { handleNumberInput("7") }, Modifier.weight(1f))
+            NumpadKey("8", { handleNumberInput("8") }, Modifier.weight(1f))
+            NumpadKey("9", { handleNumberInput("9") }, Modifier.weight(1f))
+            NumpadKey("+/-", {
+                val current = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                onAmountChange(current.negate().toPlainString())
+            }, Modifier.weight(1f))
+        }
+        // Row 3: 4, 5, 6, −
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("4", { handleNumberInput("4") }, Modifier.weight(1f))
+            NumpadKey("5", { handleNumberInput("5") }, Modifier.weight(1f))
+            NumpadKey("6", { handleNumberInput("6") }, Modifier.weight(1f))
+            NumpadKey("−", { handleOperatorInput("−") }, Modifier.weight(1f))
+        }
+        // Row 4: 1, 2, 3, +
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey("1", { handleNumberInput("1") }, Modifier.weight(1f))
+            NumpadKey("2", { handleNumberInput("2") }, Modifier.weight(1f))
+            NumpadKey("3", { handleNumberInput("3") }, Modifier.weight(1f))
+            NumpadKey("+", { handleOperatorInput("+") }, Modifier.weight(1f))
+        }
+        // Row 5: ., 0, 00, DONE
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NumpadKey(".", { handleNumberInput(".") }, Modifier.weight(1f))
+            NumpadKey("0", { handleNumberInput("0") }, Modifier.weight(1f))
+            NumpadKey("00", { handleNumberInput("00") }, Modifier.weight(1f))
+            NumpadKey(
+                key = if (operator != null) "=" else "DONE",
+                onClick = {
+                    if (operator != null) {
+                        calculateResult()
+                    } else {
+                        onDone()
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionCard(
+    title: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    if (allowedCurrencies.isEmpty()) Icons.Rounded.Warning else Icons.Rounded.Info,
-                    contentDescription = null,
-                    tint = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Column {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    description?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun BalanceInputCard(
+    currencyCode: String,
+    currentBalance: String,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+               else MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isActive) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
-                    if (allowedCurrencies.isEmpty()) "Please select at least 1 currency for your account."
-                    else "Set initial balances for each selected currency.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (allowedCurrencies.isEmpty()) MaterialTheme.colorScheme.onErrorContainer
-                           else MaterialTheme.colorScheme.onSurfaceVariant
+                    getCurrencySymbol(currencyCode),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
+                Column {
+                    Text(
+                        currencyCode,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        if (currentBalance.isEmpty()) "No balance set" 
+                        else if (currentBalance.startsWith("-")) "Debt / Expense" 
+                        else "Asset / Income",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    if (currentBalance.isEmpty()) "0.00" else currentBalance,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentBalance.startsWith("-")) MaterialTheme.colorScheme.error
+                           else MaterialTheme.colorScheme.primary
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Edit",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

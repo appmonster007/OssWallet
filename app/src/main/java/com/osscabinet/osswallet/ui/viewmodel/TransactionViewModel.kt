@@ -34,6 +34,10 @@ class TransactionViewModel(
     private val _initialFilterContext = MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
     val initialFilterContext = _initialFilterContext.asStateFlow()
 
+    // Track revealed card IDs for swipe actions
+    private val _revealedCardIdsList = MutableStateFlow<List<Long>>(emptyList())
+    val revealedCardIdsList: StateFlow<List<Long>> = _revealedCardIdsList.asStateFlow()
+
     val savedFilters = filterDao.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -319,6 +323,125 @@ class TransactionViewModel(
     fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) {
         viewModelScope.launch {
             settingsDataStore.updateRecordsSettings(update)
+        }
+    }
+
+    // Swipe action methods
+    fun onItemExpanded(cardId: Long) {
+        if (_revealedCardIdsList.value.contains(cardId)) return
+        _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
+            list.add(cardId)
+        }
+    }
+
+    fun onItemCollapsed(cardId: Long) {
+        if (!_revealedCardIdsList.value.contains(cardId)) return
+        _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
+            list.remove(cardId)
+        }
+    }
+
+    fun quickUpdateStatus(transactionId: Long, newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
+        viewModelScope.launch {
+            val transaction = transactions.value.find { it.id == transactionId }
+            if (transaction != null) {
+                updateTransaction(
+                    oldTransaction = transaction,
+                    title = transaction.title,
+                    amount = transaction.amount,
+                    category = transaction.category,
+                    transactionType = transaction.transactionType,
+                    accountId = transaction.accountId,
+                    currency = transaction.currency,
+                    categoryId = transaction.categoryId,
+                    tags = transaction.tags,
+                    paymentMethod = transaction.paymentMethod,
+                    timestamp = transaction.timestamp,
+                    payee = transaction.payee,
+                    note = transaction.note,
+                    linkedTransactionId = transaction.linkedTransactionId,
+                    latitude = transaction.latitude,
+                    longitude = transaction.longitude,
+                    warrantyExpiration = transaction.warrantyExpiration,
+                    status = newStatus
+                )
+                onItemCollapsed(transactionId)
+            }
+        }
+    }
+
+    fun quickCloneTransaction(transactionId: Long) {
+        viewModelScope.launch {
+            val transaction = transactions.value.find { it.id == transactionId }
+            if (transaction != null) {
+                addTransaction(
+                    title = transaction.title,
+                    amount = transaction.amount,
+                    category = transaction.category,
+                    transactionType = transaction.transactionType,
+                    accountId = transaction.accountId,
+                    currency = transaction.currency,
+                    categoryId = transaction.categoryId,
+                    tags = transaction.tags,
+                    paymentMethod = transaction.paymentMethod,
+                    timestamp = System.currentTimeMillis(),
+                    payee = transaction.payee,
+                    note = transaction.note,
+                    linkedTransactionId = null,
+                    latitude = transaction.latitude,
+                    longitude = transaction.longitude,
+                    warrantyExpiration = transaction.warrantyExpiration,
+                    status = transaction.status
+                )
+                onItemCollapsed(transactionId)
+            }
+        }
+    }
+
+    fun quickDeleteTransaction(transactionId: Long) {
+        viewModelScope.launch {
+            deleteTransaction(transactionId)
+            onItemCollapsed(transactionId)
+        }
+    }
+
+    fun quickSplitTransaction(transactionId: Long) {
+        // TODO: Implement split transaction logic
+        // This may require additional UI for split configuration
+        onItemCollapsed(transactionId)
+    }
+
+    fun toggleStatusClearedUncleared(transactionId: Long) {
+        viewModelScope.launch {
+            val transaction = transactions.value.find { it.id == transactionId }
+            if (transaction != null) {
+                val newStatus = when (transaction.status) {
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
+                }
+                updateTransaction(
+                    oldTransaction = transaction,
+                    title = transaction.title,
+                    amount = transaction.amount,
+                    category = transaction.category,
+                    transactionType = transaction.transactionType,
+                    accountId = transaction.accountId,
+                    currency = transaction.currency,
+                    categoryId = transaction.categoryId,
+                    tags = transaction.tags,
+                    paymentMethod = transaction.paymentMethod,
+                    timestamp = transaction.timestamp,
+                    payee = transaction.payee,
+                    note = transaction.note,
+                    linkedTransactionId = transaction.linkedTransactionId,
+                    latitude = transaction.latitude,
+                    longitude = transaction.longitude,
+                    warrantyExpiration = transaction.warrantyExpiration,
+                    status = newStatus
+                )
+                onItemCollapsed(transactionId)
+            }
         }
     }
 }

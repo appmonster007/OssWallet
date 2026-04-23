@@ -48,7 +48,15 @@ fun RecentActivitiesCard(
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     accountCurrencyMap: Map<String, String> = emptyMap(),
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    revealedCardIds: List<Long> = emptyList(),
+    onItemExpanded: (Long) -> Unit = {},
+    onItemCollapsed: (Long) -> Unit = {},
+    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    onClone: (Long) -> Unit = {},
+    onDelete: (Long) -> Unit = {},
+    onSplit: (Long) -> Unit = {},
+    onFullSwipeRight: (Long) -> Unit = {}
 ) {
     val calendar = Calendar.getInstance()
     val groupedByDay = recentTransactions.groupBy {
@@ -147,22 +155,35 @@ fun RecentActivitiesCard(
                 val categoryEntity = transaction.categoryId?.let { categoryMap[it] }
                 val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
 
-                AeonTransactionItem(
-                    category = transaction.category,
-                    account = accountNamesMap[transaction.accountId] ?: "Unknown",
-                    amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
-                    balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
-                    type = if (transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
-                    timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
-                    note = transaction.note,
-                    tags = transaction.tags,
-                    icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
-                    iconBg = categoryEntity?.let { Color(it.colorHex) },
-                    precision = decimalPrecision,
-                    status = transaction.status,
-                    onClick = { onTransactionClick(transaction.id) }
-                )
+                SwipeableTransactionItem(
+                    transaction = transaction,
+                    isRevealed = revealedCardIds.contains(transaction.id),
+                    onExpandLeft = { onItemExpanded(transaction.id) },
+                    onExpandRight = { onItemExpanded(transaction.id) },
+                    onCollapse = { onItemCollapsed(transaction.id) },
+                    onFullSwipeRight = { onFullSwipeRight(transaction.id) },
+                    onStatusChange = { onStatusChange(transaction.id, it) },
+                    onClone = { onClone(transaction.id) },
+                    onDelete = { onDelete(transaction.id) },
+                    onSplit = { onSplit(transaction.id) }
+                ) {
+                    AeonTransactionItem(
+                        category = transaction.category,
+                        account = accountNamesMap[transaction.accountId] ?: "Unknown",
+                        amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
+                        balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
+                        balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
+                        type = if (transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                        note = transaction.note,
+                        tags = transaction.tags,
+                        icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
+                        iconBg = categoryEntity?.let { Color(it.colorHex) },
+                        precision = decimalPrecision,
+                        status = transaction.status,
+                        onClick = { onTransactionClick(transaction.id) }
+                    )
+                }
             }
         }
 

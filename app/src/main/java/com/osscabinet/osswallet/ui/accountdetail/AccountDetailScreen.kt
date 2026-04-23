@@ -267,6 +267,7 @@ fun AccountDetailScreen(
                             val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
                             val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
                             val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
+                            val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                             if (transactionsWithBalanceList.isEmpty()) {
                                 Box(
@@ -301,7 +302,15 @@ fun AccountDetailScreen(
                                     exchangeRates = state.exchangeRates,
                                     accountCurrencyMap = accountCurrencyMap,
                                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize(),
+                                    revealedCardIds = revealedCardIds,
+                                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                    onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
+                                    onClone = { transactionViewModel.quickCloneTransaction(it) },
+                                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                    onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
                                 )
                             }
                         }

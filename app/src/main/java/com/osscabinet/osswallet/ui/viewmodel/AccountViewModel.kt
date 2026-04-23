@@ -117,19 +117,24 @@ class AccountViewModel(
             allowedCurrencies.forEach { currencyCode ->
                 val balanceStr = initialBalances[currencyCode] ?: "0"
                 val balance = balanceStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val initialTransaction = Transaction(
-                    title = "Initial Balance",
-                    amount = balance,
-                    category = "Adjustment",
-                    timestamp = System.currentTimeMillis(),
-                    currency = currencyCode,
-                    transactionType = "income",
-                    accountId = accountId,
-                    note = "Initial balance for $name in $currencyCode",
-                    paymentMethod = structureType,
-                    payee = "System"
-                )
-                transactionRepository.insertTransaction(initialTransaction, profileId)
+                
+                // Skip creating transaction if balance is zero
+                if (balance.signum() != 0) {
+                    val transactionType = if (balance.signum() > 0) "income" else "expense"
+                    val initialTransaction = Transaction(
+                        title = "Initial Balance",
+                        amount = balance.abs(),
+                        category = "Adjustment",
+                        timestamp = System.currentTimeMillis(),
+                        currency = currencyCode,
+                        transactionType = transactionType,
+                        accountId = accountId,
+                        note = "Initial balance for $name in $currencyCode",
+                        paymentMethod = structureType,
+                        payee = "System"
+                    )
+                    transactionRepository.insertTransaction(initialTransaction, profileId)
+                }
             }
         }
     }

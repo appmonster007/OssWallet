@@ -52,7 +52,15 @@ fun AeonTransactionList(
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     accountCurrencyMap: Map<String, String> = emptyMap(),
-    filterAccountId: String? = null
+    filterAccountId: String? = null,
+    revealedCardIds: List<Long> = emptyList(),
+    onItemExpanded: (Long) -> Unit = {},
+    onItemCollapsed: (Long) -> Unit = {},
+    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    onClone: (Long) -> Unit = {},
+    onDelete: (Long) -> Unit = {},
+    onSplit: (Long) -> Unit = {},
+    onFullSwipeRight: (Long) -> Unit = {}
 ) {
     val calendar = Calendar.getInstance()
     val groupedByWeek = transactions.groupBy {
@@ -138,28 +146,41 @@ fun AeonTransactionList(
 
                 val amountInBase = CurrencyService.convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
 
-                AeonTransactionItem(
-                    category = category?.name ?: "Uncategorized",
-                    account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                    amount = formatCurrencyRight(item.transaction.amount.abs(), item.transaction.currency, precision),
-                    convertedAmount = if (item.transaction.currency != baseCurrency) {
-                        formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
-                    } else null,
-                    balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
-                    balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
-                    type = if (item.transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
-                    timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
-                    note = item.transaction.note,
-                    tags = item.transaction.tags,
-                    icon = icon,
-                    iconBg = iconBg,
-                    precision = precision,
-                    useNoteAsHeader = useNoteAsHeader,
-                    showOpeningBalance = showOpeningBalance,
-                    showClosingBalance = showClosingBalance,
-                    status = item.transaction.status,
-                    onClick = { onTransactionClick(item.transaction) }
-                )
+                SwipeableTransactionItem(
+                    transaction = item.transaction,
+                    isRevealed = revealedCardIds.contains(item.transaction.id),
+                    onExpandLeft = { onItemExpanded(item.transaction.id) },
+                    onExpandRight = { onItemExpanded(item.transaction.id) },
+                    onCollapse = { onItemCollapsed(item.transaction.id) },
+                    onFullSwipeRight = { onFullSwipeRight(item.transaction.id) },
+                    onStatusChange = { onStatusChange(item.transaction.id, it) },
+                    onClone = { onClone(item.transaction.id) },
+                    onDelete = { onDelete(item.transaction.id) },
+                    onSplit = { onSplit(item.transaction.id) }
+                ) {
+                    AeonTransactionItem(
+                        category = category?.name ?: "Uncategorized",
+                        account = accountMap[item.transaction.accountId] ?: "Unknown Account",
+                        amount = formatCurrencyRight(item.transaction.amount.abs(), item.transaction.currency, precision),
+                        convertedAmount = if (item.transaction.currency != baseCurrency) {
+                            formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
+                        } else null,
+                        balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
+                        balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
+                        type = if (item.transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
+                        note = item.transaction.note,
+                        tags = item.transaction.tags,
+                        icon = icon,
+                        iconBg = iconBg,
+                        precision = precision,
+                        useNoteAsHeader = useNoteAsHeader,
+                        showOpeningBalance = showOpeningBalance,
+                        showClosingBalance = showClosingBalance,
+                        status = item.transaction.status,
+                        onClick = { onTransactionClick(item.transaction) }
+                    )
+                }
             }
         }
         item {

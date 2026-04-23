@@ -53,6 +53,7 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -118,7 +119,15 @@ fun TransactionListScreen(
         onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
         accountNames = accountMap,
-        onResetToInitial = { viewModel.resetToInitialFilter() }
+        onResetToInitial = { viewModel.resetToInitialFilter() },
+        revealedCardIds = revealedCardIds,
+        onItemExpanded = { viewModel.onItemExpanded(it) },
+        onItemCollapsed = { viewModel.onItemCollapsed(it) },
+        onStatusChange = { transactionId, status -> viewModel.quickUpdateStatus(transactionId, status) },
+        onClone = { viewModel.quickCloneTransaction(it) },
+        onDelete = { viewModel.quickDeleteTransaction(it) },
+        onSplit = { viewModel.quickSplitTransaction(it) },
+        onFullSwipeRight = { viewModel.toggleStatusClearedUncleared(it) }
     )
 }
 

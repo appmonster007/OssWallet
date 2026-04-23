@@ -591,6 +591,7 @@ fun DashboardContent(
                 val accountCurrencyMap = remember(state.accounts) { state.accounts.associate { it.id to it.currencyCode } }
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
+                val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                 RecentActivitiesCard(
                     recentTransactions = state.recentTransactions,
@@ -603,7 +604,15 @@ fun DashboardContent(
                     exchangeRates = state.exchangeRates,
                     accountCurrencyMap = accountCurrencyMap,
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    revealedCardIds = revealedCardIds,
+                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                    onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
+                    onClone = { transactionViewModel.quickCloneTransaction(it) },
+                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                    onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
                 )
             }
         }

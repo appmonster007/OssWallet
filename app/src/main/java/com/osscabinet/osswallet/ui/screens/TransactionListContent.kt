@@ -72,7 +72,15 @@ fun TransactionListContent(
     onSetDateRange: (Long?, Long?) -> Unit,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
     accountNames: Map<String, String> = emptyMap(),
-    onResetToInitial: (() -> Unit)? = null
+    onResetToInitial: (() -> Unit)? = null,
+    revealedCardIds: List<Long> = emptyList(),
+    onItemExpanded: (Long) -> Unit = {},
+    onItemCollapsed: (Long) -> Unit = {},
+    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    onClone: (Long) -> Unit = {},
+    onDelete: (Long) -> Unit = {},
+    onSplit: (Long) -> Unit = {},
+    onFullSwipeRight: (Long) -> Unit = {}
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -154,7 +162,15 @@ fun TransactionListContent(
                         baseCurrency = analyticsState.selectedCurrency,
                         exchangeRates = analyticsState.exchangeRates,
                         accountCurrencyMap = accountCurrencyMap,
-                        filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null
+                        filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null,
+                        revealedCardIds = revealedCardIds,
+                        onItemExpanded = onItemExpanded,
+                        onItemCollapsed = onItemCollapsed,
+                        onStatusChange = onStatusChange,
+                        onClone = onClone,
+                        onDelete = onDelete,
+                        onSplit = onSplit,
+                        onFullSwipeRight = onFullSwipeRight
                     )
                 }
             }

@@ -440,6 +440,18 @@ fun TransactionEntryContent(
     var locationCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var linkedTransactionIds by remember { mutableStateOf<List<Long>>(emptyList()) }
 
+    // Unified linked transactions display state
+    // For existing transactions: use database-linked transactions (linkedTxs)
+    // For new transactions: derive from local linkedTransactionIds state
+    val displayLinkedTxs = remember(linkedTxs, linkedTransactionIds, transactions, isEditMode) {
+        if (isEditMode) {
+            linkedTxs
+        } else {
+            // For new transactions, look up the transactions by IDs from the local state
+            linkedTransactionIds.mapNotNull { id -> transactions.find { it.id == id } }
+        }
+    }
+
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
     
@@ -935,15 +947,15 @@ fun TransactionEntryContent(
                         )
 
                         // Linked Transaction Field - Last item
-                        if (linkedTxs.isNotEmpty()) {
+                        if (displayLinkedTxs.isNotEmpty()) {
                             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "LINKED TRANSACTIONS (${linkedTxs.size})",
+                                    text = "LINKED TRANSACTIONS (${displayLinkedTxs.size})",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(horizontal = 4.dp)
                                 )
-                                linkedTxs.forEach { currentLinkedTx ->
+                                displayLinkedTxs.forEach { currentLinkedTx ->
                                     Surface(
                                         shape = RoundedCornerShape(28.dp),
                                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
@@ -1472,7 +1484,7 @@ fun TransactionEntryContent(
 
         // Multi-link selection sheet
         if (showLinkedTransactionSheet) {
-            var selectedTxIds by remember { mutableStateOf<Set<Long>>(linkedTxs.map { it.id }.toSet()) }
+            var selectedTxIds by remember { mutableStateOf<Set<Long>>(displayLinkedTxs.map { it.id }.toSet()) }
             var isSaving by remember { mutableStateOf(false) }
             val coroutineScope = rememberCoroutineScope()
 
@@ -1490,7 +1502,7 @@ fun TransactionEntryContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AeonFlowSectionHeader(
-                            title = "SELECT TRANSACTIONS TO LINK",
+                            title = "SELECT TRANSACTIONS",
                             modifier = Modifier.weight(1f)
                         )
 
@@ -1499,7 +1511,7 @@ fun TransactionEntryContent(
                                 isSaving = true
                                 if (transactionId != null && transactionId != -1L) {
                                     // Update existing transaction links
-                                    val currentIds = linkedTxs.map { it.id }.toSet()
+                                    val currentIds = displayLinkedTxs.map { it.id }.toSet()
                                     val toRemove = currentIds - selectedTxIds
                                     val toAdd = selectedTxIds - currentIds
 
@@ -1523,7 +1535,7 @@ fun TransactionEntryContent(
                             enabled = selectedTxIds.isNotEmpty() && !isSaving
                         ) {
                             Text(
-                                text = "Link ${selectedTxIds.size} Transaction${if (selectedTxIds.size != 1) "s" else ""}",
+                                text = "Link ${selectedTxIds.size}",
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }

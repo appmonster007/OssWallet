@@ -7,17 +7,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.BarChart
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
+import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
+import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
@@ -30,8 +44,14 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
+    val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
+    val categoryBreakdownData by viewModel.categoryBreakdownData.collectAsStateWithLifecycle()
+    val timelineTrajectoryData by viewModel.timelineTrajectoryData.collectAsStateWithLifecycle()
+    val categoryExpenseTreemapData by viewModel.categoryExpenseTreemapData.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
+    var showAddCardDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
@@ -53,6 +73,17 @@ fun AnalyticsScreen(
                     IconButton(onClick = { navigate { onBackClick() } }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { showAddCardDialog = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add card",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             )
         }
@@ -69,23 +100,38 @@ fun AnalyticsScreen(
                 AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency, decimalPrecision)
             }
 
-            // Cash Flow Chart
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AeonFlowSectionHeader(title = "CASH FLOW")
-                    EditorialChartCard(MaterialTheme.colorScheme.primaryContainer) {
-                        SimpleBarChart(uiState.dailyNetFlow, MaterialTheme.colorScheme.onPrimaryContainer)
+            // Analytics Cards from config
+            items(
+                count = cardsConfig.cards.size,
+                key = { index -> cardsConfig.cards.sortedBy { it.order }[index].cardId }
+            ) { index ->
+                val cardConfig = cardsConfig.cards.sortedBy { it.order }[index]
+                when (cardConfig) {
+                    is CategoryBreakdownCardConfig -> {
+                        CategoryBreakdownCard(
+                            config = cardConfig,
+                            data = categoryBreakdownData,
+                            onUpdate = { viewModel.updateCardConfig(it) },
+                            onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                        )
                     }
-                }
-            }
-
-            // Balance Outlook Chart
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AeonFlowSectionHeader(title = "BALANCE OUTLOOK")
-                    EditorialChartCard(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
-                        SimpleLineChart(uiState.forecast, MaterialTheme.colorScheme.primary)
+                    is TimelineTrajectoryCardConfig -> {
+                        TimelineTrajectoryCard(
+                            config = cardConfig,
+                            data = timelineTrajectoryData,
+                            onUpdate = { viewModel.updateCardConfig(it) },
+                            onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                        )
                     }
+                    is CategoryExpenseTreemapCardConfig -> {
+                        CategoryExpenseTreemapCard(
+                            config = cardConfig,
+                            data = categoryExpenseTreemapData,
+                            onUpdate = { viewModel.updateCardConfig(it) },
+                            onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                        )
+                    }
+                    else -> {}
                 }
             }
 
@@ -94,59 +140,75 @@ fun AnalyticsScreen(
             }
         }
     }
-}
-
-@Composable
-fun SimpleBarChart(data: Map<Long, BigDecimal>, barColor: Color) {
-    val maxValue = data.values.maxOfOrNull { it.abs() }?.toDouble()?.coerceAtLeast(1.0) ?: 1.0
-    Row(
-        modifier = Modifier.height(180.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        data.values.forEach { value ->
-            val heightPercent = (Math.abs(value.toDouble()) / maxValue).toFloat().coerceIn(0.1f, 1f)
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(heightPercent),
-                color = barColor.copy(alpha = 0.8f),
-                shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
-            ) {}
-        }
-    }
-}
-
-@Composable
-fun SimpleLineChart(data: Map<Long, BigDecimal>, lineColor: Color) {
-    val values = data.values.toList()
-    if (values.isEmpty()) return
     
-    val maxValue = values.maxOrNull()?.toDouble()?.coerceAtLeast(1.0) ?: 1.0
-    val minValue = values.minOrNull()?.toDouble()?.coerceAtMost(0.0) ?: 0.0
-    val range = (maxValue - minValue).coerceAtLeast(1.0)
-
-    Row(
-        modifier = Modifier.height(180.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        values.forEach { value ->
-            val heightPercent = ((value.toDouble() - minValue) / range).toFloat().coerceIn(0.05f, 1f)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(heightPercent)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .background(lineColor, CircleShape)
-                        .align(Alignment.TopCenter)
-                )
-            }
-        }
+    if (showAddCardDialog) {
+        val analyticsCardOptions = listOf(
+            CardTypeOptionData(
+                title = "Category Breakdown",
+                description = "View spending by category",
+                icon = Icons.Default.PieChart,
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.addCard(
+                            CategoryBreakdownCardConfig(
+                                cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
+                                order = cardsConfig.cards.size,
+                                title = "CATEGORY BREAKDOWN",
+                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                showLabels = true,
+                                showLegend = true
+                            )
+                        )
+                    }
+                    showAddCardDialog = false
+                }
+            ),
+            CardTypeOptionData(
+                title = "Timeline Trajectory",
+                description = "Track balance over time",
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.addCard(
+                            TimelineTrajectoryCardConfig(
+                                cardId = "analytics_timeline_trajectory_${System.currentTimeMillis()}",
+                                order = cardsConfig.cards.size,
+                                title = "TIMELINE TRAJECTORY",
+                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                showBalance = true,
+                                showExpense = true,
+                                showIncome = true
+                            )
+                        )
+                    }
+                    showAddCardDialog = false
+                }
+            ),
+            CardTypeOptionData(
+                title = "Category Expenses",
+                description = "Expense distribution treemap",
+                icon = Icons.Default.BarChart,
+                onClick = {
+                    coroutineScope.launch {
+                        viewModel.addCard(
+                            CategoryExpenseTreemapCardConfig(
+                                cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
+                                order = cardsConfig.cards.size,
+                                title = "CATEGORY EXPENSES",
+                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                showLabels = true
+                            )
+                        )
+                    }
+                    showAddCardDialog = false
+                }
+            )
+        )
+        
+        GenericAddCardDialog(
+            onDismiss = { showAddCardDialog = false },
+            cardOptions = analyticsCardOptions
+        )
     }
 }
 
@@ -164,24 +226,10 @@ fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int =
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("On track for goal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
             }
-        }
-    }
-}
-
-@Composable
-fun EditorialChartCard(containerColor: Color, content: @Composable () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = containerColor,
-        shadowElevation = 0.dp
-    ) {
-        Box(modifier = Modifier.padding(24.dp)) {
-            content()
         }
     }
 }

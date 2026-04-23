@@ -119,7 +119,60 @@ data class BudgetsCardConfig(
     val showProgressLabels: Boolean = true
 ) : CardConfig()
 
+/**
+ * Configuration for Category Breakdown card (Pie Wheel Chart)
+ */
+@Serializable
+@SerialName("category_breakdown")
+data class CategoryBreakdownCardConfig(
+    override val cardId: String,
+    override val title: String = "CATEGORY BREAKDOWN",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 5,
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val showLabels: Boolean = true,
+    val showLegend: Boolean = true,
+    val accountId: String? = null // For account scope (null = global)
+) : CardConfig()
+
+/**
+ * Configuration for Timeline Trajectory card (Multi-Line Chart)
+ */
+@Serializable
+@SerialName("timeline_trajectory")
+data class TimelineTrajectoryCardConfig(
+    override val cardId: String,
+    override val title: String = "TIMELINE TRAJECTORY",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 6,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+    val showBalance: Boolean = true,
+    val showExpense: Boolean = true,
+    val showIncome: Boolean = true,
+    val accountId: String? = null // For account scope (null = global)
+) : CardConfig()
+
+/**
+ * Configuration for Category Expense Treemap card
+ */
+@Serializable
+@SerialName("category_expense_treemap")
+data class CategoryExpenseTreemapCardConfig(
+    override val cardId: String,
+    override val title: String = "CATEGORY EXPENSES",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 7,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+    val showLabels: Boolean = true,
+    val accountId: String? = null // For account scope (null = global)
+) : CardConfig()
+
 @Serializable
 data class DashboardCardsConfig(
+    val cards: List<CardConfig> = emptyList()
+)
+
+@Serializable
+data class AnalyticsCardsConfig(
     val cards: List<CardConfig> = emptyList()
 )

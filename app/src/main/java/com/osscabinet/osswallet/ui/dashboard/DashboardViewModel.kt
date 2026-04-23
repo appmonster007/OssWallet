@@ -568,6 +568,51 @@ class DashboardViewModel(
         )
     }
 
+    // Analytics card compute methods
+    suspend fun computeCategoryBreakdownForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeCategoryBreakdown(
+        config = cardConfig,
+        transactions = allTransactions,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
+    suspend fun computeTimelineTrajectoryForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig,
+        allTransactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeTimelineTrajectory(
+        config = cardConfig,
+        transactions = allTransactions,
+        accounts = accounts,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
+    suspend fun computeCategoryExpenseTreemapForCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeCategoryExpenseTreemap(
+        config = cardConfig,
+        transactions = allTransactions,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -711,6 +756,18 @@ class DashboardViewModel(
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig -> {
                         cardStates[cardConfig.cardId] = BudgetsCardViewState.loading(cardConfig.cardId)
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> {
+                        // TODO: Create CategoryBreakdownCardViewState
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> {
+                        // TODO: Create TimelineTrajectoryCardViewState
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> {
+                        // TODO: Create CategoryExpenseTreemapCardViewState
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
                     }
                 }
             }

@@ -80,6 +80,6 @@ class AppContainer(private val context: Context) {
 
     // Services
     val cardComputationService: CardComputationService by lazy {
-        CardComputationServiceImpl(financialUseCases)
+        CardComputationServiceImpl(financialUseCases, db.categoryDao())
     }
 }

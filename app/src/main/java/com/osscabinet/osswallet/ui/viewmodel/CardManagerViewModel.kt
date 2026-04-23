@@ -21,7 +21,10 @@ enum class DashboardCardType(val displayName: String, val serialName: String) {
     CURRENCY_BALANCES("Currency Balances", "currency_balances"),
     CASH_FLOW("Cash Flow", "cash_flow"),
     ACCOUNTS("Accounts", "accounts"),
-    BUDGETS("Budgets", "budgets");
+    BUDGETS("Budgets", "budgets"),
+    CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown"),
+    TIMELINE_TRAJECTORY("Timeline Trajectory", "timeline_trajectory"),
+    CATEGORY_EXPENSE_TREEMAP("Category Expenses", "category_expense_treemap");
 
     companion object {
         fun fromSerialName(serialName: String): DashboardCardType? {
@@ -90,6 +93,9 @@ class CardManagerViewModel(
                 is CashFlowCardConfig -> DashboardCardType.CASH_FLOW
                 is AccountsCardConfig -> DashboardCardType.ACCOUNTS
                 is BudgetsCardConfig -> DashboardCardType.BUDGETS
+                is CategoryBreakdownCardConfig -> DashboardCardType.CATEGORY_BREAKDOWN
+                is TimelineTrajectoryCardConfig -> DashboardCardType.TIMELINE_TRAJECTORY
+                is CategoryExpenseTreemapCardConfig -> DashboardCardType.CATEGORY_EXPENSE_TREEMAP
             }
         }
         DashboardCardType.entries.filter { it !in usedTypes }
@@ -316,6 +322,18 @@ class CardManagerViewModel(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size
             )
+            DashboardCardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _cardsConfig.value.cards.size
+            )
+            DashboardCardType.TIMELINE_TRAJECTORY -> TimelineTrajectoryCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _cardsConfig.value.cards.size
+            )
+            DashboardCardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _cardsConfig.value.cards.size
+            )
         }
         
         _cardsConfig.value = _cardsConfig.value.copy(
@@ -358,6 +376,9 @@ class CardManagerViewModel(
                     is CashFlowCardConfig -> card.copy(order = index)
                     is AccountsCardConfig -> card.copy(order = index)
                     is BudgetsCardConfig -> card.copy(order = index)
+                    is CategoryBreakdownCardConfig -> card.copy(order = index)
+                    is TimelineTrajectoryCardConfig -> card.copy(order = index)
+                    is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
                 }
             }
         )

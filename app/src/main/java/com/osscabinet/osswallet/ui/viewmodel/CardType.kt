@@ -7,7 +7,8 @@ package com.osscabinet.ossWallet.ui.viewmodel
 enum class CardScreenContext {
     DASHBOARD,
     ACCOUNTS_VIEW,
-    ACCOUNT_DETAIL
+    ACCOUNT_DETAIL,
+    ANALYTICS
 }
 
 /**
@@ -25,6 +26,9 @@ enum class UnifiedCardType(
     DASHBOARD_CASH_FLOW("Cash Flow", "cash_flow", CardScreenContext.DASHBOARD),
     DASHBOARD_ACCOUNTS("Accounts", "accounts", CardScreenContext.DASHBOARD),
     DASHBOARD_BUDGETS("Budgets", "budgets", CardScreenContext.DASHBOARD),
+    DASHBOARD_CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown", CardScreenContext.DASHBOARD),
+    DASHBOARD_TIMELINE_TRAJECTORY("Timeline Trajectory", "timeline_trajectory", CardScreenContext.DASHBOARD),
+    DASHBOARD_CATEGORY_EXPENSE_TREEMAP("Category Expenses", "category_expense_treemap", CardScreenContext.DASHBOARD),
 
     // Accounts View cards
     ACCOUNTS_VIEW_NET_WORTH("Net Worth", "net_worth", CardScreenContext.ACCOUNTS_VIEW),
@@ -35,7 +39,12 @@ enum class UnifiedCardType(
     // Account Detail cards
     ACCOUNT_DETAIL_HERO("Account Summary", "account_hero", CardScreenContext.ACCOUNT_DETAIL),
     ACCOUNT_DETAIL_CASH_FLOW("Cash Flow", "account_cash_flow", CardScreenContext.ACCOUNT_DETAIL),
-    ACCOUNT_DETAIL_CURRENCY_BALANCES("Currency Balances", "account_currency_balances", CardScreenContext.ACCOUNT_DETAIL);
+    ACCOUNT_DETAIL_CURRENCY_BALANCES("Currency Balances", "account_currency_balances", CardScreenContext.ACCOUNT_DETAIL),
+
+    // Analytics cards
+    ANALYTICS_CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown", CardScreenContext.ANALYTICS),
+    ANALYTICS_TIMELINE_TRAJECTORY("Timeline Trajectory", "timeline_trajectory", CardScreenContext.ANALYTICS),
+    ANALYTICS_CATEGORY_EXPENSE_TREEMAP("Category Expenses", "category_expense_treemap", CardScreenContext.ANALYTICS);
 
     companion object {
         fun fromSerialName(serialName: String, screenContext: CardScreenContext): UnifiedCardType? {

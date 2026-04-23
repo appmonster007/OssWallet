@@ -238,10 +238,7 @@ fun StatusActionsRow(
                 containerColor = color.copy(alpha = 0.12f),
                 contentColor = color,
                 scale = itemProgress,
-                onClick = {
-                    onStatusChange(status)
-                    onCollapse()
-                }
+                onClick = { onStatusChange(status) }
             )
         }
     }

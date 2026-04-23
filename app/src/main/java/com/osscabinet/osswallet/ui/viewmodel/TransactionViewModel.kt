@@ -343,7 +343,8 @@ class TransactionViewModel(
 
     fun quickUpdateStatus(transactionId: Long, newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
         viewModelScope.launch {
-            val transaction = transactions.value.find { it.id == transactionId }
+            val profileId = settingsDataStore.currentProfileId.first()
+            val transaction = transactionUseCases.getTransactionById(transactionId)
             if (transaction != null) {
                 updateTransaction(
                     oldTransaction = transaction,
@@ -372,7 +373,8 @@ class TransactionViewModel(
 
     fun quickCloneTransaction(transactionId: Long) {
         viewModelScope.launch {
-            val transaction = transactions.value.find { it.id == transactionId }
+            val profileId = settingsDataStore.currentProfileId.first()
+            val transaction = transactionUseCases.getTransactionById(transactionId)
             if (transaction != null) {
                 addTransaction(
                     title = transaction.title,
@@ -413,7 +415,8 @@ class TransactionViewModel(
 
     fun toggleStatusClearedUncleared(transactionId: Long) {
         viewModelScope.launch {
-            val transaction = transactions.value.find { it.id == transactionId }
+            val profileId = settingsDataStore.currentProfileId.first()
+            val transaction = transactionUseCases.getTransactionById(transactionId)
             if (transaction != null) {
                 val newStatus = when (transaction.status) {
                     com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED

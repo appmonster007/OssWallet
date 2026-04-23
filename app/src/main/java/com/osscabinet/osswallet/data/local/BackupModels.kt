@@ -21,6 +21,7 @@ data class OssWalletBackup(
     val profiles: List<ProfileBackup>,
     val accounts: List<AccountBackup>,
     val transactions: List<TransactionBackup>,
+    val transactionLinks: List<TransactionLinkBackup> = emptyList(),
     val categories: List<CategoryBackup>,
     val tags: List<TagBackup>,
     val templates: List<TemplateBackup> = emptyList()
@@ -60,9 +61,15 @@ data class TransactionBackup(
     val payee: String = "",
     val note: String = "",
     val recurring: String? = null,
-    val linkedTransactionId: Long? = null,
     val profileId: Int,
     val status: String = "cleared"
+)
+
+@Serializable
+data class TransactionLinkBackup(
+    val id: Long,
+    val transactionId: Long,
+    val linkedTransactionId: Long
 )
 
 @Serializable

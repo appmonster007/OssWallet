@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.map
 class TransactionRepositoryImpl(
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
+    private val transactionLinkDao: TransactionLinkDao,
     private val database: AppDatabase
 ) : TransactionRepository {
 
@@ -175,15 +177,22 @@ class TransactionRepositoryImpl(
     ): Pair<Long, Long> {
         return database.withTransaction {
             val sourceId = transactionDao.insertTransactionWithBalanceUpdate(sourceTransaction.toEntity(profileId), accountDao)
-            
-            // Link the target back to the source if not already set
-            val updatedTarget = targetTransaction.copy(linkedTransactionId = sourceId)
-            val targetId = transactionDao.insertTransactionWithBalanceUpdate(updatedTarget.toEntity(profileId), accountDao)
-            
-            // Link source to target as well for two-way linking
-            val finalSource = sourceTransaction.copy(id = sourceId, linkedTransactionId = targetId)
-            transactionDao.insertTransaction(finalSource.toEntity(profileId))
-            
+            val targetId = transactionDao.insertTransactionWithBalanceUpdate(targetTransaction.toEntity(profileId), accountDao)
+
+            // Create bi-directional links for transfers
+            transactionLinkDao.insertLink(
+                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                    transactionId = sourceId,
+                    linkedTransactionId = targetId
+                )
+            )
+            transactionLinkDao.insertLink(
+                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                    transactionId = targetId,
+                    linkedTransactionId = sourceId
+                )
+            )
+
             Pair(sourceId, targetId)
         }
     }
@@ -238,7 +247,6 @@ class TransactionRepositoryImpl(
             payee = payee,
             note = note,
             recurring = recurring,
-            linkedTransactionId = linkedTransactionId,
             latitude = latitude,
             longitude = longitude,
             warrantyExpiration = warrantyExpiration,
@@ -263,11 +271,40 @@ class TransactionRepositoryImpl(
             payee = payee,
             note = note,
             recurring = recurring,
-            linkedTransactionId = linkedTransactionId,
             latitude = latitude,
             longitude = longitude,
             warrantyExpiration = warrantyExpiration,
             status = status.name
         )
+    }
+
+    // Link management implementations
+    override suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        transactionLinkDao.insertLink(
+            com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                transactionId = transactionId,
+                linkedTransactionId = linkedTransactionId
+            )
+        )
+    }
+
+    override suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        transactionLinkDao.deleteLink(transactionId, linkedTransactionId)
+    }
+
+    override suspend fun clearTransactionLinks(transactionId: Long) {
+        transactionLinkDao.deleteAllLinksForTransaction(transactionId)
+    }
+
+    override fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
+        return transactionLinkDao.getLinkedTransactionIds(transactionId)
+    }
+
+    override fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
+        println("Repository: getLinkedTransactions called for txId=$transactionId")
+        return transactionLinkDao.getLinkedTransactions(transactionId).map { entities ->
+            println("Repository: Found ${entities.size} linked transactions for txId=$transactionId")
+            entities.map { it.toDomain() }
+        }
     }
 }

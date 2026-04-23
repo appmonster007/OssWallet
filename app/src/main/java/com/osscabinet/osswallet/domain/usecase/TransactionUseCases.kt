@@ -114,4 +114,25 @@ class TransactionUseCases(
             lastLimitTransactions
         }
     }
+
+    // Link management methods
+    suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        repository.addTransactionLink(transactionId, linkedTransactionId)
+    }
+
+    suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+        repository.removeTransactionLink(transactionId, linkedTransactionId)
+    }
+
+    suspend fun clearTransactionLinks(transactionId: Long) {
+        repository.clearTransactionLinks(transactionId)
+    }
+
+    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
+        return repository.getLinkedTransactionIds(transactionId)
+    }
+
+    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
+        return repository.getLinkedTransactions(transactionId)
+    }
 }

@@ -25,8 +25,8 @@ data class TransactionPrefillDTO(
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
     val status: TransactionStatus = TransactionStatus.CLEARED,
-    // For transfers
-    val linkedTransactionId: Long? = null,
+    // For transfers and linking
+    val linkedTransactionIds: List<Long> = emptyList(),
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
     val exchangeRate: String = "1.0",
@@ -55,7 +55,6 @@ data class TransactionPrefillDTO(
                 longitude = transaction.longitude,
                 warrantyExpiration = transaction.warrantyExpiration,
                 status = transaction.status,
-                linkedTransactionId = transaction.linkedTransactionId,
                 clonedFromTransactionId = clonedFromTransactionId
             )
         }

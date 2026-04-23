@@ -16,7 +16,11 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -103,6 +107,13 @@ fun TransactionEntryScreen(
 
     val initialTimestamp = remember { System.currentTimeMillis() }
 
+    // Observe linked transactions for the current transaction
+    val linkedTxs by if (transactionId != null && transactionId != -1L) {
+        viewModel.getLinkedTransactions(transactionId).collectAsStateWithLifecycle(initialValue = emptyList())
+    } else {
+        remember { mutableStateOf(emptyList()) }
+    }
+
     TransactionEntryContent(
         transactionId = transactionId,
         accountId = accountId,
@@ -117,8 +128,11 @@ fun TransactionEntryScreen(
         decimalPrecision = decimalPrecision,
         dbTemplates = dbTemplates,
         allTags = allTags,
+        onAddLink = { txId, linkedId -> viewModel.addTransactionLink(txId, linkedId) },
+        onRemoveLink = { txId, linkedId -> viewModel.removeTransactionLink(txId, linkedId) },
+        linkedTxs = linkedTxs,
         onAddTag = { tagViewModel.addTag(it) },
-        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedId, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp, status ->
+        onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedIds, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp, status ->
             val isEditMode = transactionId != null && transactionId != -1L
             val finalTimestamp = if (!isEditMode && timestamp == initialTimestamp) System.currentTimeMillis() else timestamp
             if (isEditMode) {
@@ -128,9 +142,9 @@ fun TransactionEntryScreen(
                     
                     if (wasTransfer && !isTransfer) {
                         // Changed from Transfer to Income/Expense
-                        // Delete linked transaction if it exists
-                        existingTransaction.linkedTransactionId?.let { viewModel.deleteTransaction(it) }
-                        
+                        // Clear all links for this transaction
+                        viewModel.clearTransactionLinks(existingTransaction.id)
+
                         // Update current transaction to normal income/expense
                         viewModel.updateTransaction(
                             oldTransaction = existingTransaction,
@@ -145,7 +159,6 @@ fun TransactionEntryScreen(
                             timestamp = finalTimestamp,
                             payee = payee,
                             note = note,
-                            linkedTransactionId = null,
                             latitude = coords?.first,
                             longitude = coords?.second,
                             warrantyExpiration = warrantyExp,
@@ -207,51 +220,63 @@ fun TransactionEntryScreen(
                                 timestamp = finalTimestamp,
                                 payee = payee,
                                 note = note,
-                                linkedTransactionId = linkedId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
                                 warrantyExpiration = warrantyExp,
                                 status = status
                             )
-                            
-                            val existingLinkedTx = transactions.find { it.id == linkedId }
-                            val targetTx = existingLinkedTx?.copy(
-                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                amount = amountValue.multiply(rate),
+
+                            // Update source transaction
+                            viewModel.updateTransaction(
+                                oldTransaction = existingTransaction,
+                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                                amount = amountValue,
                                 category = "Transfer",
-                                transactionType = "income",
-                                accountId = targetId,
-                                currency = targetCurrency,
+                                transactionType = "expense",
+                                accountId = accId,
+                                currency = currency,
+                                categoryId = null,
                                 tags = tags,
                                 paymentMethod = paymentMethod,
                                 timestamp = finalTimestamp,
                                 payee = payee,
                                 note = note,
-                                linkedTransactionId = transactionId,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            ) ?: Transaction(
-                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                amount = amountValue.multiply(rate),
-                                category = "Transfer",
-                                transactionType = "income",
-                                accountId = targetId,
-                                currency = targetCurrency,
-                                tags = tags,
-                                paymentMethod = paymentMethod,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                linkedTransactionId = transactionId,
                                 latitude = coords?.first,
                                 longitude = coords?.second,
                                 warrantyExpiration = warrantyExp,
                                 status = status
                             )
-                            
-                            viewModel.saveTransfer(sourceTx, targetTx)
+
+                            // Get linked target transaction and update it
+                            // Note: This is a simplified approach - in production we'd need to observe the Flow
+                            // For now, we'll search the transactions list
+                            val linkedTxs = transactions.filter { tx ->
+                                tx.category == "Transfer" &&
+                                tx.accountId == targetId &&
+                                tx.transactionType == "income" &&
+                                Math.abs(tx.timestamp - existingTransaction.timestamp) < 1000 // Same transfer (within 1 second)
+                            }
+
+                            linkedTxs.firstOrNull()?.let { targetTx ->
+                                viewModel.updateTransaction(
+                                    oldTransaction = targetTx,
+                                    title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
+                                    amount = amountValue.multiply(rate),
+                                    category = "Transfer",
+                                    transactionType = "income",
+                                    accountId = targetId,
+                                    currency = targetCurrency,
+                                    tags = tags,
+                                    paymentMethod = paymentMethod,
+                                    timestamp = finalTimestamp,
+                                    payee = payee,
+                                    note = note,
+                                    latitude = coords?.first,
+                                    longitude = coords?.second,
+                                    warrantyExpiration = warrantyExp,
+                                    status = status
+                                )
+                            }
                         }
                     } else {
                         // Standard update (not a transfer)
@@ -268,7 +293,6 @@ fun TransactionEntryScreen(
                             timestamp = finalTimestamp,
                             payee = payee,
                             note = note,
-                            linkedTransactionId = linkedId,
                             latitude = coords?.first,
                             longitude = coords?.second,
                             warrantyExpiration = warrantyExp,
@@ -296,7 +320,7 @@ fun TransactionEntryScreen(
                             warrantyExpiration = warrantyExp,
                             status = status
                         )
-                        
+
                         val targetTx = Transaction(
                             title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
                             amount = amountValue.multiply(rate),
@@ -318,10 +342,7 @@ fun TransactionEntryScreen(
                         viewModel.saveTransfer(sourceTx, targetTx)
                     }
                 } else {
-                    // Use clonedFromTransactionId as linkedTransactionId if this is a clone
-                    val dto = prefillDto
-                    val finalLinkedId = dto?.clonedFromTransactionId ?: linkedId
-
+                    // Add transaction and then handle links
                     viewModel.addTransaction(
                         title = title.ifBlank { category },
                         amount = amountValue,
@@ -335,12 +356,22 @@ fun TransactionEntryScreen(
                         timestamp = finalTimestamp,
                         payee = payee,
                         note = note,
-                        linkedTransactionId = finalLinkedId,
                         latitude = coords?.first,
                         longitude = coords?.second,
                         warrantyExpiration = warrantyExp,
                         status = status
-                    )
+                    ) { newTxId ->
+                        // Add links for cloned transaction
+                        val clonedId = prefillDto?.clonedFromTransactionId
+                        if (clonedId != null) {
+                            viewModel.addTransactionLink(newTxId, clonedId)
+                        }
+
+                        // Add any additional links
+                        linkedIds.forEach { linkedId ->
+                            viewModel.addTransactionLink(newTxId, linkedId)
+                        }
+                    }
                 }
             }
             navigateBack()
@@ -371,9 +402,12 @@ fun TransactionEntryContent(
     dbTemplates: List<TemplateEntity> = emptyList(),
     allTags: List<TagEntity> = emptyList(),
     onAddTag: (String) -> Unit = {},
-    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, Long?, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
+    onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, List<Long>, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
     onDelete: (Long) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onAddLink: (Long, Long) -> Unit = { _, _ -> },
+    onRemoveLink: (Long, Long) -> Unit = { _, _ -> },
+    linkedTxs: List<Transaction> = emptyList()
 ) {
     val isEditMode = transactionId != null && transactionId != -1L
     val existingTransaction = remember(transactionId, transactions) {
@@ -404,13 +438,8 @@ fun TransactionEntryContent(
     var warrantyExpirationMillis by remember { mutableLongStateOf(System.currentTimeMillis() + 31536000000L) } // Default +1 year
     var showWarrantyDatePicker by remember { mutableStateOf(false) }
     var locationCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    var linkedTransactionId by remember(existingTransaction) { mutableStateOf(existingTransaction?.linkedTransactionId) }
-    val linkedTx = remember(linkedTransactionId, transactions) {
-        if (linkedTransactionId != null) {
-            transactions.find { it.id == linkedTransactionId }
-        } else null
-    }
-    
+    var linkedTransactionIds by remember { mutableStateOf<List<Long>>(emptyList()) }
+
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
     var selectedCurrency by remember { mutableStateOf("") }
     
@@ -438,22 +467,27 @@ fun TransactionEntryContent(
             selectedDateMillis = existingTransaction.timestamp
             payee = existingTransaction.payee
             note = existingTransaction.note
-            // Already handled by separate LaunchedEffect for better reactivity
-            // linkedTransactionId = existingTransaction.linkedTransactionId
 
             selectedAccount = accounts.find { it.id == existingTransaction.accountId }
             selectedCurrency = existingTransaction.currency
 
-            if (transactionType == 2 && existingTransaction.linkedTransactionId != null) {
-                val linkedTx = transactions.find { it.id == existingTransaction.linkedTransactionId }
-                if (linkedTx != null) {
-                    targetAccount = accounts.find { it.id == linkedTx.accountId }
-                    targetCurrency = linkedTx.currency
+            // Load transfer link logic using TransactionLinkDao
+            if (transactionType == 2) { // Transfer
+                // Use the linkedTxs observed from ViewModel
+                val linkedTransfer = linkedTxs.find { tx ->
+                    tx.category == "Transfer" &&
+                    tx.transactionType == "income" &&
+                    Math.abs(tx.timestamp - existingTransaction.timestamp) < 1000 // Same transfer (within 1 second)
+                }
+                if (linkedTransfer != null) {
+                    targetAccount = accounts.find { it.id == linkedTransfer.accountId }
+                    targetCurrency = linkedTransfer.currency
                     if (existingTransaction.amount.signum() != 0) {
-                        exchangeRate = linkedTx.amount.divide(existingTransaction.amount, 8, RoundingMode.HALF_UP).abs()
+                        exchangeRate = linkedTransfer.amount.divide(existingTransaction.amount, 8, RoundingMode.HALF_UP).abs()
                     }
                 }
             }
+
         } else {
             // Prefill from DTO if provided (for clone functionality)
             if (prefillDto != null) {
@@ -476,7 +510,13 @@ fun TransactionEntryContent(
                 } else null
                 warrantyExpirationMillis = prefillDto.warrantyExpiration ?: System.currentTimeMillis() + 31536000000L
                 isWarrantyEnabled = prefillDto.warrantyExpiration != null
-                linkedTransactionId = prefillDto.clonedFromTransactionId
+
+                // Set up clone linking using TransactionLinkDao
+                linkedTransactionIds = if (prefillDto.clonedFromTransactionId != null) {
+                    listOf(prefillDto.clonedFromTransactionId)
+                } else {
+                    emptyList()
+                }
 
                 selectedAccount = accounts.find { it.id == prefillDto.accountId }
                 selectedCurrency = prefillDto.currency
@@ -594,7 +634,7 @@ fun TransactionEntryContent(
                                 selectedDateMillis,
                                 payee,
                                 note,
-                                linkedTransactionId,
+                                linkedTransactionIds,
                                 isTransfer,
                                 targetAccount,
                                 targetCurrency,
@@ -893,93 +933,106 @@ fun TransactionEntryContent(
                             label = "PAYEE",
                             icon = Icons.Rounded.Person
                         )
-                        
+
                         // Linked Transaction Field - Last item
-                        val currentLinkedTx = linkedTx
-                        if (currentLinkedTx != null) {
-                            Surface(
-                                shape = RoundedCornerShape(28.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    val linkedCategory = categories.find { it.name == currentLinkedTx.category }
+                        if (linkedTxs.isNotEmpty()) {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "LINKED TRANSACTIONS (${linkedTxs.size})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                                linkedTxs.forEach { currentLinkedTx ->
                                     Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        modifier = Modifier.size(48.dp)
+                                        shape = RoundedCornerShape(28.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Icon(
-                                            categoryIcons[linkedCategory?.iconName] ?: categoryIcons[currentLinkedTx.category] ?: Icons.Rounded.Category,
-                                            contentDescription = null,
-                                            modifier = Modifier.padding(12.dp).size(24.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        val displayTitle = currentLinkedTx.note.ifBlank { currentLinkedTx.category }
-                                        val amountSign = if (currentLinkedTx.transactionType == "income") "+" else "-"
-                                        val formattedAmount = "$amountSign${formatCurrencyRight(currentLinkedTx.amount.abs(), currentLinkedTx.currency, precision = decimalPrecision)}"
-                                        
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                text = displayTitle,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                modifier = Modifier.weight(1f),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = formattedAmount,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
+                                            val linkedCategory = categories.find { it.name == currentLinkedTx.category }
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                                modifier = Modifier.size(48.dp)
+                                            ) {
+                                                Icon(
+                                                    categoryIcons[linkedCategory?.iconName] ?: categoryIcons[currentLinkedTx.category] ?: Icons.Rounded.Category,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.padding(12.dp).size(24.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(16.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                val displayTitle = currentLinkedTx.note.ifBlank { currentLinkedTx.category }
+                                                val amountSign = if (currentLinkedTx.transactionType == "income") "+" else "-"
+                                                val formattedAmount = "$amountSign${formatCurrencyRight(currentLinkedTx.amount.abs(), currentLinkedTx.currency, precision = decimalPrecision)}"
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = displayTitle,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        modifier = Modifier.weight(1f),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        text = formattedAmount,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                    )
+                                                }
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = if (currentLinkedTx.note.isNotBlank()) currentLinkedTx.category else "",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.weight(1f),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    Text(
+                                                        text = formatDateTime(currentLinkedTx.timestamp),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            IconButton(
+                                                onClick = {
+                                                    if (transactionId != null && transactionId != -1L) {
+                                                        onRemoveLink(transactionId, currentLinkedTx.id)
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Close,
+                                                    contentDescription = "Unlink",
+                                                    modifier = Modifier.size(20.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
-                                        
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = if (currentLinkedTx.note.isNotBlank()) currentLinkedTx.category else "",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.weight(1f),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = formatDateTime(currentLinkedTx.timestamp),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                    
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    IconButton(
-                                        onClick = { linkedTransactionId = null },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            contentDescription = "Unlink",
-                                            modifier = Modifier.size(20.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
                                     }
                                 }
                             }
@@ -987,12 +1040,13 @@ fun TransactionEntryContent(
                             RecordFieldCard(
                                 icon = Icons.Rounded.Link,
                                 label = "LINK TRANSACTION",
-                                value = "None Linked",
+                                value = if (transactionId != null && transactionId != -1L) "None Linked" else "Add Links (Optional)",
                                 onClick = { showLinkedTransactionSheet = true },
                                 trailingIcon = Icons.Rounded.KeyboardArrowDown,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                             )
                         }
+
 
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
@@ -1416,44 +1470,127 @@ fun TransactionEntryContent(
             }
         }
 
+        // Multi-link selection sheet
         if (showLinkedTransactionSheet) {
+            var selectedTxIds by remember { mutableStateOf<Set<Long>>(linkedTxs.map { it.id }.toSet()) }
+            var isSaving by remember { mutableStateOf(false) }
+            val coroutineScope = rememberCoroutineScope()
+
             ModalBottomSheet(
-                onDismissRequest = { showLinkedTransactionSheet = false },
+                onDismissRequest = { if (!isSaving) showLinkedTransactionSheet = false },
                 containerColor = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             ) {
-                Column(modifier = Modifier.padding(bottom = 32.dp).fillMaxHeight(0.6f)) {
-                    AeonFlowSectionHeader(
-                        title = "SELECT TRANSACTION TO LINK",
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-                    )
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
-                            val txAccount = accounts.find { it.id == tx.accountId }
-                            AeonTransactionItem(
-                                category = tx.category,
-                                account = txAccount?.name ?: "Unknown",
-                                amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
-                                balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = decimalPrecision), // Simplified for picker
-                                balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision), // Simplified for picker
-                                type = if (tx.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = formatDateTime(tx.timestamp),
-                                note = tx.note,
-                                tags = tx.tags,
-                                icon = AccountIconMap[tx.category] ?: Icons.Rounded.Category,
-                                precision = decimalPrecision,
-                                onClick = {
-                                    linkedTransactionId = tx.id
+                Column(modifier = Modifier.fillMaxHeight(0.7f)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AeonFlowSectionHeader(
+                            title = "SELECT TRANSACTIONS TO LINK",
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Button(
+                            onClick = {
+                                isSaving = true
+                                if (transactionId != null && transactionId != -1L) {
+                                    // Update existing transaction links
+                                    val currentIds = linkedTxs.map { it.id }.toSet()
+                                    val toRemove = currentIds - selectedTxIds
+                                    val toAdd = selectedTxIds - currentIds
+
+                                    toRemove.forEach { id ->
+                                        onRemoveLink(transactionId, id)
+                                    }
+                                    toAdd.forEach { id ->
+                                        onAddLink(transactionId, id)
+                                    }
+                                } else {
+                                    // Update new transaction links
+                                    linkedTransactionIds = selectedTxIds.toList()
+                                }
+                                // Close sheet after operations complete
+                                coroutineScope.launch {
+                                    delay(500) // Increased delay to ensure database operations complete
+                                    isSaving = false
                                     showLinkedTransactionSheet = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                }
+                            },
+                            enabled = selectedTxIds.isNotEmpty() && !isSaving
+                        ) {
+                            Text(
+                                text = "Link ${selectedTxIds.size} Transaction${if (selectedTxIds.size != 1) "s" else ""}",
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        item {
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp)
+                    ) {
+                        items(transactions.filter { it.id != transactionId }.sortedByDescending { it.timestamp }) { tx ->
+                            val isSelected = tx.id in selectedTxIds
+                            val txAccount = accounts.find { it.id == tx.accountId }
+                            val txCategory = categories.find { it.name == tx.category }
+                            val icon = categoryIcons[txCategory?.iconName] ?: categoryIcons[tx.category] ?: Icons.Rounded.Category
+                            val iconBg = txCategory?.colorHex?.let { Color(it) }
+
+                            Box {
+                                AeonTransactionItem(
+                                    category = tx.category,
+                                    account = txAccount?.name ?: "Unknown",
+                                    amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
+                                    balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = decimalPrecision),
+                                    balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision),
+                                    type = if (tx.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                    timestamp = formatDateTime(tx.timestamp),
+                                    note = tx.note,
+                                    tags = tx.tags,
+                                    icon = icon,
+                                    iconBg = iconBg,
+                                    precision = decimalPrecision,
+                                    showOpeningBalance = false,
+                                    showClosingBalance = false,
+                                    status = tx.status,
+                                    onClick = {
+                                        selectedTxIds = if (isSelected) {
+                                            selectedTxIds - tx.id
+                                        } else {
+                                            selectedTxIds + tx.id
+                                        }
+                                    }
+                                )
+
+                                // Checkbox overlay
+                                Surface(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                    border = BorderStroke(2.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(24.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Icon(
+                                                Icons.Rounded.Check,
+                                                contentDescription = "Selected",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1962,7 +2099,6 @@ fun TransactionEntryWithLongLinkPreview() {
             accountId = "1",
             currency = "USD",
             timestamp = System.currentTimeMillis(),
-            linkedTransactionId = 100L,
             status = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
         )
     )

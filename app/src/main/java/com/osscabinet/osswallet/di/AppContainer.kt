@@ -26,7 +26,7 @@ class AppContainer(private val context: Context) {
 
     // Repositories
     val transactionRepository: TransactionRepositoryImpl by lazy {
-        TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), db)
+        TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), db.transactionLinkDao(), db)
     }
 
     val accountRepository: AccountRepositoryImpl by lazy {
@@ -54,7 +54,7 @@ class AppContainer(private val context: Context) {
     }
 
     val backupRepository: BackupRepositoryImpl by lazy {
-        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), context)
+        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), db.transactionLinkDao(), context)
     }
 
     val tagRepository: TagRepositoryImpl by lazy {

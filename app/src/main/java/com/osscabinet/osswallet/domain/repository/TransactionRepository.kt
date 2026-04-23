@@ -20,6 +20,13 @@ interface TransactionRepository {
     suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>>
     suspend fun getTransactionById(id: Long): Transaction?
 
+    // Link management methods
+    suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long)
+    suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long)
+    suspend fun clearTransactionLinks(transactionId: Long)
+    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>>
+    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>>
+
     suspend fun getCurrencySummaries(profileId: Int): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
     suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary>
 }

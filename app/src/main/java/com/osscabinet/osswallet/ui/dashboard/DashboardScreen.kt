@@ -585,6 +585,79 @@ fun DashboardContent(
 //                                    Box(modifier = Modifier.size(0.dp))
 //                                }
                             }
+                            is CategoryBreakdownCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeCategoryBreakdownForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                cardData?.let { data ->
+                                    com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard(
+                                        config = cardConfig,
+                                        data = data,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        onUpdate = { updatedConfig ->
+                                            // TODO: Implement config update
+                                        },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                                    )
+                                } ?: Box(modifier = Modifier.size(0.dp))
+                            }
+                            is TimelineTrajectoryCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeTimelineTrajectoryForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = state.allTransactions,
+                                        accounts = state.accounts,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                cardData?.let { data ->
+                                    com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard(
+                                        config = cardConfig,
+                                        data = data,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        onUpdate = { updatedConfig ->
+                                            // TODO: Implement config update
+                                        },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                                    )
+                                } ?: Box(modifier = Modifier.size(0.dp))
+                            }
+                            is CategoryExpenseTreemapCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                    value = dashboardViewModel.computeCategoryExpenseTreemapForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = state.allTransactions,
+                                        baseCurrency = state.baseCurrency,
+                                        exchangeRates = state.exchangeRates,
+                                        precision = state.decimalPrecision
+                                    )
+                                }
+                                
+                                cardData?.let { data ->
+                                    com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard(
+                                        config = cardConfig,
+                                        data = data,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        headerModifier = dragModifier,
+                                        onUpdate = { updatedConfig ->
+                                            // TODO: Implement config update
+                                        },
+                                        onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                                    )
+                                } ?: Box(modifier = Modifier.size(0.dp))
+                            }
                         }
                     }
                 }

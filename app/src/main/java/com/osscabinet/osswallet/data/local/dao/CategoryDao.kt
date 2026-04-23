@@ -20,4 +20,10 @@ interface CategoryDao {
 
     @Query("DELETE FROM categories")
     suspend fun clearAll()
+
+    @Query("SELECT * FROM categories WHERE name = :name LIMIT 1")
+    suspend fun getCategoryByName(name: String): CategoryEntity?
+
+    @Query("SELECT * FROM categories WHERE parentId = :parentId")
+    suspend fun getSubCategories(parentId: Long): List<CategoryEntity>
 }

@@ -2,14 +2,27 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
+import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.domain.model.settings.AnalyticsCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
@@ -17,7 +30,9 @@ import java.util.*
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val financialUseCases: FinancialUseCases,
-    private val settingsDataStore: SettingsDataStore
+    private val settingsDataStore: SettingsDataStore,
+    private val cardComputationService: CardComputationService,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
@@ -28,10 +43,36 @@ class AnalyticsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     private var allTransactions: List<Transaction> = emptyList()
+    private var allAccounts: List<Account> = emptyList()
     private var ratesJob: Job? = null
     val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
     private var _currentPrecision: Int = 2
+
+    // Card data states
+    private val _categoryBreakdownData = MutableStateFlow<List<CategoryBreakdownData>>(emptyList())
+    val categoryBreakdownData: StateFlow<List<CategoryBreakdownData>> = _categoryBreakdownData.asStateFlow()
+
+    private val _timelineTrajectoryData = MutableStateFlow<List<TimelineTrajectoryData>>(emptyList())
+    val timelineTrajectoryData: StateFlow<List<TimelineTrajectoryData>> = _timelineTrajectoryData.asStateFlow()
+
+    private val _categoryExpenseTreemapData = MutableStateFlow<List<CategoryExpenseTreemapData>>(emptyList())
+    val categoryExpenseTreemapData: StateFlow<List<CategoryExpenseTreemapData>> = _categoryExpenseTreemapData.asStateFlow()
+
+    // Analytics cards config
+    val analyticsCardsConfig: StateFlow<AnalyticsCardsConfig> = settingsDataStore.analyticsCardsConfig
+        .map { configStr ->
+            if (configStr.isEmpty()) {
+                defaultAnalyticsCardsConfig()
+            } else {
+                try {
+                    Json.decodeFromString<AnalyticsCardsConfig>(configStr)
+                } catch (e: Exception) {
+                    defaultAnalyticsCardsConfig()
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), defaultAnalyticsCardsConfig())
 
     init {
         viewModelScope.launch {
@@ -51,6 +92,40 @@ class AnalyticsViewModel(
             transactionUseCases.getTransactions().collect { transactions ->
                 allTransactions = transactions
                 calculateAnalytics()
+                // Recompute card data when transactions change
+                analyticsCardsConfig.value.cards.forEach { cardConfig ->
+                    updateCardConfig(cardConfig)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            settingsDataStore.currentProfileId.collect { profileId ->
+                accountRepository.getAllAccounts(profileId).collect { accounts ->
+                    allAccounts = accounts
+                    calculateAnalytics()
+                    // Recompute card data when accounts change
+                    analyticsCardsConfig.value.cards.forEach { cardConfig ->
+                        updateCardConfig(cardConfig)
+                    }
+                }
+            }
+        }
+
+        // Initialize default analytics cards config if empty
+        viewModelScope.launch {
+            val currentConfig = settingsDataStore.analyticsCardsConfig.first()
+            if (currentConfig.isEmpty()) {
+                settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(defaultAnalyticsCardsConfig()))
+            }
+        }
+
+        // Compute card data when config changes
+        viewModelScope.launch {
+            analyticsCardsConfig.collect { config ->
+                config.cards.forEach { cardConfig ->
+                    updateCardConfig(cardConfig)
+                }
             }
         }
     }
@@ -70,6 +145,42 @@ class AnalyticsViewModel(
                 hasLoadedExchangeRates = true
             ) }
             calculateAnalytics()
+        }
+    }
+
+    fun updateCardConfig(cardConfig: CardConfig) {
+        viewModelScope.launch {
+            when (cardConfig) {
+                is CategoryBreakdownCardConfig -> {
+                    _categoryBreakdownData.value = cardComputationService.computeCategoryBreakdown(
+                        config = cardConfig,
+                        transactions = allTransactions,
+                        baseCurrency = _uiState.value.selectedCurrency,
+                        exchangeRates = _uiState.value.exchangeRates,
+                        precision = _currentPrecision
+                    )
+                }
+                is TimelineTrajectoryCardConfig -> {
+                    _timelineTrajectoryData.value = cardComputationService.computeTimelineTrajectory(
+                        config = cardConfig,
+                        transactions = allTransactions,
+                        accounts = allAccounts,
+                        baseCurrency = _uiState.value.selectedCurrency,
+                        exchangeRates = _uiState.value.exchangeRates,
+                        precision = _currentPrecision
+                    )
+                }
+                is CategoryExpenseTreemapCardConfig -> {
+                    _categoryExpenseTreemapData.value = cardComputationService.computeCategoryExpenseTreemap(
+                        config = cardConfig,
+                        transactions = allTransactions,
+                        baseCurrency = _uiState.value.selectedCurrency,
+                        exchangeRates = _uiState.value.exchangeRates,
+                        precision = _currentPrecision
+                    )
+                }
+                else -> {}
+            }
         }
     }
 
@@ -171,6 +282,66 @@ class AnalyticsViewModel(
             )
         }
     }
+
+    // Card management methods
+    suspend fun addCard(cardConfig: CardConfig) {
+        val currentConfig = analyticsCardsConfig.value
+        val newCards = currentConfig.cards + cardConfig
+        val updatedConfig = AnalyticsCardsConfig(newCards)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+    }
+
+    suspend fun removeCard(cardId: String) {
+        val currentConfig = analyticsCardsConfig.value
+        val newCards = currentConfig.cards.filter { it.cardId != cardId }
+        val updatedConfig = AnalyticsCardsConfig(newCards)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+    }
+
+    suspend fun updateCardConfigById(cardId: String, update: (CardConfig) -> CardConfig) {
+        val currentConfig = analyticsCardsConfig.value
+        val newCards = currentConfig.cards.map { card ->
+            if (card.cardId == cardId) update(card) else card
+        }
+        val updatedConfig = AnalyticsCardsConfig(newCards)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+    }
+
+    suspend fun reorderCards(newOrder: List<CardConfig>) {
+        val updatedConfig = AnalyticsCardsConfig(newOrder)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+    }
+}
+
+fun defaultAnalyticsCardsConfig(): AnalyticsCardsConfig {
+    return AnalyticsCardsConfig(
+        cards = listOf(
+            CategoryBreakdownCardConfig(
+                cardId = "analytics_category_breakdown",
+                order = 0,
+                title = "CATEGORY BREAKDOWN",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                showLabels = true,
+                showLegend = true
+            ),
+            TimelineTrajectoryCardConfig(
+                cardId = "analytics_timeline_trajectory",
+                order = 1,
+                title = "TIMELINE TRAJECTORY",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                showBalance = true,
+                showExpense = true,
+                showIncome = true
+            ),
+            CategoryExpenseTreemapCardConfig(
+                cardId = "analytics_category_expense_treemap",
+                order = 2,
+                title = "CATEGORY EXPENSE TREEMAP",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                showLabels = true
+            )
+        )
+    )
 }
 
 data class AnalyticsUiState(
@@ -188,3 +359,4 @@ data class AnalyticsUiState(
     val isLoading: Boolean = false,
     val hasLoadedExchangeRates: Boolean = false
 )
+

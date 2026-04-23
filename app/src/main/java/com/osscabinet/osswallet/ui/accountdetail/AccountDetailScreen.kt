@@ -75,6 +75,7 @@ fun AccountDetailScreen(
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, Int?, String?) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
 ) {
@@ -307,7 +308,7 @@ fun AccountDetailScreen(
                                     onItemExpanded = { transactionViewModel.onItemExpanded(it) },
                                     onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
                                     onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
-                                    onClone = { transactionViewModel.quickCloneTransaction(it) },
+                                    onClone = { onCloneTransactionClick(it) },
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }

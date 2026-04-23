@@ -27,7 +27,7 @@ sealed class Screen(val route: String) {
             return if (filterStack != null) "list?filterStack=$filterStack" else "list"
         }
     }
-    object AddTransaction : Screen("add?accountId={accountId}&type={type}&template={template}") {
+    object AddTransaction : Screen("add") {
         fun createRoute(accountId: String? = null, type: Int? = null, template: String? = null): String {
             val params = mutableListOf<String>()
             accountId?.let { params.add("accountId=$it") }

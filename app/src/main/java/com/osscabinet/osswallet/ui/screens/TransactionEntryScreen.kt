@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -72,6 +73,7 @@ fun TransactionEntryScreen(
 ) {
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val prefillDto by viewModel.prefillDto.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val exchangeRates by analyticsViewModel.exchangeRates.collectAsStateWithLifecycle()
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
@@ -79,7 +81,14 @@ fun TransactionEntryScreen(
     val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
-    
+
+    // Clear prefill DTO when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearPrefillDto()
+        }
+    }
+
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
@@ -100,6 +109,7 @@ fun TransactionEntryScreen(
         initialType = initialType,
         initialTemplate = initialTemplate,
         initialTimestamp = initialTimestamp,
+        prefillDto = prefillDto,
         transactions = transactions,
         categories = categories,
         accounts = accounts,
@@ -308,6 +318,10 @@ fun TransactionEntryScreen(
                         viewModel.saveTransfer(sourceTx, targetTx)
                     }
                 } else {
+                    // Use clonedFromTransactionId as linkedTransactionId if this is a clone
+                    val dto = prefillDto
+                    val finalLinkedId = dto?.clonedFromTransactionId ?: linkedId
+
                     viewModel.addTransaction(
                         title = title.ifBlank { category },
                         amount = amountValue,
@@ -321,7 +335,7 @@ fun TransactionEntryScreen(
                         timestamp = finalTimestamp,
                         payee = payee,
                         note = note,
-                        linkedTransactionId = linkedId,
+                        linkedTransactionId = finalLinkedId,
                         latitude = coords?.first,
                         longitude = coords?.second,
                         warrantyExpiration = warrantyExp,
@@ -348,6 +362,7 @@ fun TransactionEntryContent(
     initialType: Int = 0,
     initialTemplate: String? = null,
     initialTimestamp: Long = System.currentTimeMillis(),
+    prefillDto: TransactionPrefillDTO? = null,
     transactions: List<Transaction> = emptyList(),
     categories: List<CategoryEntity> = emptyList(),
     accounts: List<Account> = emptyList(),
@@ -406,7 +421,7 @@ fun TransactionEntryContent(
     var showLocationSheet by remember { mutableStateOf(false) }
 
     // Initialize state from existing transaction or initial parameters
-    LaunchedEffect(existingTransaction, accounts) {
+    LaunchedEffect(existingTransaction, accounts, prefillDto) {
         if (isEditMode && existingTransaction != null) {
             title = existingTransaction.title
             amount = existingTransaction.amount.toPlainString()
@@ -425,7 +440,7 @@ fun TransactionEntryContent(
             note = existingTransaction.note
             // Already handled by separate LaunchedEffect for better reactivity
             // linkedTransactionId = existingTransaction.linkedTransactionId
-            
+
             selectedAccount = accounts.find { it.id == existingTransaction.accountId }
             selectedCurrency = existingTransaction.currency
 
@@ -440,7 +455,41 @@ fun TransactionEntryContent(
                 }
             }
         } else {
-            if (initialTemplate != null) {
+            // Prefill from DTO if provided (for clone functionality)
+            if (prefillDto != null) {
+                title = prefillDto.title
+                amount = prefillDto.amount
+                category = prefillDto.category
+                selectedCategoryId = prefillDto.categoryId
+                selectedTags = prefillDto.tags
+                paymentMethod = prefillDto.paymentMethod
+                status = prefillDto.status
+                transactionType = when (prefillDto.transactionType.lowercase()) {
+                    "income" -> 1
+                    "transfer" -> 2
+                    else -> 0
+                }
+                payee = prefillDto.payee
+                note = prefillDto.note
+                locationCoords = if (prefillDto.latitude != null && prefillDto.longitude != null) {
+                    Pair(prefillDto.latitude, prefillDto.longitude)
+                } else null
+                warrantyExpirationMillis = prefillDto.warrantyExpiration ?: System.currentTimeMillis() + 31536000000L
+                isWarrantyEnabled = prefillDto.warrantyExpiration != null
+                linkedTransactionId = prefillDto.clonedFromTransactionId
+
+                selectedAccount = accounts.find { it.id == prefillDto.accountId }
+                selectedCurrency = prefillDto.currency
+
+                // Handle transfer-specific fields
+                if (transactionType == 2) {
+                    prefillDto.targetAccountId?.let { targetId ->
+                        targetAccount = accounts.find { it.id == targetId }
+                    }
+                    targetCurrency = prefillDto.targetCurrency ?: "USD"
+                    exchangeRate = prefillDto.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE
+                }
+            } else if (initialTemplate != null) {
                 val template = dbTemplates.find { it.name == initialTemplate }
                 if (template != null) {
                     title = template.name

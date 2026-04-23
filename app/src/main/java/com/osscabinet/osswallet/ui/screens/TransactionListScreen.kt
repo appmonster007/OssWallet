@@ -34,6 +34,7 @@ fun TransactionListScreen(
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit = {},
     onBackClick: () -> Unit,
     onAccountDetailClick: (String) -> Unit,
     templateViewModel: TemplateViewModel,
@@ -124,7 +125,7 @@ fun TransactionListScreen(
         onItemExpanded = { viewModel.onItemExpanded(it) },
         onItemCollapsed = { viewModel.onItemCollapsed(it) },
         onStatusChange = { transactionId, status -> viewModel.quickUpdateStatus(transactionId, status) },
-        onClone = { viewModel.quickCloneTransaction(it) },
+        onClone = { onCloneTransactionClick(it) },
         onDelete = { viewModel.quickDeleteTransaction(it) },
         onSplit = { viewModel.quickSplitTransaction(it) },
         onFullSwipeRight = { viewModel.toggleStatusClearedUncleared(it) }

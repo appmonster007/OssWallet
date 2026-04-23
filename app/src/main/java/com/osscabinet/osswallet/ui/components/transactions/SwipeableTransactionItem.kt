@@ -111,6 +111,7 @@ fun SwipeableTransactionItem(
                     currentStatus = transaction.status,
                     onStatusChange = onStatusChange,
                     progress = progress,
+                    onCollapse = onCollapse,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
@@ -122,6 +123,7 @@ fun SwipeableTransactionItem(
                     onClone = onClone,
                     onDelete = onDelete,
                     progress = progress,
+                    onCollapse = onCollapse,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 )
             }
@@ -212,6 +214,7 @@ fun StatusActionsRow(
     currentStatus: TransactionStatus,
     onStatusChange: (TransactionStatus) -> Unit,
     progress: Float,
+    onCollapse: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -226,16 +229,19 @@ fun StatusActionsRow(
                 TransactionStatus.RECONCILE -> Icons.Rounded.AccountBalance to Color(0xFF2196F3)
                 TransactionStatus.UNCLEARED -> Icons.Rounded.Pending to Color(0xFFFF9800)
             }
-            
+
             val itemProgress = (progress * 1.5f - (index * 0.2f)).coerceIn(0f, 1f)
-            
+
             ExpressiveActionButton(
                 icon = icon,
                 label = status.displayName,
                 containerColor = color.copy(alpha = 0.12f),
                 contentColor = color,
                 scale = itemProgress,
-                onClick = { onStatusChange(status) }
+                onClick = {
+                    onStatusChange(status)
+                    onCollapse()
+                }
             )
         }
     }
@@ -247,6 +253,7 @@ fun TransactionActionsRow(
     onClone: () -> Unit,
     onDelete: () -> Unit,
     progress: Float,
+    onCollapse: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -262,17 +269,20 @@ fun TransactionActionsRow(
 
         actions.forEachIndexed { index, (icon, label, color) ->
             val itemProgress = (progress * 1.5f - (index * 0.15f)).coerceIn(0f, 1f)
-            
+
             ExpressiveActionButton(
                 icon = icon,
                 label = label,
                 containerColor = color.copy(alpha = 0.12f),
                 contentColor = color,
                 scale = itemProgress,
-                onClick = when (label) {
-                    "Split" -> onSplit
-                    "Clone" -> onClone
-                    else -> onDelete
+                onClick = {
+                    when (label) {
+                        "Split" -> onSplit()
+                        "Clone" -> onClone()
+                        else -> onDelete()
+                    }
+                    onCollapse()
                 }
             )
         }
@@ -352,6 +362,7 @@ fun PreviewSwipeableTransactionItem_LeftSwipe() {
                 TransactionActionsRow(
                     onSplit = {}, onClone = {}, onDelete = {},
                     progress = 1f,
+                    onCollapse = {},
                     modifier = Modifier.align(Alignment.CenterEnd).padding(horizontal = 12.dp)
                 )
                 Surface(
@@ -388,6 +399,7 @@ fun PreviewSwipeableTransactionItem_RightSwipe() {
                     currentStatus = TransactionStatus.CLEARED,
                     onStatusChange = {},
                     progress = 1f,
+                    onCollapse = {},
                     modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 12.dp)
                 )
                 Surface(

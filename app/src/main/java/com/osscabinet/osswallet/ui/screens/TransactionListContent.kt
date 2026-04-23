@@ -93,7 +93,7 @@ fun TransactionListContent(
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier.background(Color.Transparent),
-        sheetPeekHeight = 90.dp,
+        sheetPeekHeight = 120.dp,
         sheetContainerColor = Color.Transparent,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetTonalElevation = 0.dp,
@@ -109,32 +109,38 @@ fun TransactionListContent(
             )
         },
         sheetContent = {
-            TransactionFilterSheet(
-                filter = filter,
-                accounts = accounts,
-                categories = categories,
-                savedFilters = savedFilters,
-                onSetDateRange = onSetDateRange,
-                onUpdateFilter = onUpdateFilter,
-                onToggleExpand = {
-                    scope.launch {
-                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                            scaffoldState.bottomSheetState.expand()
-                        } else {
-                            scaffoldState.bottomSheetState.partialExpand()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
+            ) {
+                TransactionFilterSheet(
+                    filter = filter,
+                    accounts = accounts,
+                    categories = categories,
+                    savedFilters = savedFilters,
+                    onSetDateRange = onSetDateRange,
+                    onUpdateFilter = onUpdateFilter,
+                    onToggleExpand = {
+                        scope.launch {
+                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+                                scaffoldState.bottomSheetState.expand()
+                            } else {
+                                scaffoldState.bottomSheetState.partialExpand()
+                            }
                         }
-                    }
-                },
-                onClose = {
-                    scope.launch { scaffoldState.bottomSheetState.partialExpand() }
-                },
-                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+                    },
+                    onClose = {
+                        scope.launch { scaffoldState.bottomSheetState.partialExpand() }
+                    },
+                    isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
 //                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
 //                backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                accountNames = accountNames,
-                onResetToInitial = onResetToInitial
-            )
+                    backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    accountNames = accountNames,
+                    onResetToInitial = onResetToInitial
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {

@@ -114,11 +114,12 @@ def calculate_account_metrics(account: Dict[str, Any],
         currency = tx['currency']
         amount = tx['amount']
         
-        if tx['isIncome']:
+        # Use signed amounts: positive for income, negative for expenses
+        if amount >= 0:
             currency_cash_flow[currency]['income'] += amount
         else:
-            currency_cash_flow[currency]['expenses'] += amount
-            category_breakdown[tx['category']]['amount'] += amount
+            currency_cash_flow[currency]['expenses'] += abs(amount)
+            category_breakdown[tx['category']]['amount'] += abs(amount)
         
         category_breakdown[tx['category']]['count'] += 1
     
@@ -216,10 +217,12 @@ def calculate_global_breakdown(all_transactions: List[Dict[str, Any]]) -> Dict[s
     
     for tx in all_transactions:
         currency = tx['currency']
-        if tx['isIncome']:
-            currency_data[currency]['income'] += tx['amount']
+        amount = tx['amount']
+        # Use signed amounts: positive for income, negative for expenses
+        if amount >= 0:
+            currency_data[currency]['income'] += amount
         else:
-            currency_data[currency]['expenses'] += tx['amount']
+            currency_data[currency]['expenses'] += abs(amount)
         currency_data[currency]['accounts'].add(tx['accountId'])
     
     # Convert to USD for totals

@@ -398,7 +398,7 @@ fun DynamicAccountDetailCards(
                     val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
                         value = accountDetailViewModel.computeCashFlowForCard(
                             cardConfig = cardConfig,
-                            accountTransactions = state.recentTransactions,
+                            accountTransactions = state.allAccountTransactions,
                             baseCurrency = state.account.currencyCode,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
@@ -434,7 +434,7 @@ fun DynamicAccountDetailCards(
                         value = accountDetailViewModel.computeCurrencyTotalsForCard(
                             cardConfig = cardConfig,
                             account = state.account,
-                            accountTransactions = state.recentTransactions,
+                            accountTransactions = state.allAccountTransactions,
                             baseCurrency = state.baseCurrency,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision

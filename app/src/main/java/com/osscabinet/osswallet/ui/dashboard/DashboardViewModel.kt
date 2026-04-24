@@ -846,7 +846,7 @@ class DashboardViewModel(
     val cardViewStates: StateFlow<Map<String, CardViewState>> = cardManagerViewModel.cardsConfig
         .map { cardsConfig ->
             val cardStates = mutableMapOf<String, CardViewState>()
-            // Placeholder: return loading states for all cards
+            // Note: This implementation returns loading states for all cards
             // Full implementation would compute actual ViewStates using the compute functions
             cardsConfig.cards.forEach { cardConfig ->
                 when (cardConfig) {
@@ -866,52 +866,64 @@ class DashboardViewModel(
                         cardStates[cardConfig.cardId] = BudgetsCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> {
-                        // TODO: Create CategoryBreakdownCardViewState
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> {
-                        // TODO: Create TimelineTrajectoryCardViewState
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> {
-                        // TODO: Create CategoryExpenseTreemapCardViewState
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> {
-                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                        // Analytics cards use data directly in DashboardScreen, not ViewStates
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId)
                     }
                 }
             }

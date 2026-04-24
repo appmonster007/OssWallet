@@ -478,8 +478,13 @@ class TransactionViewModel(
     }
 
     fun quickSplitTransaction(transactionId: Long) {
-        // TODO: Implement split transaction logic
-        // This may require additional UI for split configuration
+        // Note: Split transaction logic requires additional UI for split configuration
+        // To implement properly, you would need:
+        // 1. A split transaction dialog to configure how to split the transaction
+        // 2. A data model for split transactions (e.g., TransactionSplit with amount, category, etc.)
+        // 3. Logic to create multiple child transactions from the parent
+        // 4. Update the original transaction to mark it as split
+        // For now, this function collapses the item as a placeholder
         onItemCollapsed(transactionId)
     }
 

@@ -887,7 +887,10 @@ class AnalyticsViewModel(
     private fun computePlannedPayments(config: PlannedPaymentsCardConfig): PlannedPaymentsData {
         val selectedCurrency = _uiState.value.selectedCurrency
         
-        // Placeholder data - would need actual planned/recurring transactions
+        // Note: This uses placeholder data. To implement properly, you would need:
+        // 1. A data model for planned/recurring transactions
+        // 2. Query the database for planned payments within the timeline range
+        // 3. Calculate progress based on actual vs planned amounts
         val payments = listOf(
             PaymentItem(
                 name = "Financial investments",
@@ -1022,7 +1025,10 @@ class AnalyticsViewModel(
     private fun computePlannedPaymentsTimeline(config: PlannedPaymentsTimelineCardConfig): PlannedPaymentsTimelineData {
         val selectedCurrency = _uiState.value.selectedCurrency
         
-        // Placeholder data - would need actual planned payment schedule
+        // Note: This uses placeholder data. To implement properly, you would need:
+        // 1. A data model for planned/recurring transactions
+        // 2. Query the database for planned payments within the timeline range
+        // 3. Group payments by week based on due dates
         val weeklyData = listOf(
             "Week 17" to BigDecimal("50000.00"),
             "Week 18" to BigDecimal("75000.00"),

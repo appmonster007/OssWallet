@@ -244,7 +244,7 @@ class AccountDetailViewModel(
 
                 val updatedAccount = financialUseCases.getTotalBalances(
                     accounts = listOf(account),
-                    allTransactions = allTransactions.filter { it.accountId == accountId },
+                    allTransactions = accountTransactions,
                     exchangeRates = rates,
                     precision = precision,
                     timelineRange = settings.currencyBalancesSection.timelineRange

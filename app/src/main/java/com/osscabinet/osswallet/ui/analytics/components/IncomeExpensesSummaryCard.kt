@@ -1,8 +1,10 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
@@ -41,9 +43,11 @@ fun IncomeExpensesSummaryCard(
     data: IncomeExpensesSummaryData,
     modifier: Modifier = Modifier,
     onUpdate: (IncomeExpensesSummaryCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onCategoryClick: ((String) -> Unit)? = null
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
     
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -66,7 +70,7 @@ fun IncomeExpensesSummaryCard(
                 }
             )
             
-            // Main value
+            // Main value with trend indicator
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     formatCurrencyRight(data.totalAmount, data.currency, data.precision),
@@ -75,11 +79,21 @@ fun IncomeExpensesSummaryCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.weight(1f))
-                Text(
-                    data.percentageChange,
-                    color = if (data.percentageChange.startsWith("+")) PositiveAmountColor else NegativeAmountColor,
-                    fontWeight = FontWeight.Bold
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (data.percentageChange.startsWith("+")) 
+                        PositiveAmountColor.copy(alpha = 0.1f) 
+                    else 
+                        NegativeAmountColor.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        data.percentageChange,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        color = if (data.percentageChange.startsWith("+")) PositiveAmountColor else NegativeAmountColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
             }
             
             HorizontalDivider(
@@ -87,39 +101,61 @@ fun IncomeExpensesSummaryCard(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
             
-            // Category items
+            // Category items with interactivity
             data.categories.forEach { item ->
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(item.color, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            item.icon,
-                            null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Text(
-                        item.name,
-                        modifier = Modifier.weight(1f).padding(start = 12.dp),
-                        color = MaterialTheme.colorScheme.onSurface
+                val isSelected = selectedCategory == item.name
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (onCategoryClick != null) {
+                                Modifier.clickable {
+                                    selectedCategory = if (isSelected) null else item.name
+                                    onCategoryClick(item.name)
+                                }
+                            } else Modifier
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) 
+                            item.color.copy(alpha = 0.15f) 
+                        else 
+                            MaterialTheme.colorScheme.surface
                     )
-                    Column(horizontalAlignment = Alignment.End) {
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(item.color, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                item.icon,
+                                null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(
+                                item.name,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                item.change,
+                                color = if (item.change.startsWith("+")) PositiveAmountColor else NegativeAmountColor,
+                                fontSize = 11.sp
+                            )
+                        }
                         Text(
                             formatCurrencyRight(item.amount, data.currency, data.precision),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            item.change,
-                            color = if (item.change.startsWith("+")) NegativeAmountColor else PositiveAmountColor,
-                            fontSize = 12.sp
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }

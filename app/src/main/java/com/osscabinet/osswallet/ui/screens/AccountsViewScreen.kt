@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,8 +58,8 @@ import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.computeNetWorth
-import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotalsWithFinancialUseCases
-import com.osscabinet.ossWallet.ui.components.cards.computeCashFlowWithFinancialUseCases
+import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
+import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeAccountStats
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
@@ -327,17 +327,17 @@ fun AccountsViewScreen(
                             ) { cardConfig, isDragging, dragModifier ->
                             val cardWithCallbacks = when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> {
-                                    var cardNetWorthData by remember { mutableStateOf<Pair<BigDecimal, CashFlowResult>?>(null) }
                                     LaunchedEffect(cardConfig, state) {
-                                        cardNetWorthData = cardConfig.computeNetWorth(
+                                        accountsViewViewModel.computeNetWorthCard(
+                                            cardConfig = cardConfig,
                                             accounts = state.accounts,
-                                            allTransactions = state.allTransactions,
-                                            financialUseCases = accountsViewViewModel.financialUseCases,
+                                            transactions = state.allTransactions,
                                             baseCurrency = state.baseCurrency,
                                             exchangeRates = state.exchangeRates,
                                             precision = state.decimalPrecision
                                         )
                                     }
+                                    val cardNetWorthData by accountsViewViewModel.netWorthCardData.collectAsState()
 
                                     cardNetWorthData?.let { (netWorth, cashFlow) ->
                                         val cardUiState = NetWorthUiState.Success(
@@ -363,17 +363,17 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
-                                    var currencyTotals by remember { mutableStateOf<List<CurrencyAggregationItem>?>(null) }
                                     LaunchedEffect(cardConfig, state) {
-                                        currencyTotals = cardConfig.computeCurrencyTotalsWithFinancialUseCases(
+                                        accountsViewViewModel.computeCurrencyBalancesCard(
+                                            cardConfig = cardConfig,
                                             accounts = state.accounts,
-                                            allTransactions = state.allTransactions,
-                                            financialUseCases = accountsViewViewModel.financialUseCases,
+                                            transactions = state.allTransactions,
                                             baseCurrency = state.baseCurrency,
                                             exchangeRates = state.exchangeRates,
                                             precision = state.decimalPrecision
                                         )
                                     }
+                                    val currencyTotals by accountsViewViewModel.currencyBalancesCardData.collectAsState()
 
                                     currencyTotals?.let { totals ->
                                         CardWithCallbacks(
@@ -401,16 +401,16 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
-                                    var cashFlowResult by remember { mutableStateOf<CashFlowResult?>(null) }
                                     LaunchedEffect(cardConfig, state) {
-                                        cashFlowResult = cardConfig.computeCashFlowWithFinancialUseCases(
-                                            allTransactions = state.allTransactions,
-                                            financialUseCases = accountsViewViewModel.financialUseCases,
+                                        accountsViewViewModel.computeCashFlowCard(
+                                            cardConfig = cardConfig,
+                                            transactions = state.allTransactions,
                                             baseCurrency = state.baseCurrency,
                                             exchangeRates = state.exchangeRates,
                                             precision = state.decimalPrecision
                                         )
                                     }
+                                    val cashFlowResult by accountsViewViewModel.cashFlowCardData.collectAsState()
 
                                     cashFlowResult?.let { result ->
                                         CardWithCallbacks(
@@ -431,16 +431,17 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> {
-                                    val accountStatsData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
-                                        value = cardConfig.computeAccountStats(
+                                    LaunchedEffect(cardConfig, state) {
+                                        accountsViewViewModel.computeAccountsCard(
+                                            cardConfig = cardConfig,
                                             accounts = state.accounts,
-                                            allTransactions = state.allTransactions,
-                                            cardComputationService = accountsViewViewModel.cardComputationService,
+                                            transactions = state.allTransactions,
                                             baseCurrency = state.baseCurrency,
                                             exchangeRates = state.exchangeRates,
                                             precision = state.decimalPrecision
                                         )
                                     }
+                                    val accountStatsData by accountsViewViewModel.accountsCardData.collectAsState()
 
                                     accountStatsData?.let { (accounts, accountStats) ->
                                         CardWithCallbacks(

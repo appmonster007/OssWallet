@@ -256,6 +256,19 @@ data class PlannedPaymentsCardConfig(
     val accountId: String? = null
 ) : CardConfig()
 
+/**
+ * Configuration for Account Hero card (account detail screen)
+ */
+@Serializable
+@SerialName("account_hero")
+data class AccountHeroCardConfig(
+    override val cardId: String,
+    override val title: String = "ACCOUNT HERO",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    val showCurrencyBadges: Boolean = true
+) : CardConfig()
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()

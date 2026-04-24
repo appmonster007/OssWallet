@@ -59,9 +59,9 @@ fun UnifiedCardRenderer(
             
             NetWorthCard(
                 uiState = renderData.uiState,
-                cardId = renderData.cardId,
-                fontSize = renderData.fontSize,
-                timelineRange = renderData.timelineRange,
+                cardId = renderData.config.cardId,
+                fontSize = renderData.config.fontSize,
+                timelineRange = renderData.config.timelineRange,
                 onFontSizeChange = cb.onFontSizeChange,
                 onTimelineRangeChange = cb.onTimelineRangeChange,
                 onDelete = { cb.onDelete() },
@@ -88,10 +88,10 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 precision = renderData.precision,
-                layout = renderData.layout,
-                showBaseConversion = renderData.showBaseConversion,
-                timelineRange = renderData.timelineRange,
-                cardId = renderData.cardId,
+                layout = renderData.config.layout,
+                showBaseConversion = renderData.config.showBaseConversion,
+                timelineRange = renderData.config.timelineRange,
+                cardId = renderData.config.cardId,
                 onLayoutChange = cb.onLayoutChange,
                 onShowBaseConversionChange = cb.onShowBaseConversionChange,
                 onTimelineRangeChange = cb.onTimelineRangeChange,
@@ -114,13 +114,13 @@ fun UnifiedCardRenderer(
                 cashFlowResult = renderData.cashFlowResult,
                 baseCurrency = renderData.baseCurrency,
                 currentTheme = "light",
-                cardId = renderData.cardId,
+                cardId = renderData.config.cardId,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 showTitle = showTitle,
                 precision = renderData.precision,
-                showBaseConversion = renderData.showBaseConversion,
-                timelineRange = renderData.timelineRange,
+                showBaseConversion = renderData.config.showBaseConversion,
+                timelineRange = renderData.config.timelineRange,
                 onShowBaseConversionChange = cb.onShowBaseConversionChange,
                 onTimelineRangeChange = cb.onTimelineRangeChange,
                 onDelete = { cb.onDelete() },
@@ -252,7 +252,7 @@ fun UnifiedCardRenderer(
         is CardRenderData.AccountHero -> {
             val cb = callbacks as? CardCallbacks.AccountHero
                 ?: CardCallbacks.AccountHero(
-                    onShowCurrencyBadgesChange = {},
+                    onShowCurrencyBadgesChange = { _, _ -> },
                     onClick = null,
                     onDelete = {}
                 )
@@ -265,77 +265,20 @@ fun UnifiedCardRenderer(
                 exchangeRates = renderData.exchangeRates,
                 modifier = modifier.fillMaxWidth(),
                 precision = renderData.precision,
-                showCurrencyBadges = renderData.config.showCurrencyBadges,
-                onShowCurrencyBadgesChange = cb.onShowCurrencyBadgesChange,
+                showCurrencyBadges = (renderData.config as? com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig)?.showCurrencyBadges ?: true,
+                onShowCurrencyBadgesChange = { show -> cb.onShowCurrencyBadgesChange(renderData.config.cardId, show) },
                 onClick = cb.onClick,
                 onDelete = { cb.onDelete() }
-            )
-        }
-        
-        is CardRenderData.AccountCashFlow -> {
-            val cb = callbacks as? CardCallbacks.AccountCashFlow
-                ?: CardCallbacks.AccountCashFlow(
-                    onShowBaseConversionChange = {},
-                    onTimelineRangeChange = {},
-                    onClickIncome = null,
-                    onClickExpense = null,
-                    onDelete = {}
-                )
-            
-            CashFlowCard(
-                cashFlowResult = renderData.cashFlowResult,
-                baseCurrency = renderData.baseCurrency,
-                currentTheme = currentTheme,
-                cardId = renderData.config.cardId,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                showTitle = showTitle,
-                precision = renderData.precision,
-                showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
-                onShowBaseConversionChange = { _, _ -> cb.onShowBaseConversionChange(renderData.config.showBaseConversion) },
-                onTimelineRangeChange = { _, _ -> cb.onTimelineRangeChange(renderData.config.timelineRange) },
-                onDelete = { cb.onDelete() },
-                onClickIncome = { cb.onClickIncome?.invoke() },
-                onClickExpense = { cb.onClickExpense?.invoke() }
-            )
-        }
-        
-        is CardRenderData.AccountCurrencyBalances -> {
-            val cb = callbacks as? CardCallbacks.AccountCurrencyBalances
-                ?: CardCallbacks.AccountCurrencyBalances(
-                    onLayoutChange = {},
-                    onShowBaseConversionChange = {},
-                    onTimelineRangeChange = {},
-                    onCurrencyClick = { _, _ -> },
-                    onDelete = {}
-                )
-            
-            CurrencyBalancesCard(
-                currencyTotals = renderData.currencyTotals,
-                baseCurrency = renderData.baseCurrency,
-                cardId = renderData.config.cardId,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                precision = renderData.precision,
-                layout = renderData.config.layout,
-                showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
-                onLayoutChange = { _, _ -> cb.onLayoutChange(renderData.config.layout) },
-                onShowBaseConversionChange = { _, _ -> cb.onShowBaseConversionChange(renderData.config.showBaseConversion) },
-                onTimelineRangeChange = { _, _ -> cb.onTimelineRangeChange(renderData.config.timelineRange) },
-                onDelete = { cb.onDelete() },
-                onCurrencyClick = cb.onCurrencyClick
             )
         }
         
         is CardRenderData.Accounts -> {
             val cb = callbacks as? CardCallbacks.Accounts
                 ?: CardCallbacks.Accounts(
-                    onGridColumnsChange = {},
-                    onLayoutChange = {},
-                    onTimelineRangeChange = {},
-                    onShowAddAccountCardChange = {},
+                    onGridColumnsChange = { _, _ -> },
+                    onLayoutChange = { _, _ -> },
+                    onTimelineRangeChange = { _, _ -> },
+                    onShowAddAccountCardChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -344,7 +287,7 @@ fun UnifiedCardRenderer(
                 onHeaderClick = cb.onHeaderClick,
                 onAccountClick = cb.onAccountClick,
                 onRecordsClick = { cb.onRecordsClick(it) },
-                onGridColumnsChange = { _, _ -> cb.onGridColumnsChange(renderData.config.gridColumns) },
+                onGridColumnsChange = { _, _ -> cb.onGridColumnsChange(renderData.config.cardId, renderData.config.gridColumns) },
                 accounts = renderData.accounts,
                 accountStats = renderData.accountStats,
                 baseCurrency = renderData.baseCurrency,
@@ -353,14 +296,14 @@ fun UnifiedCardRenderer(
                 gridColumns = renderData.config.gridColumns,
                 precision = renderData.precision,
                 layout = renderData.config.layout,
-                onLayoutChange = { _, _ -> cb.onLayoutChange(renderData.config.layout) },
+                onLayoutChange = { _, _ -> cb.onLayoutChange(renderData.config.cardId, renderData.config.layout) },
                 timelineRange = renderData.config.timelineRange,
-                onTimelineRangeChange = { _, _ -> cb.onTimelineRangeChange(renderData.config.timelineRange) },
+                onTimelineRangeChange = { _, _ -> cb.onTimelineRangeChange(renderData.config.cardId, renderData.config.timelineRange) },
                 showAddAccountCard = renderData.config.showAddAccountCard,
-                onShowAddAccountCardChange = { _, _ -> cb.onShowAddAccountCardChange(renderData.config.showAddAccountCard) },
+                onShowAddAccountCardChange = { _, _ -> cb.onShowAddAccountCardChange(renderData.config.cardId, renderData.config.showAddAccountCard) },
                 cardId = renderData.config.cardId,
                 headerModifier = headerModifier.fillMaxWidth(),
-                settingsTitle = "Dashboard Settings",
+                settingsTitle = "Settings",
                 onDelete = { cb.onDelete() }
             )
         }
@@ -368,7 +311,7 @@ fun UnifiedCardRenderer(
         is CardRenderData.Budgets -> {
             val cb = callbacks as? CardCallbacks.Budgets
                 ?: CardCallbacks.Budgets(
-                    onShowProgressLabelsChange = {},
+                    onShowProgressLabelsChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -384,122 +327,7 @@ fun UnifiedCardRenderer(
                 showProgressLabels = renderData.config.showProgressLabels,
                 timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
                 cardId = renderData.config.cardId,
-                onShowProgressLabelsChange = { _, _ -> cb.onShowProgressLabelsChange(renderData.config.showProgressLabels) },
-                onDelete = { cb.onDelete() }
-            )
-        }
-        
-        is CardRenderData.AccountsViewNetWorth -> {
-            val cb = callbacks as? CardCallbacks.AccountsViewNetWorth
-                ?: CardCallbacks.AccountsViewNetWorth(
-                    onFontSizeChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onDelete = {}
-                )
-            
-            NetWorthCard(
-                uiState = renderData.uiState,
-                cardId = renderData.config.cardId,
-                fontSize = renderData.config.fontSize,
-                timelineRange = renderData.config.timelineRange,
-                onFontSizeChange = cb.onFontSizeChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
-                onDelete = { cb.onDelete() },
-                onClickIncome = { cb.onClickIncome?.invoke(it) },
-                onClickExpense = { cb.onClickExpense?.invoke(it) },
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier
-            )
-        }
-        
-        is CardRenderData.AccountsViewCurrencyBalances -> {
-            val cb = callbacks as? CardCallbacks.AccountsViewCurrencyBalances
-                ?: CardCallbacks.AccountsViewCurrencyBalances(
-                    onLayoutChange = { _, _ -> },
-                    onShowBaseConversionChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onCurrencyClick = null,
-                    onDelete = {}
-                )
-            
-            CurrencyBalancesCard(
-                currencyTotals = renderData.currencyTotals,
-                baseCurrency = renderData.baseCurrency,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                precision = renderData.precision,
-                layout = renderData.config.layout,
-                showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
-                cardId = renderData.config.cardId,
-                onLayoutChange = cb.onLayoutChange,
-                onShowBaseConversionChange = cb.onShowBaseConversionChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
-                onDelete = { cb.onDelete() },
-                onCurrencyClick = cb.onCurrencyClick ?: { _, _ -> }
-            )
-        }
-        
-        is CardRenderData.AccountsViewCashFlow -> {
-            val cb = callbacks as? CardCallbacks.AccountsViewCashFlow
-                ?: CardCallbacks.AccountsViewCashFlow(
-                    onShowBaseConversionChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onClickIncome = null,
-                    onClickExpense = null,
-                    onDelete = {}
-                )
-            
-            CashFlowCard(
-                cashFlowResult = renderData.cashFlowResult,
-                baseCurrency = renderData.baseCurrency,
-                currentTheme = currentTheme,
-                cardId = renderData.config.cardId,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                showTitle = showTitle,
-                precision = renderData.precision,
-                showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
-                onShowBaseConversionChange = cb.onShowBaseConversionChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
-                onDelete = { cb.onDelete() },
-                onClickIncome = { cb.onClickIncome?.invoke(it) },
-                onClickExpense = { cb.onClickExpense?.invoke(it) }
-            )
-        }
-        
-        is CardRenderData.AccountsViewAccountsList -> {
-            val cb = callbacks as? CardCallbacks.AccountsViewAccountsList
-                ?: CardCallbacks.AccountsViewAccountsList(
-                    onGridColumnsChange = { _, _ -> },
-                    onLayoutChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onDelete = {}
-                )
-            
-            AccountsCard(
-                onManageClick = cb.onManageClick ?: {},
-                onHeaderClick = cb.onHeaderClick ?: {},
-                onAccountClick = cb.onAccountClick ?: {},
-                onRecordsClick = { cb.onRecordsClick?.invoke(it) },
-                onGridColumnsChange = cb.onGridColumnsChange,
-                accounts = renderData.accounts,
-                accountStats = renderData.accountStats,
-                baseCurrency = renderData.baseCurrency,
-                currentTheme = renderData.currentTheme,
-                modifier = modifier.fillMaxWidth(),
-                gridColumns = renderData.config.gridColumns,
-                precision = renderData.precision,
-                layout = renderData.config.layout,
-                onLayoutChange = cb.onLayoutChange,
-                timelineRange = renderData.config.timelineRange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
-                showAddAccountCard = false,
-                onShowAddAccountCardChange = { _, _ -> },
-                cardId = renderData.config.cardId,
-                headerModifier = headerModifier.fillMaxWidth(),
-                settingsTitle = "Accounts View Settings",
+                onShowProgressLabelsChange = { _, _ -> cb.onShowProgressLabelsChange(renderData.config.cardId, renderData.config.showProgressLabels) },
                 onDelete = { cb.onDelete() }
             )
         }

@@ -13,14 +13,11 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
@@ -43,37 +40,36 @@ sealed class CardRenderData {
     
     /**
      * Data for NetWorth card
+     * Uses shared NetWorthCardConfig across all screens
+     * Screens set accountId or selectedAccountIds to filter data for their context
      */
     data class NetWorth(
-        val uiState: NetWorthUiState,
-        val cardId: String,
-        val fontSize: String,
-        val timelineRange: TimelineRange
+        val config: NetWorthCardConfig,
+        val uiState: NetWorthUiState
     ) : CardRenderData()
     
     /**
      * Data for CurrencyBalances card
+     * Uses shared CurrencyBalancesCardConfig across all screens
+     * Screens set accountId to filter data for their context
      */
     data class CurrencyBalances(
+        val config: CurrencyBalancesCardConfig,
         val currencyTotals: List<CurrencyAggregationItem>,
         val baseCurrency: String,
-        val cardId: String,
-        val precision: Int,
-        val layout: String,
-        val showBaseConversion: Boolean,
-        val timelineRange: TimelineRange
+        val precision: Int
     ) : CardRenderData()
     
     /**
      * Data for CashFlow card
+     * Uses shared CashFlowCardConfig across all screens
+     * Screens set accountId to filter data for their context
      */
     data class CashFlow(
+        val config: CashFlowCardConfig,
         val cashFlowResult: CashFlowResult,
         val baseCurrency: String,
-        val cardId: String,
-        val precision: Int,
-        val showBaseConversion: Boolean,
-        val timelineRange: TimelineRange
+        val precision: Int
     ) : CardRenderData()
     
     /**
@@ -162,27 +158,8 @@ sealed class CardRenderData {
     ) : CardRenderData()
     
     /**
-     * Data for AccountCashFlow card
-     */
-    data class AccountCashFlow(
-        val config: AccountCashFlowCardConfig,
-        val cashFlowResult: CashFlowResult,
-        val baseCurrency: String,
-        val precision: Int
-    ) : CardRenderData()
-    
-    /**
-     * Data for AccountCurrencyBalances card
-     */
-    data class AccountCurrencyBalances(
-        val config: AccountCurrencyBalancesCardConfig,
-        val currencyTotals: List<CurrencyAggregationItem>,
-        val baseCurrency: String,
-        val precision: Int
-    ) : CardRenderData()
-    
-    /**
      * Data for Accounts card
+     * Uses shared AccountsCardConfig across all screens
      */
     data class Accounts(
         val config: AccountsCardConfig,
@@ -200,46 +177,6 @@ sealed class CardRenderData {
         val config: BudgetsCardConfig,
         val budgets: List<com.osscabinet.ossWallet.domain.model.Budget>,
         val baseCurrency: String,
-        val precision: Int
-    ) : CardRenderData()
-    
-    /**
-     * Data for AccountsViewNetWorth card
-     */
-    data class AccountsViewNetWorth(
-        val config: AccountsViewNetWorthCardConfig,
-        val uiState: NetWorthUiState
-    ) : CardRenderData()
-    
-    /**
-     * Data for AccountsViewCurrencyBalances card
-     */
-    data class AccountsViewCurrencyBalances(
-        val config: AccountsViewCurrencyBalancesCardConfig,
-        val currencyTotals: List<CurrencyAggregationItem>,
-        val baseCurrency: String,
-        val precision: Int
-    ) : CardRenderData()
-    
-    /**
-     * Data for AccountsViewCashFlow card
-     */
-    data class AccountsViewCashFlow(
-        val config: AccountsViewCashFlowCardConfig,
-        val cashFlowResult: CashFlowResult,
-        val baseCurrency: String,
-        val precision: Int
-    ) : CardRenderData()
-    
-    /**
-     * Data for AccountsViewAccountsList card
-     */
-    data class AccountsViewAccountsList(
-        val config: AccountsViewAccountsListCardConfig,
-        val accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
-        val accountStats: Map<String, AccountSummaryItem>,
-        val baseCurrency: String,
-        val currentTheme: String,
         val precision: Int
     ) : CardRenderData()
 }

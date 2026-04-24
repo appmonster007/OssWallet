@@ -14,7 +14,8 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -44,8 +45,8 @@ import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.computeCashFlowWithCardComputationService
-import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotalsWithCardComputationService
+import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
+import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
@@ -405,15 +406,16 @@ fun DynamicAccountDetailCards(
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
-                    val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
-                        value = cardConfig.computeCashFlowWithCardComputationService(
-                            allTransactions = state.allAccountTransactions,
-                            cardComputationService = accountDetailViewModel.cardComputationService,
+                    LaunchedEffect(cardConfig, state) {
+                        accountDetailViewModel.computeCashFlowCard(
+                            cardConfig = cardConfig,
+                            transactions = state.allAccountTransactions,
                             baseCurrency = state.account.currencyCode,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
                         )
                     }
+                    val cashFlowResult by accountDetailViewModel.cashFlowCardData.collectAsState()
 
                     cashFlowResult?.let { result ->
                         CardWithCallbacks(
@@ -438,16 +440,17 @@ fun DynamicAccountDetailCards(
                     }
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
-                    val currencyTotals by produceState<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
-                        value = cardConfig.computeCurrencyTotalsWithCardComputationService(
+                    LaunchedEffect(cardConfig, state) {
+                        accountDetailViewModel.computeCurrencyBalancesCard(
+                            cardConfig = cardConfig,
                             accounts = listOf(state.account),
-                            allTransactions = state.allAccountTransactions,
-                            cardComputationService = accountDetailViewModel.cardComputationService,
+                            transactions = state.allAccountTransactions,
                             baseCurrency = state.baseCurrency,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
                         )
                     }
+                    val currencyTotals by accountDetailViewModel.currencyBalancesCardData.collectAsState()
 
                     currencyTotals?.let { totals ->
                         CardWithCallbacks(

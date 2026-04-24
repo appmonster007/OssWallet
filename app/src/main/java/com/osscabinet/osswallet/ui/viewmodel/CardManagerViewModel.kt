@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
-import com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.coroutines.flow.*
@@ -38,8 +37,8 @@ enum class DashboardCardType(val displayName: String, val serialName: String) {
  */
 enum class AccountDetailCardType(val displayName: String, val serialName: String) {
     ACCOUNT_HERO("Account Summary", "account_hero"),
-    ACCOUNT_CASH_FLOW("Cash Flow", "account_cash_flow"),
-    ACCOUNT_CURRENCY_BALANCES("Currency Balances", "account_currency_balances");
+    CASH_FLOW("Cash Flow", "cash_flow"),
+    CURRENCY_BALANCES("Currency Balances", "currency_balances");
 
     companion object {
         fun fromSerialName(serialName: String): AccountDetailCardType? {
@@ -55,7 +54,7 @@ enum class AccountsViewCardType(val displayName: String, val serialName: String)
     NET_WORTH("Net Worth", "net_worth"),
     CURRENCY_BALANCES("Currency Balances", "currency_balances"),
     CASH_FLOW("Cash Flow", "cash_flow"),
-    ACCOUNTS_LIST("Accounts List", "accounts_list");
+    ACCOUNTS_LIST("Accounts List", "accounts");
 
     companion object {
         fun fromSerialName(serialName: String): AccountsViewCardType? {
@@ -76,13 +75,13 @@ class CardManagerViewModel(
     private val _cardsConfig = MutableStateFlow(DashboardCardsConfig())
     val cardsConfig: StateFlow<DashboardCardsConfig> = _cardsConfig.asStateFlow()
 
-    // Account Detail Cards Configuration
-    private val _accountDetailCardsConfig = MutableStateFlow(AccountDetailCardsConfig())
-    val accountDetailCardsConfig: StateFlow<AccountDetailCardsConfig> = _accountDetailCardsConfig.asStateFlow()
+    // Account Detail Cards Configuration - using shared CardConfig
+    private val _accountDetailCardsConfig = MutableStateFlow(DashboardCardsConfig())
+    val accountDetailCardsConfig: StateFlow<DashboardCardsConfig> = _accountDetailCardsConfig.asStateFlow()
 
-    // Accounts View Cards Configuration
-    private val _accountsViewCardsConfig = MutableStateFlow(AccountsViewCardsConfig())
-    val accountsViewCardsConfig: StateFlow<AccountsViewCardsConfig> = _accountsViewCardsConfig.asStateFlow()
+    // Accounts View Cards Configuration - using shared CardConfig
+    private val _accountsViewCardsConfig = MutableStateFlow(DashboardCardsConfig())
+    val accountsViewCardsConfig: StateFlow<DashboardCardsConfig> = _accountsViewCardsConfig.asStateFlow()
 
     // Track which card types are currently in use for the add card dialog
     val availableDashboardCardTypes: StateFlow<List<DashboardCardType>> = cardsConfig.map { config ->
@@ -102,6 +101,7 @@ class CardManagerViewModel(
                 is CashFlowProgressCardConfig -> null // Analytics-only card
                 is BalanceForecastCardConfig -> null // Analytics-only card
                 is PlannedPaymentsCardConfig -> null // Analytics-only card
+                is AccountHeroCardConfig -> null // Account detail-only card
             }
         }
         DashboardCardType.entries.filter { it !in usedTypes }
@@ -115,8 +115,9 @@ class CardManagerViewModel(
         val usedTypes = config.cards.mapNotNull { card ->
             when (card) {
                 is AccountHeroCardConfig -> AccountDetailCardType.ACCOUNT_HERO
-                is AccountCashFlowCardConfig -> AccountDetailCardType.ACCOUNT_CASH_FLOW
-                is AccountCurrencyBalancesCardConfig -> AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES
+                is CashFlowCardConfig -> AccountDetailCardType.CASH_FLOW
+                is CurrencyBalancesCardConfig -> AccountDetailCardType.CURRENCY_BALANCES
+                else -> null
             }
         }
         AccountDetailCardType.entries.filter { it !in usedTypes }
@@ -129,10 +130,11 @@ class CardManagerViewModel(
     val availableAccountsViewCardTypes: StateFlow<List<AccountsViewCardType>> = accountsViewCardsConfig.map { config ->
         val usedTypes = config.cards.mapNotNull { card ->
             when (card) {
-                is AccountsViewNetWorthCardConfig -> AccountsViewCardType.NET_WORTH
-                is AccountsViewCurrencyBalancesCardConfig -> AccountsViewCardType.CURRENCY_BALANCES
-                is AccountsViewCashFlowCardConfig -> AccountsViewCardType.CASH_FLOW
-                is AccountsViewAccountsListCardConfig -> AccountsViewCardType.ACCOUNTS_LIST
+                is NetWorthCardConfig -> AccountsViewCardType.NET_WORTH
+                is CurrencyBalancesCardConfig -> AccountsViewCardType.CURRENCY_BALANCES
+                is CashFlowCardConfig -> AccountsViewCardType.CASH_FLOW
+                is AccountsCardConfig -> AccountsViewCardType.ACCOUNTS_LIST
+                else -> null
             }
         }
         AccountsViewCardType.entries.filter { it !in usedTypes }
@@ -176,7 +178,7 @@ class CardManagerViewModel(
                 .collect { configJson ->
                     if (configJson.isNotEmpty()) {
                         try {
-                            val decoded = json.decodeFromString<AccountDetailCardsConfig>(configJson)
+                            val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
                             if (decoded.cards.isNotEmpty()) {
                                 _accountDetailCardsConfig.value = decoded
                             } else {
@@ -198,7 +200,7 @@ class CardManagerViewModel(
                 .collect { configJson ->
                     if (configJson.isNotEmpty()) {
                         try {
-                            val decoded = json.decodeFromString<AccountsViewCardsConfig>(configJson)
+                            val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
                             if (decoded.cards.isNotEmpty()) {
                                 _accountsViewCardsConfig.value = decoded
                             } else {
@@ -247,39 +249,42 @@ class CardManagerViewModel(
                 cardId = UUID.randomUUID().toString(),
                 order = 0
             ),
-            AccountCashFlowCardConfig(
+            CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 1
+                order = 1,
+                accountId = null // Will be set by screen
             ),
-            AccountCurrencyBalancesCardConfig(
+            CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 2
+                order = 2,
+                accountId = null // Will be set by screen
             )
         )
-        _accountDetailCardsConfig.value = AccountDetailCardsConfig(cards = defaultAccountDetailCards)
+        _accountDetailCardsConfig.value = DashboardCardsConfig(cards = defaultAccountDetailCards)
         saveAccountDetailCards()
     }
 
     private fun initializeDefaultAccountsViewCards() {
         val defaultAccountsViewCards = listOf(
-            AccountsViewNetWorthCardConfig(
+            NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 0
+                order = 0,
+                selectedAccountIds = emptyList() // Will be set by screen
             ),
-            AccountsViewCurrencyBalancesCardConfig(
+            CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 1
             ),
-            AccountsViewCashFlowCardConfig(
+            CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 2
             ),
-            AccountsViewAccountsListCardConfig(
+            AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 3
             )
         )
-        _accountsViewCardsConfig.value = AccountsViewCardsConfig(cards = defaultAccountsViewCards)
+        _accountsViewCardsConfig.value = DashboardCardsConfig(cards = defaultAccountsViewCards)
         saveAccountsViewCards()
     }
 
@@ -382,6 +387,7 @@ class CardManagerViewModel(
                     is CashFlowProgressCardConfig -> card.copy(order = index)
                     is BalanceForecastCardConfig -> card.copy(order = index)
                     is PlannedPaymentsCardConfig -> card.copy(order = index)
+                    is AccountHeroCardConfig -> card.copy(order = index)
                 }
             }
         )
@@ -392,20 +398,24 @@ class CardManagerViewModel(
     /**
      * Adds a new card of the specified type to the account detail screen.
      * Uses type-safe enum for card type selection.
+     * Uses shared CardConfig classes instead of screen-specific ones.
+     * Sets accountId for cards that support account filtering.
      */
-    fun addAccountDetailCard(cardType: AccountDetailCardType) {
+    fun addAccountDetailCard(cardType: AccountDetailCardType, accountId: String?) {
         val newCard = when (cardType) {
             AccountDetailCardType.ACCOUNT_HERO -> AccountHeroCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size
             )
-            AccountDetailCardType.ACCOUNT_CASH_FLOW -> AccountCashFlowCardConfig(
+            AccountDetailCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountDetailCardsConfig.value.cards.size
+                order = _accountDetailCardsConfig.value.cards.size,
+                accountId = accountId
             )
-            AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES -> AccountCurrencyBalancesCardConfig(
+            AccountDetailCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountDetailCardsConfig.value.cards.size
+                order = _accountDetailCardsConfig.value.cards.size,
+                accountId = accountId
             )
         }
         
@@ -422,7 +432,7 @@ class CardManagerViewModel(
         saveAccountDetailCards()
     }
 
-    fun updateAccountDetailCard(cardId: String, updateFn: (AccountDetailCardConfig) -> AccountDetailCardConfig) {
+    fun updateAccountDetailCard(cardId: String, updateFn: (CardConfig) -> CardConfig) {
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = _accountDetailCardsConfig.value.cards.map { card ->
                 if (card.cardId == cardId) updateFn(card) else card
@@ -431,13 +441,14 @@ class CardManagerViewModel(
         saveAccountDetailCards()
     }
 
-    fun reorderAccountDetailCards(reorderedCards: List<AccountDetailCardConfig>) {
+    fun reorderAccountDetailCards(reorderedCards: List<CardConfig>) {
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = reorderedCards.mapIndexed { index, card ->
                 when (card) {
                     is AccountHeroCardConfig -> card.copy(order = index)
-                    is AccountCashFlowCardConfig -> card.copy(order = index)
-                    is AccountCurrencyBalancesCardConfig -> card.copy(order = index)
+                    is CashFlowCardConfig -> card.copy(order = index)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index)
+                    else -> card
                 }
             }
         )
@@ -448,22 +459,24 @@ class CardManagerViewModel(
     /**
      * Adds a new card of the specified type to the accounts view screen.
      * Uses type-safe enum for card type selection.
+     * Uses shared CardConfig classes instead of screen-specific ones.
      */
     fun addAccountsViewCard(cardType: AccountsViewCardType) {
         val newCard = when (cardType) {
-            AccountsViewCardType.NET_WORTH -> AccountsViewNetWorthCardConfig(
+            AccountsViewCardType.NET_WORTH -> NetWorthCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _accountsViewCardsConfig.value.cards.size,
+                selectedAccountIds = emptyList() // Will be set by screen
+            )
+            AccountsViewCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountsViewCardsConfig.value.cards.size
             )
-            AccountsViewCardType.CURRENCY_BALANCES -> AccountsViewCurrencyBalancesCardConfig(
+            AccountsViewCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountsViewCardsConfig.value.cards.size
             )
-            AccountsViewCardType.CASH_FLOW -> AccountsViewCashFlowCardConfig(
-                cardId = UUID.randomUUID().toString(),
-                order = _accountsViewCardsConfig.value.cards.size
-            )
-            AccountsViewCardType.ACCOUNTS_LIST -> AccountsViewAccountsListCardConfig(
+            AccountsViewCardType.ACCOUNTS_LIST -> AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountsViewCardsConfig.value.cards.size
             )
@@ -482,7 +495,7 @@ class CardManagerViewModel(
         saveAccountsViewCards()
     }
 
-    fun updateAccountsViewCard(cardId: String, updateFn: (AccountsViewCardConfig) -> AccountsViewCardConfig) {
+    fun updateAccountsViewCard(cardId: String, updateFn: (CardConfig) -> CardConfig) {
         _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
             cards = _accountsViewCardsConfig.value.cards.map { card ->
                 if (card.cardId == cardId) updateFn(card) else card
@@ -491,14 +504,15 @@ class CardManagerViewModel(
         saveAccountsViewCards()
     }
 
-    fun reorderAccountsViewCards(reorderedCards: List<AccountsViewCardConfig>) {
+    fun reorderAccountsViewCards(reorderedCards: List<CardConfig>) {
         _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
             cards = reorderedCards.mapIndexed { index, card ->
                 when (card) {
-                    is AccountsViewNetWorthCardConfig -> card.copy(order = index)
-                    is AccountsViewCurrencyBalancesCardConfig -> card.copy(order = index)
-                    is AccountsViewCashFlowCardConfig -> card.copy(order = index)
-                    is AccountsViewAccountsListCardConfig -> card.copy(order = index)
+                    is NetWorthCardConfig -> card.copy(order = index)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index)
+                    is CashFlowCardConfig -> card.copy(order = index)
+                    is AccountsCardConfig -> card.copy(order = index)
+                    else -> card
                 }
             }
         )

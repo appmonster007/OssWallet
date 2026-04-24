@@ -8,10 +8,26 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
+import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
+
+/**
+ * Cache entry for computed card data with timestamp for expiration
+ */
+internal data class CachedCardData<T>(
+    val timestamp: Long,
+    val data: T
+) {
+    fun isExpired(expirationMinutes: Long = 5): Boolean {
+        val elapsedMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - timestamp)
+        return elapsedMinutes >= expirationMinutes
+    }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountDetailViewModel(
@@ -22,8 +38,85 @@ class AccountDetailViewModel(
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: CardManagerViewModel,
-    internal val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
+
+    // Cache for computed card data to avoid recomputation
+    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
+    private val cacheExpirationMinutes = 5L
+
+    /**
+     * Get cached data if available and not expired, otherwise compute and cache
+     */
+    private inline fun <T> getCachedOrCompute(
+        cacheKey: String,
+        compute: () -> T
+    ): T {
+        val cached = cardDataCache[cacheKey]
+        @Suppress("UNCHECKED_CAST")
+        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
+            return cached.data as T
+        }
+
+        val result = compute()
+        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
+        return result
+    }
+
+    /**
+     * Invalidate cache for a specific card
+     */
+    fun invalidateCardCache(cardId: String) {
+        cardDataCache.keys.removeIf { it.startsWith(cardId) }
+    }
+
+    /**
+     * Invalidate all cache (called when data changes significantly)
+     */
+    fun invalidateAllCache() {
+        cardDataCache.clear()
+    }
+
+    // Flow-based card data computation for CashFlowCard
+    private val _cashFlowCardData = MutableStateFlow<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(null)
+    val cashFlowCardData: StateFlow<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?> = _cashFlowCardData.asStateFlow()
+
+    fun computeCashFlowCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeCashFlow(
+                    transactions = transactions,
+                    engine = cardComputationService,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _cashFlowCardData.value = result
+        }
+    }
+
+    // Flow-based card data computation for CurrencyBalancesCard
+    private val _currencyBalancesCardData = MutableStateFlow<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(null)
+    val currencyBalancesCardData: StateFlow<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?> = _currencyBalancesCardData.asStateFlow()
+
+    fun computeCurrencyBalancesCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeCurrencyTotals(
+                    accounts = accounts,
+                    transactions = transactions,
+                    engine = cardComputationService,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _currencyBalancesCardData.value = result
+        }
+    }
 
     fun updateCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
@@ -75,6 +168,7 @@ class AccountDetailViewModel(
                     config.copy(showCurrencyBadges = show)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
@@ -85,6 +179,7 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
@@ -95,6 +190,7 @@ class AccountDetailViewModel(
                     config.copy(timelineRange = range)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
@@ -105,6 +201,7 @@ class AccountDetailViewModel(
                     config.copy(layout = layout)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
@@ -115,6 +212,7 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
@@ -125,12 +223,14 @@ class AccountDetailViewModel(
                     config.copy(timelineRange = range)
                 } else config
             }
+            invalidateCardCache(cardId)
         }
     }
 
     fun removeAccountDetailCard(cardId: String) {
         viewModelScope.launch {
             cardManagerViewModel.removeAccountDetailCard(cardId)
+            invalidateCardCache(cardId)
         }
     }
 
@@ -145,6 +245,9 @@ class AccountDetailViewModel(
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.accountDetailSettings
             ) { accounts, allTransactions, analyticsState, precision, settings ->
+                // Invalidate cache when transactions change
+                invalidateAllCache()
+                
                 val account = accounts.find { it.id == accountId } ?: return@combine AccountDetailUiState.Error("Account not found")
 
                 val rates = analyticsState.exchangeRates

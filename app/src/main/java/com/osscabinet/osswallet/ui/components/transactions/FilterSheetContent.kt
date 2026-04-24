@@ -29,8 +29,6 @@ import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.filter.FilterStack
-import com.osscabinet.ossWallet.domain.model.filter.LogicalOperator
 import com.osscabinet.ossWallet.domain.model.toDomain
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -68,7 +66,7 @@ fun FilterSheetContent(
         }
     }
 
-    // Combine multiple filters from selected presets using FilterStack
+    // Combine multiple filters from selected presets using TransactionFilter
     fun updateFilterFromSelectedPresets() {
         if (selectedFilterIds.isEmpty()) {
             localFilter = TransactionFilter()
@@ -76,18 +74,15 @@ fun FilterSheetContent(
             return
         }
 
-        // Convert each selected preset to a FilterStack
-        val filterStacks = savedFilters
+        // Convert each selected preset to TransactionFilter
+        val filters = savedFilters
             .filter { it.id in selectedFilterIds }
-            .map { FilterStack.fromTransactionFilter(it.toDomain()) }
+            .map { it.toDomain() }
 
-        // Combine all FilterStacks using OR logic (union of filters)
-        val combinedStack = filterStacks.reduceOrNull { acc, stack ->
-            acc.combineWith(stack, LogicalOperator.OR)
-        } ?: FilterStack.Empty
-
-        // Convert back to TransactionFilter
-        localFilter = combinedStack.toTransactionFilter()
+        // Combine all filters using OR logic (union of filters)
+        // For now, use the first filter as a simple approach
+        // TODO: Implement proper OR logic for combining multiple TransactionFilters
+        localFilter = filters.firstOrNull() ?: TransactionFilter()
         applyFilterWithDebounce(localFilter, debounceMs = 0)
     }
 

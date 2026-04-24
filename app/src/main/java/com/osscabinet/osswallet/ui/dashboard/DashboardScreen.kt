@@ -464,6 +464,14 @@ fun DashboardContent(
                                     onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
                                     onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardNetWorthTimelineRange(cardId, range) },
                                     onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
+                                    onClickIncome = { timelineRange ->
+                                        val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
+                                    },
+                                    onClickExpense = { timelineRange ->
+                                        val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
+                                    },
                                     modifier = Modifier.fillMaxWidth(),
                                     headerModifier = dragModifier
                                 )
@@ -496,9 +504,12 @@ fun DashboardContent(
                                     onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show) },
                                     onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
                                     onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
-                                    onCurrencyClick = { currency ->
+                                    onCurrencyClick = { currency, timelineRange ->
+                                        val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
                                         onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                            currencies = listOf(currency)
+                                            currencies = listOf(currency),
+                                            startDate = start,
+                                            endDate = end
                                         ))
                                     }
                                 )
@@ -530,8 +541,14 @@ fun DashboardContent(
                                     onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
                                     onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
                                     onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) },
-                                    onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
-                                    onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
+                                    onClickIncome = { timelineRange ->
+                                        val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
+                                    },
+                                    onClickExpense = { timelineRange ->
+                                        val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
+                                    }
                                 )
                             }
                             is AccountsCardConfig -> {
@@ -562,6 +579,9 @@ fun DashboardContent(
                                     onManageClick = onManageAccountsClick,
                                     onHeaderClick = onAccountsViewClick,
                                     onAccountClick = onAccountClick,
+                                    onRecordsClick = { filterContext ->
+                                        onRecordsClick(filterContext)
+                                    },
                                     onGridColumnsChange = { cardId, columns -> dashboardViewModel.updateCardAccountsGridColumns(cardId, columns) },
                                     accounts = updatedAccounts,
                                     accountStats = accountStats,
@@ -587,12 +607,16 @@ fun DashboardContent(
                                     BudgetsCard(
                                         onManageClick = onBudgetsClick,
                                         onBudgetClick = onEditBudgetClick,
+                                        onRecordsClick = { filterContext ->
+                                            onRecordsClick(filterContext)
+                                        },
                                         budgets = budgets,
                                         baseCurrency = state.baseCurrency,
                                         modifier = Modifier.fillMaxWidth(),
                                         precision = decimalPrecision,
                                         headerModifier = dragModifier.fillMaxWidth(),
                                         showProgressLabels = cardConfig.showProgressLabels,
+                                        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
                                         cardId = cardConfig.cardId,
                                         onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
                                         onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }

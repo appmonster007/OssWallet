@@ -463,7 +463,8 @@ fun DynamicAccountDetailCards(
                                 accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, it)
                             },
                             onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) },
-                            onCurrencyClick = { currency ->
+                            onCurrencyClick = { currency, timelineRange ->
+                                val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
                                 onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndCurrency(accountId, currency))
                             }
                         )

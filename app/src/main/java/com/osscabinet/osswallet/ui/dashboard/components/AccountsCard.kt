@@ -21,9 +21,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
@@ -43,6 +45,7 @@ data class AccountsSectionSettings(
 fun AccountsCard(
     onManageClick: () -> Unit,
     onAccountClick: (String) -> Unit,
+    onRecordsClick: ((com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit)? = null,
     onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
@@ -242,8 +245,10 @@ fun AccountsCard(
                             baseCurrency = baseCurrency,
                             currentTheme = currentTheme,
                             gridColumns = gridColumns,
-                            precision = precision,
                             onAccountClick = onAccountClick,
+                            onRecordsClick = onRecordsClick,
+                            timelineRange = timelineRange,
+                            precision = precision,
                             modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                         )
                     }
@@ -275,8 +280,10 @@ fun AccountsCard(
                             baseCurrency = baseCurrency,
                             currentTheme = currentTheme,
                             gridColumns = 2,
-                            precision = precision,
                             onAccountClick = onAccountClick,
+                            onRecordsClick = onRecordsClick,
+                            timelineRange = timelineRange,
+                            precision = precision,
                             modifier = Modifier.width(160.dp)
                         )
                     }
@@ -308,6 +315,8 @@ private fun FlowRowScope.AccountItemWrapper(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
+    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
+    timelineRange: TimelineRange = TimelineRange.AllTime,
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
@@ -318,6 +327,8 @@ private fun FlowRowScope.AccountItemWrapper(
         gridColumns = gridColumns,
         precision = precision,
         onAccountClick = onAccountClick,
+        onRecordsClick = onRecordsClick,
+        timelineRange = timelineRange,
         modifier = modifier
     )
 }
@@ -331,6 +342,8 @@ private fun AccountItemWrapper(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
+    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
+    timelineRange: TimelineRange = TimelineRange.AllTime,
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
@@ -341,6 +354,8 @@ private fun AccountItemWrapper(
         gridColumns = gridColumns,
         precision = precision,
         onAccountClick = onAccountClick,
+        onRecordsClick = onRecordsClick,
+        timelineRange = timelineRange,
         modifier = modifier
     )
 }
@@ -354,10 +369,20 @@ private fun AccountItemContent(
     gridColumns: Int,
     precision: Int,
     onAccountClick: (String) -> Unit,
+    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
+    timelineRange: TimelineRange = TimelineRange.AllTime,
     modifier: Modifier = Modifier
 ) {
     val stats = accountStats[account.id]
     val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
+
+    val handleAccountClick = {
+        onAccountClick(account.id)
+        if (onRecordsClick != null) {
+            val (start, end) = TimelineService.getDateRange(timelineRange)
+            onRecordsClick(RecordsFilterContext.Custom(accountIds = listOf(account.id), startDate = start, endDate = end))
+        }
+    }
 
     val isDarkTheme = when (currentTheme) {
         "Light" -> false
@@ -376,7 +401,7 @@ private fun AccountItemContent(
             expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = { onAccountClick(account.id) },
+            onClick = handleAccountClick,
             modifier = modifier,
             precision = precision
         )
@@ -387,7 +412,7 @@ private fun AccountItemContent(
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = { onAccountClick(account.id) },
+            onClick = handleAccountClick,
             modifier = modifier,
             precision = precision
         )
@@ -398,7 +423,7 @@ private fun AccountItemContent(
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
             isDarkTheme = isDarkTheme,
             isAmoled = isAmoled,
-            onClick = { onAccountClick(account.id) },
+            onClick = handleAccountClick,
             modifier = modifier,
             precision = precision
         )

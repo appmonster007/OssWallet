@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,11 +21,13 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
@@ -40,6 +43,8 @@ fun NetWorthCard(
     onFontSizeChange: (String, String) -> Unit,
     onTimelineRangeChange: (String, TimelineRange) -> Unit,
     onDelete: () -> Unit = {},
+    onClickIncome: (TimelineRange) -> Unit = {},
+    onClickExpense: (TimelineRange) -> Unit = {},
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -60,6 +65,8 @@ fun NetWorthCard(
                 onFontSizeChange = onFontSizeChange,
                 onTimelineRangeChange = onTimelineRangeChange,
                 onDelete = onDelete,
+                onClickIncome = onClickIncome,
+                onClickExpense = onClickExpense,
                 modifier = modifier,
                 headerModifier = headerModifier
             )
@@ -83,6 +90,8 @@ private fun NetWorthContent(
     onFontSizeChange: (String, String) -> Unit,
     onTimelineRangeChange: (String, TimelineRange) -> Unit,
     onDelete: () -> Unit,
+    onClickIncome: (TimelineRange) -> Unit = {},
+    onClickExpense: (TimelineRange) -> Unit = {},
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
@@ -162,7 +171,8 @@ private fun NetWorthContent(
                         currency = baseCurrency,
                         precision = precision,
                         color = PositiveAmountColor,
-                        isIncome = true
+                        isIncome = true,
+                        onClick = { onClickIncome(timelineRange) }
                     )
                     FlowBadge(
                         label = "EXPENSE",
@@ -170,7 +180,8 @@ private fun NetWorthContent(
                         currency = baseCurrency,
                         precision = precision,
                         color = NegativeAmountColor,
-                        isIncome = false
+                        isIncome = false,
+                        onClick = { onClickExpense(timelineRange) }
                     )
                 }
 
@@ -206,9 +217,11 @@ private fun FlowBadge(
     currency: String,
     precision: Int,
     color: Color,
-    isIncome: Boolean
+    isIncome: Boolean,
+    onClick: () -> Unit = {}
 ) {
     Surface(
+        modifier = Modifier.clickable(onClick = onClick),
         color = color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.2f))

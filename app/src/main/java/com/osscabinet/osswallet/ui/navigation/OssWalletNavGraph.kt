@@ -273,24 +273,10 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
-                },
-                navArgument("filterStack") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val filterContext = backStackEntry.arguments?.getString("filterContext")
-            val filterStackString = backStackEntry.arguments?.getString("filterStack")
-            val filterStack = filterStackString?.let {
-                try {
-                    val decoded = java.net.URLDecoder.decode(it, java.nio.charset.StandardCharsets.UTF_8.toString())
-                    kotlinx.serialization.json.Json.decodeFromString<com.osscabinet.ossWallet.domain.model.filter.FilterStack>(decoded)
-                } catch (e: Exception) {
-                    com.osscabinet.ossWallet.domain.model.filter.FilterStack.Empty
-                }
-            }
             AccountsViewScreen(
                 onDashboardClick = {
                     navController.popBackStack()
@@ -315,8 +301,7 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 accountsViewViewModel = accountsViewViewModel,
                 cardManagerViewModel = cardManagerViewModel,
-                filterContext = filterContext,
-                initialFilterStack = filterStack
+                filterContext = filterContext
             )
         }
 
@@ -458,30 +443,15 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
-                },
-                navArgument("filterStack") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val filterContext = backStackEntry.arguments?.getString("filterContext")
-            val filterStackString = backStackEntry.arguments?.getString("filterStack")
-            val filterStack = filterStackString?.let {
-                try {
-                    val decoded = java.net.URLDecoder.decode(it, java.nio.charset.StandardCharsets.UTF_8.toString())
-                    kotlinx.serialization.json.Json.decodeFromString<com.osscabinet.ossWallet.domain.model.filter.FilterStack>(decoded)
-                } catch (e: Exception) {
-                    com.osscabinet.ossWallet.domain.model.filter.FilterStack.Empty
-                }
-            }
             TransactionListScreen(
                 viewModel = transactionViewModel,
                 accountViewModel = accountViewModel,
                 analyticsViewModel = analyticsViewModel,
                 templateViewModel = templateViewModel,
-                initialFilterStack = filterStack,
                 onAddTransactionClick = { type, name ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
                 },

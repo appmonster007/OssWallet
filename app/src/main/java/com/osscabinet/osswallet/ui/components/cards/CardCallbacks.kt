@@ -84,6 +84,15 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
     
     /**
+     * Callbacks for analytics cards with timeline support
+     */
+    data class AnalyticsWithTimeline(
+        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
+        val onUpdate: (Any) -> Unit = {},
+        val onDelete: () -> Unit = {}
+    ) : CardCallbacks()
+    
+    /**
      * Callbacks for account hero card
      */
     data class AccountHero(

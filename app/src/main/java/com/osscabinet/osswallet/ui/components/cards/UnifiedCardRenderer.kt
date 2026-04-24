@@ -131,8 +131,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.CategoryBreakdown -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             CategoryBreakdownCard(
                 config = renderData.config,
@@ -145,8 +148,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.TimelineTrajectory -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             TimelineTrajectoryCard(
                 config = renderData.config,
@@ -159,8 +165,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.CategoryExpenseTreemap -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             CategoryExpenseTreemapCard(
                 config = renderData.config,
@@ -173,8 +182,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.IncomeExpensesSummary -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             IncomeExpensesSummaryCard(
                 config = renderData.config,
@@ -186,8 +198,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.PeriodComparison -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             PeriodComparisonCard(
                 config = renderData.config,
@@ -199,8 +214,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.CashFlowTrend -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             CashFlowTrendCard(
                 config = renderData.config,
@@ -212,8 +230,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.CashFlowProgress -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             CashFlowProgressCard(
                 config = renderData.config,
@@ -238,8 +259,11 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.PlannedPayments -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onDelete = {}
+                )
             
             PlannedPaymentsCard(
                 config = renderData.config,
@@ -334,9 +358,9 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.IncomeExpensesBook -> {
-            val cb = callbacks as? CardCallbacks.IncomeExpensesBook
-                ?: CardCallbacks.IncomeExpensesBook(
-                    onUpdate = { },
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -347,9 +371,9 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.CashFlowTable -> {
-            val cb = callbacks as? CardCallbacks.CashFlowTable
-                ?: CardCallbacks.CashFlowTable(
-                    onUpdate = { },
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -360,9 +384,9 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.PlannedPaymentsTimeline -> {
-            val cb = callbacks as? CardCallbacks.PlannedPaymentsTimeline
-                ?: CardCallbacks.PlannedPaymentsTimeline(
-                    onUpdate = { },
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -373,9 +397,9 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.BalanceByAccounts -> {
-            val cb = callbacks as? CardCallbacks.BalanceByAccounts
-                ?: CardCallbacks.BalanceByAccounts(
-                    onUpdate = { },
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
                     onDelete = {}
                 )
             
@@ -386,9 +410,9 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.BalanceTrend -> {
-            val cb = callbacks as? CardCallbacks.BalanceTrend
-                ?: CardCallbacks.BalanceTrend(
-                    onUpdate = { },
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
                     onDelete = {}
                 )
             

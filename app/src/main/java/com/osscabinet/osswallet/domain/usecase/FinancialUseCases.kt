@@ -123,10 +123,10 @@ class FinancialUseCases(
         val expenseBreakdown = mutableMapOf<String, BigDecimal>()
 
         accountTransactions.forEach { tx ->
-            if (tx.transactionType == "income") {
+            if (tx.amount.signum() >= 0) {
                 incomeBreakdown[tx.currency] = (incomeBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
             } else {
-                expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
+                expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount.abs())
             }
         }
 
@@ -139,14 +139,21 @@ class FinancialUseCases(
      * @param currency The currency to filter by
      * @param transactionType Whether to sum income or expense transactions
      * @return Total amount for the specified currency and type
+     * @deprecated Use sign-based filtering instead
      */
     private fun sumTransactionsByCurrencyAndType(
         transactions: List<Transaction>,
         currency: String,
         transactionType: String
     ): BigDecimal {
-        return transactions.filter { it.currency == currency && it.transactionType == transactionType }
-            .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
+        // Use sign-based filtering for compatibility
+        val isIncome = transactionType == "income"
+        return transactions.filter { 
+            it.currency == currency && 
+            (if (isIncome) it.amount.signum() >= 0 else it.amount.signum() < 0)
+        }.fold(BigDecimal.ZERO) { acc, t -> 
+            acc.add(if (isIncome) t.amount else t.amount.abs()) 
+        }
     }
 
     fun calculateNetWorth(

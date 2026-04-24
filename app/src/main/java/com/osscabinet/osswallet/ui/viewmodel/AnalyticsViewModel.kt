@@ -199,8 +199,8 @@ class AnalyticsViewModel(
             tx.copy(amount = convertedAmount)
         }
 
-        val totalIncome = convertedTransactions.filter { it.transactionType == "income" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
-        val totalExpense = convertedTransactions.filter { it.transactionType == "expense" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val totalIncome = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val totalExpense = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount.abs()) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
         val currentBalance = totalIncome.subtract(totalExpense).setScale(_currentPrecision, RoundingMode.HALF_UP)
         
         val calendar = Calendar.getInstance()
@@ -221,14 +221,14 @@ class AnalyticsViewModel(
             cal.get(Calendar.MONTH) == lastMonth && cal.get(Calendar.YEAR) == lastYear
         }
 
-        val thisMonthIncome = thisMonthTransactions.filter { it.transactionType == "income" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val thisMonthExpense = thisMonthTransactions.filter { it.transactionType == "expense" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val thisMonthIncome = thisMonthTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val thisMonthExpense = thisMonthTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount.abs()) }
         val thisMonthSavingsRate = if (thisMonthIncome.signum() > 0) {
             thisMonthIncome.subtract(thisMonthExpense).divide(thisMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
         } else 0.0
 
-        val lastMonthIncome = lastMonthTransactions.filter { it.transactionType == "income" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val lastMonthExpense = lastMonthTransactions.filter { it.transactionType == "expense" }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val lastMonthIncome = lastMonthTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val lastMonthExpense = lastMonthTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount.abs()) }
         val lastMonthSavingsRate = if (lastMonthIncome.signum() > 0) {
             lastMonthIncome.subtract(lastMonthExpense).divide(lastMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
         } else 0.0

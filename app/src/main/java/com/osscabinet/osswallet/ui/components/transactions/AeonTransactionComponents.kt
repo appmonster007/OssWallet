@@ -85,15 +85,15 @@ fun AeonTransactionList(
             val weekEnd = calendar.time
             val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
 
-            // Aggregation using CurrencyUtils (CurrencyUtilkit)
-            val incomeByCurrency = weekTransactions.filter { it.transaction.transactionType == "income" }
+            // Aggregation using CurrencyUtils (CurrencyUtilkit) - using signed amounts
+            val incomeByCurrency = weekTransactions.filter { it.transaction.amount.signum() >= 0 }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val weekIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
 
-            val expenseByCurrency = weekTransactions.filter { it.transaction.transactionType == "expense" }
+            val expenseByCurrency = weekTransactions.filter { it.transaction.amount.signum() < 0 }
                 .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount.abs()) } }
             val weekExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
 
             val weekNetBase = weekIncomeBase.subtract(weekExpenseBase)
@@ -161,13 +161,13 @@ fun AeonTransactionList(
                     AeonTransactionItem(
                         category = category?.name ?: "Uncategorized",
                         account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                        amount = formatCurrencyRight(item.transaction.amount.abs(), item.transaction.currency, precision),
+                        amount = formatCurrencyRight(item.transaction.amount, item.transaction.currency, precision),
                         convertedAmount = if (item.transaction.currency != baseCurrency) {
-                            formatCurrencyRight(amountInBase.abs(), baseCurrency, precision)
+                            formatCurrencyRight(amountInBase, baseCurrency, precision)
                         } else null,
                         balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
                         balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
-                        type = if (item.transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        type = if (item.transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                         timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                         note = item.transaction.note,
                         tags = item.transaction.tags,

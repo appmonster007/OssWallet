@@ -257,7 +257,7 @@ fun AccountDetailScreen(
                                 var currentBalance = BigDecimal.ZERO
                                 state.recentTransactions.sortedByDescending { it.timestamp }.map { tx ->
                                     val balanceAfter = currentBalance
-                                    val balanceBefore = if (tx.transactionType == "income") currentBalance.subtract(tx.amount) else currentBalance.add(tx.amount)
+                                    val balanceBefore = currentBalance.subtract(tx.amount) // tx.amount is already signed
                                     currentBalance = balanceBefore
                                     TransactionWithBalance(tx, balanceBefore, balanceAfter)
                                 }.reversed()

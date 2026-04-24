@@ -123,7 +123,7 @@ class AccountViewModel(
                     val transactionType = if (balance.signum() > 0) "income" else "expense"
                     val initialTransaction = Transaction(
                         title = "Initial Balance",
-                        amount = balance.abs(),
+                        amount = balance, // Store signed amount (negative for expense)
                         category = "Adjustment",
                         timestamp = System.currentTimeMillis(),
                         currency = currencyCode,

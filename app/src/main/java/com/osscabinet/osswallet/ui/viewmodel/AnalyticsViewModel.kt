@@ -2,12 +2,21 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.ElectricBolt
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Label
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
 import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryItem
 import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
@@ -50,7 +59,6 @@ import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Home
@@ -291,7 +299,7 @@ class AnalyticsViewModel(
 
     suspend fun computeIncomeExpensesBookCard(
         cardConfig: IncomeExpensesBookCardConfig
-    ): IncomeExpensesSummaryData {
+    ): IncomeExpensesBookData {
         val cacheKey = "income_expenses_book_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return getCachedOrCompute(cacheKey) { computeIncomeExpensesBook(cardConfig) }
     }
@@ -450,7 +458,7 @@ class AnalyticsViewModel(
                     is PeriodComparisonCardConfig -> card.copy(timelineRange = newTimelineRange)
                     is CashFlowTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
                     is CashFlowProgressCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is BalanceForecastCardConfig -> card // BalanceForecast doesn't have timelineRange
+                    is BalanceForecastCardConfig -> card.copy(timelineRange = newTimelineRange)
                     is PlannedPaymentsCardConfig -> card.copy(timelineRange = newTimelineRange)
                     is IncomeExpensesBookCardConfig -> card.copy(timelineRange = newTimelineRange)
                     is CashFlowTableCardConfig -> card.copy(timelineRange = newTimelineRange)
@@ -501,42 +509,113 @@ class AnalyticsViewModel(
             tx.copy(amount = convertedAmount)
         }
         
-        // Calculate totals by category
-        val categoryTotals = convertedTransactions
+        // Calculate totals by category for expenses
+        val expenseCategoryTotals = convertedTransactions
             .filter { it.amount.signum() < 0 } // Only expenses
             .groupBy { it.category ?: "Uncategorized" }
             .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
         
-        // Calculate total amount
-        val totalAmount = categoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        // Calculate totals by category for income
+        val incomeCategoryTotals = convertedTransactions
+            .filter { it.amount.signum() >= 0 } // Only income
+            .groupBy { it.category ?: "Uncategorized" }
+            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
         
-        // Calculate percentage change (simplified - compare with previous period)
-        val percentageChange = "+154%" // Placeholder - would need historical data
+        // Calculate total amount (net cash flow)
+        val totalIncome = incomeCategoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        val totalExpenses = expenseCategoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        val totalAmount = totalIncome.add(totalExpenses)
         
-        // Create category items with icons and colors
-        val categories = listOf(
+        // Calculate percentage change (compare with previous period)
+        val now = System.currentTimeMillis()
+        val daysInPeriod = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 30L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 84L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 180L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 365L
+                    else -> 30L
+                }
+            }
+            else -> 30L
+        }
+        
+        val currentPeriodEnd = now
+        val currentPeriodStart = now - daysInPeriod * 24 * 60 * 60 * 1000L
+        val previousPeriodStart = currentPeriodStart - daysInPeriod * 24 * 60 * 60 * 1000L
+        
+        val previousPeriodTransactions = allTransactions.filter { 
+            it.timestamp >= previousPeriodStart && it.timestamp < currentPeriodStart 
+        }
+        
+        val previousPeriodNetFlow = previousPeriodTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            acc.add(convertedAmount)
+        }
+        
+        val percentageChange = if (previousPeriodNetFlow != BigDecimal.ZERO) {
+            val change = ((totalAmount - previousPeriodNetFlow).toDouble() / Math.abs(previousPeriodNetFlow.toDouble())) * 100
+            String.format("%.1f%%", change)
+        } else {
+            "0%"
+        }
+        
+        // Create category items with icons and colors based on actual data
+        val categoryIcons = mapOf(
             "Food & Drinks" to Icons.Default.Restaurant,
             "Shopping" to Icons.Default.ShoppingCart,
             "Housing" to Icons.Default.Home,
-            "Transportation" to Icons.Default.DirectionsCar
-        ).mapNotNull { (name, icon) ->
-            val amount = categoryTotals[name]
-            if (amount != null) {
-                CategoryItem(
-                    name = name,
-                    amount = amount,
-                    change = "+5%", // Placeholder
-                    color = when (name) {
-                        "Food & Drinks" -> Color(0xFFFF5722)
-                        "Shopping" -> AccentBlue
-                        "Housing" -> AccentOrange
-                        "Transportation" -> Color(0xFF607D8B)
-                        else -> AccentPurple
-                    },
-                    icon = icon
-                )
-            } else null
-        }.take(4)
+            "Transportation" to Icons.Default.DirectionsCar,
+            "Salary" to Icons.Default.AttachMoney,
+            "Investments" to Icons.Default.TrendingUp,
+            "Utilities" to Icons.Default.ElectricBolt,
+            "Entertainment" to Icons.Default.Movie,
+            "Health" to Icons.Default.LocalHospital,
+            "Education" to Icons.Default.School
+        )
+        
+        val categoryColors = listOf(
+            Color(0xFFFF5722),
+            AccentBlue,
+            AccentOrange,
+            Color(0xFF607D8B),
+            AccentPurple,
+            Color(0xFF4CAF50),
+            Color(0xFFE91E63),
+            Color(0xFF9C27B0),
+            Color(0xFF00BCD4),
+            Color(0xFFFFC107)
+        )
+        
+        val sortedCategories = expenseCategoryTotals.entries
+            .sortedByDescending { it.value.abs() }
+            .take(4)
+        
+        val categories = sortedCategories.mapIndexed { index, entry ->
+            val name = entry.key
+            val amount = entry.value
+            val icon = categoryIcons[name] ?: Icons.Default.Label
+            val color = categoryColors.getOrElse(index) { AccentPurple }
+            
+            // Calculate category change (simplified - would need historical data per category)
+            val change = "+0%"
+            
+            CategoryItem(
+                name = name,
+                amount = amount,
+                change = change,
+                color = color,
+                icon = icon
+            )
+        }
         
         return IncomeExpensesSummaryData(
             totalAmount = totalAmount,
@@ -570,8 +649,50 @@ class AnalyticsViewModel(
             else -> convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
         }
         
-        // Generate chart data (weekly breakdown)
-        val chartData = listOf(4.0, 12.0, 8.0, 16.0, 20.0, 15.0) // Placeholder - would need actual weekly data
+        // Generate chart data (weekly breakdown based on timeline)
+        val calendar = java.util.Calendar.getInstance()
+        val now = System.currentTimeMillis()
+        
+        val numPeriods = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 4
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 12
+                    else -> 12
+                }
+            }
+            else -> 12
+        }
+        
+        val periodLength = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 24 * 60 * 60 * 1000L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 7 * 24 * 60 * 60 * 1000L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 7 * 24 * 60 * 60 * 1000L
+                    else -> 7 * 24 * 60 * 60 * 1000L
+                }
+            }
+            else -> 7 * 24 * 60 * 60 * 1000L
+        }
+        
+        val chartData = (0 until numPeriods).map { periodIndex ->
+            val periodEnd = now - (periodIndex * periodLength)
+            val periodStart = periodEnd - periodLength
+            
+            val periodTransactions = convertedTransactions.filter { 
+                it.timestamp >= periodStart && it.timestamp < periodEnd 
+            }
+            
+            when (config.selectedTab) {
+                "Income" -> periodTransactions.filter { it.amount.signum() >= 0 }
+                    .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.toDouble()
+                "Expenses" -> periodTransactions.filter { it.amount.signum() < 0 }
+                    .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.toDouble()
+                else -> periodTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.toDouble()
+            }
+        }.reversed()
         
         return PeriodComparisonData(
             currentValue = currentValue,
@@ -597,9 +718,63 @@ class AnalyticsViewModel(
             tx.copy(amount = convertedAmount)
         }
         
-        // Generate bar and line data
-        val barData = listOf(5.0, -10.0, 15.0, -5.0, 10.0) // Placeholder
-        val lineData = listOf(2.0, -4.0, 8.0, -2.0, 5.0) // Placeholder
+        // Group transactions by time period (weekly for better visualization)
+        val calendar = java.util.Calendar.getInstance()
+        val now = System.currentTimeMillis()
+        
+        // Determine number of periods based on timeline range
+        val numPeriods = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 4
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 12
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 6
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 12
+                    else -> 12
+                }
+            }
+            else -> 12
+        }
+        
+        // Group by period and calculate net cash flow
+        val periodData = (0 until numPeriods).map { periodIndex ->
+            // Calculate time range for this period
+            val periodLength = when (config.timelineRange) {
+                is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                    when (config.timelineRange.period) {
+                        com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 24 * 60 * 60 * 1000L // 1 day
+                        com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 7 * 24 * 60 * 60 * 1000L // 1 week
+                        com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 7 * 24 * 60 * 60 * 1000L // 1 week
+                        com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 30 * 24 * 60 * 60 * 1000L // 1 month
+                        com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 30 * 24 * 60 * 60 * 1000L // 1 month
+                        else -> 7 * 24 * 60 * 60 * 1000L
+                    }
+                }
+                else -> 7 * 24 * 60 * 60 * 1000L
+            }
+            
+            val periodEnd = now - (periodIndex * periodLength)
+            val periodStart = periodEnd - periodLength
+            
+            val periodTransactions = convertedTransactions.filter { 
+                it.timestamp >= periodStart && it.timestamp < periodEnd 
+            }
+            
+            val income = periodTransactions.filter { it.amount.signum() >= 0 }
+                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            val expenses = periodTransactions.filter { it.amount.signum() < 0 }
+                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            val netFlow = income.add(expenses)
+            
+            netFlow.toDouble()
+        }
+        
+        // Bar data = net cash flow per period
+        val barData = periodData
+        
+        // Line data = cumulative balance trend
+        val lineData = periodData.runningReduce { acc, value -> acc + value }
         
         return CashFlowTrendData(
             barData = barData,
@@ -636,16 +811,70 @@ class AnalyticsViewModel(
     
     private fun computeBalanceForecast(config: BalanceForecastCardConfig): BalanceForecastData {
         val selectedCurrency = _uiState.value.selectedCurrency
-        val currentBalance = _uiState.value.currentBalance
-        val avgDailyNetFlow = if (_uiState.value.dailyNetFlow.values.isNotEmpty()) {
-            _uiState.value.dailyNetFlow.values.map { it.toDouble() }.average().toBigDecimal()
+        val currentRates = _uiState.value.exchangeRates
+        
+        // Filter transactions based on timeline range to calculate historical trends
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Calculate average daily net flow from historical data
+        val calendar = java.util.Calendar.getInstance()
+        val now = System.currentTimeMillis()
+        val daysInPeriod = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 30L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 84L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 180L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 365L
+                    else -> 30L
+                }
+            }
+            else -> 30L
+        }
+        
+        val totalNetFlow = convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val avgDailyNetFlow = if (daysInPeriod > 0) {
+            totalNetFlow.divide(BigDecimal.valueOf(daysInPeriod), _currentPrecision, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
+        
+        // Get current balance from all transactions (not just filtered)
+        val currentBalance = allTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            acc.add(convertedAmount)
+        }
         
         // Calculate forecast
         val forecastBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(config.forecastDays.toLong())))
         
-        // Generate chart data
-        val chartData = (1..5).map { Triple(it.toDouble(), (it * 1.5).toDouble(), (it * 0.8).toDouble()) }
+        // Generate chart data with historical and forecast data
+        val chartData = (0 until 5).map { periodIndex ->
+            val daysFromNow = periodIndex * (config.forecastDays / 4)
+            val projectedBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(daysFromNow.toLong())))
+            
+            // Create optimistic, realistic, and pessimistic projections
+            val optimistic = projectedBalance.multiply(BigDecimal.valueOf(1.1))
+            val realistic = projectedBalance
+            val pessimistic = projectedBalance.multiply(BigDecimal.valueOf(0.9))
+            
+            Triple(optimistic.toDouble(), realistic.toDouble(), pessimistic.toDouble())
+        }
         
         return BalanceForecastData(
             forecastBalance = forecastBalance,
@@ -690,7 +919,7 @@ class AnalyticsViewModel(
         )
     }
 
-    private fun computeIncomeExpensesBook(config: IncomeExpensesBookCardConfig): IncomeExpensesSummaryData {
+    private fun computeIncomeExpensesBook(config: IncomeExpensesBookCardConfig): IncomeExpensesBookData {
         val selectedCurrency = _uiState.value.selectedCurrency
         val currentRates = _uiState.value.exchangeRates
         
@@ -706,46 +935,42 @@ class AnalyticsViewModel(
             tx.copy(amount = convertedAmount)
         }
         
-        val totalIncome = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val totalExpense = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val netCashFlow = totalIncome.add(totalExpense)
+        val incomeTransactions = convertedTransactions.filter { it.amount.signum() >= 0 }
+        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
         
-        val categoryTotals = convertedTransactions
-            .filter { it.amount.signum() < 0 }
-            .groupBy { it.category ?: "Uncategorized" }
-            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
+        val totalIncome = incomeTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val totalExpense = expenseTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
         
-        val categories = listOf(
-            "Food & Drinks" to Icons.Default.Restaurant,
-            "Shopping" to Icons.Default.ShoppingCart,
-            "Housing" to Icons.Default.Home,
-            "Transportation" to Icons.Default.DirectionsCar
-        ).mapNotNull { (name, icon) ->
-            val amount = categoryTotals[name]
-            if (amount != null) {
-                CategoryItem(
-                    name = name,
-                    amount = amount,
-                    change = "+5%",
-                    color = when (name) {
-                        "Food & Drinks" -> Color(0xFFFF5722)
-                        "Shopping" -> AccentBlue
-                        "Housing" -> AccentOrange
-                        "Transportation" -> Color(0xFF607D8B)
-                        else -> AccentPurple
-                    },
-                    icon = icon
-                )
-            } else null
-        }.take(4)
-        
-        return IncomeExpensesSummaryData(
-            totalAmount = netCashFlow,
-            percentageChange = "+154%",
+        return IncomeExpensesBookData(
+            incomeTotal = totalIncome,
+            expenseTotal = totalExpense,
+            incomeCount = incomeTransactions.size,
+            expenseCount = expenseTransactions.size,
             currency = selectedCurrency,
-            precision = _currentPrecision,
-            categories = categories
+            precision = _currentPrecision
         )
+    }
+    
+    private fun filterTransactionsByTimeline(transactions: List<Transaction>, timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange): List<Transaction> {
+        val now = System.currentTimeMillis()
+        return when (timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                val days = when (timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 30L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 84L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 180L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 365L
+                    else -> 30L
+                }
+                val startTime = now - days * 24 * 60 * 60 * 1000L
+                transactions.filter { it.timestamp >= startTime }
+            }
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange -> {
+                transactions.filter { it.timestamp >= timelineRange.start && it.timestamp <= timelineRange.end }
+            }
+            else -> transactions
+        }
     }
 
     private fun computeCashFlowTable(config: CashFlowTableCardConfig): CashFlowTableData {
@@ -862,45 +1087,63 @@ class AnalyticsViewModel(
             tx.copy(amount = convertedAmount)
         }
         
-        // Calculate balance trend over time
-        val weeklyBalances = (1..12).map { week ->
-            val weekTransactions = convertedTransactions.take((convertedTransactions.size * week / 12).coerceAtLeast(1))
-            val balance = weekTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-            balance.toDouble()
+        // Calculate balance trend over time based on timeline
+        val calendar = java.util.Calendar.getInstance()
+        val now = System.currentTimeMillis()
+        
+        val numPeriods = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 4
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 12
+                    else -> 12
+                }
+            }
+            else -> 12
         }
+        
+        val periodLength = when (config.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (config.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 24 * 60 * 60 * 1000L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 7 * 24 * 60 * 60 * 1000L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 7 * 24 * 60 * 60 * 1000L
+                    else -> 7 * 24 * 60 * 60 * 1000L
+                }
+            }
+            else -> 7 * 24 * 60 * 60 * 1000L
+        }
+        
+        val weeklyBalances = (0 until numPeriods).map { periodIndex ->
+            val periodEnd = now - (periodIndex * periodLength)
+            val periodStart = periodEnd - periodLength
+            
+            val periodTransactions = convertedTransactions.filter { 
+                it.timestamp >= periodStart && it.timestamp < periodEnd 
+            }
+            
+            periodTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.toDouble()
+        }.reversed()
         
         val currentBalance = weeklyBalances.lastOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
         
+        // Calculate percentage change from first to last period
+        val firstBalance = weeklyBalances.firstOrNull() ?: 0.0
+        val percentageChange = if (firstBalance != 0.0) {
+            val change = ((currentBalance.toDouble() - firstBalance) / Math.abs(firstBalance)) * 100
+            String.format("%.1f%%", change)
+        } else {
+            "0%"
+        }
+        
         return BalanceTrendData(
             currentBalance = currentBalance,
-            percentageChange = "-65%",
+            percentageChange = percentageChange,
             currency = selectedCurrency,
             precision = _currentPrecision,
             weeklyBalances = weeklyBalances
         )
-    }
-    
-    private fun filterTransactionsByTimeline(transactions: List<Transaction>, timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange): List<Transaction> {
-        val now = System.currentTimeMillis()
-        return when (timelineRange) {
-            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
-                val days = when (timelineRange.period) {
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_24H -> 1L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 30L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 84L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 180L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 365L
-                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_5_YEARS -> 1825L
-                }
-                val cutoff = now - days * 24 * 60 * 60 * 1000L
-                transactions.filter { it.timestamp >= cutoff }
-            }
-            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange -> {
-                transactions.filter { it.timestamp >= timelineRange.start && it.timestamp <= timelineRange.end }
-            }
-            else -> transactions
-        }
     }
 }
 
@@ -963,6 +1206,7 @@ fun defaultAnalyticsCardsConfig(): AnalyticsCardsConfig {
                 order = 7,
                 title = "BALANCE FORECAST",
                 subtitle = "Will I have enough money?",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
                 forecastDays = 30
             ),
             PlannedPaymentsCardConfig(

@@ -263,6 +263,7 @@ data class BalanceForecastCardConfig(
     override val order: Int = 12,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val subtitle: String = "Will I have enough money?",
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
     val forecastDays: Int = 30,
     val accountId: String? = null
 ) : CardConfig()

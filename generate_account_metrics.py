@@ -130,36 +130,16 @@ def calculate_account_metrics(account: Dict[str, Any],
             currency_cash_flow[currency]['expenses']
         )
     
-    # Convert non-USD currencies to USD
-    total_usd_income = currency_cash_flow.get('USD', {}).get('income', 0.0)
-    total_usd_expenses = currency_cash_flow.get('USD', {}).get('expenses', 0.0)
-    
-    for currency in currency_cash_flow:
-        if currency == 'USD':
-            continue
-        
-        if currency == 'INR':
-            rate = EXCHANGE_RATES['INR_to_USD']
-        elif currency == 'EUR':
-            rate = EXCHANGE_RATES['EUR_to_USD']
-        else:
-            rate = 1.0  # Default to 1:1 for unknown currencies
-        
-        income_usd = currency_cash_flow[currency]['income'] * rate
-        expenses_usd = currency_cash_flow[currency]['expenses'] * rate
-        net_usd = currency_cash_flow[currency]['net'] * rate
-        
-        total_usd_income += income_usd
-        total_usd_expenses += expenses_usd
-        
-        currency_cash_flow[currency]['convertedToUSD'] = net_usd
-    
-    # Calculate net cash flow and final balance
-    net_cash_flow = total_usd_income - total_usd_expenses
+    # Calculate net cash flow and final balance (using account's base currency only)
+    account_currency = account['currencyCode']
+    currency_data = currency_cash_flow.get(account_currency, {})
+    total_income = currency_data.get('income', 0.0)
+    total_expenses = currency_data.get('expenses', 0.0)
+    net_cash_flow = total_income - total_expenses
     final_balance = account['initialBalance'] + net_cash_flow
     net_change = net_cash_flow
     
-    # Build multi-currency cash flow object
+    # Build multi-currency cash flow object (raw values, no currency conversion)
     multi_currency_cash_flow = {}
     for currency, data in sorted(currency_cash_flow.items()):
         multi_currency_cash_flow[currency] = {
@@ -167,8 +147,6 @@ def calculate_account_metrics(account: Dict[str, Any],
             'totalExpenses': data['expenses'],
             'netCashFlow': data['net']
         }
-        if currency != 'USD':
-            multi_currency_cash_flow[currency]['convertedToUSD'] = data['convertedToUSD']
     
     # Build category breakdown (exclude Initial Balance)
     category_breakdown_list = []
@@ -192,8 +170,8 @@ def calculate_account_metrics(account: Dict[str, Any],
         'netChange': round(net_change, 2),
         'transactionCount': len(account_transactions),
         'cashFlow': {
-            'totalIncome': round(total_usd_income, 2),
-            'totalExpenses': round(total_usd_expenses, 2),
+            'totalIncome': round(total_income, 2),
+            'totalExpenses': round(total_expenses, 2),
             'netCashFlow': round(net_cash_flow, 2)
         },
         'multiCurrencyCashFlow': multi_currency_cash_flow,
@@ -201,8 +179,8 @@ def calculate_account_metrics(account: Dict[str, Any],
         'monthlyTrend': [
             {
                 'month': '2024-01',
-                'income': round(total_usd_income, 2),
-                'expenses': round(total_usd_expenses, 2),
+                'income': round(total_income, 2),
+                'expenses': round(total_expenses, 2),
                 'balance': round(final_balance, 2)
             }
         ]

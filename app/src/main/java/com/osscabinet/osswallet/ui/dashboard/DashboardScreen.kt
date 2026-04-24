@@ -459,10 +459,8 @@ fun DashboardContent(
 
                     CardWithCallbacks(
                         renderData = CardRenderData.NetWorth(
-                            uiState = cardUiState,
-                            cardId = cardConfig.cardId,
-                            fontSize = cardConfig.fontSize,
-                            timelineRange = cardConfig.timelineRange
+                            config = cardConfig,
+                            uiState = cardUiState
                         ),
                         callbacks = CardCallbacks.WithFontSizeAndTimeline(
                             onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
@@ -485,13 +483,10 @@ fun DashboardContent(
 
                     CardWithCallbacks(
                         renderData = CardRenderData.CurrencyBalances(
+                            config = cardConfig,
                             currencyTotals = currencyTotals,
                             baseCurrency = state.baseCurrency,
-                            cardId = cardConfig.cardId,
-                            precision = decimalPrecision,
-                            layout = cardConfig.layout,
-                            showBaseConversion = cardConfig.showBaseConversion,
-                            timelineRange = cardConfig.timelineRange
+                            precision = decimalPrecision
                         ),
                         callbacks = CardCallbacks.CurrencyBalances(
                             onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
@@ -522,12 +517,10 @@ fun DashboardContent(
 
                     CardWithCallbacks(
                         renderData = CardRenderData.CashFlow(
+                            config = cardConfig,
                             cashFlowResult = cashFlowResult,
                             baseCurrency = state.baseCurrency,
-                            cardId = cardConfig.cardId,
-                            precision = decimalPrecision,
-                            showBaseConversion = cardConfig.showBaseConversion,
-                            timelineRange = cardConfig.timelineRange
+                            precision = decimalPrecision
                         ),
                         callbacks = CardCallbacks.CashFlow(
                             onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
@@ -576,10 +569,10 @@ fun DashboardContent(
                             precision = decimalPrecision
                         ),
                         callbacks = CardCallbacks.Accounts(
-                            onGridColumnsChange = { columns -> dashboardViewModel.updateCardAccountsGridColumns(cardConfig.cardId, columns) },
-                            onLayoutChange = { layout -> dashboardViewModel.updateCardAccountsLayout(cardConfig.cardId, layout) },
-                            onTimelineRangeChange = { range -> dashboardViewModel.updateCardAccountsTimelineRange(cardConfig.cardId, range) },
-                            onShowAddAccountCardChange = { show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardConfig.cardId, show) },
+                            onGridColumnsChange = { cardId, columns -> dashboardViewModel.updateCardAccountsGridColumns(cardId, columns) },
+                            onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardAccountsLayout(cardId, layout) },
+                            onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardAccountsTimelineRange(cardId, range) },
+                            onShowAddAccountCardChange = { cardId, show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardId, show) },
                             onManageClick = onManageAccountsClick,
                             onHeaderClick = onAccountsViewClick,
                             onAccountClick = onAccountClick,
@@ -598,7 +591,7 @@ fun DashboardContent(
                                 precision = decimalPrecision
                             ),
                             callbacks = CardCallbacks.Budgets(
-                                onShowProgressLabelsChange = { show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardConfig.cardId, show) },
+                                onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
                                 onManageClick = onBudgetsClick,
                                 onBudgetClick = onEditBudgetClick,
                                 onRecordsClick = { filterContext -> onRecordsClick(filterContext) },

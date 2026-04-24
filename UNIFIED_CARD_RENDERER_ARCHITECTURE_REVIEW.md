@@ -1,20 +1,20 @@
 # UnifiedCardRenderer Architecture Review & Refactoring Plan
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Date:** April 24, 2026  
 **Author:** Senior Android Architect  
-**Status:** Review Complete
+**Status:** Revised - Simplified Approach
 
 ---
 
 ## Executive Summary
 
-The current `UnifiedCardRenderer` implementation successfully centralizes card rendering logic across the application, but suffers from several architectural anti-patterns that will impact long-term maintainability, extensibility, and testability. This document provides a comprehensive analysis and proposes a refactoring roadmap aligned with Clean Architecture and SOLID principles.
+The current `UnifiedCardRenderer` implementation successfully centralizes card rendering logic across the application, but contains unnecessary screen-specific card variants that violate DRY principles. This document provides a comprehensive analysis and proposes a simplified refactoring approach focused on eliminating duplication by having screens handle data filtering and configuration, while the renderer remains purely presentational.
 
 **Key Findings:**
 - ✅ **Strengths:** Type-safe sealed classes, separation of data/callbacks, successful consolidation of rendering logic
-- ⚠️ **Concerns:** Monolithic renderer (500+ lines), tight coupling, no extension mechanism, callback signature inconsistency
-- 🎯 **Recommendation:** Incremental refactoring to plugin-based architecture with dependency injection
+- ⚠️ **Concerns:** Screen-specific card variants (NetWorth vs AccountsViewNetWorth), data duplication, unnecessary complexity
+- 🎯 **Recommendation:** Eliminate screen-specific card variants, use unified card types with screen-specific data filtering
 
 ---
 
@@ -27,15 +27,18 @@ The current `UnifiedCardRenderer` implementation successfully centralizes card r
 │                    Screens (UI Layer)                        │
 │  AnalyticsScreen, DashboardScreen, AccountDetailScreen,    │
 │  AccountsViewScreen                                         │
+│  - Filter data based on screen context                      │
+│  - Set appropriate config values                             │
+│  - Pass filtered data to renderer                            │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        │ Uses
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              UnifiedCardRenderer (UI Layer)                 │
-│  - Single composable with 500+ line when statement          │
-│  - Directly imports 20+ card composables                     │
-│  - Handles 24 card types, 18 callback types                  │
+│  - Single composable with when statement                     │
+│  - Directly imports card composables                         │
+│  - Handles card types (no screen-specific variants)          │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        │ Uses
@@ -43,8 +46,8 @@ The current `UnifiedCardRenderer` implementation successfully centralizes card r
 ┌─────────────────────────────────────────────────────────────┐
 │         CardRenderData & CardCallbacks (UI Layer)           │
 │  - Sealed class hierarchies for type safety                  │
-│  - 24 CardRenderData subtypes                                │
-│  - 18 CardCallbacks subtypes                                 │
+│  - Unified card types (no screen-specific variants)          │
+│  - Shared CardConfig across screens                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -52,9 +55,9 @@ The current `UnifiedCardRenderer` implementation successfully centralizes card r
 
 | File | Lines | Purpose | Issues |
 |------|-------|---------|--------|
-| `UnifiedCardRenderer.kt` | 553 | Central rendering logic | Monolithic, violates SRP |
-| `CardRenderData.kt` | 246 | Data contracts | Data duplication, no common interface |
-| `CardCallbacks.kt` | 190 | Callback contracts | Inconsistent signatures, no base interface |
+| `UnifiedCardRenderer.kt` | 553 | Central rendering logic | Screen-specific card variants, data duplication |
+| `CardRenderData.kt` | 246 | Data contracts | Screen-specific variants (NetWorth vs AccountsViewNetWorth) |
+| `CardCallbacks.kt` | 190 | Callback contracts | Screen-specific variants, inconsistent signatures |
 
 ---
 
@@ -62,151 +65,493 @@ The current `UnifiedCardRenderer` implementation successfully centralizes card r
 
 ### Critical Issues (Must Fix)
 
-#### 1. **Violation of Single Responsibility Principle**
-**Problem:** `UnifiedCardRenderer` handles:
-- Type dispatching
-- Callback casting with fallback logic
-- Data mapping
-- Direct composable calls
-- Theme handling
-- Modifier application
+#### 1. **Screen-Specific Card Variants (DRY Violation)**
+**Problem:** Same card types exist with screen-specific variants:
+- `NetWorth` vs `AccountsViewNetWorth` (both render `NetWorthCard`)
+- `CurrencyBalances` vs `AccountCurrencyBalances` vs `AccountsViewCurrencyBalances`
+- `CashFlow` vs `AccountCashFlow` vs `AccountsViewCashFlow`
+- `Accounts` vs `AccountsViewAccountsList`
 
-**Impact:** Any change to one concern risks breaking others. Testing individual concerns is impossible.
+**Impact:** 
+- Code duplication and maintenance burden
+- Potential divergence between variants
+- Unnecessary complexity in renderer
+- Violates DRY principle
 
 **Current Code:**
 ```kotlin
-@Composable
-fun UnifiedCardRenderer(
-    renderData: CardRenderData,
-    callbacks: CardCallbacks,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    showTitle: Boolean = false,
-    currentTheme: String = "light"
-) {
-    when (renderData) {
-        is CardRenderData.NetWorth -> {
-            val cb = callbacks as? CardCallbacks.WithFontSizeAndTimeline 
-                ?: CardCallbacks.WithFontSizeAndTimeline(...) // Fallback logic
-            NetWorthCard(...) // Direct call
-        }
-        // ... 23 more cases
-    }
-}
+// CardRenderData.kt
+data class NetWorth(...) : CardRenderData()
+data class AccountsViewNetWorth(...) : CardRenderData()
+
+// Both use the same card component but with different data structures
 ```
 
-#### 2. **Tight Coupling to Card Implementations**
-**Problem:** Renderer directly imports and calls 20+ specific card composables:
-- `NetWorthCard`, `CurrencyBalancesCard`, `CashFlowCard`
-- `AccountsCard`, `BudgetsCard`
-- `AccountHeroCard`
-- 9 Analytics cards
-- 4 AccountsView cards
+#### 2. **Screen-Specific CardConfig Duplication**
+**Problem:** Same card has multiple config classes:
+- `NetWorthCardConfig` vs `AccountsViewNetWorthCardConfig`
+- `CurrencyBalancesCardConfig` vs `AccountCurrencyBalancesCardConfig` vs `AccountsViewCurrencyBalancesCardConfig`
 
 **Impact:** 
-- Cannot add cards without modifying renderer
-- Cannot mock card implementations for testing
-- Breaking changes propagate through entire chain
+- Settings management complexity
+- Cannot share settings across screens
+- Redundant configuration logic
 
-#### 3. **No Extension Mechanism (Open/Closed Principle Violation)**
-**Problem:** Adding a new card type requires:
-1. Adding subtype to `CardRenderData`
-2. Adding subtype to `CardCallbacks`
-3. Adding case to `UnifiedCardRenderer` when statement
-4. Adding imports to renderer
-5. Updating all screens that might use it
-
-**Impact:** High friction for adding features, encourages code duplication.
-
-#### 4. **Callback Signature Inconsistency**
-**Problem:** Callback signatures vary inconsistently:
-
-| Callback Type | Signature Pattern |
-|--------------|-------------------|
-| `WithFontSizeAndTimeline` | `(String, String) -> Unit`, `(String, TimelineRange) -> Unit` |
-| `Accounts` | `(Int) -> Unit`, `(String) -> Unit`, `(TimelineRange) -> Unit` |
-| `AccountCashFlow` | `(Boolean) -> Unit`, `(TimelineRange) -> Unit` |
-| `AccountsViewAccountsList` | `(String, Int) -> Unit`, `(String, String) -> Unit` |
-
-**Impact:** Cognitive load for developers, prone to errors, difficult to generate automatically.
-
-#### 5. **Type Safety Issues with Fallback Logic**
-**Problem:** Extensive use of `as?` casting with fallback:
-```kotlin
-val cb = callbacks as? CardCallbacks.WithFontSizeAndTimeline 
-    ?: CardCallbacks.WithFontSizeAndTimeline(
-        onFontSizeChange = { _, _ -> },
-        onTimelineRangeChange = { _, _ -> },
-        onDelete = {}
-    )
-```
+#### 3. **Screen-Specific Callback Duplication**
+**Problem:** Same card has multiple callback types:
+- `WithFontSizeAndTimeline` vs `AccountsViewNetWorth`
+- `CurrencyBalances` vs `AccountCurrencyBalances` vs `AccountsViewCurrencyBalances`
 
 **Impact:** 
-- Silent failures when wrong callback type is passed
-- Masking of real bugs
-- Empty fallbacks may cause unexpected behavior
+- Callback signature inconsistency
+- Unnecessary type casting complexity
+- Harder to maintain
 
 ### Moderate Issues (Should Fix)
 
-#### 6. **Data Duplication**
-**Problem:** Similar card types duplicated:
-- `NetWorth` vs `AccountsViewNetWorth` (both use `NetWorthCard`)
-- `CurrencyBalances` vs `AccountCurrencyBalances` vs `AccountsViewCurrencyBalances`
-- `CashFlow` vs `AccountCashFlow` vs `AccountsViewCashFlow`
+#### 4. **Data Filtering Responsibility Unclear**
+**Problem:** Currently unclear whether data filtering happens:
+- In the card data class
+- In the renderer
+- In the screen
+- In the ViewModel
 
-**Impact:** Code duplication, maintenance burden, potential divergence.
+**Impact:** Inconsistent patterns, potential performance issues.
 
-#### 7. **Missing Common Interface**
-**Problem:** No base interface for cards. Cannot:
-- Treat cards polymorphically
-- Define common operations (e.g., `cardId`, `config`)
-- Create generic card containers
+#### 5. **Callback Signature Inconsistency**
+**Problem:** Callback signatures vary inconsistently across card types.
 
-#### 8. **Hardcoded Values**
-**Problem:** Hardcoded strings in renderer:
-```kotlin
-currentTheme = "light"
-settingsTitle = "Dashboard Settings"
-settingsTitle = "Accounts View Settings"
-```
-
-**Impact:** No theming support, no internationalization, maintenance issues.
-
-#### 9. **No State Management Strategy**
-**Problem:** Renderer is purely functional but screens still use `remember`, `LaunchedEffect`, `produceState` for data fetching.
-
-**Impact:** Inconsistent patterns, potential performance issues, no clear data flow.
+#### 6. **Type Safety Issues with Fallback Logic**
+**Problem:** Extensive use of `as?` casting with fallback logic in renderer.
 
 ### Minor Issues (Nice to Fix)
 
-#### 10. **Inadequate Documentation**
-**Problem:** Minimal KDoc, no architecture diagrams, no usage examples.
+#### 7. **Missing Common Interface**
+**Problem:** No base interface for cards.
 
-#### 11. **No Preview Support**
-**Problem:** Preview is empty placeholder, cannot visually test cards in isolation.
+#### 8. **Hardcoded Values**
+**Problem:** Hardcoded strings in renderer (theme, settings titles).
 
-#### 12. **No Error Handling**
-**Problem:** No explicit error states, no loading states, no empty states.
+#### 9. **Inadequate Documentation**
+**Problem:** Minimal KDoc, no architecture diagrams.
+
+#### 10. **No Preview Support**
+**Problem:** Preview is empty placeholder.
 
 ---
 
-## Proposed Architecture
+## Proposed Simplified Architecture
 
-### Phase 1: Interface-Based Abstraction (Foundation)
+### Core Principle
 
-**Goal:** Define clear contracts without changing implementation.
+**Screens are responsible for data filtering and configuration, renderer is purely presentational.**
 
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Screens (UI Layer)                        │
+│  - Filter data based on screen context (account, date, etc)  │
+│  - Set appropriate config values (layout, visibility, etc)   │
+│  - Create unified CardRenderData with filtered data          │
+│  - Create unified CardCallbacks with appropriate handlers     │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       │ Passes filtered data
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│              UnifiedCardRenderer (UI Layer)                 │
+│  - Pure presentational component                              │
+│  - No data filtering logic                                    │
+│  - No screen-specific variants                               │
+│  - Single when statement for each card type                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       │ Uses
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│         CardRenderData & CardCallbacks (UI Layer)           │
+│  - Unified card types (no screen-specific variants)          │
+│  - Shared CardConfig across all screens                      │
+│  - Callbacks match actual card component signatures          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Example: NetWorth Card Across Screens
+
+**DashboardScreen:**
 ```kotlin
-/**
- * Base interface for all card render data
- */
-interface CardData {
-    val cardId: String
-    val cardType: CardType
-}
+// Filter data: All accounts, global timeline
+val filteredAccounts = allAccounts
+val filteredTimeline = globalTimelineRange
 
-/**
- * Base interface for all card callbacks
+val netWorthData = CardRenderData.NetWorth(
+    uiState = computeNetWorthState(filteredAccounts, filteredTimeline),
+    cardId = config.cardId,
+    fontSize = config.fontSize,
+    timelineRange = filteredTimeline
+)
+
+val callbacks = CardCallbacks.WithFontSizeAndTimeline(
+    onFontSizeChange = { cardId, fontSize -> 
+        viewModel.updateCardConfig(cardId, fontSize) 
+    },
+    onTimelineRangeChange = { cardId, range ->
+        viewModel.updateTimelineRange(range)
+    },
+    onDelete = { viewModel.removeCard(config.cardId) }
+)
+
+UnifiedCardRenderer(netWorthData, callbacks, ...)
+```
+
+**AccountsViewScreen:**
+```kotlin
+// Filter data: Specific account(s), account-specific timeline
+val filteredAccounts = selectedAccounts
+val filteredTimeline = accountTimelineRange
+
+val netWorthData = CardRenderData.NetWorth(
+    uiState = computeNetWorthState(filteredAccounts, filteredTimeline),
+    cardId = config.cardId,
+    fontSize = config.fontSize,
+    timelineRange = filteredTimeline
+)
+
+val callbacks = CardCallbacks.WithFontSizeAndTimeline(
+    onFontSizeChange = { cardId, fontSize -> 
+        viewModel.updateCardConfig(cardId, fontSize) 
+    },
+    onTimelineRangeChange = { cardId, range ->
+        viewModel.updateTimelineRange(range)
+    },
+    onDelete = { viewModel.removeCard(config.cardId) }
+)
+
+UnifiedCardRenderer(netWorthData, callbacks, ...)
+```
+
+**Key Insight:** Both screens use the exact same `CardRenderData.NetWorth` and `CardCallbacks.WithFontSizeAndTimeline`, but with different filtered data and config values.
+
+---
+
+## Consolidation Plan
+
+### Phase 1: Consolidate CardConfig (Week 1)
+
+**Goal:** Remove screen-specific config classes, use shared config across all screens.
+
+**Current State:**
+```kotlin
+data class NetWorthCardConfig(...)
+data class AccountsViewNetWorthCardConfig(...)
+
+data class CurrencyBalancesCardConfig(...)
+data class AccountCurrencyBalancesCardConfig(...)
+data class AccountsViewCurrencyBalancesCardConfig(...)
+
+data class CashFlowCardConfig(...)
+data class AccountCashFlowCardConfig(...)
+data class AccountsViewCashFlowCardConfig(...)
+
+data class AccountsCardConfig(...)
+data class AccountsViewAccountsListCardConfig(...)
+```
+
+**Target State:**
+```kotlin
+data class NetWorthCardConfig(...)
+data class CurrencyBalancesCardConfig(...)
+data class CashFlowCardConfig(...)
+data class AccountsCardConfig(...)
+```
+
+**Actions:**
+- [ ] Keep `NetWorthCardConfig`, remove `AccountsViewNetWorthCardConfig`
+- [ ] Keep `CurrencyBalancesCardConfig`, remove `AccountCurrencyBalancesCardConfig` and `AccountsViewCurrencyBalancesCardConfig`
+- [ ] Keep `CashFlowCardConfig`, remove `AccountCashFlowCardConfig` and `AccountsViewCashFlowCardConfig`
+- [ ] Keep `AccountsCardConfig`, remove `AccountsViewAccountsListCardConfig`
+- [ ] Update CardManagerViewModel to use shared config classes
+- [ ] Update screens to set config values appropriately for their context
+
+### Phase 2: Consolidate CardRenderData (Week 1-2)
+
+**Goal:** Remove screen-specific variants, use unified card types with shared configs.
+
+**Current State:**
+```kotlin
+data class NetWorth(...) : CardRenderData()
+data class AccountsViewNetWorth(...) : CardRenderData()
+
+data class CurrencyBalances(...) : CardRenderData()
+data class AccountCurrencyBalances(...) : CardRenderData()
+data class AccountsViewCurrencyBalances(...) : CardRenderData()
+
+data class CashFlow(...) : CardRenderData()
+data class AccountCashFlow(...) : CardRenderData()
+data class AccountsViewCashFlow(...) : CardRenderData()
+
+data class Accounts(...) : CardRenderData()
+data class AccountsViewAccountsList(...) : CardRenderData()
+```
+
+**Target State:**
+```kotlin
+data class NetWorth(
+    val config: NetWorthCardConfig,
+    val uiState: NetWorthUiState
+) : CardRenderData()
+
+data class CurrencyBalances(
+    val config: CurrencyBalancesCardConfig,
+    val currencyTotals: List<CurrencyAggregationItem>,
+    val baseCurrency: String,
+    val precision: Int
+) : CardRenderData()
+
+data class CashFlow(
+    val config: CashFlowCardConfig,
+    val cashFlowResult: CashFlowResult,
+    val baseCurrency: String,
+    val precision: Int
+) : CardRenderData()
+
+data class Accounts(
+    val config: AccountsCardConfig,
+    val accounts: List<Account>,
+    val accountStats: Map<String, AccountSummaryItem>,
+    val baseCurrency: String,
+    val currentTheme: String,
+    val precision: Int
+) : CardRenderData()
+```
+
+**Actions:**
+- [ ] Update `NetWorth` to use `NetWorthCardConfig` instead of individual fields
+- [ ] Remove `AccountsViewNetWorth`
+- [ ] Update `CurrencyBalances` to use `CurrencyBalancesCardConfig` instead of individual fields
+- [ ] Remove `AccountCurrencyBalances` and `AccountsViewCurrencyBalances`
+- [ ] Update `CashFlow` to use `CashFlowCardConfig` instead of individual fields
+- [ ] Remove `AccountCashFlow` and `AccountsViewCashFlow`
+- [ ] Update `Accounts` to use `AccountsCardConfig` (already has it)
+- [ ] Remove `AccountsViewAccountsList`
+- [ ] Update AccountDetailScreen to use unified types with account-filtered data
+- [ ] Update AccountsViewScreen to use unified types with account-filtered data
+
+### Phase 3: Consolidate CardCallbacks (Week 2)
+
+**Goal:** Remove screen-specific callback types, use unified callbacks.
+
+**Current State:**
+```kotlin
+data class WithFontSizeAndTimeline(...)
+data class AccountsViewNetWorth(...)
+
+data class CurrencyBalances(...)
+data class AccountCurrencyBalances(...)
+data class AccountsViewCurrencyBalances(...)
+```
+
+**Target State:**
+```kotlin
+data class WithFontSizeAndTimeline(...)
+data class CurrencyBalances(...)
+```
+
+**Actions:**
+- [ ] Keep `WithFontSizeAndTimeline`, remove `AccountsViewNetWorth`
+- [ ] Keep `CurrencyBalances`, remove `AccountCurrencyBalances` and `AccountsViewCurrencyBalances`
+- [ ] Keep `CashFlow`, remove `AccountCashFlow` and `AccountsViewCashFlow`
+- [ ] Keep `Accounts`, remove `AccountsViewAccountsList`
+- [ ] Update UnifiedCardRenderer to use unified callbacks
+- [ ] Update screens to use unified callbacks with appropriate handlers
+
+### Phase 4: Update UnifiedCardRenderer (Week 2)
+
+**Goal:** Remove screen-specific rendering cases and update to use config-based data.
+
+**Actions:**
+- [ ] Remove `AccountsViewNetWorth` case
+- [ ] Remove `AccountCurrencyBalances` case
+- [ ] Remove `AccountsViewCurrencyBalances` case
+- [ ] Remove `AccountCashFlow` case
+- [ ] Remove `AccountsViewCashFlow` case
+- [ ] Remove `AccountsViewAccountsList` case
+- [ ] Update `NetWorth` case to read from `config.cardId`, `config.fontSize`, `config.timelineRange`
+- [ ] Update `CurrencyBalances` case to read from `config.cardId`, `config.layout`, `config.showBaseConversion`, `config.timelineRange`
+- [ ] Update `CashFlow` case to read from `config.cardId`, `config.showBaseConversion`, `config.timelineRange`
+- [ ] Update `Accounts` case to read from `config.cardId`, `config.gridColumns`, `config.layout`, `config.timelineRange`, `config.showAddAccountCard`
+- [ ] Ensure remaining cases handle all screen contexts through data/config differences
+
+### Phase 5: Update Screens with Data Filtering (Week 3)
+
+**Goal:** Implement screen-specific data filtering logic and use shared configs.
+
+**DashboardScreen:**
+```kotlin
+// Use global data (all accounts, global timeline)
+val netWorthData = CardRenderData.NetWorth(
+    config = netWorthCardConfig, // Shared config
+    uiState = viewModel.netWorthState // Computed from all accounts
+)
+```
+
+**AccountDetailScreen:**
+```kotlin
+// Use account-specific data (single account, account timeline)
+val netWorthData = CardRenderData.NetWorth(
+    config = netWorthCardConfig, // Shared config with account-specific values
+    uiState = viewModel.accountNetWorthState // Computed from single account
+)
+```
+
+**AccountsViewScreen:**
+```kotlin
+// Use selected accounts data (filtered accounts, account timeline)
+val netWorthData = CardRenderData.NetWorth(
+    config = netWorthCardConfig, // Shared config with accounts-view-specific values
+    uiState = viewModel.selectedAccountsNetWorthState // Computed from selected accounts
+)
+```
+
+**Actions:**
+- [ ] Update DashboardScreen to use shared configs with global data
+- [ ] Update AccountDetailScreen to use shared configs with account-filtered data
+- [ ] Update AccountsViewScreen to use shared configs with selected-accounts-filtered data
+- [ ] Ensure ViewModels provide appropriate filtered data computation
+- [ ] Ensure screens set config values appropriately for their context
+
+### Phase 6: Build and Verify (Week 3)
+
+**Actions:**
+- [ ] Build application
+- [ ] Fix compilation errors
+- [ ] Test DashboardScreen with all cards
+- [ ] Test AccountDetailScreen with all cards
+- [ ] Test AccountsViewScreen with all cards
+- [ ] Verify data filtering works correctly for each screen context
+- [ ] Verify config values are set correctly for each screen context
+
+---
+
+## Benefits of Simplified Architecture
+
+### Maintainability
+- ✅ DRY Principle: No duplicate card variants
+- ✅ Single Source of Truth: One CardRenderData per card type
+- ✅ Shared Config: One CardConfig per card type
+- ✅ Clear Responsibility: Screens filter data, renderer presents data
+
+### Extensibility
+- ✅ Easy to Add Screens: New screens use existing card types with different data
+- ✅ Easy to Add Cards: Add one CardRenderData, one CardConfig, one renderer case
+- ✅ No Renderer Changes for New Screens: Screens just filter data differently
+
+### Testability
+- ✅ Unit Testable: Each card type testable once
+- ✅ Screen Testable: Data filtering logic testable per screen
+- ✅ Config Testable: Config logic testable independently
+
+### Developer Experience
+- ✅ Clear Patterns: Screens filter, renderer presents
+- ✅ Less Code: Fewer files, fewer classes
+- ✅ Consistent: Same card type always uses same structure
+
+---
+
+## Migration Strategy
+
+### Incremental Approach
+1. **Consolidate CardRenderData First:** Remove screen-specific data classes
+2. **Update Screens to Use Unified Data:** Screens handle filtering
+3. **Consolidate CardConfig:** Remove screen-specific configs
+4. **Consolidate CardCallbacks:** Remove screen-specific callbacks
+5. **Update Renderer:** Remove screen-specific cases
+6. **Test Thoroughly:** Verify each screen context works correctly
+
+### Backward Compatibility
+- No breaking changes to card component APIs
+- Screens gradually adopt unified types
+- Can test each screen independently
+
+---
+
+## Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Data filtering errors | Medium | High | Thorough testing per screen |
+| Config value errors | Low | Medium | Clear documentation, examples |
+| Performance regression | Low | Low | Data filtering is cheap |
+| Breaking existing screens | Medium | High | Incremental migration, testing |
+
+---
+
+## Success Metrics
+
+### Code Quality
+- Reduce CardRenderData from 24 to 15 types (eliminate 9 screen-specific variants)
+- Reduce CardConfig variants by 50%
+- Reduce CardCallbacks variants by 50%
+- Reduce UnifiedCardRenderer cases by 25%
+
+### Developer Experience
+- Add new screen with existing cards in <1 hour
+- Clear data filtering patterns documented
+- No screen-specific card types needed
+
+### Performance
+- No increase in memory usage
+- No increase in build time
+- Data filtering overhead <5ms
+
+---
+
+## Conclusion
+
+The simplified architecture eliminates screen-specific card variants by making screens responsible for data filtering and configuration. This aligns with DRY principles and reduces complexity while maintaining type safety and separation of concerns.
+
+**Recommendation:** Proceed with Phase 1 (Consolidate CardRenderData) immediately as it provides the foundation for all subsequent phases with minimal risk. The full consolidation should be completed over 3 weeks with careful testing at each phase.
+
+---
+
+## Appendix
+
+### A. Card Type Consolidation Map
+
+| Card Type | Current Variants | Unified Type | Variants to Remove |
+|-----------|----------------|--------------|-------------------|
+| NetWorth | NetWorth, AccountsViewNetWorth | NetWorth | AccountsViewNetWorth |
+| CurrencyBalances | CurrencyBalances, AccountCurrencyBalances, AccountsViewCurrencyBalances | CurrencyBalances | AccountCurrencyBalances, AccountsViewCurrencyBalances |
+| CashFlow | CashFlow, AccountCashFlow, AccountsViewCashFlow | CashFlow | AccountCashFlow, AccountsViewCashFlow |
+| Accounts | Accounts, AccountsViewAccountsList | Accounts | AccountsViewAccountsList |
+
+### B. Data Filtering Examples
+
+**DashboardScreen - Global Data:**
+```kotlin
+val allAccounts = accountRepository.getAllAccounts()
+val globalTimeline = viewModel.globalTimelineRange
+val netWorthState = computeNetWorth(allAccounts, globalTimeline)
+```
+
+**AccountDetailScreen - Single Account Data:**
+```kotlin
+val account = accountRepository.getAccountById(accountId)
+val accountTimeline = viewModel.accountTimelineRange
+val netWorthState = computeNetWorth(listOf(account), accountTimeline)
+```
+
+**AccountsViewScreen - Selected Accounts Data:**
+```kotlin
+val selectedAccounts = accountRepository.getAccountsByIds(selectedAccountIds)
+val accountsViewTimeline = viewModel.accountsViewTimelineRange
+val netWorthState = computeNetWorth(selectedAccounts, accountsViewTimeline)
+```
+
+### C. References
+- DRY Principle (Don't Repeat Yourself)
+- Single Responsibility Principle
+- Clean Architecture by Robert C. Martin
+- Jetpack Compose Best Practices
  */
 interface CardCallbacks {
     val onDelete: () -> Unit
@@ -545,7 +890,8 @@ fun UnifiedCardRendererLegacy(...) {
 
 ## Conclusion
 
-The current `UnifiedCardRenderer` successfully achieves its goal of centralizing card rendering, but the monolithic implementation will become a maintenance burden as the application grows. The proposed plugin-based architecture with dependency injection addresses all identified issues while maintaining the benefits of type safety and separation of concerns.
+The current `UnifiedCardRenderer` successfully achieves its goal of centralizing card rendering, but the monolithic implementation will become a maintenance burd
+en as the application grows. The proposed plugin-based architecture with dependency injection addresses all identified issues while maintaining the benefits of type safety and separation of concerns.
 
 **Recommendation:** Proceed with Phase 1 (Foundation) immediately as it provides the groundwork for all subsequent phases with minimal risk. The full refactoring should be completed over 9 weeks with careful testing at each phase.
 

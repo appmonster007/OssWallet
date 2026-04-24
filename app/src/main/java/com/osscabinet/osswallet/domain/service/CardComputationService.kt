@@ -24,60 +24,12 @@ import java.math.BigDecimal
 /**
  * Service for computing card data with scope-aware filtering.
  * Provides unified computation logic for all card types across different screens.
+ * 
+ * This interface extends CardComputationEngine to provide additional computation methods
+ * for analytics cards that are not part of the core engine interface.
  */
-interface CardComputationService {
+interface CardComputationService : CardComputationEngine {
     
-    /**
-     * Computes cash flow data for a cash flow card.
-     * Filters transactions based on card scope (GLOBAL or ACCOUNT).
-     */
-    suspend fun computeCashFlow(
-        config: CashFlowCardConfig,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): CashFlowResult
-
-    /**
-     * Computes currency totals for a currency balances card.
-     * Filters transactions based on card scope (GLOBAL or ACCOUNT).
-     */
-    suspend fun computeCurrencyTotals(
-        config: CurrencyBalancesCardConfig,
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): List<CurrencyAggregationItem>
-
-    /**
-     * Computes net worth and cash flow for a net worth card.
-     * Filters transactions based on card scope (GLOBAL or ACCOUNT).
-     */
-    suspend fun computeNetWorth(
-        config: NetWorthCardConfig,
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): Pair<BigDecimal, CashFlowResult>
-
-    /**
-     * Computes account statistics for an accounts card.
-     * Filters transactions based on card scope (GLOBAL or ACCOUNT).
-     */
-    suspend fun computeAccountStats(
-        config: AccountsCardConfig,
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): Pair<List<Account>, Map<String, AccountSummaryItem>>
-
     /**
      * Computes category breakdown for pie chart card.
      * Groups transactions by category and calculates net balance per category.

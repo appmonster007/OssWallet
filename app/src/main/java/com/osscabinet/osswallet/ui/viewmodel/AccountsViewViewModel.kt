@@ -12,11 +12,17 @@ import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
+import com.osscabinet.ossWallet.ui.viewmodel.CachedCardData
+import com.osscabinet.ossWallet.ui.components.cards.computeNetWorth
+import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
+import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
+import com.osscabinet.ossWallet.ui.components.cards.computeAccountStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 
 enum class AccountsViewSection {
     NET_WORTH,
@@ -31,10 +37,130 @@ class AccountsViewViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    internal val financialUseCases: FinancialUseCases,
+    private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: CardManagerViewModel,
-    internal val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService,
+    private val financialUseCasesCardComputationAdapter: com.osscabinet.ossWallet.domain.service.FinancialUseCasesCardComputationAdapter
 ) : ViewModel() {
+
+    // Cache for computed card data to avoid recomputation
+    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
+    private val cacheExpirationMinutes = 5L
+
+    /**
+     * Get cached data if available and not expired, otherwise compute and cache
+     */
+    private inline fun <T> getCachedOrCompute(
+        cacheKey: String,
+        compute: () -> T
+    ): T {
+        val cached = cardDataCache[cacheKey]
+        @Suppress("UNCHECKED_CAST")
+        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
+            return cached.data as T
+        }
+
+        val result = compute()
+        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
+        return result
+    }
+
+    /**
+     * Invalidate cache for a specific card
+     */
+    fun invalidateCardCache(cardId: String) {
+        cardDataCache.keys.removeIf { it.startsWith(cardId) }
+    }
+
+    /**
+     * Invalidate all cache (called when data changes significantly)
+     */
+    fun invalidateAllCache() {
+        cardDataCache.clear()
+    }
+
+    // Flow-based card data computation for NetWorthCard
+    private val _netWorthCardData = MutableStateFlow<Pair<BigDecimal, CashFlowResult>?>(null)
+    val netWorthCardData: StateFlow<Pair<BigDecimal, CashFlowResult>?> = _netWorthCardData.asStateFlow()
+
+    fun computeNetWorthCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "networth_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeNetWorth(
+                    accounts = accounts,
+                    transactions = transactions,
+                    engine = financialUseCasesCardComputationAdapter,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _netWorthCardData.value = result
+        }
+    }
+
+    // Flow-based card data computation for CurrencyBalancesCard
+    private val _currencyBalancesCardData = MutableStateFlow<List<CurrencyAggregationItem>?>(null)
+    val currencyBalancesCardData: StateFlow<List<CurrencyAggregationItem>?> = _currencyBalancesCardData.asStateFlow()
+
+    fun computeCurrencyBalancesCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeCurrencyTotals(
+                    accounts = accounts,
+                    transactions = transactions,
+                    engine = financialUseCasesCardComputationAdapter,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _currencyBalancesCardData.value = result
+        }
+    }
+
+    // Flow-based card data computation for CashFlowCard
+    private val _cashFlowCardData = MutableStateFlow<CashFlowResult?>(null)
+    val cashFlowCardData: StateFlow<CashFlowResult?> = _cashFlowCardData.asStateFlow()
+
+    fun computeCashFlowCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeCashFlow(
+                    transactions = transactions,
+                    engine = financialUseCasesCardComputationAdapter,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _cashFlowCardData.value = result
+        }
+    }
+
+    // Flow-based card data computation for AccountsCard
+    private val _accountsCardData = MutableStateFlow<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null)
+    val accountsCardData: StateFlow<Pair<List<Account>, Map<String, AccountSummaryItem>>?> = _accountsCardData.asStateFlow()
+
+    fun computeAccountsCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
+        viewModelScope.launch {
+            val cacheKey = "accounts_${cardConfig.cardId}_${cardConfig.timelineRange}"
+            val result = getCachedOrCompute(cacheKey) {
+                cardConfig.computeAccountStats(
+                    accounts = accounts,
+                    transactions = transactions,
+                    engine = cardComputationService,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = exchangeRates,
+                    precision = precision
+                )
+            }
+            _accountsCardData.value = result
+        }
+    }
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
     val sectionOrder: StateFlow<List<AccountsViewSection>> = _sectionOrder.asStateFlow()
@@ -216,6 +342,9 @@ class AccountsViewViewModel(
                 settingsDataStore.decimalPrecision,
                 settingsDataStore.accountsViewSettings
             ) { accounts, allTransactions, analyticsState, precision, accountsViewSettings ->
+                // Invalidate cache when transactions change
+                invalidateAllCache()
+                
                 if (!analyticsState.hasLoadedExchangeRates) {
                     return@combine AccountsViewUiState.Loading
                 }
@@ -327,6 +456,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(fontSize = fontSize)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
@@ -335,6 +465,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(timelineRange = range)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
@@ -343,6 +474,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(layout = layout)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
@@ -351,6 +483,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(showBaseConversion = show)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
@@ -359,6 +492,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(timelineRange = range)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
@@ -367,6 +501,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(showBaseConversion = show)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
@@ -375,6 +510,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(timelineRange = range)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsLayout(cardId: String, layout: String) {
@@ -383,6 +519,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(layout = layout)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
@@ -391,6 +528,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(gridColumns = columns)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
@@ -399,6 +537,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(showAddAccountCard = show)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
@@ -407,6 +546,7 @@ class AccountsViewViewModel(
                 cardConfig.copy(timelineRange = range)
             } else cardConfig
         }
+        invalidateCardCache(cardId)
     }
 
     // Helper functions to compute data for a specific card based on its config

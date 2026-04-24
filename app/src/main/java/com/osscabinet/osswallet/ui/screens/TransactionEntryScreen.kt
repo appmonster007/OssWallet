@@ -52,7 +52,9 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
+import com.osscabinet.ossWallet.ui.util.determineTransactionType
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -1018,8 +1020,7 @@ fun TransactionEntryContent(
                                             Spacer(modifier = Modifier.width(16.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 val displayTitle = currentLinkedTx.note.ifBlank { currentLinkedTx.category }
-                                                val amountSign = if (currentLinkedTx.transactionType == "income") "+" else "-"
-                                                val formattedAmount = "$amountSign${formatCurrencyRight(currentLinkedTx.amount.abs(), currentLinkedTx.currency, precision = decimalPrecision)}"
+                                                val formattedAmount = formatCurrencyRight(currentLinkedTx.amount, currentLinkedTx.currency, precision = decimalPrecision)
 
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
@@ -1294,16 +1295,26 @@ fun TransactionEntryContent(
             }
 
             // Numpad Overlay
-            Numpad(
-                amount = amount,
-                onAmountChange = { amount = it },
-                decimalPrecision = decimalPrecision,
-                onDone = { isNumpadVisible = false },
-                isVisible = isNumpadVisible,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            )
+            if (isNumpadVisible) {
+                CalculatorNumpadV2(
+                    amount = amount,
+                    onAmountChange = { 
+                        amount = it
+                        // Auto-toggle transaction type based on value sign
+                        val typeString = determineTransactionType(it)
+                        transactionType = if (typeString == "income") 1 else 0
+                    },
+                    onTransactionTypeChange = { 
+                        // Convert string to int: "income" -> 1, "expense" -> 0
+                        transactionType = if (it == "income") 1 else 0
+                    },
+                    decimalPrecision = decimalPrecision,
+                    onDone = { isNumpadVisible = false },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                )
+            }
         }
 
         if (showLocationSheet) {
@@ -1613,10 +1624,10 @@ fun TransactionEntryContent(
                                 AeonTransactionItem(
                                     category = tx.category,
                                     account = txAccount?.name ?: "Unknown",
-                                    amount = formatCurrencyRight(tx.amount.abs(), tx.currency, precision = decimalPrecision),
+                                    amount = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision),
                                     balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = decimalPrecision),
                                     balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = decimalPrecision),
-                                    type = if (tx.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                    type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                                     timestamp = formatDateTime(tx.timestamp),
                                     note = tx.note,
                                     tags = tx.tags,

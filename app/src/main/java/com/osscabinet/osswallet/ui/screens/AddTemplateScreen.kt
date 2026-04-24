@@ -26,6 +26,7 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
@@ -324,16 +325,18 @@ fun AddTemplateScreen(
         }
 
         // Numpad Overlay
-        Numpad(
-            amount = amount,
-            onAmountChange = { amount = it },
-            decimalPrecision = decimalPrecision,
-            onDone = { isNumpadVisible = false },
-            isVisible = isNumpadVisible,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        )
+        if (isNumpadVisible) {
+            CalculatorNumpadV2(
+                amount = amount,
+                onAmountChange = { amount = it },
+                onTransactionTypeChange = { /* Not needed for templates */ },
+                decimalPrecision = decimalPrecision,
+                onDone = { isNumpadVisible = false },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
 
         // Background dimming for Sheets
         if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showLabelSheet) {

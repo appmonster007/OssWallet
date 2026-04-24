@@ -34,6 +34,8 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
+import com.osscabinet.ossWallet.ui.util.determineTransactionType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -728,205 +730,14 @@ private fun BalanceEditSheet(
                 }
             }
 
-            // Compact Numpad
-            CompactNumpad(
+            // Calculator Numpad
+            CalculatorNumpadV2(
                 amount = currentBalance,
                 onAmountChange = onBalanceChange,
+                onTransactionTypeChange = { /* Not needed for initial balance */ },
                 decimalPrecision = decimalPrecision,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-private fun CompactNumpad(
-    amount: String,
-    onAmountChange: (String) -> Unit,
-    decimalPrecision: Int,
-    onDone: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var firstOperand by remember { mutableStateOf<BigDecimal?>(null) }
-    var operator by remember { mutableStateOf<String?>(null) }
-    var isEnteringSecondOperand by remember { mutableStateOf(false) }
-
-    fun calculateResult() {
-        if (firstOperand != null && operator != null && amount.isNotEmpty()) {
-            val secondOperand = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            val rawResult = try {
-                when (operator) {
-                    "+" -> firstOperand!!.add(secondOperand)
-                    "−" -> firstOperand!!.subtract(secondOperand)
-                    "×" -> firstOperand!!.multiply(secondOperand)
-                    "÷" -> if (secondOperand.signum() != 0) firstOperand!!.divide(
-                        secondOperand,
-                        decimalPrecision,
-                        java.math.RoundingMode.HALF_UP
-                    ) else BigDecimal.ZERO
-                    else -> secondOperand
-                }
-            } catch (e: Exception) {
-                BigDecimal.ZERO
-            }
-
-            val result = rawResult.abs().stripTrailingZeros()
-            onAmountChange(result.toPlainString())
-            firstOperand = null
-            operator = null
-            isEnteringSecondOperand = false
-        }
-    }
-
-    fun handleNumberInput(input: String) {
-        if (isEnteringSecondOperand) {
-            onAmountChange(if (input == ".") "0." else input)
-            isEnteringSecondOperand = false
-        } else {
-            if (input == ".") {
-                if (!amount.contains(".")) {
-                    onAmountChange(if (amount.isEmpty()) "0." else amount + ".")
-                }
-            } else if (input == "00") {
-                if (amount.isNotEmpty() && amount != "0") {
-                    if (amount.contains(".")) {
-                        if (amount.substringAfter(".").length < decimalPrecision) {
-                            onAmountChange(amount + "00")
-                        }
-                    } else {
-                        onAmountChange(amount + "00")
-                    }
-                }
-            } else {
-                onAmountChange(if (amount == "0") input else amount + input)
-            }
-        }
-    }
-
-    fun handleOperatorInput(op: String) {
-        if (amount.isNotEmpty()) {
-            if (operator != null) calculateResult()
-            firstOperand = amount.toBigDecimalOrNull()
-            operator = op
-            isEnteringSecondOperand = true
-        }
-    }
-
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val operators = listOf("+", "−", "×", "÷")
-
-        @Composable
-        fun NumpadKey(
-            key: String,
-            onClick: () -> Unit,
-            modifier: Modifier = Modifier,
-            color: androidx.compose.ui.graphics.Color? = null,
-            contentColor: androidx.compose.ui.graphics.Color? = null
-        ) {
-            val backgroundColor = color ?: when (key) {
-                in operators -> MaterialTheme.colorScheme.primaryContainer
-                "C", "DEL" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            }
-            val textColor = contentColor ?: if (key in operators) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            }
-
-            Surface(
-                onClick = onClick,
-                modifier = modifier.height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = backgroundColor
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (key == "DEL") {
-                        Icon(
-                            Icons.Rounded.KeyboardBackspace,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = textColor
-                        )
-                    } else if (key == "DONE") {
-                        Icon(
-                            Icons.Rounded.Done,
-                            contentDescription = "Done",
-                            modifier = Modifier.size(24.dp),
-                            tint = textColor
-                        )
-                    } else {
-                        Text(
-                            text = key,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor
-                        )
-                    }
-                }
-            }
-        }
-
-        // Row 1: C, ÷, ×, DEL
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("C", {
-                onAmountChange("")
-                firstOperand = null
-                operator = null
-                isEnteringSecondOperand = false
-            }, Modifier.weight(1f))
-            NumpadKey("÷", { handleOperatorInput("÷") }, Modifier.weight(1f))
-            NumpadKey("×", { handleOperatorInput("×") }, Modifier.weight(1f))
-            NumpadKey("DEL", { if (amount.isNotEmpty()) onAmountChange(amount.dropLast(1)) }, Modifier.weight(1f))
-        }
-        // Row 2: 7, 8, 9, +/-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("7", { handleNumberInput("7") }, Modifier.weight(1f))
-            NumpadKey("8", { handleNumberInput("8") }, Modifier.weight(1f))
-            NumpadKey("9", { handleNumberInput("9") }, Modifier.weight(1f))
-            NumpadKey("+/-", {
-                val current = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                onAmountChange(current.negate().toPlainString())
-            }, Modifier.weight(1f))
-        }
-        // Row 3: 4, 5, 6, −
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("4", { handleNumberInput("4") }, Modifier.weight(1f))
-            NumpadKey("5", { handleNumberInput("5") }, Modifier.weight(1f))
-            NumpadKey("6", { handleNumberInput("6") }, Modifier.weight(1f))
-            NumpadKey("−", { handleOperatorInput("−") }, Modifier.weight(1f))
-        }
-        // Row 4: 1, 2, 3, +
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey("1", { handleNumberInput("1") }, Modifier.weight(1f))
-            NumpadKey("2", { handleNumberInput("2") }, Modifier.weight(1f))
-            NumpadKey("3", { handleNumberInput("3") }, Modifier.weight(1f))
-            NumpadKey("+", { handleOperatorInput("+") }, Modifier.weight(1f))
-        }
-        // Row 5: ., 0, 00, DONE
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumpadKey(".", { handleNumberInput(".") }, Modifier.weight(1f))
-            NumpadKey("0", { handleNumberInput("0") }, Modifier.weight(1f))
-            NumpadKey("00", { handleNumberInput("00") }, Modifier.weight(1f))
-            NumpadKey(
-                key = if (operator != null) "=" else "DONE",
-                onClick = {
-                    if (operator != null) {
-                        calculateResult()
-                    } else {
-                        onDone()
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     }

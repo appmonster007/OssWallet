@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.Numpad
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
@@ -184,15 +185,17 @@ fun EditBudgetScreen(
         }
 
         // Numpad Overlay
-        Numpad(
-            amount = amount,
-            onAmountChange = { amount = it },
-            decimalPrecision = decimalPrecision,
-            onDone = { isNumpadVisible = false },
-            isVisible = isNumpadVisible,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        )
+        if (isNumpadVisible) {
+            CalculatorNumpadV2(
+                amount = amount,
+                onAmountChange = { amount = it },
+                onTransactionTypeChange = { /* Not needed for budgets */ },
+                decimalPrecision = decimalPrecision,
+                onDone = { isNumpadVisible = false },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
     }
 }

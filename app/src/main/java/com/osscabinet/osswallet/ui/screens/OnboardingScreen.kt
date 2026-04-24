@@ -34,7 +34,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.util.determineTransactionType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -731,14 +731,22 @@ private fun BalanceEditSheet(
             }
 
             // Calculator Numpad
-            CalculatorNumpadV2(
-                amount = currentBalance,
-                onAmountChange = onBalanceChange,
-                onTransactionTypeChange = { /* Not needed for initial balance */ },
-                decimalPrecision = decimalPrecision,
-                onDone = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
+            ) {
+                CalculatorNumpad(
+                    amount = currentBalance,
+                    onAmountChange = onBalanceChange,
+                    onTransactionTypeChange = { /* Not needed for initial balance */ },
+                    decimalPrecision = decimalPrecision,
+                    onDone = onDismiss,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
     }
 }

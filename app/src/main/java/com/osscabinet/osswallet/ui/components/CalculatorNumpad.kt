@@ -30,7 +30,7 @@ import java.math.BigDecimal
  * - Calculation history
  */
 @Composable
-fun CalculatorNumpadV2(
+fun CalculatorNumpad(
     amount: String,
     onAmountChange: (String) -> Unit,
     onTransactionTypeChange: ((String) -> Unit)? = null,

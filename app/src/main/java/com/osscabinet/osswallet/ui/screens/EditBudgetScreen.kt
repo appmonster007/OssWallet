@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,18 +12,18 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.EditorialInput
-import com.osscabinet.ossWallet.ui.components.Numpad
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
@@ -186,16 +188,39 @@ fun EditBudgetScreen(
 
         // Numpad Overlay
         if (isNumpadVisible) {
-            CalculatorNumpadV2(
-                amount = amount,
-                onAmountChange = { amount = it },
-                onTransactionTypeChange = { /* Not needed for budgets */ },
-                decimalPrecision = decimalPrecision,
-                onDone = { isNumpadVisible = false },
+            // Background dimming
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isNumpadVisible = false
+                    }
+            )
+            
+            // Numpad
+            Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
+            ) {
+                CalculatorNumpad(
+                    amount = amount,
+                    onAmountChange = { amount = it },
+                    onTransactionTypeChange = { /* Not needed for budgets */ },
+                    decimalPrecision = decimalPrecision,
+                    onDone = { isNumpadVisible = false },
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
     }
 }

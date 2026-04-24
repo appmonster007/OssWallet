@@ -337,7 +337,7 @@ fun DailyHeader(
                         )
                         val netSign = if (netBase >= BigDecimal.ZERO) "+ " else "- "
                         Text(
-                            netSign + formatCurrencyRight(netBase.abs(), baseCurrency, precision),
+                            netSign + formatCurrencyRight(netBase, baseCurrency, precision),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                             color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                             modifier = Modifier.weight(1f)
@@ -395,7 +395,7 @@ fun DailyHeader(
                                     )
                                     val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
                                     Text(
-                                        netSign + formatCurrencyRight(net.abs(), curr, precision),
+                                        netSign + formatCurrencyRight(net, curr, precision),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 10.sp

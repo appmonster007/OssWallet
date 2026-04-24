@@ -851,7 +851,7 @@ fun TransactionEntryContent(
                                             color = MaterialTheme.colorScheme.primary,
                                             maxLines = 1
                                         )
-                                        val convertedText = "+${convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()}"
+                                        val convertedText = convertedAmount.setScale(decimalPrecision, RoundingMode.HALF_UP).toPlainString()
                                         Spacer(modifier = Modifier.width(12.dp))
                                         AdaptiveAmountText(
                                             text = convertedText,

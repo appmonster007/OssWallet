@@ -228,7 +228,7 @@ fun AddTemplateScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else (if (isIncome) "+" else "-") + amount,
+                                    text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else amount,
                                     style = TextStyle(
                                         fontSize = 56.sp,
                                         fontWeight = FontWeight.Black,

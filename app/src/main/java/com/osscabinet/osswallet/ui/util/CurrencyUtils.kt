@@ -11,17 +11,15 @@ import java.util.*
 fun formatCurrencyRight(amount: BigDecimal?, currencyCode: String?, precision: Int = 2): String {
     val validAmount = amount ?: BigDecimal.ZERO
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = validAmount.abs()
-    val absFormatted = formatAmount(absAmount, precision)
-    return if (validAmount.compareTo(BigDecimal.ZERO) < 0) "-$absFormatted $symbol" else "$absFormatted $symbol"
+    val formatted = formatAmount(validAmount, precision)
+    return "$formatted $symbol"
 }
 
 fun formatCurrencyLeft(amount: BigDecimal?, currencyCode: String?, precision: Int = 2): String {
     val validAmount = amount ?: BigDecimal.ZERO
     val symbol = getCurrencySymbol(currencyCode)
-    val absAmount = validAmount.abs()
-    val absFormatted = formatAmount(absAmount, precision)
-    return if (validAmount.compareTo(BigDecimal.ZERO) < 0) "-$symbol$absFormatted" else "$symbol$absFormatted "
+    val formatted = formatAmount(validAmount, precision)
+    return "$symbol$formatted"
 }
 
 fun formatAmount(amount: BigDecimal, precision: Int = 2): String {

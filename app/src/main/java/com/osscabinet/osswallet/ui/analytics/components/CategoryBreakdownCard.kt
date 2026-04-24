@@ -152,7 +152,7 @@ private fun formatCurrency(amount: java.math.BigDecimal): String {
     return if (amount >= java.math.BigDecimal.ZERO) {
         "+$amount"
     } else {
-        "-$amount"
+        amount.toString()
     }
 }
 

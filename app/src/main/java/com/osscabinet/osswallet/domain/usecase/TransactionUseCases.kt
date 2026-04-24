@@ -67,7 +67,7 @@ class TransactionUseCases(
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
 
-        // Calculate running balances for all transactions
+        // Calculate running balances for all transactions first (to ensure accurate balances)
         val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
             .groupBy { it.accountId }
             .flatMap { (accId, accountTransactions) ->
@@ -85,11 +85,8 @@ class TransactionUseCases(
                     )
 
                     val balanceBefore = runningBalance
-                    runningBalance = if (transaction.transactionType == "income") {
-                        runningBalance.add(txAmountInAccountCurrency)
-                    } else {
-                        runningBalance.subtract(txAmountInAccountCurrency)
-                    }
+                    // Amount already carries the sign (positive for income, negative for expense)
+                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
                     TransactionWithBalance(
                         transaction = transaction,
                         balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
@@ -108,7 +105,7 @@ class TransactionUseCases(
         val lastLimitTransactions = transactionsWithBalance.take(limit)
 
         // Return whichever has more transactions
-        return if (transactionsFromLastDays.size >= lastLimitTransactions.size) {
+        return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
             transactionsFromLastDays
         } else {
             lastLimitTransactions

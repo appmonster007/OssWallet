@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
@@ -90,6 +91,27 @@ fun AnalyticsScreen(
         }
     }
 
+    // Helper function to safely get timelineRange from card config
+    fun getTimelineRange(cardConfig: CardConfig): String {
+        return when (cardConfig) {
+            is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> cardConfig.timelineRange.toString()
+            is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> cardConfig.timelineRange.toString()
+            else -> "no_timeline"
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -129,7 +151,7 @@ fun AnalyticsScreen(
             // Analytics Cards from config
             CardReorderableList(
                 items = cardsConfig.cards.sortedBy { it.order },
-                key = { it.cardId },
+                key = { "${it.cardId}_${getTimelineRange(it)}" },
                 onReorder = { reorderedCards ->
                     coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
                 },

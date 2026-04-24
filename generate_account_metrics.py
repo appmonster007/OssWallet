@@ -130,12 +130,32 @@ def calculate_account_metrics(account: Dict[str, Any],
             currency_cash_flow[currency]['expenses']
         )
     
-    # Calculate net cash flow and final balance (using account's base currency only)
+    # Convert all currencies to account's base currency for balance and cashFlow calculations
     account_currency = account['currencyCode']
-    currency_data = currency_cash_flow.get(account_currency, {})
-    total_income = currency_data.get('income', 0.0)
-    total_expenses = currency_data.get('expenses', 0.0)
-    net_cash_flow = total_income - total_expenses
+    total_income_base = 0.0
+    total_expenses_base = 0.0
+    
+    for currency, data in currency_cash_flow.items():
+        if currency == account_currency:
+            income_base = data['income']
+            expenses_base = data['expenses']
+        elif currency == 'INR':
+            rate = EXCHANGE_RATES['INR_to_USD']
+            income_base = data['income'] * rate
+            expenses_base = data['expenses'] * rate
+        elif currency == 'EUR':
+            rate = EXCHANGE_RATES['EUR_to_USD']
+            income_base = data['income'] * rate
+            expenses_base = data['expenses'] * rate
+        else:
+            # For unknown currencies, assume 1:1 with account currency
+            income_base = data['income']
+            expenses_base = data['expenses']
+        
+        total_income_base += income_base
+        total_expenses_base += expenses_base
+    
+    net_cash_flow = total_income_base - total_expenses_base
     final_balance = account['initialBalance'] + net_cash_flow
     net_change = net_cash_flow
     
@@ -170,8 +190,8 @@ def calculate_account_metrics(account: Dict[str, Any],
         'netChange': round(net_change, 2),
         'transactionCount': len(account_transactions),
         'cashFlow': {
-            'totalIncome': round(total_income, 2),
-            'totalExpenses': round(total_expenses, 2),
+            'totalIncome': round(total_income_base, 2),
+            'totalExpenses': round(total_expenses_base, 2),
             'netCashFlow': round(net_cash_flow, 2)
         },
         'multiCurrencyCashFlow': multi_currency_cash_flow,
@@ -179,8 +199,8 @@ def calculate_account_metrics(account: Dict[str, Any],
         'monthlyTrend': [
             {
                 'month': '2024-01',
-                'income': round(total_income, 2),
-                'expenses': round(total_expenses, 2),
+                'income': round(total_income_base, 2),
+                'expenses': round(total_expenses_base, 2),
                 'balance': round(final_balance, 2)
             }
         ]

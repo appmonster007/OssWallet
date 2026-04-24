@@ -35,10 +35,34 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 
+/**
+ * Helper function to filter transactions to recent ones (last N or last X days, whichever is more)
+ * This is the same logic used in TransactionUseCases.getRecentTransactions
+ */
+private fun filterToRecentTransactions(
+    allTransactions: List<TransactionWithBalance>,
+    limit: Int = 20,
+    days: Int = 7
+): List<TransactionWithBalance> {
+    // Get transactions from last 7 days
+    val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+    val transactionsFromLastDays = allTransactions.filter { it.transaction.timestamp >= cutoffTime }
+
+    // Get last 20 transactions
+    val lastLimitTransactions = allTransactions.take(limit)
+
+    // Return whichever has more transactions
+    return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
+        transactionsFromLastDays
+    } else {
+        lastLimitTransactions
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecentActivitiesCard(
-    recentTransactions: List<TransactionWithBalance>,
+    allTransactions: List<TransactionWithBalance>,
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, CategoryEntity>,
     decimalPrecision: Int,
@@ -56,8 +80,18 @@ fun RecentActivitiesCard(
     onClone: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {}
+    onFullSwipeRight: (Long) -> Unit = {},
+    limit: Int = 20,
+    days: Int = 7,
+    applyFilter: Boolean = true
 ) {
+    // Apply recent transactions filter if enabled
+    val recentTransactions = if (applyFilter) {
+        filterToRecentTransactions(allTransactions, limit, days)
+    } else {
+        allTransactions
+    }
+
     val calendar = Calendar.getInstance()
     val groupedByDay = recentTransactions.groupBy {
         calendar.timeInMillis = it.transaction.timestamp

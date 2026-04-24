@@ -158,7 +158,15 @@ class CardManagerViewModel(
                         try {
                             val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
                             if (decoded.cards.isNotEmpty()) {
-                                _cardsConfig.value = decoded
+                                // Migration: Add screenContext to cards that don't have it
+                                val migratedCards = decoded.cards.map { card ->
+                                    migrateScreenContext(card, ScreenContext.DASHBOARD)
+                                }
+                                _cardsConfig.value = DashboardCardsConfig(cards = migratedCards)
+                                // Only save if migration actually changed something
+                                if (needsMigration(decoded.cards, migratedCards)) {
+                                    saveDashboardCards()
+                                }
                             } else {
                                 initializeDefaultDashboardCards()
                             }
@@ -180,7 +188,15 @@ class CardManagerViewModel(
                         try {
                             val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
                             if (decoded.cards.isNotEmpty()) {
-                                _accountDetailCardsConfig.value = decoded
+                                // Migration: Add screenContext to cards that don't have it
+                                val migratedCards = decoded.cards.map { card ->
+                                    migrateScreenContext(card, ScreenContext.ACCOUNT_DETAIL)
+                                }
+                                _accountDetailCardsConfig.value = DashboardCardsConfig(cards = migratedCards)
+                                // Only save if migration actually changed something
+                                if (needsMigration(decoded.cards, migratedCards)) {
+                                    saveAccountDetailCards()
+                                }
                             } else {
                                 initializeDefaultAccountDetailCards()
                             }
@@ -202,7 +218,15 @@ class CardManagerViewModel(
                         try {
                             val decoded = json.decodeFromString<DashboardCardsConfig>(configJson)
                             if (decoded.cards.isNotEmpty()) {
-                                _accountsViewCardsConfig.value = decoded
+                                // Migration: Add screenContext to cards that don't have it
+                                val migratedCards = decoded.cards.map { card ->
+                                    migrateScreenContext(card, ScreenContext.ACCOUNTS_VIEW)
+                                }
+                                _accountsViewCardsConfig.value = DashboardCardsConfig(cards = migratedCards)
+                                // Only save if migration actually changed something
+                                if (needsMigration(decoded.cards, migratedCards)) {
+                                    saveAccountsViewCards()
+                                }
                             } else {
                                 initializeDefaultAccountsViewCards()
                             }
@@ -216,27 +240,87 @@ class CardManagerViewModel(
         }
     }
 
+    /**
+     * Checks if any card needs migration (missing screenContext).
+     * Returns true if migration actually changed any card.
+     */
+    private fun needsMigration(original: List<CardConfig>, migrated: List<CardConfig>): Boolean {
+        return original.zip(migrated).any { (orig, migr) ->
+            // Check if screenContext was added during migration
+            // We compare the original card's screenContext with the migrated one
+            // If they differ, migration occurred
+            when (orig) {
+                is NetWorthCardConfig -> orig.screenContext != (migr as NetWorthCardConfig).screenContext
+                is CurrencyBalancesCardConfig -> orig.screenContext != (migr as CurrencyBalancesCardConfig).screenContext
+                is CashFlowCardConfig -> orig.screenContext != (migr as CashFlowCardConfig).screenContext
+                is AccountsCardConfig -> orig.screenContext != (migr as AccountsCardConfig).screenContext
+                is BudgetsCardConfig -> orig.screenContext != (migr as BudgetsCardConfig).screenContext
+                is CategoryBreakdownCardConfig -> orig.screenContext != (migr as CategoryBreakdownCardConfig).screenContext
+                is TimelineTrajectoryCardConfig -> orig.screenContext != (migr as TimelineTrajectoryCardConfig).screenContext
+                is CategoryExpenseTreemapCardConfig -> orig.screenContext != (migr as CategoryExpenseTreemapCardConfig).screenContext
+                is IncomeExpensesSummaryCardConfig -> orig.screenContext != (migr as IncomeExpensesSummaryCardConfig).screenContext
+                is PeriodComparisonCardConfig -> orig.screenContext != (migr as PeriodComparisonCardConfig).screenContext
+                is CashFlowTrendCardConfig -> orig.screenContext != (migr as CashFlowTrendCardConfig).screenContext
+                is CashFlowProgressCardConfig -> orig.screenContext != (migr as CashFlowProgressCardConfig).screenContext
+                is BalanceForecastCardConfig -> orig.screenContext != (migr as BalanceForecastCardConfig).screenContext
+                is PlannedPaymentsCardConfig -> orig.screenContext != (migr as PlannedPaymentsCardConfig).screenContext
+                is AccountHeroCardConfig -> orig.screenContext != (migr as AccountHeroCardConfig).screenContext
+            }
+        }
+    }
+
+    /**
+     * Migrates card configs to include screenContext if missing.
+     * This handles backward compatibility for existing saved configs.
+     * Each card is treated independently, so multiple instances of the same card type
+     * on the same screen will each get their own screenContext.
+     */
+    private fun migrateScreenContext(card: CardConfig, defaultContext: ScreenContext): CardConfig {
+        return when (card) {
+            is NetWorthCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CurrencyBalancesCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CashFlowCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is AccountsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is BudgetsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CategoryBreakdownCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is TimelineTrajectoryCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CategoryExpenseTreemapCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is IncomeExpensesSummaryCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is PeriodComparisonCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CashFlowTrendCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CashFlowProgressCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is BalanceForecastCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is PlannedPaymentsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is AccountHeroCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+        }
+    }
+
     private fun initializeDefaultDashboardCards() {
         val defaultDashboardCards = listOf(
             NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 0
+                order = 0,
+                screenContext = ScreenContext.DASHBOARD
             ),
             CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 1
+                order = 1,
+                screenContext = ScreenContext.DASHBOARD
             ),
             CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 2
+                order = 2,
+                screenContext = ScreenContext.DASHBOARD
             ),
             AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 3
+                order = 3,
+                screenContext = ScreenContext.DASHBOARD
             ),
             BudgetsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 4
+                order = 4,
+                screenContext = ScreenContext.DASHBOARD
             )
         )
         _cardsConfig.value = DashboardCardsConfig(cards = defaultDashboardCards)
@@ -247,16 +331,19 @@ class CardManagerViewModel(
         val defaultAccountDetailCards = listOf(
             AccountHeroCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 0
+                order = 0,
+                screenContext = ScreenContext.ACCOUNT_DETAIL
             ),
             CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 1,
+                screenContext = ScreenContext.ACCOUNT_DETAIL,
                 accountId = null // Will be set by screen
             ),
             CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 2,
+                screenContext = ScreenContext.ACCOUNT_DETAIL,
                 accountId = null // Will be set by screen
             )
         )
@@ -269,19 +356,23 @@ class CardManagerViewModel(
             NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 0,
+                screenContext = ScreenContext.ACCOUNTS_VIEW,
                 selectedAccountIds = emptyList() // Will be set by screen
             ),
             CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 1
+                order = 1,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             ),
             CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 2
+                order = 2,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             ),
             AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = 3
+                order = 3,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             )
         )
         _accountsViewCardsConfig.value = DashboardCardsConfig(cards = defaultAccountsViewCards)
@@ -315,38 +406,46 @@ class CardManagerViewModel(
         val newCard = when (cardType) {
             DashboardCardType.NET_WORTH -> NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
             )
             DashboardCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
             )
             DashboardCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
             )
             DashboardCardType.ACCOUNTS -> AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
             )
             DashboardCardType.BUDGETS -> BudgetsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
             )
             DashboardCardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.ANALYTICS
             )
             DashboardCardType.TIMELINE_TRAJECTORY -> TimelineTrajectoryCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.ANALYTICS
             )
             DashboardCardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _cardsConfig.value.cards.size
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.ANALYTICS
             )
         }
-        
+
         _cardsConfig.value = _cardsConfig.value.copy(
             cards = _cardsConfig.value.cards + newCard
         )
@@ -373,21 +472,21 @@ class CardManagerViewModel(
         _cardsConfig.value = _cardsConfig.value.copy(
             cards = reorderedCards.mapIndexed { index, card ->
                 when (card) {
-                    is NetWorthCardConfig -> card.copy(order = index)
-                    is CurrencyBalancesCardConfig -> card.copy(order = index)
-                    is CashFlowCardConfig -> card.copy(order = index)
-                    is AccountsCardConfig -> card.copy(order = index)
-                    is BudgetsCardConfig -> card.copy(order = index)
-                    is CategoryBreakdownCardConfig -> card.copy(order = index)
-                    is TimelineTrajectoryCardConfig -> card.copy(order = index)
-                    is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
-                    is IncomeExpensesSummaryCardConfig -> card.copy(order = index)
-                    is PeriodComparisonCardConfig -> card.copy(order = index)
-                    is CashFlowTrendCardConfig -> card.copy(order = index)
-                    is CashFlowProgressCardConfig -> card.copy(order = index)
-                    is BalanceForecastCardConfig -> card.copy(order = index)
-                    is PlannedPaymentsCardConfig -> card.copy(order = index)
-                    is AccountHeroCardConfig -> card.copy(order = index)
+                    is NetWorthCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is AccountsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is BudgetsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CategoryBreakdownCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is TimelineTrajectoryCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CategoryExpenseTreemapCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is IncomeExpensesSummaryCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is PeriodComparisonCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowTrendCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowProgressCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is BalanceForecastCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is PlannedPaymentsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is AccountHeroCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                 }
             }
         )
@@ -405,20 +504,23 @@ class CardManagerViewModel(
         val newCard = when (cardType) {
             AccountDetailCardType.ACCOUNT_HERO -> AccountHeroCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountDetailCardsConfig.value.cards.size
+                order = _accountDetailCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNT_DETAIL
             )
             AccountDetailCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNT_DETAIL,
                 accountId = accountId
             )
             AccountDetailCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNT_DETAIL,
                 accountId = accountId
             )
         }
-        
+
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = _accountDetailCardsConfig.value.cards + newCard
         )
@@ -445,9 +547,9 @@ class CardManagerViewModel(
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = reorderedCards.mapIndexed { index, card ->
                 when (card) {
-                    is AccountHeroCardConfig -> card.copy(order = index)
-                    is CashFlowCardConfig -> card.copy(order = index)
-                    is CurrencyBalancesCardConfig -> card.copy(order = index)
+                    is AccountHeroCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     else -> card
                 }
             }
@@ -466,19 +568,23 @@ class CardManagerViewModel(
             AccountsViewCardType.NET_WORTH -> NetWorthCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountsViewCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNTS_VIEW,
                 selectedAccountIds = emptyList() // Will be set by screen
             )
             AccountsViewCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountsViewCardsConfig.value.cards.size
+                order = _accountsViewCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             )
             AccountsViewCardType.CASH_FLOW -> CashFlowCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountsViewCardsConfig.value.cards.size
+                order = _accountsViewCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             )
             AccountsViewCardType.ACCOUNTS_LIST -> AccountsCardConfig(
                 cardId = UUID.randomUUID().toString(),
-                order = _accountsViewCardsConfig.value.cards.size
+                order = _accountsViewCardsConfig.value.cards.size,
+                screenContext = ScreenContext.ACCOUNTS_VIEW
             )
         }
 
@@ -508,10 +614,10 @@ class CardManagerViewModel(
         _accountsViewCardsConfig.value = _accountsViewCardsConfig.value.copy(
             cards = reorderedCards.mapIndexed { index, card ->
                 when (card) {
-                    is NetWorthCardConfig -> card.copy(order = index)
-                    is CurrencyBalancesCardConfig -> card.copy(order = index)
-                    is CashFlowCardConfig -> card.copy(order = index)
-                    is AccountsCardConfig -> card.copy(order = index)
+                    is NetWorthCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CurrencyBalancesCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is AccountsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     else -> card
                 }
             }

@@ -20,6 +20,18 @@ enum class CardScope {
 }
 
 /**
+ * Screen context identifies which screen a card belongs to.
+ * This ensures card configurations are decoupled across screens.
+ */
+@Serializable
+enum class ScreenContext {
+    DASHBOARD,
+    ACCOUNT_DETAIL,
+    ACCOUNTS_VIEW,
+    ANALYTICS
+}
+
+/**
  * Common settings shared across different card types.
  */
 @Serializable
@@ -41,6 +53,7 @@ sealed class CardConfig : BaseCardConfig {
     abstract override val title: String
     abstract override val isEnabled: Boolean
     abstract override val order: Int
+    abstract override val screenContext: ScreenContext
 }
 
 /**
@@ -53,6 +66,7 @@ data class NetWorthCardConfig(
     override val title: String = "NET WORTH",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val timelineRange: TimelineRange = TimelineRange.AllTime,
     val profileId: Int? = null,
@@ -69,6 +83,7 @@ data class CurrencyBalancesCardConfig(
     override val title: String = "CURRENCY BALANCES",
     override val isEnabled: Boolean = true,
     override val order: Int = 1,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
@@ -85,6 +100,7 @@ data class CashFlowCardConfig(
     override val title: String = "CASH FLOW",
     override val isEnabled: Boolean = true,
     override val order: Int = 2,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
     val accountId: String? = null // For account scope (null = global)
@@ -100,6 +116,7 @@ data class AccountsCardConfig(
     override val title: String = "ACCOUNTS",
     override val isEnabled: Boolean = true,
     override val order: Int = 3,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "grid",
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
@@ -116,6 +133,7 @@ data class BudgetsCardConfig(
     override val title: String = "BUDGETS",
     override val isEnabled: Boolean = true,
     override val order: Int = 4,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showProgressLabels: Boolean = true
 ) : CardConfig()
 
@@ -129,6 +147,7 @@ data class CategoryBreakdownCardConfig(
     override val title: String = "CATEGORY BREAKDOWN",
     override val isEnabled: Boolean = true,
     override val order: Int = 5,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
@@ -145,6 +164,7 @@ data class TimelineTrajectoryCardConfig(
     override val title: String = "TIMELINE TRAJECTORY",
     override val isEnabled: Boolean = true,
     override val order: Int = 6,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
     val showBalance: Boolean = true,
     val showExpense: Boolean = true,
@@ -162,6 +182,7 @@ data class CategoryExpenseTreemapCardConfig(
     override val title: String = "CATEGORY EXPENSES",
     override val isEnabled: Boolean = true,
     override val order: Int = 7,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
     val showLabels: Boolean = true,
     val accountId: String? = null // For account scope (null = global)
@@ -177,6 +198,7 @@ data class IncomeExpensesSummaryCardConfig(
     override val title: String = "INCOME & EXPENSES",
     override val isEnabled: Boolean = true,
     override val order: Int = 8,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
     val showPercentage: Boolean = true,
     val accountId: String? = null
@@ -192,6 +214,7 @@ data class PeriodComparisonCardConfig(
     override val title: String = "PERIOD COMPARISON",
     override val isEnabled: Boolean = true,
     override val order: Int = 9,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
     val selectedTab: String = "Income", // "Cash flow", "Expenses", "Income"
     val accountId: String? = null
@@ -207,6 +230,7 @@ data class CashFlowTrendCardConfig(
     override val title: String = "CASH FLOW TREND",
     override val isEnabled: Boolean = true,
     override val order: Int = 10,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
     val accountId: String? = null
 ) : CardConfig()
@@ -221,6 +245,7 @@ data class CashFlowProgressCardConfig(
     override val title: String = "CASH FLOW",
     override val isEnabled: Boolean = true,
     override val order: Int = 11,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val subtitle: String = "Am I spending less than I make?",
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
     val accountId: String? = null
@@ -236,6 +261,7 @@ data class BalanceForecastCardConfig(
     override val title: String = "BALANCE FORECAST",
     override val isEnabled: Boolean = true,
     override val order: Int = 12,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val subtitle: String = "Will I have enough money?",
     val forecastDays: Int = 30,
     val accountId: String? = null
@@ -251,6 +277,7 @@ data class PlannedPaymentsCardConfig(
     override val title: String = "PLANNED PAYMENTS",
     override val isEnabled: Boolean = true,
     override val order: Int = 13,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val subtitle: String = "Planned Payments by Category",
     val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
     val accountId: String? = null
@@ -266,6 +293,7 @@ data class AccountHeroCardConfig(
     override val title: String = "ACCOUNT HERO",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true
 ) : CardConfig()
 

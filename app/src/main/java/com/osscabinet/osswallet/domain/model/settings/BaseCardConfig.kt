@@ -9,6 +9,7 @@ interface BaseCardConfig {
     val title: String
     val isEnabled: Boolean
     val order: Int
+    val screenContext: ScreenContext
 }
 
 /**

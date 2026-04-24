@@ -26,7 +26,7 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
@@ -326,16 +326,39 @@ fun AddTemplateScreen(
 
         // Numpad Overlay
         if (isNumpadVisible) {
-            CalculatorNumpadV2(
-                amount = amount,
-                onAmountChange = { amount = it },
-                onTransactionTypeChange = { /* Not needed for templates */ },
-                decimalPrecision = decimalPrecision,
-                onDone = { isNumpadVisible = false },
+            // Background dimming
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isNumpadVisible = false
+                    }
+            )
+            
+            // Numpad
+            Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
+            ) {
+                CalculatorNumpad(
+                    amount = amount,
+                    onAmountChange = { amount = it },
+                    onTransactionTypeChange = { /* Not needed for templates */ },
+                    decimalPrecision = decimalPrecision,
+                    onDone = { isNumpadVisible = false },
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
 
         // Background dimming for Sheets

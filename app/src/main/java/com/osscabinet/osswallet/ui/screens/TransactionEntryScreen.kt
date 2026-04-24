@@ -52,7 +52,7 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpadV2
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.util.determineTransactionType
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -1296,24 +1296,47 @@ fun TransactionEntryContent(
 
             // Numpad Overlay
             if (isNumpadVisible) {
-                CalculatorNumpadV2(
-                    amount = amount,
-                    onAmountChange = { 
-                        amount = it
-                        // Auto-toggle transaction type based on value sign
-                        val typeString = determineTransactionType(it)
-                        transactionType = if (typeString == "income") 1 else 0
-                    },
-                    onTransactionTypeChange = { 
-                        // Convert string to int: "income" -> 1, "expense" -> 0
-                        transactionType = if (it == "income") 1 else 0
-                    },
-                    decimalPrecision = decimalPrecision,
-                    onDone = { isNumpadVisible = false },
+                // Background dimming
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            isNumpadVisible = false
+                        }
+                )
+                
+                // Numpad
+                Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                )
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp
+                ) {
+                    CalculatorNumpad(
+                        amount = amount,
+                        onAmountChange = { 
+                            amount = it
+                            // Auto-toggle transaction type based on value sign
+                            val typeString = determineTransactionType(it)
+                            transactionType = if (typeString == "income") 1 else 0
+                        },
+                        onTransactionTypeChange = { 
+                            // Convert string to int: "income" -> 1, "expense" -> 0
+                            transactionType = if (it == "income") 1 else 0
+                        },
+                        decimalPrecision = decimalPrecision,
+                        onDone = { isNumpadVisible = false },
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
             }
         }
 

@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.dashboard.model.*
 import com.osscabinet.ossWallet.domain.formatter.TimelineFormatter
 import com.osscabinet.ossWallet.domain.formatter.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -690,17 +691,39 @@ class DashboardViewModel(
                     )
                 }
 
-                val transactionsWithBalance = transactionUseCases.getRecentTransactions(
-                    allTransactions = allTransactions,
-                    accounts = updatedAccounts,
-                    exchangeRates = rates,
-                    precision = precision
-                )
+                // Calculate all transactions with balance (without filtering)
+                val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
+                    .groupBy { it.accountId }
+                    .flatMap { (accId, accountTransactions) ->
+                        val account = updatedAccounts.find { it.id == accId }
+                        val accountCurrency = account?.currencyCode ?: "USD"
+
+                        var runningBalance = BigDecimal.ZERO
+                        accountTransactions.map { transaction ->
+                            val txAmountInAccountCurrency = CurrencyService.convertAmount(
+                                amount = transaction.amount,
+                                fromCurrency = transaction.currency,
+                                toCurrency = accountCurrency,
+                                exchangeRates = rates,
+                                precision = precision + 4
+                            )
+
+                            val balanceBefore = runningBalance
+                            runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                            TransactionWithBalance(
+                                transaction = transaction,
+                                balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
+                                balanceAfter = runningBalance.setScale(precision, RoundingMode.HALF_UP)
+                            )
+                        }
+                    }
+                    .filter { it.transaction.accountId in updatedAccounts.filter { !it.isArchived }.map { it.id }.toSet() }
+                    .sortedByDescending { it.transaction.timestamp }
 
                 DashboardUiState.Success(
                     accounts = updatedAccounts.filter { !it.isArchived },
                     allTransactions = allTransactions,
-                    recentTransactions = transactionsWithBalance,
+                    allTransactionsWithBalance = transactionsWithBalance,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     currencyTotals = globalCurrencyTotals,
@@ -785,7 +808,7 @@ sealed class DashboardUiState {
     data class Success(
         val accounts: List<Account>,
         val allTransactions: List<Transaction> = emptyList(),
-        val recentTransactions: List<TransactionWithBalance>,
+        val allTransactionsWithBalance: List<TransactionWithBalance>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyTotals: List<CurrencyAggregationItem> = emptyList(),

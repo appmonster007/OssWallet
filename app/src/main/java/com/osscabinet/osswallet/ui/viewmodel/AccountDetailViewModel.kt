@@ -242,19 +242,9 @@ class AccountDetailViewModel(
                     timelineRange = settings.currencyBalancesSection.timelineRange
                 ).first()
 
-                // Get recent transactions using the same logic as dashboard (last 20 or last 7 days, whichever has more)
-                // This is ONLY for the RecentActivitiesCard display, not for card calculations
-                val recentTransactions = transactionUseCases.getRecentTransactions(
-                    allTransactions = accountTransactions,
-                    accounts = listOf(account),
-                    exchangeRates = rates,
-                    precision = precision
-                ).map { it.transaction }
-
                 AccountDetailUiState.Success(
                     account = updatedAccount,
                     allAccountTransactions = accountTransactions,
-                    recentTransactions = recentTransactions,
                     currencyTotals = currencyTotals,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -282,7 +272,6 @@ sealed class AccountDetailUiState {
     data class Success(
         val account: Account,
         val allAccountTransactions: List<Transaction>,
-        val recentTransactions: List<Transaction>,
         val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

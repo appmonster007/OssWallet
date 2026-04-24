@@ -251,24 +251,25 @@ fun AccountDetailScreen(
                         }
                         1 -> {
                             // Transactions tab content using RecentActivitiesCard
-                            val transactionsWithBalanceList = remember(state.recentTransactions, state.account.balance) {
-                                // Calculate running balance from transactions
-                                // Start from zero and apply transactions in reverse order
-                                var currentBalance = BigDecimal.ZERO
-                                state.recentTransactions.sortedByDescending { it.timestamp }.map { tx ->
-                                    val balanceAfter = currentBalance
-                                    val balanceBefore = currentBalance.subtract(tx.amount) // tx.amount is already signed
-                                    currentBalance = balanceBefore
-                                    TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                                }.reversed()
-                            }.sortedByDescending { it.transaction.timestamp }
-
                             val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
                             val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
                             val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
                             val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+
+                            // Calculate running balance for all account transactions
+                            val transactionsWithBalanceList = remember(state.allAccountTransactions, state.account.balance) {
+                                // Calculate running balance from transactions
+                                // Start from zero and apply transactions in reverse order
+                                var currentBalance = BigDecimal.ZERO
+                                state.allAccountTransactions.sortedByDescending { it.timestamp }.map { tx ->
+                                    val balanceAfter = currentBalance
+                                    val balanceBefore = currentBalance.subtract(tx.amount) // tx.amount is already signed
+                                    currentBalance = balanceBefore
+                                    TransactionWithBalance(tx, balanceBefore, balanceAfter)
+                                }.reversed()
+                            }.sortedByDescending { it.transaction.timestamp }
 
                             if (transactionsWithBalanceList.isEmpty()) {
                                 Box(
@@ -293,7 +294,7 @@ fun AccountDetailScreen(
                                 }
                             } else {
                                 RecentActivitiesCard(
-                                    recentTransactions = transactionsWithBalanceList,
+                                    allTransactions = transactionsWithBalanceList,
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
                                     decimalPrecision = state.decimalPrecision,

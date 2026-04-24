@@ -362,10 +362,6 @@ fun DashboardContent(
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
 ) {
-    remember(state.recentTransactions) {
-        state.recentTransactions.map { it.transaction }
-    }
-
     HorizontalPager(
         state = pagerState,
         modifier = Modifier
@@ -670,7 +666,7 @@ fun DashboardContent(
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                 RecentActivitiesCard(
-                    recentTransactions = state.recentTransactions,
+                    allTransactions = state.allTransactionsWithBalance,
                     accountNamesMap = accountMap,
                     categoryMap = categoryMap,
                     decimalPrecision = state.decimalPrecision,

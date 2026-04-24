@@ -118,7 +118,6 @@ fun AnalyticsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
         ) {
             AnalyticsHeroSection(
                 uiState.currentBalance,
@@ -134,6 +133,7 @@ fun AnalyticsScreen(
                 onReorder = { reorderedCards ->
                     coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
                 },
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(32.dp)
             ) { cardConfig, isDragging, dragModifier ->

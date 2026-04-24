@@ -140,8 +140,14 @@ fun AnalyticsScreen(
             ) { cardConfig, isDragging, dragModifier ->
                 val cardWithCallbacks = when (cardConfig) {
                     is CategoryBreakdownCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeCategoryBreakdownCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeCategoryBreakdownForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CategoryBreakdown(
@@ -156,8 +162,15 @@ fun AnalyticsScreen(
                         )
                     }
                     is TimelineTrajectoryCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeTimelineTrajectoryCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeTimelineTrajectoryForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                accounts = uiState.accounts,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.TimelineTrajectory(
@@ -172,8 +185,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is CategoryExpenseTreemapCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeCategoryExpenseTreemapCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeCategoryExpenseTreemapForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CategoryExpenseTreemap(
@@ -188,8 +207,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is IncomeExpensesSummaryCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeIncomeExpensesSummaryCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeIncomeExpensesSummaryForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.IncomeExpensesSummary(
@@ -210,8 +235,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is PeriodComparisonCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computePeriodComparisonCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computePeriodComparisonForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PeriodComparison(
@@ -231,8 +262,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowTrendCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeCashFlowTrendCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeCashFlowTrendForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowTrend(
@@ -250,8 +287,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowProgressCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeCashFlowProgressCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeCashFlowProgressForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowProgress(
@@ -271,8 +314,15 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceForecastCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeBalanceForecastCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeBalanceForecastForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                accounts = uiState.accounts,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceForecast(
@@ -292,8 +342,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is PlannedPaymentsCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computePlannedPaymentsCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computePlannedPaymentsForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PlannedPayments(
@@ -313,8 +369,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is IncomeExpensesBookCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeIncomeExpensesBookCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeIncomeExpensesBookForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.IncomeExpensesBook(
@@ -336,8 +398,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowTableCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeCashFlowTableCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeCashFlowTableForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowTable(
@@ -364,8 +432,14 @@ fun AnalyticsScreen(
                         )
                     }
                     is PlannedPaymentsTimelineCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computePlannedPaymentsTimelineCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computePlannedPaymentsTimelineForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PlannedPaymentsTimeline(
@@ -385,8 +459,15 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceByAccountsCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeBalanceByAccountsCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeBalanceByAccountsForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                accounts = uiState.accounts,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceByAccounts(
@@ -406,8 +487,15 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceTrendCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
-                            value = viewModel.computeBalanceTrendCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                            value = viewModel.computeBalanceTrendForCard(
+                                cardConfig = cardConfig,
+                                allTransactions = uiState.allTransactions,
+                                accounts = uiState.accounts,
+                                baseCurrency = uiState.selectedCurrency,
+                                exchangeRates = uiState.exchangeRates,
+                                precision = decimalPrecision
+                            )
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceTrend(

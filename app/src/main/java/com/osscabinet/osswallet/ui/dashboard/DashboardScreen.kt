@@ -413,7 +413,7 @@ fun DashboardContent(
                     ) { cardConfig, isDragging, dragModifier ->
                         when (cardConfig) {
                             is NetWorthCardConfig -> {
-                                val cardData by produceState<Pair<BigDecimal, CashFlowResult>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val cardData by produceState<Pair<BigDecimal, CashFlowResult>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeNetWorthForCard(
                                         cardConfig = cardConfig,
                                         accounts = state.accounts,
@@ -458,7 +458,7 @@ fun DashboardContent(
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is CurrencyBalancesCardConfig -> {
-                                val currencyTotals by produceState<List<CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val currencyTotals by produceState<List<CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeCurrencyTotalsForCard(
                                         cardConfig = cardConfig,
                                         accounts = state.accounts,
@@ -493,7 +493,7 @@ fun DashboardContent(
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is CashFlowCardConfig -> {
-                                val cashFlowResult by produceState<CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val cashFlowResult by produceState<CashFlowResult?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeCashFlowForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = state.allTransactions,
@@ -524,7 +524,7 @@ fun DashboardContent(
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is AccountsCardConfig -> {
-                                val accountData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val accountData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeAccountStatsForCard(
                                         cardConfig = cardConfig,
                                         accounts = state.accounts,
@@ -534,7 +534,7 @@ fun DashboardContent(
                                         precision = state.decimalPrecision
                                     )
                                 }
-                                
+
                                 accountData?.let { (updatedAccounts, accountStats) ->
                                     AccountsCard(
                                         onManageClick = onManageAccountsClick,
@@ -582,7 +582,7 @@ fun DashboardContent(
 //                                }
                             }
                             is CategoryBreakdownCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeCategoryBreakdownForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = state.allTransactions,
@@ -606,7 +606,7 @@ fun DashboardContent(
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is TimelineTrajectoryCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeTimelineTrajectoryForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = state.allTransactions,
@@ -631,7 +631,7 @@ fun DashboardContent(
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }
                             is CategoryExpenseTreemapCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                                     value = dashboardViewModel.computeCategoryExpenseTreemapForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = state.allTransactions,

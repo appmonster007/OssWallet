@@ -396,7 +396,7 @@ fun DynamicAccountDetailCards(
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
-                    val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                    val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                         value = accountDetailViewModel.computeCashFlowForCard(
                             cardConfig = cardConfig,
                             accountTransactions = state.allAccountTransactions,
@@ -431,7 +431,7 @@ fun DynamicAccountDetailCards(
                     } ?: Box(modifier = Modifier.size(0.dp))
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
-                    val currencyTotals by produceState<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig, key2 = state) {
+                    val currencyTotals by produceState<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
                         value = accountDetailViewModel.computeCurrencyTotalsForCard(
                             cardConfig = cardConfig,
                             account = state.account,

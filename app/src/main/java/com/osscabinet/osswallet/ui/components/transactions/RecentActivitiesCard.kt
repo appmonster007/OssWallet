@@ -97,15 +97,15 @@ fun RecentActivitiesCard(
             val isToday = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
             val displayDate = if (isToday) "Today" else date
 
-            // Calculate currency breakdown for the day
-            val incomeByCurrency = dayTransactions.filter { it.transaction.transactionType == "income" }
+            // Calculate currency breakdown for the day (using signed amounts)
+            val incomeByCurrency = dayTransactions.filter { it.transaction.amount.signum() >= 0 }
                 .groupBy { it.transaction.currency }
                 .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val dayIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, decimalPrecision)
 
-            val expenseByCurrency = dayTransactions.filter { it.transaction.transactionType == "expense" }
+            val expenseByCurrency = dayTransactions.filter { it.transaction.amount.signum() < 0 }
                 .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount.abs()) } }
             val dayExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, decimalPrecision)
 
             val dayNetBase = dayIncomeBase.subtract(dayExpenseBase)
@@ -170,10 +170,10 @@ fun RecentActivitiesCard(
                     AeonTransactionItem(
                         category = transaction.category,
                         account = accountNamesMap[transaction.accountId] ?: "Unknown",
-                        amount = formatCurrencyRight(transaction.amount.abs(), transaction.currency, decimalPrecision),
+                        amount = formatCurrencyRight(transaction.amount, transaction.currency, decimalPrecision),
                         balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
                         balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
-                        type = if (transaction.transactionType == "income") CashFlowType.INCOME else CashFlowType.EXPENSE,
+                        type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                         timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                         note = transaction.note,
                         tags = transaction.tags,

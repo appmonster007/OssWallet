@@ -22,8 +22,8 @@ class BudgetUseCases(
         ) { budgets, transactions ->
             budgets.map { budget ->
                 val spent = transactions
-                    .filter { it.transactionType == "expense" && it.category.equals(budget.category, ignoreCase = true) }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
+                    .filter { it.amount.signum() < 0 && it.category.equals(budget.category, ignoreCase = true) }
+                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount.abs()) }
                 budget.copy(spent = spent.abs())
             }
         }

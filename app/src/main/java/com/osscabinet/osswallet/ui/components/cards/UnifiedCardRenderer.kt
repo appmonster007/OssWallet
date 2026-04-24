@@ -193,7 +193,8 @@ fun UnifiedCardRenderer(
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onCategoryClick = null // Can be added later for navigation
             )
         }
         

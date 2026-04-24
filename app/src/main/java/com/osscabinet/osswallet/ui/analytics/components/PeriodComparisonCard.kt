@@ -1,7 +1,9 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -62,7 +64,7 @@ fun PeriodComparisonCard(
                 fontWeight = FontWeight.Bold
             )
             
-            // Tabs
+            // Interactive Tabs
             Row(
                 modifier = Modifier
                     .padding(vertical = 12.dp)
@@ -80,27 +82,65 @@ fun PeriodComparisonCard(
                                 if (isSelected) AccentBlue else Color.Transparent,
                                 RoundedCornerShape(8.dp)
                             )
+                            .clickable { selectedTab = tab }
                             .padding(8.dp),
                         textAlign = TextAlign.Center,
                         color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }
             
-            // Simple placeholder for line chart
+            // Interactive line chart
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { /* Handle chart click */ },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "Chart visualization coming soon",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Simple line chart visualization using Canvas-like approach
+                    if (data.chartData.isNotEmpty()) {
+                        val maxValue = data.chartData.maxOrNull() ?: 1.0
+                        val minValue = data.chartData.minOrNull() ?: 0.0
+                        val range = maxValue - minValue
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            data.chartData.forEachIndexed { index, value ->
+                                val normalizedHeight = if (range > 0) {
+                                    ((value - minValue) / range).toFloat()
+                                } else {
+                                    0.5f
+                                }
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .width(12.dp)
+                                        .height(100.dp * normalizedHeight.coerceIn(0.1f, 1.0f))
+                                        .background(
+                                            if (index == data.chartData.size - 1) AccentBlue 
+                                            else AccentBlue.copy(alpha = 0.5f),
+                                            RoundedCornerShape(4.dp)
+                                        )
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            "No data available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

@@ -102,6 +102,11 @@ class CardManagerViewModel(
                 is BalanceForecastCardConfig -> null // Analytics-only card
                 is PlannedPaymentsCardConfig -> null // Analytics-only card
                 is AccountHeroCardConfig -> null // Account detail-only card
+                is IncomeExpensesBookCardConfig -> null // Analytics-only card
+                is CashFlowTableCardConfig -> null // Analytics-only card
+                is PlannedPaymentsTimelineCardConfig -> null // Analytics-only card
+                is BalanceByAccountsCardConfig -> null // Analytics-only card
+                is BalanceTrendCardConfig -> null // Analytics-only card
             }
         }
         DashboardCardType.entries.filter { it !in usedTypes }
@@ -265,6 +270,11 @@ class CardManagerViewModel(
                 is BalanceForecastCardConfig -> orig.screenContext != (migr as BalanceForecastCardConfig).screenContext
                 is PlannedPaymentsCardConfig -> orig.screenContext != (migr as PlannedPaymentsCardConfig).screenContext
                 is AccountHeroCardConfig -> orig.screenContext != (migr as AccountHeroCardConfig).screenContext
+                is IncomeExpensesBookCardConfig -> orig.screenContext != (migr as IncomeExpensesBookCardConfig).screenContext
+                is CashFlowTableCardConfig -> orig.screenContext != (migr as CashFlowTableCardConfig).screenContext
+                is PlannedPaymentsTimelineCardConfig -> orig.screenContext != (migr as PlannedPaymentsTimelineCardConfig).screenContext
+                is BalanceByAccountsCardConfig -> orig.screenContext != (migr as BalanceByAccountsCardConfig).screenContext
+                is BalanceTrendCardConfig -> orig.screenContext != (migr as BalanceTrendCardConfig).screenContext
             }
         }
     }
@@ -292,6 +302,11 @@ class CardManagerViewModel(
             is BalanceForecastCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is PlannedPaymentsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is AccountHeroCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is IncomeExpensesBookCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is CashFlowTableCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is PlannedPaymentsTimelineCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is BalanceByAccountsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is BalanceTrendCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
         }
     }
 
@@ -487,6 +502,11 @@ class CardManagerViewModel(
                     is BalanceForecastCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is PlannedPaymentsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is AccountHeroCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is IncomeExpensesBookCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is CashFlowTableCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is PlannedPaymentsTimelineCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is BalanceByAccountsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is BalanceTrendCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                 }
             }
         )

@@ -898,6 +898,21 @@ class DashboardViewModel(
                     is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> {
                         cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
                     }
+                    is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
                 }
             }
             cardStates

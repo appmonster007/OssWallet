@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -330,6 +331,71 @@ fun UnifiedCardRenderer(
                 onShowProgressLabelsChange = { _, _ -> cb.onShowProgressLabelsChange(renderData.config.cardId, renderData.config.showProgressLabels) },
                 onDelete = { cb.onDelete() }
             )
+        }
+        
+        is CardRenderData.IncomeExpensesBook -> {
+            val cb = callbacks as? CardCallbacks.IncomeExpensesBook
+                ?: CardCallbacks.IncomeExpensesBook(
+                    onUpdate = { },
+                    onDelete = {}
+                )
+            
+            // Placeholder - would need to create IncomeExpensesBookCard component
+            Box(modifier = modifier.fillMaxWidth()) {
+                Text("Income & Expenses Book Card - Component not yet implemented")
+            }
+        }
+        
+        is CardRenderData.CashFlowTable -> {
+            val cb = callbacks as? CardCallbacks.CashFlowTable
+                ?: CardCallbacks.CashFlowTable(
+                    onUpdate = { },
+                    onDelete = {}
+                )
+            
+            // Placeholder - would need to create CashFlowTableCard component
+            Box(modifier = modifier.fillMaxWidth()) {
+                Text("Cash Flow Table Card - Component not yet implemented")
+            }
+        }
+        
+        is CardRenderData.PlannedPaymentsTimeline -> {
+            val cb = callbacks as? CardCallbacks.PlannedPaymentsTimeline
+                ?: CardCallbacks.PlannedPaymentsTimeline(
+                    onUpdate = { },
+                    onDelete = {}
+                )
+            
+            // Placeholder - would need to create PlannedPaymentsTimelineCard component
+            Box(modifier = modifier.fillMaxWidth()) {
+                Text("Planned Payments Timeline Card - Component not yet implemented")
+            }
+        }
+        
+        is CardRenderData.BalanceByAccounts -> {
+            val cb = callbacks as? CardCallbacks.BalanceByAccounts
+                ?: CardCallbacks.BalanceByAccounts(
+                    onUpdate = { },
+                    onDelete = {}
+                )
+            
+            // Placeholder - would need to create BalanceByAccountsCard component
+            Box(modifier = modifier.fillMaxWidth()) {
+                Text("Balance By Accounts Card - Component not yet implemented")
+            }
+        }
+        
+        is CardRenderData.BalanceTrend -> {
+            val cb = callbacks as? CardCallbacks.BalanceTrend
+                ?: CardCallbacks.BalanceTrend(
+                    onUpdate = { },
+                    onDelete = {}
+                )
+            
+            // Placeholder - would need to create BalanceTrendCard component
+            Box(modifier = modifier.fillMaxWidth()) {
+                Text("Balance Trend Card - Component not yet implemented")
+            }
         }
     }
 }

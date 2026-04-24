@@ -12,6 +12,11 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
@@ -25,6 +30,10 @@ import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryDat
 import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
@@ -178,5 +187,45 @@ sealed class CardRenderData {
         val budgets: List<com.osscabinet.ossWallet.domain.model.Budget>,
         val baseCurrency: String,
         val precision: Int
+    ) : CardRenderData()
+    
+    /**
+     * Data for IncomeExpensesBook card
+     */
+    data class IncomeExpensesBook(
+        val config: IncomeExpensesBookCardConfig,
+        val data: IncomeExpensesSummaryData
+    ) : CardRenderData()
+    
+    /**
+     * Data for CashFlowTable card
+     */
+    data class CashFlowTable(
+        val config: CashFlowTableCardConfig,
+        val data: CashFlowTableData
+    ) : CardRenderData()
+    
+    /**
+     * Data for PlannedPaymentsTimeline card
+     */
+    data class PlannedPaymentsTimeline(
+        val config: PlannedPaymentsTimelineCardConfig,
+        val data: PlannedPaymentsTimelineData
+    ) : CardRenderData()
+    
+    /**
+     * Data for BalanceByAccounts card
+     */
+    data class BalanceByAccounts(
+        val config: BalanceByAccountsCardConfig,
+        val data: BalanceByAccountsData
+    ) : CardRenderData()
+    
+    /**
+     * Data for BalanceTrend card
+     */
+    data class BalanceTrend(
+        val config: BalanceTrendCardConfig,
+        val data: BalanceTrendData
     ) : CardRenderData()
 }

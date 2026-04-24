@@ -327,8 +327,9 @@ fun AccountsViewScreen(
                             ) { cardConfig, isDragging, dragModifier ->
                             val cardWithCallbacks = when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> {
+                                    var cardNetWorthData by remember { mutableStateOf<Pair<BigDecimal, CashFlowResult>?>(null) }
                                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                                        accountsViewViewModel.computeNetWorthCard(
+                                        cardNetWorthData = accountsViewViewModel.computeNetWorthCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
                                             transactions = state.allTransactions,
@@ -337,7 +338,6 @@ fun AccountsViewScreen(
                                             precision = state.decimalPrecision
                                         )
                                     }
-                                    val cardNetWorthData by accountsViewViewModel.netWorthCardData.collectAsState()
 
                                     cardNetWorthData?.let { (netWorth, cashFlow) ->
                                         val cardUiState = NetWorthUiState.Success(
@@ -363,8 +363,9 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
+                                    var currencyTotals by remember { mutableStateOf<List<CurrencyAggregationItem>?>(null) }
                                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                                        accountsViewViewModel.computeCurrencyBalancesCard(
+                                        currencyTotals = accountsViewViewModel.computeCurrencyBalancesCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
                                             transactions = state.allTransactions,
@@ -373,7 +374,6 @@ fun AccountsViewScreen(
                                             precision = state.decimalPrecision
                                         )
                                     }
-                                    val currencyTotals by accountsViewViewModel.currencyBalancesCardData.collectAsState()
 
                                     currencyTotals?.let { totals ->
                                         CardWithCallbacks(
@@ -401,8 +401,9 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
+                                    var cashFlowResult by remember { mutableStateOf<CashFlowResult?>(null) }
                                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                                        accountsViewViewModel.computeCashFlowCard(
+                                        cashFlowResult = accountsViewViewModel.computeCashFlowCard(
                                             cardConfig = cardConfig,
                                             transactions = state.allTransactions,
                                             baseCurrency = state.baseCurrency,
@@ -410,7 +411,6 @@ fun AccountsViewScreen(
                                             precision = state.decimalPrecision
                                         )
                                     }
-                                    val cashFlowResult by accountsViewViewModel.cashFlowCardData.collectAsState()
 
                                     cashFlowResult?.let { result ->
                                         CardWithCallbacks(
@@ -431,8 +431,9 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> {
+                                    var accountStatsData by remember { mutableStateOf<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null) }
                                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.exchangeRates, state.decimalPrecision) {
-                                        accountsViewViewModel.computeAccountsCard(
+                                        accountStatsData = accountsViewViewModel.computeAccountsCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
                                             transactions = state.allTransactions,
@@ -441,7 +442,6 @@ fun AccountsViewScreen(
                                             precision = state.decimalPrecision
                                         )
                                     }
-                                    val accountStatsData by accountsViewViewModel.accountsCardData.collectAsState()
 
                                     accountStatsData?.let { (accounts, accountStats) ->
                                         CardWithCallbacks(

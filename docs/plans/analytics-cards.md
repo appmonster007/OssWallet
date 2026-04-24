@@ -1,7 +1,9 @@
 # Analytics Cards Implementation Plan
 
 ## Overview
-This document outlines a comprehensive plan to implement three new analytics cards for the Analytics screen that can also be reused on the Dashboard screen. These cards will follow the existing card architecture established in the `CARD_ARCHITECTURE_REDESIGN.md`.
+This document outlines a comprehensive plan to implement three new analytics cards for the Analytics screen that can also be reused on the Dashboard screen. These cards will follow the **generic card architecture** that uses pure suspend functions with LaunchedEffect + remember pattern, as described in `card-architecture-roadmap.md`.
+
+> **Note:** The card system now uses a generic pattern that eliminates the need for shared StateFlows. See the "Creating New Custom Cards" section in `card-architecture-roadmap.md` for the complete guide on adding new cards.
 
 ## New Cards to Implement
 

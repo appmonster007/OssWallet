@@ -406,8 +406,9 @@ fun DynamicAccountDetailCards(
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
+                    var cashFlowResult by remember { mutableStateOf<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(null) }
                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allAccountTransactions, state.account.currencyCode, state.exchangeRates, state.decimalPrecision) {
-                        accountDetailViewModel.computeCashFlowCard(
+                        cashFlowResult = accountDetailViewModel.computeCashFlowCard(
                             cardConfig = cardConfig,
                             transactions = state.allAccountTransactions,
                             baseCurrency = state.account.currencyCode,
@@ -415,7 +416,6 @@ fun DynamicAccountDetailCards(
                             precision = state.decimalPrecision
                         )
                     }
-                    val cashFlowResult by accountDetailViewModel.cashFlowCardData.collectAsState()
 
                     cashFlowResult?.let { result ->
                         CardWithCallbacks(
@@ -440,8 +440,9 @@ fun DynamicAccountDetailCards(
                     }
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
+                    var currencyTotals by remember { mutableStateOf<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(null) }
                     LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allAccountTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        accountDetailViewModel.computeCurrencyBalancesCard(
+                        currencyTotals = accountDetailViewModel.computeCurrencyBalancesCard(
                             cardConfig = cardConfig,
                             accounts = listOf(state.account),
                             transactions = state.allAccountTransactions,
@@ -450,7 +451,6 @@ fun DynamicAccountDetailCards(
                             precision = state.decimalPrecision
                         )
                     }
-                    val currencyTotals by accountDetailViewModel.currencyBalancesCardData.collectAsState()
 
                     currencyTotals?.let { totals ->
                         CardWithCallbacks(

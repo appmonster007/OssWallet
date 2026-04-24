@@ -164,3 +164,46 @@ data class IncomeExpensesSummaryData(
     val precision: Int,
     val categories: List<CategoryItem>
 )
+
+data class CashFlowTableData(
+    val incomeCount: Int,
+    val expenseCount: Int,
+    val incomeAvgDay: BigDecimal,
+    val expenseAvgDay: BigDecimal,
+    val incomeAvgRecord: BigDecimal,
+    val expenseAvgRecord: BigDecimal,
+    val incomeTotal: BigDecimal,
+    val expenseTotal: BigDecimal,
+    val netCashFlow: BigDecimal,
+    val currency: String,
+    val precision: Int
+)
+
+data class PlannedPaymentsTimelineData(
+    val total: BigDecimal,
+    val currency: String,
+    val precision: Int,
+    val weeklyData: List<Pair<String, BigDecimal>>
+)
+
+data class AccountBalanceItem(
+    val accountName: String,
+    val balance: BigDecimal,
+    val currency: String,
+    val isNegative: Boolean
+)
+
+data class BalanceByAccountsData(
+    val totalBalance: BigDecimal,
+    val currency: String,
+    val precision: Int,
+    val accountBalances: List<AccountBalanceItem>
+)
+
+data class BalanceTrendData(
+    val currentBalance: BigDecimal,
+    val percentageChange: String,
+    val currency: String,
+    val precision: Int,
+    val weeklyBalances: List<Double>
+)

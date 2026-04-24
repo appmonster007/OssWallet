@@ -297,6 +297,83 @@ data class AccountHeroCardConfig(
     val showCurrencyBadges: Boolean = true
 ) : CardConfig()
 
+/**
+ * Configuration for Income & Expenses Book card (General Summary)
+ */
+@Serializable
+@SerialName("income_expenses_book")
+data class IncomeExpensesBookCardConfig(
+    override val cardId: String,
+    override val title: String = "INCOME & EXPENSES BOOK",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 14,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val subtitle: String = "Want to see where your money goes?",
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val showShareButton: Boolean = true,
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Cash Flow Table card (Statistical Analysis)
+ */
+@Serializable
+@SerialName("cash_flow_table")
+data class CashFlowTableCardConfig(
+    override val cardId: String,
+    override val title: String = "CASH FLOW TABLE",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 15,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Planned Payments Timeline card (Weekly Bar Chart)
+ */
+@Serializable
+@SerialName("planned_payments_timeline")
+data class PlannedPaymentsTimelineCardConfig(
+    override val cardId: String,
+    override val title: String = "PLANNED PAYMENTS TIMELINE",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 16,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Balance by Accounts card (Liquidity Distribution)
+ */
+@Serializable
+@SerialName("balance_by_accounts")
+data class BalanceByAccountsCardConfig(
+    override val cardId: String,
+    override val title: String = "BALANCE BY ACCOUNTS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 17,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Balance Trend card (Area Chart)
+ */
+@Serializable
+@SerialName("balance_trend")
+data class BalanceTrendCardConfig(
+    override val cardId: String,
+    override val title: String = "BALANCE TREND",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 18,
+    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val accountId: String? = null
+) : CardConfig()
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()

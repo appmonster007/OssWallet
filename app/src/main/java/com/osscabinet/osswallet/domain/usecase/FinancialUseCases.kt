@@ -84,9 +84,10 @@ class FinancialUseCases(
 
         // Start with zero balance
         // Apply filtered transactions to calculate the balance for the selected timeline
+        // Amount already carries the sign (positive for income, negative for expense)
         accountTransactions.forEach { tx ->
             val current = breakdown[tx.currency] ?: BigDecimal.ZERO
-            breakdown[tx.currency] = if (tx.transactionType == "income") current.add(tx.amount) else current.subtract(tx.amount)
+            breakdown[tx.currency] = current.add(tx.amount)
         }
 
         return breakdown.toMap()
@@ -152,7 +153,8 @@ class FinancialUseCases(
             it.currency == currency && 
             (if (isIncome) it.amount.signum() >= 0 else it.amount.signum() < 0)
         }.fold(BigDecimal.ZERO) { acc, t -> 
-            acc.add(if (isIncome) t.amount else t.amount.abs()) 
+            // Amount already carries the sign (positive for income, negative for expense)
+            acc.add(t.amount)
         }
     }
 
@@ -326,9 +328,8 @@ class FinancialUseCases(
      * @return Net flow amount
      */
     private fun calculateNetFlow(transactions: List<Transaction>): BigDecimal {
-        return transactions.fold(BigDecimal.ZERO) { acc, t ->
-            if (t.transactionType == "income") acc.add(t.amount) else acc.subtract(t.amount)
-        }
+        // Amount already carries the sign (positive for income, negative for expense)
+        return transactions.fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
     }
 
     private fun calculateAvgDailyNetFlow(transactions: List<Transaction>, precision: Int = 2): BigDecimal {

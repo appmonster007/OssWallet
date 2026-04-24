@@ -201,7 +201,7 @@ fun AeonFlowBadge(
         modifier = modifier
     ) {
         Text(
-            text = (if (type == CashFlowType.INCOME) "+" else "-") + formatCurrencyRight(amount, currency, precision).trim(),
+            text = formatCurrencyRight(amount, currency, precision).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,

@@ -4,77 +4,77 @@ Initial Balance,5000.00,Initial Balance,0,1735603200000,USD,true,acc_bank,Bank T
 Initial Balance,15000.00,Initial Balance,0,1735603200000,USD,true,acc_savings,Bank Transfer,Self,Opening balance,Personal,,1
 Initial Balance,0.00,Initial Balance,0,1735603200000,USD,true,acc_credit,Credit Card,Self,Opening balance,Personal,,1
 Initial Balance,10000.00,Initial Balance,0,1735603200000,USD,true,acc_invest,Bank Transfer,Self,Opening balance,Personal,,1
-Weekly grocery run at Whole Foods,125.50,Groceries,1,1735689600000,USD,false,acc_cash,Debit Card,Whole Foods,Weekly groceries including organic produce,Personal,,1
-Morning coffee at Starbucks,6.50,Coffee & Snacks,1,1735776000000,USD,false,acc_cash,Cash,Starbucks,Latte and croissant,Personal,,1
-Full tank gas at Shell,52.00,Fuel,2,1735862400000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Work,,1
-Netflix monthly subscription,15.99,Netflix,11,1735948800000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming plan,Subscription,,monthly
+Weekly grocery run at Whole Foods,-125.50,Groceries,1,1735689600000,USD,false,acc_cash,Debit Card,Whole Foods,Weekly groceries including organic produce,Personal,,1
+Morning coffee at Starbucks,-6.50,Coffee & Snacks,1,1735776000000,USD,false,acc_cash,Cash,Starbucks,Latte and croissant,Personal,,1
+Full tank gas at Shell,-52.00,Fuel,2,1735862400000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Work,,1
+Netflix monthly subscription,-15.99,Netflix,11,1735948800000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming plan,Subscription,,monthly
 Monthly salary deposit,5250.00,Salary,8,1736035200000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary after tax,Work,,monthly
-Monthly rent payment,1850.00,Rent,4,1736121600000,USD,false,acc_bank,Bank Transfer,Property Management,2-bedroom apartment,Housing,,monthly
-New laptop from Amazon,1299.99,Electronics,3,1736208000000,USD,false,acc_credit,Credit Card,Amazon,MacBook Pro for work,Work,,1
+Monthly rent payment,-1850.00,Rent,4,1736121600000,USD,false,acc_bank,Bank Transfer,Property Management,2-bedroom apartment,Housing,,monthly
+New laptop from Amazon,-1299.99,Electronics,3,1736208000000,USD,false,acc_credit,Credit Card,Amazon,MacBook Pro for work,Work,,1
 Freelance web development project,1200.00,Freelance,8,1736294400000,USD,true,acc_bank,Bank Transfer,Startup Client,E-commerce website project,Work,,1
-Business lunch with clients,85.00,Dining Out,1,1736380800000,USD,false,acc_cash,Debit Card,The Grill,Client meeting,Work,,1
-Monthly electricity bill,145.00,Electricity,4,1736467200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly usage,Housing,,monthly
-Monthly gym membership,49.99,Gym,6,1736553600000,USD,false,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,,monthly
-Technical programming book,45.99,Books,3,1736640000000,USD,false,acc_cash,Credit Card,Barnes & Noble,Clean Code book,Education,,1
+Business lunch with clients,-85.00,Dining Out,1,1736380800000,USD,false,acc_cash,Debit Card,The Grill,Client meeting,Work,,1
+Monthly electricity bill,-145.00,Electricity,4,1736467200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly usage,Housing,,monthly
+Monthly gym membership,-49.99,Gym,6,1736553600000,USD,false,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,,monthly
+Technical programming book,-45.99,Books,3,1736640000000,USD,false,acc_cash,Credit Card,Barnes & Noble,Clean Code book,Education,,1
 Quarterly performance bonus,2500.00,Salary,8,1736726400000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Q4 bonus,Work,,1
-Trader Joe's weekly groceries,78.25,Groceries,1,1736812800000,USD,false,acc_cash,Debit Card,Trader Joe's,Weekly grocery run,Personal,,1
-Uber to airport,24.50,Rideshare,2,1736899200000,USD,false,acc_credit,Credit Card,Uber,Airport transfer for business trip,Travel,,1
-Monthly phone bill,65.00,Phone,4,1736985600000,USD,false,acc_bank,Bank Transfer,Verizon,Unlimited plan,Housing,,monthly
-Family dinner at Italian restaurant,145.00,Dining Out,1,1737072000000,USD,false,acc_cash,Credit Card,Olive Garden,Family celebration,Family,,1
-Spotify Premium subscription,10.99,Spotify,11,1737158400000,USD,false,acc_credit,Credit Card,Spotify,Monthly music subscription,Subscription,,monthly
-Indian grocery shopping,4200.00,Groceries,1,1737244800000,INR,false,acc_bank,Cash,Local Market,Monthly groceries in India,Personal,,1
+Trader Joe's weekly groceries,-78.25,Groceries,1,1736812800000,USD,false,acc_cash,Debit Card,Trader Joe's,Weekly grocery run,Personal,,1
+Uber to airport,-24.50,Rideshare,2,1736899200000,USD,false,acc_credit,Credit Card,Uber,Airport transfer for business trip,Travel,,1
+Monthly phone bill,-65.00,Phone,4,1736985600000,USD,false,acc_bank,Bank Transfer,Verizon,Unlimited plan,Housing,,monthly
+Family dinner at Italian restaurant,-145.00,Dining Out,1,1737072000000,USD,false,acc_cash,Credit Card,Olive Garden,Family celebration,Family,,1
+Spotify Premium subscription,-10.99,Spotify,11,1737158400000,USD,false,acc_credit,Credit Card,Spotify,Monthly music subscription,Subscription,,monthly
+Indian grocery shopping,-4200.00,Groceries,1,1737244800000,INR,false,acc_bank,Cash,Local Market,Monthly groceries in India,Personal,,1
 Monthly salary in INR,125000.00,Salary,8,1737331200000,INR,true,acc_bank,Bank Transfer,Indian Client,Monthly consulting fee,Work,,monthly
 Monthly transfer to savings,50000.00,Salary,8,1737417600000,INR,true,acc_savings,Bank Transfer,Self,Monthly savings goal,Personal,,monthly
-Hotel booking in Paris,180.00,Hotels,9,1737504000000,EUR,false,acc_bank,Credit Card,Hotel Le Marais,3 nights,Travel,,1
-Train ticket Paris to Lyon,55.00,Public Transit,2,1737590400000,EUR,false,acc_bank,Debit Card,SNCF,TGV first class,Travel,,1
-Louvre Museum entry ticket,17.00,Activities,9,1737676800000,EUR,false,acc_bank,Cash,Louvre,Museum admission,Travel,,1
-Coffee at Cafe de Flore,6.50,Coffee & Snacks,1,1737763200000,EUR,false,acc_bank,Cash,Cafe de Flore,Famous Parisian cafe,Travel,,1
-Monthly phone bill India,1200.00,Phone,4,1737849600000,INR,false,acc_bank,Bank Transfer,Jio,Monthly plan India,Housing,,monthly
-Monthly electricity India,4800.00,Electricity,4,1737936000000,INR,false,acc_bank,Bank Transfer,BESCOM,Monthly electricity India,Housing,,monthly
+Hotel booking in Paris,-180.00,Hotels,9,1737504000000,EUR,false,acc_bank,Credit Card,Hotel Le Marais,3 nights,Travel,,1
+Train ticket Paris to Lyon,-55.00,Public Transit,2,1737590400000,EUR,false,acc_bank,Debit Card,SNCF,TGV first class,Travel,,1
+Louvre Museum entry ticket,-17.00,Activities,9,1737676800000,EUR,false,acc_bank,Cash,Louvre,Museum admission,Travel,,1
+Coffee at Cafe de Flore,-6.50,Coffee & Snacks,1,1737763200000,EUR,false,acc_bank,Cash,Cafe de Flore,Famous Parisian cafe,Travel,,1
+Monthly phone bill India,-1200.00,Phone,4,1737849600000,INR,false,acc_bank,Bank Transfer,Jio,Monthly plan India,Housing,,monthly
+Monthly electricity India,-4800.00,Electricity,4,1737936000000,INR,false,acc_bank,Bank Transfer,BESCOM,Monthly electricity India,Housing,,monthly
 European client payment,950.00,Freelance,8,1738022400000,EUR,true,acc_bank,Bank Transfer,European Startup,Mobile app development,Work,,1
 Bonus savings transfer,100000.00,Salary,8,1738108800000,INR,true,acc_savings,Bank Transfer,Self,Q4 bonus savings,Personal,,1
-Haircut at local barbershop,35.00,Haircut,10,1738195200000,USD,false,acc_cash,Cash,Local Barbershop,Monthly haircut,Personal,,1
-Prescription medication,45.00,Pharmacy,6,1738281600000,USD,false,acc_cash,Debit Card,CVS Pharmacy,Monthly prescription,Health,,1
-Online course subscription,29.99,Courses,7,1738368000000,USD,false,acc_credit,Credit Card,Udemy,Machine learning course,Education,,monthly
-Car oil change,75.00,Car Maintenance,2,1738454400000,USD,false,acc_bank,Debit Card,Jiffy Lube,Full synthetic oil change,Personal,,1
-Clothing purchase at H&M,89.99,Clothing,3,1738540800000,USD,false,acc_credit,Credit Card,H&M,Winter sweater and jeans,Personal,,1
-Home decor purchase from IKEA,245.00,Home & Garden,3,1738627200000,USD,false,acc_credit,Credit Card,IKEA,Shelving unit and decor,Personal,,1
-Parking downtown,12.00,Parking,2,1738713600000,USD,false,acc_cash,Cash,Parking Meter,2 hours parking,Work,,1
-Movie theater tickets,32.00,Movies & Theater,5,1738800000000,USD,false,acc_cash,Debit Card,AMC,Two tickets to new release,Entertainment,,1
-Video game purchase,59.99,Gaming,5,1738886400000,USD,false,acc_credit,Credit Card,Steam,New release game,Entertainment,,1
-Concert tickets,150.00,Concerts & Events,5,1738972800000,USD,false,acc_credit,Credit Card,Ticketmaster,Band concert,Entertainment,,1
-Monthly renter's insurance,25.00,Insurance,4,1739059200000,USD,false,acc_bank,Bank Transfer,Insurance Co,Monthly premium,Housing,,monthly
-Monthly internet bill,79.99,Internet,4,1739145600000,USD,false,acc_bank,Bank Transfer,ISP,Fiber internet,Housing,,monthly
-Water bill,45.00,Water,4,1739232000000,USD,false,acc_bank,Bank Transfer,Water Company,Monthly usage,Housing,,monthly
-Stock investment contribution,500.00,Stocks,12,1739318400000,USD,false,acc_invest,Bank Transfer,Brokerage,Index fund contribution,Investments,,monthly
-Crypto purchase,200.00,Crypto,12,1739404800000,USD,false,acc_invest,Bank Transfer,Crypto Exchange,Bitcoin purchase,Investments,,1
-Spa day treatment,150.00,Spa & Massage,10,1739491200000,USD,false,acc_credit,Credit Card,Day Spa,Relaxation massage,Personal,,1
-Beauty products purchase,85.00,Beauty,10,1739577600000,USD,false,acc_credit,Credit Card,Sephora,Skincare products,Personal,,1
-Adobe Creative Cloud subscription,54.99,Software Subscriptions,11,1739664000000,USD,false,acc_credit,Credit Card,Adobe,Monthly subscription,Work,,monthly
-Google Cloud storage,9.99,Cloud Storage,11,1739750400000,USD,false,acc_credit,Credit Card,Google,100GB storage,Work,,monthly
+Haircut at local barbershop,-35.00,Haircut,10,1738195200000,USD,false,acc_cash,Cash,Local Barbershop,Monthly haircut,Personal,,1
+Prescription medication,-45.00,Pharmacy,6,1738281600000,USD,false,acc_cash,Debit Card,CVS Pharmacy,Monthly prescription,Health,,1
+Online course subscription,-29.99,Courses,7,1738368000000,USD,false,acc_credit,Credit Card,Udemy,Machine learning course,Education,,monthly
+Car oil change,-75.00,Car Maintenance,2,1738454400000,USD,false,acc_bank,Debit Card,Jiffy Lube,Full synthetic oil change,Personal,,1
+Clothing purchase at H&M,-89.99,Clothing,3,1738540800000,USD,false,acc_credit,Credit Card,H&M,Winter sweater and jeans,Personal,,1
+Home decor purchase from IKEA,-245.00,Home & Garden,3,1738627200000,USD,false,acc_credit,Credit Card,IKEA,Shelving unit and decor,Personal,,1
+Parking downtown,-12.00,Parking,2,1738713600000,USD,false,acc_cash,Cash,Parking Meter,2 hours parking,Work,,1
+Movie theater tickets,-32.00,Movies & Theater,5,1738800000000,USD,false,acc_cash,Debit Card,AMC,Two tickets to new release,Entertainment,,1
+Video game purchase,-59.99,Gaming,5,1738886400000,USD,false,acc_credit,Credit Card,Steam,New release game,Entertainment,,1
+Concert tickets,-150.00,Concerts & Events,5,1738972800000,USD,false,acc_credit,Credit Card,Ticketmaster,Band concert,Entertainment,,1
+Monthly renter's insurance,-25.00,Insurance,4,1739059200000,USD,false,acc_bank,Bank Transfer,Insurance Co,Monthly premium,Housing,,monthly
+Monthly internet bill,-79.99,Internet,4,1739145600000,USD,false,acc_bank,Bank Transfer,ISP,Fiber internet,Housing,,monthly
+Water bill,-45.00,Water,4,1739232000000,USD,false,acc_bank,Bank Transfer,Water Company,Monthly usage,Housing,,monthly
+Stock investment contribution,-500.00,Stocks,12,1739318400000,USD,false,acc_invest,Bank Transfer,Brokerage,Index fund contribution,Investments,,monthly
+Crypto purchase,-200.00,Crypto,12,1739404800000,USD,false,acc_invest,Bank Transfer,Crypto Exchange,Bitcoin purchase,Investments,,1
+Spa day treatment,-150.00,Spa & Massage,10,1739491200000,USD,false,acc_credit,Credit Card,Day Spa,Relaxation massage,Personal,,1
+Beauty products purchase,-85.00,Beauty,10,1739577600000,USD,false,acc_credit,Credit Card,Sephora,Skincare products,Personal,,1
+Adobe Creative Cloud subscription,-54.99,Software Subscriptions,11,1739664000000,USD,false,acc_credit,Credit Card,Adobe,Monthly subscription,Work,,monthly
+Google Cloud storage,-9.99,Cloud Storage,11,1739750400000,USD,false,acc_credit,Credit Card,Google,100GB storage,Work,,monthly
 Gift from parents,500.00,Gifts,8,1739836800000,USD,true,acc_bank,Bank Transfer,Parents,Birthday gift,Family,,1
 Product refund,125.00,Refunds,8,1739923200000,USD,true,acc_bank,Bank Transfer,Amazon,Returned item refund,Personal,,1
-Flight to New York,320.00,Flights,9,1740009600000,USD,false,acc_credit,Credit Card,Delta,Round trip flight,Travel,,1
-Car rental in NYC,180.00,Car Rental,9,1740096000000,USD,false,acc_credit,Credit Card,Hertz,3-day rental,Travel,,1
-Museum ticket in NYC,25.00,Activities,9,1740182400000,USD,false,acc_cash,Cash,Met Museum,Admission ticket,Travel,,1
-Dinner in NYC,95.00,Dining Out,1,1740268800000,USD,false,acc_cash,Credit Card,Joe's Pizza,Famous NYC pizza,Travel,,1
-Uber in NYC,18.00,Rideshare,2,1740355200000,USD,false,acc_credit,Credit Card,Uber,Manhattan ride,Travel,,1
-Coffee in NYC,7.50,Coffee & Snacks,1,1740441600000,USD,false,acc_cash,Cash,Blue Bottle Coffee,Morning coffee,Travel,,1
-Monthly water bill,38.00,Water,4,1740528000000,USD,false,acc_bank,Bank Transfer,Water Company,Monthly usage,Housing,,monthly
-Monthly gas bill,68.00,Electricity,4,1740614400000,USD,false,acc_bank,Bank Transfer,Gas Company,Monthly heating,Housing,,monthly
-Monthly gym membership,49.99,Gym,6,1740700800000,USD,false,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,,monthly
-Grocery shopping at Costco,245.00,Groceries,1,1740787200000,USD,false,acc_cash,Debit Card,Costco,Bulk groceries,Personal,,1
-Lunch at work cafeteria,15.00,Dining Out,1,1740873600000,USD,false,acc_cash,Debit Card,Cafeteria,Work lunch,Work,,1
-Gas station fill-up,48.00,Fuel,2,1740960000000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Personal,,1
-Online shopping at Amazon,67.99,Online Shopping,3,1741046400000,USD,false,acc_credit,Credit Card,Amazon,Household items,Personal,,1
-Monthly Netflix subscription,15.99,Netflix,11,1741132800000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming,Subscription,,monthly
-Monthly Spotify subscription,10.99,Spotify,11,1741219200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music,Subscription,,monthly
+Flight to New York,-320.00,Flights,9,1740009600000,USD,false,acc_credit,Credit Card,Delta,Round trip flight,Travel,,1
+Car rental in NYC,-180.00,Car Rental,9,1740096000000,USD,false,acc_credit,Credit Card,Hertz,3-day rental,Travel,,1
+Museum ticket in NYC,-25.00,Activities,9,1740182400000,USD,false,acc_cash,Cash,Met Museum,Admission ticket,Travel,,1
+Dinner in NYC,-95.00,Dining Out,1,1740268800000,USD,false,acc_cash,Credit Card,Joe's Pizza,Famous NYC pizza,Travel,,1
+Uber in NYC,-18.00,Rideshare,2,1740355200000,USD,false,acc_credit,Credit Card,Uber,Manhattan ride,Travel,,1
+Coffee in NYC,-7.50,Coffee & Snacks,1,1740441600000,USD,false,acc_cash,Cash,Blue Bottle Coffee,Morning coffee,Travel,,1
+Monthly water bill,-38.00,Water,4,1740528000000,USD,false,acc_bank,Bank Transfer,Water Company,Monthly usage,Housing,,monthly
+Monthly gas bill,-68.00,Electricity,4,1740614400000,USD,false,acc_bank,Bank Transfer,Gas Company,Monthly heating,Housing,,monthly
+Monthly gym membership,-49.99,Gym,6,1740700800000,USD,false,acc_credit,Credit Card,LA Fitness,Monthly membership,Health,,monthly
+Grocery shopping at Costco,-245.00,Groceries,1,1740787200000,USD,false,acc_cash,Debit Card,Costco,Bulk groceries,Personal,,1
+Lunch at work cafeteria,-15.00,Dining Out,1,1740873600000,USD,false,acc_cash,Debit Card,Cafeteria,Work lunch,Work,,1
+Gas station fill-up,-48.00,Fuel,2,1740960000000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Personal,,1
+Online shopping at Amazon,-67.99,Online Shopping,3,1741046400000,USD,false,acc_credit,Credit Card,Amazon,Household items,Personal,,1
+Monthly Netflix subscription,-15.99,Netflix,11,1741132800000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming,Subscription,,monthly
+Monthly Spotify subscription,-10.99,Spotify,11,1741219200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music,Subscription,,monthly
 Monthly salary deposit,5250.00,Salary,8,1741305600000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,,monthly
-Monthly rent payment,1850.00,Rent,4,1741392000000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,,monthly
-Monthly phone bill,65.00,Phone,4,1741478400000,USD,false,acc_bank,Bank Transfer,Verizon,Monthly phone,Housing,,monthly
-Monthly internet bill,79.99,Internet,4,1741564800000,USD,false,acc_bank,Bank Transfer,ISP,Monthly internet,Housing,,monthly
-Monthly electricity bill,142.00,Electricity,4,1741651200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly electricity,Housing,,monthly
-Stock investment contribution,500.00,Stocks,12,1741737600000,USD,false,acc_invest,Bank Transfer,Brokerage,Monthly investment,Investments,,monthly
-Adobe subscription,54.99,Software Subscriptions,11,1741824000000,USD,false,acc_credit,Credit Card,Adobe,Monthly subscription,Work,,monthly
-Google Cloud storage,9.99,Cloud Storage,11,1741910400000,USD,false,acc_credit,Credit Card,Google,Monthly storage,Work,,monthly
+Monthly rent payment,-1850.00,Rent,4,1741392000000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,,monthly
+Monthly phone bill,-65.00,Phone,4,1741478400000,USD,false,acc_bank,Bank Transfer,Verizon,Monthly phone,Housing,,monthly
+Monthly internet bill,-79.99,Internet,4,1741564800000,USD,false,acc_bank,Bank Transfer,ISP,Monthly internet,Housing,,monthly
+Monthly electricity bill,-142.00,Electricity,4,1741651200000,USD,false,acc_bank,Bank Transfer,Electric Company,Monthly electricity,Housing,,monthly
+Stock investment contribution,-500.00,Stocks,12,1741737600000,USD,false,acc_invest,Bank Transfer,Brokerage,Monthly investment,Investments,,monthly
+Adobe subscription,-54.99,Software Subscriptions,11,1741824000000,USD,false,acc_credit,Credit Card,Adobe,Monthly subscription,Work,,monthly
+Google Cloud storage,-9.99,Cloud Storage,11,1741910400000,USD,false,acc_credit,Credit Card,Google,Monthly storage,Work,,monthly
 

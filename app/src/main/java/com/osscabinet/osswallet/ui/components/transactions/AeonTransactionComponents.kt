@@ -333,7 +333,7 @@ fun AeonWeeklyHeader(
                         )
                         val netSign = if (weekNetBase >= BigDecimal.ZERO) "+ " else "- "
                         Text(
-                            netSign + formatCurrencyRight(weekNetBase.abs(), baseCurrency, precision),
+                            netSign + formatCurrencyRight(weekNetBase, baseCurrency, precision),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
                             color = if (weekNetBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                             modifier = Modifier.weight(1f)
@@ -391,7 +391,7 @@ fun AeonWeeklyHeader(
                                     )
                                     val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
                                     Text(
-                                        netSign + formatCurrencyRight(net.abs(), curr, precision),
+                                        netSign + formatCurrencyRight(net, curr, precision),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 10.sp
@@ -552,7 +552,7 @@ fun AeonTransactionItem(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                (if (type == CashFlowType.INCOME) "+" else "-") + amount,
+                                text = amount,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Black,
                                     fontSize = 15.sp,
@@ -562,7 +562,7 @@ fun AeonTransactionItem(
                             
                             if (convertedAmount != null) {
                                 Text(
-                                    (if (type == CashFlowType.INCOME) "+" else "-") + convertedAmount,
+                                    text = convertedAmount,
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 10.sp

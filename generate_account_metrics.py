@@ -14,8 +14,8 @@ from datetime import datetime
 
 # Exchange rates
 EXCHANGE_RATES = {
-    "INR_to_USD": 1/93.1663,
-    "EUR_to_USD": 1/0.8490
+    "INR_to_USD": 1/94.1701,
+    "EUR_to_USD": 1/0.8553
 }
 
 
@@ -225,29 +225,8 @@ def calculate_global_breakdown(all_transactions: List[Dict[str, Any]]) -> Dict[s
             currency_data[currency]['expenses'] += abs(amount)
         currency_data[currency]['accounts'].add(tx['accountId'])
     
-    # Convert to USD for totals
+    # Build global breakdown with raw values (no currency conversion)
     global_breakdown = {}
-    total_usd_income = 0.0
-    total_usd_expenses = 0.0
-    
-    for currency, data in sorted(currency_data.items()):
-        if currency == 'USD':
-            converted_income = data['income']
-            converted_expenses = data['expenses']
-        elif currency == 'INR':
-            converted_income = data['income'] * EXCHANGE_RATES['INR_to_USD']
-            converted_expenses = data['expenses'] * EXCHANGE_RATES['INR_to_USD']
-        elif currency == 'EUR':
-            converted_income = data['income'] * EXCHANGE_RATES['EUR_to_USD']
-            converted_expenses = data['expenses'] * EXCHANGE_RATES['EUR_to_USD']
-        else:
-            converted_income = data['income']
-            converted_expenses = data['expenses']
-        
-        total_usd_income += converted_income
-        total_usd_expenses += converted_expenses
-    
-    # Build global breakdown with raw values
     for currency, data in sorted(currency_data.items()):
         global_breakdown[currency] = {
             'totalIncome': round(data['income'], 2),
@@ -255,12 +234,6 @@ def calculate_global_breakdown(all_transactions: List[Dict[str, Any]]) -> Dict[s
             'netCashFlow': round(data['income'] - data['expenses'], 2),
             'accountCount': len(data['accounts'])
         }
-    
-    # Update USD breakdown to include converted amounts
-    if 'USD' in global_breakdown:
-        global_breakdown['USD']['totalIncome'] = round(total_usd_income, 2)
-        global_breakdown['USD']['totalExpenses'] = round(total_usd_expenses, 2)
-        global_breakdown['USD']['netCashFlow'] = round(total_usd_income - total_usd_expenses, 2)
     
     return global_breakdown
 

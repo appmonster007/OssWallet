@@ -53,6 +53,10 @@ import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
+import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
@@ -317,7 +321,7 @@ fun AccountsViewScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
                                 animateCards = cardAnimationEnabled
                             ) { cardConfig, isDragging, dragModifier ->
-                            when (cardConfig) {
+                            val cardWithCallbacks = when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewNetWorthCardConfig -> {
                                     var cardNetWorthData by remember { mutableStateOf<Pair<BigDecimal, CashFlowResult>?>(null) }
                                     LaunchedEffect(cardConfig, state) {
@@ -341,18 +345,18 @@ fun AccountsViewScreen(
                                             fontSize = cardConfig.fontSize,
                                             timelineRange = cardConfig.timelineRange
                                         )
-                                        NetWorthCard(
-                                            uiState = cardUiState,
-                                            cardId = cardConfig.cardId,
-                                            fontSize = cardConfig.fontSize,
-                                            timelineRange = cardConfig.timelineRange,
-                                            onFontSizeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthFontSize(cardId, it) },
-                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardNetWorthTimelineRange(cardId, it) },
-                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            headerModifier = dragModifier
+                                        CardWithCallbacks(
+                                            renderData = CardRenderData.AccountsViewNetWorth(
+                                                config = cardConfig,
+                                                uiState = cardUiState
+                                            ),
+                                            callbacks = CardCallbacks.AccountsViewNetWorth(
+                                                onFontSizeChange = { cardId, fontSize -> accountsViewViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
+                                                onTimelineRangeChange = { cardId, range -> accountsViewViewModel.updateCardNetWorthTimelineRange(cardId, range) },
+                                                onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                            )
                                         )
-                                    } ?: Box(modifier = Modifier.size(0.dp))
+                                    }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCurrencyBalancesCardConfig -> {
                                     var currencyTotals by remember { mutableStateOf<List<CurrencyAggregationItem>?>(null) }
@@ -368,30 +372,29 @@ fun AccountsViewScreen(
                                     }
 
                                     currencyTotals?.let { totals ->
-                                        CurrencyBalancesCard(
-                                            currencyTotals = totals,
-                                            baseCurrency = state.baseCurrency,
-                                            cardId = cardConfig.cardId,
-                                            precision = state.decimalPrecision,
-                                            layout = cardConfig.layout,
-                                            showBaseConversion = cardConfig.showBaseConversion,
-                                            timelineRange = cardConfig.timelineRange,
-                                            onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesLayout(cardId, it) },
-                                            onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
-                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
-                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            onCurrencyClick = { currency, timelineRange ->
-                                                val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
-                                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                                    currencies = listOf(currency),
-                                                    startDate = start,
-                                                    endDate = end
-                                                ))
-                                            },
-                                            headerModifier = dragModifier,
-                                            modifier = Modifier.fillMaxWidth()
+                                        CardWithCallbacks(
+                                            renderData = CardRenderData.AccountsViewCurrencyBalances(
+                                                config = cardConfig,
+                                                currencyTotals = totals,
+                                                baseCurrency = state.baseCurrency,
+                                                precision = state.decimalPrecision
+                                            ),
+                                            callbacks = CardCallbacks.AccountsViewCurrencyBalances(
+                                                onLayoutChange = { cardId, layout -> accountsViewViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
+                                                onShowBaseConversionChange = { cardId, show -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show) },
+                                                onTimelineRangeChange = { cardId, range -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range) },
+                                                onCurrencyClick = { currency, timelineRange ->
+                                                    val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                                        currencies = listOf(currency),
+                                                        startDate = start,
+                                                        endDate = end
+                                                    ))
+                                                },
+                                                onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                            )
                                         )
-                                    } ?: Box(modifier = Modifier.size(0.dp))
+                                    }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewCashFlowCardConfig -> {
                                     var cashFlowResult by remember { mutableStateOf<CashFlowResult?>(null) }
@@ -406,24 +409,22 @@ fun AccountsViewScreen(
                                     }
 
                                     cashFlowResult?.let { result ->
-                                        CashFlowCard(
-                                            cashFlowResult = result,
-                                            baseCurrency = state.baseCurrency,
-                                            currentTheme = currentTheme,
-                                            cardId = cardConfig.cardId,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            headerModifier = dragModifier,
-                                            showTitle = true,
-                                            precision = state.decimalPrecision,
-                                            showBaseConversion = cardConfig.showBaseConversion,
-                                            timelineRange = cardConfig.timelineRange,
-                                            onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, it) },
-                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, it) },
-                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
-                                            onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) }
+                                        CardWithCallbacks(
+                                            renderData = CardRenderData.AccountsViewCashFlow(
+                                                config = cardConfig,
+                                                cashFlowResult = result,
+                                                baseCurrency = state.baseCurrency,
+                                                precision = state.decimalPrecision
+                                            ),
+                                            callbacks = CardCallbacks.AccountsViewCashFlow(
+                                                onShowBaseConversionChange = { cardId, show -> accountsViewViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
+                                                onTimelineRangeChange = { cardId, range -> accountsViewViewModel.updateCardCashFlowTimelineRange(cardId, range) },
+                                                onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true)) },
+                                                onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false)) },
+                                                onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                            )
                                         )
-                                    } ?: Box(modifier = Modifier.size(0.dp))
+                                    }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsViewAccountsListCardConfig -> {
                                     val accountStatsData by produceState<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(initialValue = null, key1 = cardConfig, key2 = state) {
@@ -438,31 +439,39 @@ fun AccountsViewScreen(
                                     }
 
                                     accountStatsData?.let { (accounts, accountStats) ->
-                                        AccountsCard(
-                                            onManageClick = { navigate(onManageAccountsClick) },
-                                            onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                            onGridColumnsChange = { cardId, it -> accountsViewViewModel.updateCardAccountsGridColumns(cardId, it) },
-                                            accounts = accounts,
-                                            accountStats = accountStats,
-                                            baseCurrency = state.baseCurrency,
-                                            cardId = cardConfig.cardId,
-                                            currentTheme = currentTheme,
-                                            gridColumns = cardConfig.gridColumns,
-                                            precision = state.decimalPrecision,
-                                            layout = cardConfig.layout,
-                                            onLayoutChange = { cardId, it -> accountsViewViewModel.updateCardAccountsLayout(cardId, it) },
-                                            timelineRange = cardConfig.timelineRange,
-                                            onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardAccountsTimelineRange(cardId, it) },
-                                            showAddAccountCard = cardConfig.showAddAccountCard,
-                                            onShowAddAccountCardChange = { cardId, it -> accountsViewViewModel.updateCardAccountsShowAddAccountCard(cardId, it) },
-                                            onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            headerModifier = dragModifier.fillMaxWidth(),
-                                            modifier = Modifier.fillMaxWidth(),
-                                            settingsTitle = "Accounts List Settings"
+                                        CardWithCallbacks(
+                                            renderData = CardRenderData.AccountsViewAccountsList(
+                                                config = cardConfig,
+                                                accounts = accounts,
+                                                accountStats = accountStats,
+                                                baseCurrency = state.baseCurrency,
+                                                currentTheme = currentTheme,
+                                                precision = state.decimalPrecision
+                                            ),
+                                            callbacks = CardCallbacks.AccountsViewAccountsList(
+                                                onGridColumnsChange = { cardId, columns -> accountsViewViewModel.updateCardAccountsGridColumns(cardId, columns) },
+                                                onLayoutChange = { cardId, layout -> accountsViewViewModel.updateCardAccountsLayout(cardId, layout) },
+                                                onTimelineRangeChange = { cardId, range -> accountsViewViewModel.updateCardAccountsTimelineRange(cardId, range) },
+                                                onManageClick = { navigate(onManageAccountsClick) },
+                                                onAccountClick = { id -> navigate { onAccountClick(id) } },
+                                                onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) }
+                                            )
                                         )
-                                    } ?: Box(modifier = Modifier.size(0.dp))
+                                    }
                                 }
+                                else -> null
                             }
+                            
+                            cardWithCallbacks?.let {
+                                UnifiedCardRenderer(
+                                    renderData = it.renderData,
+                                    callbacks = it.callbacks,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    headerModifier = dragModifier,
+                                    showTitle = true,
+                                    currentTheme = currentTheme
+                                )
+                            } ?: Box(modifier = Modifier.size(0.dp))
                         }
                         }
                     }

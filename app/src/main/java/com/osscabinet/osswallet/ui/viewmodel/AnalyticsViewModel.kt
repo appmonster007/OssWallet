@@ -7,11 +7,25 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryItem
+import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
+import com.osscabinet.ossWallet.ui.analytics.components.PaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.AnalyticsCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
@@ -26,6 +40,16 @@ import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.ui.graphics.Color
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AccentOrange
+import com.osscabinet.ossWallet.ui.theme.AccentPurple
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
@@ -58,6 +82,25 @@ class AnalyticsViewModel(
 
     private val _categoryExpenseTreemapData = MutableStateFlow<List<CategoryExpenseTreemapData>>(emptyList())
     val categoryExpenseTreemapData: StateFlow<List<CategoryExpenseTreemapData>> = _categoryExpenseTreemapData.asStateFlow()
+
+    // New card data states
+    private val _incomeExpensesSummaryData = MutableStateFlow<IncomeExpensesSummaryData?>(null)
+    val incomeExpensesSummaryData: StateFlow<IncomeExpensesSummaryData?> = _incomeExpensesSummaryData.asStateFlow()
+
+    private val _periodComparisonData = MutableStateFlow<PeriodComparisonData?>(null)
+    val periodComparisonData: StateFlow<PeriodComparisonData?> = _periodComparisonData.asStateFlow()
+
+    private val _cashFlowTrendData = MutableStateFlow<CashFlowTrendData?>(null)
+    val cashFlowTrendData: StateFlow<CashFlowTrendData?> = _cashFlowTrendData.asStateFlow()
+
+    private val _cashFlowProgressData = MutableStateFlow<CashFlowProgressData?>(null)
+    val cashFlowProgressData: StateFlow<CashFlowProgressData?> = _cashFlowProgressData.asStateFlow()
+
+    private val _balanceForecastData = MutableStateFlow<BalanceForecastData?>(null)
+    val balanceForecastData: StateFlow<BalanceForecastData?> = _balanceForecastData.asStateFlow()
+
+    private val _plannedPaymentsData = MutableStateFlow<PlannedPaymentsData?>(null)
+    val plannedPaymentsData: StateFlow<PlannedPaymentsData?> = _plannedPaymentsData.asStateFlow()
 
     // Analytics cards config
     val analyticsCardsConfig: StateFlow<AnalyticsCardsConfig> = settingsDataStore.analyticsCardsConfig
@@ -178,6 +221,24 @@ class AnalyticsViewModel(
                         exchangeRates = _uiState.value.exchangeRates,
                         precision = _currentPrecision
                     )
+                }
+                is IncomeExpensesSummaryCardConfig -> {
+                    _incomeExpensesSummaryData.value = computeIncomeExpensesSummary(cardConfig)
+                }
+                is PeriodComparisonCardConfig -> {
+                    _periodComparisonData.value = computePeriodComparison(cardConfig)
+                }
+                is CashFlowTrendCardConfig -> {
+                    _cashFlowTrendData.value = computeCashFlowTrend(cardConfig)
+                }
+                is CashFlowProgressCardConfig -> {
+                    _cashFlowProgressData.value = computeCashFlowProgress(cardConfig)
+                }
+                is BalanceForecastCardConfig -> {
+                    _balanceForecastData.value = computeBalanceForecast(cardConfig)
+                }
+                is PlannedPaymentsCardConfig -> {
+                    _plannedPaymentsData.value = computePlannedPayments(cardConfig)
                 }
                 else -> {}
             }
@@ -311,6 +372,238 @@ class AnalyticsViewModel(
         val updatedConfig = AnalyticsCardsConfig(newOrder)
         settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
     }
+
+    // Computation methods for new card types
+    private fun computeIncomeExpensesSummary(config: IncomeExpensesSummaryCardConfig): IncomeExpensesSummaryData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        // Filter transactions based on timeline range
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        
+        // Convert to base currency
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Calculate totals by category
+        val categoryTotals = convertedTransactions
+            .filter { it.amount.signum() < 0 } // Only expenses
+            .groupBy { it.category ?: "Uncategorized" }
+            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
+        
+        // Calculate total amount
+        val totalAmount = categoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        
+        // Calculate percentage change (simplified - compare with previous period)
+        val percentageChange = "+154%" // Placeholder - would need historical data
+        
+        // Create category items with icons and colors
+        val categories = listOf(
+            "Food & Drinks" to Icons.Default.Restaurant,
+            "Shopping" to Icons.Default.ShoppingCart,
+            "Housing" to Icons.Default.Home,
+            "Transportation" to Icons.Default.DirectionsCar
+        ).mapNotNull { (name, icon) ->
+            val amount = categoryTotals[name]
+            if (amount != null) {
+                CategoryItem(
+                    name = name,
+                    amount = amount,
+                    change = "+5%", // Placeholder
+                    color = when (name) {
+                        "Food & Drinks" -> Color(0xFFFF5722)
+                        "Shopping" -> AccentBlue
+                        "Housing" -> AccentOrange
+                        "Transportation" -> Color(0xFF607D8B)
+                        else -> AccentPurple
+                    },
+                    icon = icon
+                )
+            } else null
+        }.take(4)
+        
+        return IncomeExpensesSummaryData(
+            totalAmount = totalAmount,
+            percentageChange = percentageChange,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            categories = categories
+        )
+    }
+    
+    private fun computePeriodComparison(config: PeriodComparisonCardConfig): PeriodComparisonData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Calculate current value based on selected tab
+        val currentValue = when (config.selectedTab) {
+            "Income" -> convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            "Expenses" -> convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            else -> convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        }
+        
+        // Generate chart data (weekly breakdown)
+        val chartData = listOf(4.0, 12.0, 8.0, 16.0, 20.0, 15.0) // Placeholder - would need actual weekly data
+        
+        return PeriodComparisonData(
+            currentValue = currentValue,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            chartData = chartData
+        )
+    }
+    
+    private fun computeCashFlowTrend(config: CashFlowTrendCardConfig): CashFlowTrendData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Generate bar and line data
+        val barData = listOf(5.0, -10.0, 15.0, -5.0, 10.0) // Placeholder
+        val lineData = listOf(2.0, -4.0, 8.0, -2.0, 5.0) // Placeholder
+        
+        return CashFlowTrendData(
+            barData = barData,
+            lineData = lineData
+        )
+    }
+    
+    private fun computeCashFlowProgress(config: CashFlowProgressCardConfig): CashFlowProgressData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        val income = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val expenses = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        
+        return CashFlowProgressData(
+            income = income,
+            expenses = expenses,
+            currency = selectedCurrency,
+            precision = _currentPrecision
+        )
+    }
+    
+    private fun computeBalanceForecast(config: BalanceForecastCardConfig): BalanceForecastData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentBalance = _uiState.value.currentBalance
+        val avgDailyNetFlow = if (_uiState.value.dailyNetFlow.values.isNotEmpty()) {
+            _uiState.value.dailyNetFlow.values.map { it.toDouble() }.average().toBigDecimal()
+        } else BigDecimal.ZERO
+        
+        // Calculate forecast
+        val forecastBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(config.forecastDays.toLong())))
+        
+        // Generate chart data
+        val chartData = (1..5).map { Triple(it.toDouble(), (it * 1.5).toDouble(), (it * 0.8).toDouble()) }
+        
+        return BalanceForecastData(
+            forecastBalance = forecastBalance,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            chartData = chartData
+        )
+    }
+    
+    private fun computePlannedPayments(config: PlannedPaymentsCardConfig): PlannedPaymentsData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        
+        // Placeholder data - would need actual planned/recurring transactions
+        val payments = listOf(
+            PaymentItem(
+                name = "Financial investments",
+                amount = BigDecimal("210000.00"),
+                progress = 0.6f,
+                color = AccentPurple
+            ),
+            PaymentItem(
+                name = "Transfer, withdraw",
+                amount = BigDecimal("105000.00"),
+                progress = 0.4f,
+                color = PositiveAmountColor
+            ),
+            PaymentItem(
+                name = "Rent",
+                amount = BigDecimal("45675.00"),
+                progress = 0.8f,
+                color = AccentOrange
+            )
+        )
+        
+        val total = payments.fold(BigDecimal.ZERO) { acc, payment -> acc.add(payment.amount) }
+        
+        return PlannedPaymentsData(
+            total = total,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            payments = payments
+        )
+    }
+    
+    private fun filterTransactionsByTimeline(transactions: List<Transaction>, timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange): List<Transaction> {
+        val now = System.currentTimeMillis()
+        return when (timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                val days = when (timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_24H -> 1L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 7L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 30L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 84L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 180L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 365L
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_5_YEARS -> 1825L
+                }
+                val cutoff = now - days * 24 * 60 * 60 * 1000L
+                transactions.filter { it.timestamp >= cutoff }
+            }
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange -> {
+                transactions.filter { it.timestamp >= timelineRange.start && it.timestamp <= timelineRange.end }
+            }
+            else -> transactions
+        }
+    }
 }
 
 fun defaultAnalyticsCardsConfig(): AnalyticsCardsConfig {
@@ -336,9 +629,50 @@ fun defaultAnalyticsCardsConfig(): AnalyticsCardsConfig {
             CategoryExpenseTreemapCardConfig(
                 cardId = "analytics_category_expense_treemap",
                 order = 2,
-                title = "CATEGORY EXPENSE TREEMAP",
+                title = "CATEGORY EXPENSES",
                 timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
                 showLabels = true
+            ),
+            IncomeExpensesSummaryCardConfig(
+                cardId = "analytics_income_expenses_summary",
+                order = 3,
+                title = "INCOME & EXPENSES",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+                showPercentage = true
+            ),
+            PeriodComparisonCardConfig(
+                cardId = "analytics_period_comparison",
+                order = 4,
+                title = "PERIOD COMPARISON",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+                selectedTab = "Income"
+            ),
+            CashFlowTrendCardConfig(
+                cardId = "analytics_cash_flow_trend",
+                order = 5,
+                title = "CASH FLOW TREND",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+            ),
+            CashFlowProgressCardConfig(
+                cardId = "analytics_cash_flow_progress",
+                order = 6,
+                title = "CASH FLOW",
+                subtitle = "Am I spending less than I make?",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)
+            ),
+            BalanceForecastCardConfig(
+                cardId = "analytics_balance_forecast",
+                order = 7,
+                title = "BALANCE FORECAST",
+                subtitle = "Will I have enough money?",
+                forecastDays = 30
+            ),
+            PlannedPaymentsCardConfig(
+                cardId = "analytics_planned_payments",
+                order = 8,
+                title = "PLANNED PAYMENTS",
+                subtitle = "Planned Payments by Category",
+                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
             )
         )
     )

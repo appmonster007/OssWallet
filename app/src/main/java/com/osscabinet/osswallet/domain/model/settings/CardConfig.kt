@@ -167,6 +167,95 @@ data class CategoryExpenseTreemapCardConfig(
     val accountId: String? = null // For account scope (null = global)
 ) : CardConfig()
 
+/**
+ * Configuration for Income & Expenses Summary card
+ */
+@Serializable
+@SerialName("income_expenses_summary")
+data class IncomeExpensesSummaryCardConfig(
+    override val cardId: String,
+    override val title: String = "INCOME & EXPENSES",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 8,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val showPercentage: Boolean = true,
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Period Comparison Line Chart card
+ */
+@Serializable
+@SerialName("period_comparison")
+data class PeriodComparisonCardConfig(
+    override val cardId: String,
+    override val title: String = "PERIOD COMPARISON",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 9,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val selectedTab: String = "Income", // "Cash flow", "Expenses", "Income"
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Cash Flow Trend card (Bar + Line)
+ */
+@Serializable
+@SerialName("cash_flow_trend")
+data class CashFlowTrendCardConfig(
+    override val cardId: String,
+    override val title: String = "CASH FLOW TREND",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 10,
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Cash Flow Progress card
+ */
+@Serializable
+@SerialName("cash_flow_progress")
+data class CashFlowProgressCardConfig(
+    override val cardId: String,
+    override val title: String = "CASH FLOW",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 11,
+    val subtitle: String = "Am I spending less than I make?",
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Balance Forecast card
+ */
+@Serializable
+@SerialName("balance_forecast")
+data class BalanceForecastCardConfig(
+    override val cardId: String,
+    override val title: String = "BALANCE FORECAST",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 12,
+    val subtitle: String = "Will I have enough money?",
+    val forecastDays: Int = 30,
+    val accountId: String? = null
+) : CardConfig()
+
+/**
+ * Configuration for Planned Payments card
+ */
+@Serializable
+@SerialName("planned_payments")
+data class PlannedPaymentsCardConfig(
+    override val cardId: String,
+    override val title: String = "PLANNED PAYMENTS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 13,
+    val subtitle: String = "Planned Payments by Category",
+    val timelineRange: TimelineRange = TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+    val accountId: String? = null
+) : CardConfig()
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()

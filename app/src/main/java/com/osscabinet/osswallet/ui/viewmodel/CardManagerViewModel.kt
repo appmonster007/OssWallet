@@ -96,6 +96,12 @@ class CardManagerViewModel(
                 is CategoryBreakdownCardConfig -> DashboardCardType.CATEGORY_BREAKDOWN
                 is TimelineTrajectoryCardConfig -> DashboardCardType.TIMELINE_TRAJECTORY
                 is CategoryExpenseTreemapCardConfig -> DashboardCardType.CATEGORY_EXPENSE_TREEMAP
+                is IncomeExpensesSummaryCardConfig -> null // Analytics-only card
+                is PeriodComparisonCardConfig -> null // Analytics-only card
+                is CashFlowTrendCardConfig -> null // Analytics-only card
+                is CashFlowProgressCardConfig -> null // Analytics-only card
+                is BalanceForecastCardConfig -> null // Analytics-only card
+                is PlannedPaymentsCardConfig -> null // Analytics-only card
             }
         }
         DashboardCardType.entries.filter { it !in usedTypes }
@@ -370,6 +376,12 @@ class CardManagerViewModel(
                     is CategoryBreakdownCardConfig -> card.copy(order = index)
                     is TimelineTrajectoryCardConfig -> card.copy(order = index)
                     is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                    is IncomeExpensesSummaryCardConfig -> card.copy(order = index)
+                    is PeriodComparisonCardConfig -> card.copy(order = index)
+                    is CashFlowTrendCardConfig -> card.copy(order = index)
+                    is CashFlowProgressCardConfig -> card.copy(order = index)
+                    is BalanceForecastCardConfig -> card.copy(order = index)
+                    is PlannedPaymentsCardConfig -> card.copy(order = index)
                 }
             }
         )

@@ -1,21 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +20,7 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
@@ -168,9 +161,9 @@ fun RecentActivitiesCard(
                 .sorted()
 
             stickyHeader {
-                DailyHeader(
-                    date = displayDate,
-                    transactionCount = dayTransactions.size,
+                TransactionHeader(
+                    title = displayDate,
+                    subtitle = "${dayTransactions.size} transaction${if (dayTransactions.size > 1) "s" else ""}",
                     incomeByCurrency = incomeByCurrency,
                     expenseByCurrency = expenseByCurrency,
                     closingBalancesByCurrency = closingBalancesByCurrency,
@@ -226,234 +219,6 @@ fun RecentActivitiesCard(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
-        }
-    }
-}
-
-@Composable
-fun DailyHeader(
-    date: String,
-    transactionCount: Int,
-    incomeByCurrency: Map<String, BigDecimal>,
-    expenseByCurrency: Map<String, BigDecimal>,
-    closingBalancesByCurrency: Map<String, BigDecimal>,
-    allCurrencies: List<String>,
-    incomeBase: BigDecimal,
-    expenseBase: BigDecimal,
-    netBase: BigDecimal,
-    totalClosingBalanceBase: BigDecimal,
-    baseCurrency: String,
-    precision: Int
-) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val positiveColor = Color(0xFF4CAF50)
-    val negativeColor = MaterialTheme.colorScheme.error
-    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val outlineColor = MaterialTheme.colorScheme.outline
-    val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = surfaceColor
-    ) {
-        Column {
-            HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                // Row 1: Date Info
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = date.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = outlineColor,
-                            letterSpacing = 1.sp,
-                            fontSize = 9.sp
-                        )
-                    )
-                    Text(
-                        text = "$transactionCount transaction${if (transactionCount > 1) "s" else ""}",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = outlineColor.copy(alpha = 0.6f),
-                            letterSpacing = 0.5.sp,
-                            fontSize = 8.sp
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Row 2: Headers
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(modifier = Modifier.width(44.dp))
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf("INCOME", "EXPENSE", "NET").forEach { label ->
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 7.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = outlineColor.copy(alpha = 0.5f),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    Text(
-                        "BALANCE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 7.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = outlineColor.copy(alpha = 0.5f),
-                        modifier = Modifier.width(80.dp),
-                        textAlign = TextAlign.End
-                    )
-                }
-
-                // Row 3: Aggregate (Clickable)
-                val canExpand = allCurrencies.isNotEmpty()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(if (canExpand) Modifier.clickable { isExpanded = !isExpanded } else Modifier)
-                        .padding(vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.width(44.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "TOTAL",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 8.5.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        if (canExpand) {
-                            Icon(
-                                if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(10.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            formatCurrencyRight(incomeBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                            color = positiveColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            formatCurrencyRight(expenseBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                            color = negativeColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        val netSign = if (netBase >= BigDecimal.ZERO) "+ " else "- "
-                        Text(
-                            netSign + formatCurrencyRight(netBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                            color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Text(
-                        formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                        modifier = Modifier.width(80.dp),
-                        textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Row 4+: Breakdown (Expandable)
-                AnimatedVisibility(visible = isExpanded) {
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
-                        allCurrencies.forEach { curr ->
-                            val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
-                            val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
-                            val net = inc.add(exp)
-                            val bal = closingBalancesByCurrency[curr]
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 1.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = curr,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
-                                    ),
-                                    modifier = Modifier.width(44.dp),
-                                    color = outlineColor.copy(alpha = 0.8f)
-                                )
-
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        formatCurrencyRight(inc, curr, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                        color = positiveColor.copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        formatCurrencyRight(exp, curr, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                        color = negativeColor.copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
-                                    Text(
-                                        netSign + formatCurrencyRight(net, curr, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 10.sp
-                                        ),
-                                        color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-
-                                Text(
-                                    if (bal != null) formatCurrencyRight(bal, curr, precision) else "0.00 $curr",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
-                                    ),
-                                    modifier = Modifier.width(80.dp),
-                                    textAlign = TextAlign.End,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

@@ -945,6 +945,24 @@ class DashboardViewModel(
                         // TODO: Create CategoryExpenseTreemapCardViewState
                         cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
                     }
+                    is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
                 }
             }
             cardStates

@@ -406,7 +406,7 @@ fun DynamicAccountDetailCards(
                     )
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
-                    LaunchedEffect(cardConfig, state) {
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allAccountTransactions, state.account.currencyCode, state.exchangeRates, state.decimalPrecision) {
                         accountDetailViewModel.computeCashFlowCard(
                             cardConfig = cardConfig,
                             transactions = state.allAccountTransactions,
@@ -440,7 +440,7 @@ fun DynamicAccountDetailCards(
                     }
                 }
                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
-                    LaunchedEffect(cardConfig, state) {
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allAccountTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         accountDetailViewModel.computeCurrencyBalancesCard(
                             cardConfig = cardConfig,
                             accounts = listOf(state.account),

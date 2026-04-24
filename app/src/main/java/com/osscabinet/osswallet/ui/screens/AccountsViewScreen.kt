@@ -327,7 +327,7 @@ fun AccountsViewScreen(
                             ) { cardConfig, isDragging, dragModifier ->
                             val cardWithCallbacks = when (cardConfig) {
                                 is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig -> {
-                                    LaunchedEffect(cardConfig, state) {
+                                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                                         accountsViewViewModel.computeNetWorthCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
@@ -363,7 +363,7 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
-                                    LaunchedEffect(cardConfig, state) {
+                                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                                         accountsViewViewModel.computeCurrencyBalancesCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,
@@ -401,7 +401,7 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
-                                    LaunchedEffect(cardConfig, state) {
+                                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                                         accountsViewViewModel.computeCashFlowCard(
                                             cardConfig = cardConfig,
                                             transactions = state.allTransactions,
@@ -431,7 +431,7 @@ fun AccountsViewScreen(
                                     }
                                 }
                                 is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig -> {
-                                    LaunchedEffect(cardConfig, state) {
+                                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.exchangeRates, state.decimalPrecision) {
                                         accountsViewViewModel.computeAccountsCard(
                                             cardConfig = cardConfig,
                                             accounts = state.accounts,

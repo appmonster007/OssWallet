@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
 import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData
 import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
@@ -194,7 +195,7 @@ sealed class CardRenderData {
      */
     data class IncomeExpensesBook(
         val config: IncomeExpensesBookCardConfig,
-        val data: IncomeExpensesSummaryData
+        val data: IncomeExpensesBookData
     ) : CardRenderData()
     
     /**

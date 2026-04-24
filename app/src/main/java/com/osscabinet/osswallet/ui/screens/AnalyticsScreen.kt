@@ -3,6 +3,9 @@ package com.osscabinet.ossWallet.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -110,24 +113,30 @@ fun AnalyticsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            item {
-                AnalyticsHeroSection(uiState.currentBalance, uiState.selectedCurrency, decimalPrecision)
-            }
+            AnalyticsHeroSection(
+                uiState.currentBalance,
+                uiState.selectedCurrency,
+                decimalPrecision,
+                modifier = Modifier.padding(24.dp)
+            )
 
             // Analytics Cards from config
-            items(
-                count = cardsConfig.cards.size,
-                key = { index -> cardsConfig.cards.sortedBy { it.order }[index].cardId }
-            ) { index ->
-                val cardConfig = cardsConfig.cards.sortedBy { it.order }[index]
+            CardReorderableList(
+                items = cardsConfig.cards.sortedBy { it.order },
+                key = { it.cardId },
+                onReorder = { reorderedCards ->
+                    coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
+                },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
+            ) { cardConfig, isDragging, dragModifier ->
                 val cardWithCallbacks = when (cardConfig) {
                     is CategoryBreakdownCardConfig -> {
                         var data by remember { mutableStateOf<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(null) }
@@ -269,7 +278,7 @@ fun AnalyticsScreen(
                     }
                     is BalanceForecastCardConfig -> {
                         var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.forecastDays, uiState.selectedCurrency, decimalPrecision) {
+                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, cardConfig.forecastDays, uiState.selectedCurrency, decimalPrecision) {
                             data = viewModel.computeBalanceForecastCard(cardConfig)
                         }
                         CardWithCallbacks(
@@ -282,7 +291,8 @@ fun AnalyticsScreen(
                                     chartData = emptyList<Triple<Double, Double, Double>>()
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -311,19 +321,20 @@ fun AnalyticsScreen(
                         )
                     }
                     is IncomeExpensesBookCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(null) }
+                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(null) }
                         LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
                             data = viewModel.computeIncomeExpensesBookCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.IncomeExpensesBook(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData(
-                                    totalAmount = BigDecimal.ZERO,
-                                    percentageChange = "0%",
+                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData(
+                                    incomeTotal = BigDecimal.ZERO,
+                                    expenseTotal = BigDecimal.ZERO,
+                                    incomeCount = 0,
+                                    expenseCount = 0,
                                     currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    categories = emptyList<com.osscabinet.ossWallet.ui.analytics.components.CategoryItem>()
+                                    precision = decimalPrecision
                                 )
                             ),
                             callbacks = CardCallbacks.AnalyticsWithTimeline(
@@ -440,9 +451,7 @@ fun AnalyticsScreen(
                 }
             }
 
-            item {
-                InsightSection(uiState.selectedCurrency, decimalPrecision)
-            }
+            InsightSection(uiState.selectedCurrency, decimalPrecision, modifier = Modifier.padding(24.dp))
         }
     }
     
@@ -723,8 +732,8 @@ fun AnalyticsScreen(
 }
 
 @Composable
-fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int = 2) {
-    Column {
+fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int = 2, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
         AeonFlowSectionHeader(title = "PROJECTED BALANCE")
         Text(
             formatCurrencyRight(balance, currency, precision),
@@ -745,9 +754,9 @@ fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int =
 }
 
 @Composable
-fun InsightSection(currency: String, precision: Int = 2) {
+fun InsightSection(currency: String, precision: Int = 2, modifier: Modifier = Modifier) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {

@@ -19,6 +19,11 @@ import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendCard
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressCard
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastCard
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsCard
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookCard
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableCard
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineCard
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsCard
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendCard
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
@@ -247,8 +252,12 @@ fun UnifiedCardRenderer(
         }
         
         is CardRenderData.BalanceForecast -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(onDelete = {})
+            val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
+                ?: CardCallbacks.AnalyticsWithTimeline(
+                    onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
+                    onDelete = {}
+                )
             
             BalanceForecastCard(
                 config = renderData.config,
@@ -362,65 +371,85 @@ fun UnifiedCardRenderer(
             val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
                 ?: CardCallbacks.AnalyticsWithTimeline(
                     onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
                     onDelete = {}
                 )
             
-            // Placeholder - would need to create IncomeExpensesBookCard component
-            Box(modifier = modifier.fillMaxWidth()) {
-                Text("Income & Expenses Book Card - Component not yet implemented")
-            }
+            IncomeExpensesBookCard(
+                config = renderData.config,
+                data = renderData.data,
+                modifier = modifier.fillMaxWidth(),
+                onUpdate = { cb.onUpdate(it) },
+                onDelete = { cb.onDelete() }
+            )
         }
         
         is CardRenderData.CashFlowTable -> {
             val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
                 ?: CardCallbacks.AnalyticsWithTimeline(
                     onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
                     onDelete = {}
                 )
             
-            // Placeholder - would need to create CashFlowTableCard component
-            Box(modifier = modifier.fillMaxWidth()) {
-                Text("Cash Flow Table Card - Component not yet implemented")
-            }
+            CashFlowTableCard(
+                config = renderData.config,
+                data = renderData.data,
+                modifier = modifier.fillMaxWidth(),
+                onUpdate = { cb.onUpdate(it) },
+                onDelete = { cb.onDelete() }
+            )
         }
         
         is CardRenderData.PlannedPaymentsTimeline -> {
             val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
                 ?: CardCallbacks.AnalyticsWithTimeline(
                     onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
                     onDelete = {}
                 )
             
-            // Placeholder - would need to create PlannedPaymentsTimelineCard component
-            Box(modifier = modifier.fillMaxWidth()) {
-                Text("Planned Payments Timeline Card - Component not yet implemented")
-            }
+            PlannedPaymentsTimelineCard(
+                config = renderData.config,
+                data = renderData.data,
+                modifier = modifier.fillMaxWidth(),
+                onUpdate = { cb.onUpdate(it) },
+                onDelete = { cb.onDelete() }
+            )
         }
         
         is CardRenderData.BalanceByAccounts -> {
             val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
                 ?: CardCallbacks.AnalyticsWithTimeline(
                     onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
                     onDelete = {}
                 )
             
-            // Placeholder - would need to create BalanceByAccountsCard component
-            Box(modifier = modifier.fillMaxWidth()) {
-                Text("Balance By Accounts Card - Component not yet implemented")
-            }
+            BalanceByAccountsCard(
+                config = renderData.config,
+                data = renderData.data,
+                modifier = modifier.fillMaxWidth(),
+                onUpdate = { cb.onUpdate(it) },
+                onDelete = { cb.onDelete() }
+            )
         }
         
         is CardRenderData.BalanceTrend -> {
             val cb = callbacks as? CardCallbacks.AnalyticsWithTimeline
                 ?: CardCallbacks.AnalyticsWithTimeline(
                     onTimelineRangeChange = { _, _ -> },
+                    onUpdate = {},
                     onDelete = {}
                 )
             
-            // Placeholder - would need to create BalanceTrendCard component
-            Box(modifier = modifier.fillMaxWidth()) {
-                Text("Balance Trend Card - Component not yet implemented")
-            }
+            BalanceTrendCard(
+                config = renderData.config,
+                data = renderData.data,
+                modifier = modifier.fillMaxWidth(),
+                onUpdate = { cb.onUpdate(it) },
+                onDelete = { cb.onDelete() }
+            )
         }
     }
 }

@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.ui.util.convertAmount
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -71,7 +71,7 @@ class TransactionUseCases(
 
                 var runningBalance = BigDecimal.ZERO
                 accountTransactions.map { transaction ->
-                    val txAmountInAccountCurrency = convertAmount(
+                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
                         amount = transaction.amount,
                         fromCurrency = transaction.currency,
                         toCurrency = accountCurrency,

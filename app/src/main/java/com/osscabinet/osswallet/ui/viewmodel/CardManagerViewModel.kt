@@ -342,15 +342,6 @@ class CardManagerViewModel(
         saveDashboardCards()
     }
 
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use addDashboardCard with DashboardCardType enum instead.
-     */
-    @Deprecated("Use addDashboardCard with DashboardCardType enum instead")
-    fun addCard(cardType: String) {
-        DashboardCardType.fromSerialName(cardType)?.let { addDashboardCard(it) }
-    }
-
     fun removeCard(cardId: String) {
         _cardsConfig.value = _cardsConfig.value.copy(
             cards = _cardsConfig.value.cards.filter { it.cardId != cardId }
@@ -412,15 +403,6 @@ class CardManagerViewModel(
         saveAccountDetailCards()
     }
 
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use addAccountDetailCard with AccountDetailCardType enum instead.
-     */
-    @Deprecated("Use addAccountDetailCard with AccountDetailCardType enum instead")
-    fun addAccountDetailCard(cardType: String) {
-        AccountDetailCardType.fromSerialName(cardType)?.let { addAccountDetailCard(it) }
-    }
-
     fun removeAccountDetailCard(cardId: String) {
         _accountDetailCardsConfig.value = _accountDetailCardsConfig.value.copy(
             cards = _accountDetailCardsConfig.value.cards.filter { it.cardId != cardId }
@@ -479,15 +461,6 @@ class CardManagerViewModel(
             cards = _accountsViewCardsConfig.value.cards + newCard
         )
         saveAccountsViewCards()
-    }
-
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use addAccountsViewCard with AccountsViewCardType enum instead.
-     */
-    @Deprecated("Use addAccountsViewCard with AccountsViewCardType enum instead")
-    fun addAccountsViewCard(cardType: String) {
-        AccountsViewCardType.fromSerialName(cardType)?.let { addAccountsViewCard(it) }
     }
 
     fun removeAccountsViewCard(cardId: String) {

@@ -66,6 +66,31 @@ fun FilterSheetContent(
         }
     }
 
+    fun combineFiltersWithOrLogic(filters: List<TransactionFilter>): TransactionFilter {
+        if (filters.isEmpty()) return TransactionFilter()
+        if (filters.size == 1) return filters[0]
+
+        return TransactionFilter(
+            queryNote = filters.mapNotNull { it.queryNote }.takeIf { it.isNotEmpty() }?.joinToString("|"),
+            isNoteRegex = filters.any { it.isNoteRegex },
+            queryPayee = filters.mapNotNull { it.queryPayee }.takeIf { it.isNotEmpty() }?.joinToString("|"),
+            isPayeeRegex = filters.any { it.isPayeeRegex },
+            categoryIds = filters.flatMap { it.categoryIds }.distinct(),
+            accountIds = filters.flatMap { it.accountIds }.distinct(),
+            startDate = filters.mapNotNull { it.startDate }.minOrNull(),
+            endDate = filters.mapNotNull { it.endDate }.maxOrNull(),
+            paymentMethods = filters.flatMap { it.paymentMethods }.distinct(),
+            hasWarranty = if (filters.any { it.hasWarranty == null }) null else filters.any { it.hasWarranty == true },
+            warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.minOrNull(),
+            warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.maxOrNull(),
+            minAmount = filters.mapNotNull { it.minAmount }.minOrNull(),
+            maxAmount = filters.mapNotNull { it.maxAmount }.maxOrNull(),
+            transactionType = if (filters.mapNotNull { it.transactionType }.distinct().size > 1) null else filters.firstOrNull()?.transactionType,
+            currencies = filters.flatMap { it.currencies }.distinct(),
+            statuses = filters.flatMap { it.statuses }.distinct()
+        )
+    }
+
     // Combine multiple filters from selected presets using TransactionFilter
     fun updateFilterFromSelectedPresets() {
         if (selectedFilterIds.isEmpty()) {
@@ -80,9 +105,7 @@ fun FilterSheetContent(
             .map { it.toDomain() }
 
         // Combine all filters using OR logic (union of filters)
-        // For now, use the first filter as a simple approach
-        // TODO: Implement proper OR logic for combining multiple TransactionFilters
-        localFilter = filters.firstOrNull() ?: TransactionFilter()
+        localFilter = combineFiltersWithOrLogic(filters)
         applyFilterWithDebounce(localFilter, debounceMs = 0)
     }
 

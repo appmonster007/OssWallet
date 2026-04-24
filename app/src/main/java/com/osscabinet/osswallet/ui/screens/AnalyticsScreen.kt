@@ -91,27 +91,6 @@ fun AnalyticsScreen(
         }
     }
 
-    // Helper function to safely get timelineRange from card config
-    fun getTimelineRange(cardConfig: CardConfig): String {
-        return when (cardConfig) {
-            is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> cardConfig.timelineRange.toString()
-            is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> cardConfig.timelineRange.toString()
-            else -> "no_timeline"
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -151,7 +130,7 @@ fun AnalyticsScreen(
             // Analytics Cards from config
             CardReorderableList(
                 items = cardsConfig.cards.sortedBy { it.order },
-                key = { "${it.cardId}_${getTimelineRange(it)}" },
+                key = { it.cardId },
                 onReorder = { reorderedCards ->
                     coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
                 },
@@ -161,14 +140,13 @@ fun AnalyticsScreen(
             ) { cardConfig, isDragging, dragModifier ->
                 val cardWithCallbacks = when (cardConfig) {
                     is CategoryBreakdownCardConfig -> {
-                        var data by remember { mutableStateOf<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, uiState.exchangeRates, decimalPrecision) {
-                            data = viewModel.computeCategoryBreakdownCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeCategoryBreakdownCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CategoryBreakdown(
                                 config = cardConfig,
-                                data = data ?: emptyList()
+                                data = cardData ?: emptyList()
                             ),
                             callbacks = CardCallbacks.AnalyticsWithTimeline(
                                 onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
@@ -178,14 +156,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is TimelineTrajectoryCardConfig -> {
-                        var data by remember { mutableStateOf<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, uiState.exchangeRates, decimalPrecision) {
-                            data = viewModel.computeTimelineTrajectoryCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeTimelineTrajectoryCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.TimelineTrajectory(
                                 config = cardConfig,
-                                data = data ?: emptyList()
+                                data = cardData ?: emptyList()
                             ),
                             callbacks = CardCallbacks.AnalyticsWithTimeline(
                                 onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
@@ -195,14 +172,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is CategoryExpenseTreemapCardConfig -> {
-                        var data by remember { mutableStateOf<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, uiState.exchangeRates, decimalPrecision) {
-                            data = viewModel.computeCategoryExpenseTreemapCard(cardConfig)
+                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeCategoryExpenseTreemapCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CategoryExpenseTreemap(
                                 config = cardConfig,
-                                data = data ?: emptyList()
+                                data = cardData ?: emptyList()
                             ),
                             callbacks = CardCallbacks.AnalyticsWithTimeline(
                                 onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
@@ -212,14 +188,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is IncomeExpensesSummaryCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeIncomeExpensesSummaryCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeIncomeExpensesSummaryCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.IncomeExpensesSummary(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData(
                                     totalAmount = BigDecimal.ZERO,
                                     percentageChange = "0%",
                                     currency = uiState.selectedCurrency,
@@ -235,14 +210,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is PeriodComparisonCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computePeriodComparisonCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computePeriodComparisonCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PeriodComparison(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData(
                                     currentValue = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
                                     precision = decimalPrecision,
@@ -257,14 +231,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowTrendCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeCashFlowTrendCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeCashFlowTrendCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowTrend(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData(
                                     barData = emptyList<Double>(),
                                     lineData = emptyList<Double>()
                                 )
@@ -277,14 +250,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowProgressCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeCashFlowProgressCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeCashFlowProgressCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowProgress(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData(
                                     income = BigDecimal.ZERO,
                                     expenses = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
@@ -299,14 +271,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceForecastCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, cardConfig.forecastDays, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeBalanceForecastCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeBalanceForecastCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceForecast(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData(
                                     forecastBalance = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
                                     precision = decimalPrecision,
@@ -321,14 +292,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is PlannedPaymentsCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computePlannedPaymentsCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computePlannedPaymentsCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PlannedPayments(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData(
                                     total = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
                                     precision = decimalPrecision,
@@ -343,14 +313,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is IncomeExpensesBookCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeIncomeExpensesBookCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeIncomeExpensesBookCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.IncomeExpensesBook(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData(
                                     incomeTotal = BigDecimal.ZERO,
                                     expenseTotal = BigDecimal.ZERO,
                                     incomeCount = 0,
@@ -367,14 +336,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is CashFlowTableCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeCashFlowTableCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeCashFlowTableCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.CashFlowTable(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData(
                                     incomeCount = 0,
                                     expenseCount = 0,
                                     incomeAvgDay = BigDecimal.ZERO,
@@ -396,14 +364,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is PlannedPaymentsTimelineCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computePlannedPaymentsTimelineCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computePlannedPaymentsTimelineCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.PlannedPaymentsTimeline(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData(
                                     total = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
                                     precision = decimalPrecision,
@@ -418,14 +385,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceByAccountsCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeBalanceByAccountsCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeBalanceByAccountsCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceByAccounts(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData(
                                     totalBalance = BigDecimal.ZERO,
                                     currency = uiState.selectedCurrency,
                                     precision = decimalPrecision,
@@ -440,14 +406,13 @@ fun AnalyticsScreen(
                         )
                     }
                     is BalanceTrendCardConfig -> {
-                        var data by remember { mutableStateOf<com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData?>(null) }
-                        LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, uiState.selectedCurrency, decimalPrecision) {
-                            data = viewModel.computeBalanceTrendCard(cardConfig)
+                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = cardsConfig) {
+                            value = viewModel.computeBalanceTrendCard(cardConfig)
                         }
                         CardWithCallbacks(
                             renderData = CardRenderData.BalanceTrend(
                                 config = cardConfig,
-                                data = data ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData(
+                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData(
                                     currentBalance = BigDecimal.ZERO,
                                     percentageChange = "0%",
                                     currency = uiState.selectedCurrency,

@@ -37,13 +37,31 @@ data class CashFlowResult(
     val netInBase: BigDecimal,
     val breakdown: List<CashFlowBreakdownItem>,
     val filteredTransactions: List<Transaction>
-)
+) {
+    companion object {
+        fun empty() = CashFlowResult(
+            totalIncomeInBase = BigDecimal.ZERO,
+            totalExpensesInBase = BigDecimal.ZERO,
+            netInBase = BigDecimal.ZERO,
+            breakdown = emptyList(),
+            filteredTransactions = emptyList()
+        )
+    }
+}
 
 data class CurrencyAggregationItem(
     val currency: String,
     val amount: BigDecimal,
     val amountInBase: BigDecimal
-)
+) {
+    companion object {
+        fun empty(currency: String = "") = CurrencyAggregationItem(
+            currency = currency,
+            amount = BigDecimal.ZERO,
+            amountInBase = BigDecimal.ZERO
+        )
+    }
+}
 
 /**
  * Shared data structure for filtered and grouped transactions

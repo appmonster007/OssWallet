@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCard
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
@@ -133,17 +134,19 @@ class CardComputationServiceImpl(
     ): CashFlowResult {
         // Determine scope based on accountId
         val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        
+
         // Filter transactions based on scope
         val filteredTransactions = filterTransactionsByScope(
             transactions = transactions,
             scope = scope,
             accountId = config.accountId
         )
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use TimelineRange.AllTime since filtering is done at card level
         return financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
-            timelineRange = config.timelineRange,
+            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
@@ -174,11 +177,13 @@ class CardComputationServiceImpl(
         } else {
             accounts
         }
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use TimelineRange.AllTime since filtering is done at card level
         return financialUseCases.getCurrencyAggregation(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
-            timelineRange = config.timelineRange,
+            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
@@ -199,31 +204,33 @@ class CardComputationServiceImpl(
             scope = CardScope.GLOBAL,
             accountId = null
         )
-        
+
         // Filter accounts based on selectedAccountIds if specified
         val filteredAccounts = if (config.selectedAccountIds != null) {
             accounts.filter { it.id in config.selectedAccountIds }
         } else {
             accounts
         }
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use TimelineRange.AllTime since filtering is done at card level
         val netWorth = financialUseCases.calculateNetWorth(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision,
-            timelineRange = config.timelineRange
+            timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
-        
+
         val cashFlow = financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
-            timelineRange = config.timelineRange,
+            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
         )
-        
+
         return Pair(netWorth, cashFlow)
     }
 
@@ -235,11 +242,12 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        // Filter transactions based on timelineRange
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use TimelineRange.AllTime since filtering is done at card level
         val accountStats = financialUseCases.getAccountSummaries(
             accounts = accounts,
             allTransactions = transactions,
-            timelineRange = config.timelineRange,
+            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
             baseCurrency = baseCurrency,
             exchangeRates = exchangeRates,
             precision = precision
@@ -250,7 +258,7 @@ class CardComputationServiceImpl(
             allTransactions = transactions,
             exchangeRates = exchangeRates,
             precision = precision,
-            timelineRange = config.timelineRange
+            timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
         return Pair(updatedAccounts, accountStats)
     }
@@ -264,16 +272,16 @@ class CardComputationServiceImpl(
     ): List<CategoryBreakdownData> {
         val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
         val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
-        
-        // Filter by timeline range - THIS WAS MISSING
-        val filteredTransactions = TimelineService.filterByTimelineRange(filteredByScope, config.timelineRange)
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use filteredByScope directly (scope filtering only, no timeline filtering)
+
         // Get all categories for color and subcategory info
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
-        
+
         // Group by category
-        val transactionCategoryMap = filteredTransactions.groupBy { it.category }
+        val transactionCategoryMap = filteredByScope.groupBy { it.category }
         
         // Calculate total net balance for percentage calculation
         val totalNetBalance = transactionCategoryMap.values.sumOf { txs ->
@@ -356,15 +364,15 @@ class CardComputationServiceImpl(
     ): List<TimelineTrajectoryData> {
         val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
         val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
-        
-        // Filter by timeline range - THIS WAS MISSING
-        val filteredTransactions = TimelineService.filterByTimelineRange(filteredByScope, config.timelineRange)
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use filteredByScope directly (scope filtering only, no timeline filtering)
+
         // Determine time buckets based on timelineRange using TimelineService
         val timeBuckets = getTimeBuckets(config.timelineRange)
-        
+
         return timeBuckets.map { bucket ->
-            val bucketTransactions = filteredTransactions.filter { tx ->
+            val bucketTransactions = filteredByScope.filter { tx ->
                 tx.timestamp >= bucket.start && tx.timestamp < bucket.end
             }
             
@@ -376,7 +384,7 @@ class CardComputationServiceImpl(
             }
             
             // Calculate running balance
-            val priorTransactions = filteredTransactions.filter { it.timestamp < bucket.start }
+            val priorTransactions = filteredByScope.filter { it.timestamp < bucket.start }
             val priorBalance = financialUseCases.calculateNetWorth(
                 accounts = if (scope == CardScope.ACCOUNT) accounts.filter { it.id == config.accountId } else accounts,
                 allTransactions = priorTransactions,
@@ -406,16 +414,16 @@ class CardComputationServiceImpl(
     ): List<CategoryExpenseTreemapData> {
         val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
         val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
-        
-        // Filter by timeline range - THIS WAS MISSING
-        val filteredTransactions = TimelineService.filterByTimelineRange(filteredByScope, config.timelineRange)
-        
+
+        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
+        // Use filteredByScope directly (scope filtering only, no timeline filtering)
+
         // Get all categories for color and subcategory info
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
-        
+
         // Filter only expenses (negative amounts)
-        val expenseTransactions = filteredTransactions.filter { it.amount.signum() < 0 }
+        val expenseTransactions = filteredByScope.filter { it.amount.signum() < 0 }
         
         // Group by category
         val transactionCategoryMap = expenseTransactions.groupBy { it.category }

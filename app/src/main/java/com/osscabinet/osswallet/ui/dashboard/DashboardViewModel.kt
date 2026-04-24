@@ -303,6 +303,159 @@ class DashboardViewModel(
         }
     }
 
+    // ============================================================
+    // HYBRID APPROACH: Helper Functions for Card-Level Filtering
+    // These helpers provide testable filtering and computation logic
+    // Cards use these helpers with remember for flexible UI-level filtering
+    // ============================================================
+
+    /**
+     * Helper function for timeline filtering (testable, reusable)
+     * Cards use this with remember to filter transactions at UI level
+     */
+    fun filterTransactionsByTimeline(
+        transactions: List<Transaction>,
+        timelineRange: TimelineRange
+    ): List<Transaction> {
+        return com.osscabinet.ossWallet.domain.service.TimelineService.filterByTimelineRange(
+            transactions,
+            timelineRange
+        )
+    }
+
+    /**
+     * Helper function for cash flow computation (testable, reusable)
+     * Cards use this with remember to compute cash flow from filtered transactions
+     */
+    fun computeCashFlow(
+        transactions: List<Transaction>,
+        timelineRange: TimelineRange,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        return try {
+            val filtered = filterTransactionsByTimeline(transactions, timelineRange)
+            financialUseCases.calculateCashFlow(
+                filtered,
+                TimelineRange.AllTime,  // Already filtered, use AllTime
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+        } catch (e: Exception) {
+            CashFlowResult.empty()
+        }
+    }
+
+    /**
+     * Helper function for currency aggregation (testable, reusable)
+     * Cards use this with remember to compute currency totals from filtered transactions
+     */
+    fun computeCurrencyAggregation(
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        timelineRange: TimelineRange,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<CurrencyAggregationItem> {
+        return try {
+            val filtered = filterTransactionsByTimeline(transactions, timelineRange)
+            financialUseCases.getCurrencyAggregation(
+                accounts,
+                filtered,
+                TimelineRange.AllTime,  // Already filtered, use AllTime
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Helper function for net worth computation (testable, reusable)
+     * Cards use this with remember to compute net worth from filtered transactions
+     */
+    fun computeNetWorth(
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        timelineRange: TimelineRange,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): BigDecimal {
+        return try {
+            financialUseCases.calculateNetWorth(
+                accounts,
+                transactions,
+                baseCurrency,
+                exchangeRates,
+                precision,
+                timelineRange
+            )
+        } catch (e: Exception) {
+            BigDecimal.ZERO
+        }
+    }
+
+    /**
+     * Helper function for account stats computation (testable, reusable)
+     * Cards use this with remember to compute account stats from filtered transactions
+     */
+    fun computeAccountStats(
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        timelineRange: TimelineRange,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Map<String, AccountSummaryItem> {
+        return try {
+            financialUseCases.getAccountSummaries(
+                accounts,
+                transactions,
+                timelineRange,
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    /**
+     * Helper function for total balances computation (testable, reusable)
+     * Cards use this with remember to compute total balances from filtered transactions
+     */
+    fun getTotalBalances(
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int,
+        timelineRange: TimelineRange
+    ): List<Account> {
+        return try {
+            financialUseCases.getTotalBalances(
+                accounts,
+                transactions,
+                exchangeRates,
+                precision,
+                timelineRange
+            )
+        } catch (e: Exception) {
+            accounts
+        }
+    }
+
+    // ============================================================
+    // OLD METHODS (TO BE REMOVED IN PHASE 2)
+    // These will be removed in Phase 2: Architecture Cleanup
+    // ============================================================
+
     // Helper functions to compute data for a specific card based on its config
     suspend fun computeNetWorthForCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,

@@ -10,9 +10,6 @@ import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.filter.FilterStack
-import com.osscabinet.ossWallet.domain.model.filter.LogicalOperator
-import com.osscabinet.ossWallet.domain.model.filter.UnifiedFilter
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -48,20 +45,6 @@ class TransactionRepositoryImpl(
         val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
 
         return applyRegexFilter(transactionDao.getFilteredTransactionsSync(sqliteQuery).map { it.toDomain() }, filter)
-    }
-
-    override fun getFilteredTransactions(profileId: Int, filterStack: FilterStack): Flow<List<Transaction>> {
-        // Unwrap instant filters and convert to TransactionFilter for now
-        // In a full implementation, we would build SQL directly from FilterStack
-        val transactionFilter = filterStack.toTransactionFilter()
-        return getFilteredTransactions(profileId, transactionFilter)
-    }
-
-    override suspend fun getFilteredTransactionsSync(profileId: Int, filterStack: FilterStack): List<Transaction> {
-        // Unwrap instant filters and convert to TransactionFilter for now
-        // In a full implementation, we would build SQL directly from FilterStack
-        val transactionFilter = filterStack.toTransactionFilter()
-        return getFilteredTransactionsSync(profileId, transactionFilter)
     }
 
     private fun buildFilteredQuery(profileId: Int, filter: TransactionFilter): Pair<String, List<Any>> {

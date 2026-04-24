@@ -50,7 +50,7 @@ fun CurrencyBalancesCard(
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
     onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
-    onCurrencyClick: (String) -> Unit = {}
+    onCurrencyClick: (String, TimelineRange) -> Unit = { _, _ -> }
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -124,7 +124,7 @@ fun CurrencyBalancesCard(
                                         baseCurrency = baseCurrency,
                                         precision = precision,
                                         showBaseConversion = showBaseConversion,
-                                        onClick = { onCurrencyClick(item.currency) },
+                                        onClick = { onCurrencyClick(item.currency, timelineRange) },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -149,7 +149,7 @@ fun CurrencyBalancesCard(
                                 baseCurrency = baseCurrency,
                                 precision = precision,
                                 showBaseConversion = showBaseConversion,
-                                onClick = { onCurrencyClick(item.currency) }
+                                onClick = { onCurrencyClick(item.currency, timelineRange) }
                             )
                         }
                     }

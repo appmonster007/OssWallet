@@ -103,8 +103,7 @@ fun AccountsViewScreen(
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
     accountsViewViewModel: AccountsViewViewModel,
     cardManagerViewModel: CardManagerViewModel,
-    filterContext: String? = null,
-    initialFilterStack: com.osscabinet.ossWallet.domain.model.filter.FilterStack? = null
+    filterContext: String? = null
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -130,16 +129,6 @@ fun AccountsViewScreen(
         } ?: run {
             // If no context provided, ensure filter is cleared
             accountsViewViewModel.clearAccountsFilter()
-        }
-    }
-
-    // Initialize filter from FilterStack when screen opens (new approach)
-    LaunchedEffect(initialFilterStack) {
-        if (initialFilterStack != null) {
-            // Convert FilterStack to account-specific filter
-            // For now, we'll handle this by applying the filters to the accounts view
-            // This may need custom logic based on how accountsViewViewModel handles filters
-            // TODO: Implement proper FilterStack to accounts filter conversion
         }
     }
 
@@ -391,9 +380,12 @@ fun AccountsViewScreen(
                                             onShowBaseConversionChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, it) },
                                             onTimelineRangeChange = { cardId, it -> accountsViewViewModel.updateCardCurrencyBalancesTimelineRange(cardId, it) },
                                             onDelete = { cardManagerViewModel.removeAccountsViewCard(cardConfig.cardId) },
-                                            onCurrencyClick = { currency ->
+                                            onCurrencyClick = { currency, timelineRange ->
+                                                val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
                                                 onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                                    currencies = listOf(currency)
+                                                    currencies = listOf(currency),
+                                                    startDate = start,
+                                                    endDate = end
                                                 ))
                                             },
                                             headerModifier = dragModifier,

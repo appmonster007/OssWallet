@@ -76,6 +76,29 @@ object TimelineService {
     }
 
     /**
+     * Extracts the date range from a timeline range.
+     * 
+     * @param timelineRange The timeline range to extract dates from
+     * @return Pair of start and end timestamps (nullable for AllTime)
+     */
+    fun getDateRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
+        return when (timelineRange) {
+            is TimelineRange.AllTime -> Pair(null, null)
+            is TimelineRange.ThisPeriod -> {
+                val (start, end) = getRangeForThis(timelineRange.period)
+                Pair(start, end)
+            }
+            is TimelineRange.LastPeriod -> {
+                val (start, end) = getRangeForLast(timelineRange.period)
+                Pair(start, end)
+            }
+            is TimelineRange.CustomRange -> {
+                Pair(timelineRange.start, timelineRange.end)
+            }
+        }
+    }
+
+    /**
      * Filters a list of timestamped items by a timeline range.
      * 
      * @param items The list of items to filter
@@ -86,19 +109,12 @@ object TimelineService {
         items: List<T>,
         timelineRange: TimelineRange
     ): List<T> {
-        return when (timelineRange) {
-            is TimelineRange.AllTime -> items
-            is TimelineRange.ThisPeriod -> {
-                val (start, end) = getRangeForThis(timelineRange.period)
-                items.filter { it.timestamp in start..end }
-            }
-            is TimelineRange.LastPeriod -> {
-                val (start, end) = getRangeForLast(timelineRange.period)
-                items.filter { it.timestamp in start..end }
-            }
-            is TimelineRange.CustomRange -> {
-                items.filter { it.timestamp in timelineRange.start..timelineRange.end }
-            }
+        val (start, end) = getDateRange(timelineRange)
+        
+        return if (start == null || end == null) {
+            items
+        } else {
+            items.filter { it.timestamp in start..end }
         }
     }
 }

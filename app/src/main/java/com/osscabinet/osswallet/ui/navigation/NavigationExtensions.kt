@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 import androidx.navigation.NavHostController
-import com.osscabinet.ossWallet.domain.model.filter.FilterStack
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
@@ -48,29 +47,4 @@ fun NavHostController.navigateToDashboard(context: DashboardViewContext) {
     navigate(Screen.Dashboard.createRoute(encodedContext))
 }
 
-// ========== FilterStack Navigation Extensions ==========
-
-/**
- * Navigate to TransactionListScreen with FilterStack context.
- * FilterStack is serialized and passed directly.
- * @param filterStack The FilterStack to apply (encoded as JSON)
- */
-fun NavHostController.navigateToRecords(filterStack: FilterStack) {
-    val encodedFilterStack = URLEncoder.encode(
-        Json.encodeToString(filterStack),
-        StandardCharsets.UTF_8.toString()
-    )
-    navigate(Screen.TransactionList.createRouteWithFilterStack(encodedFilterStack))
-}
-
-/**
- * Navigate to AccountsViewScreen with FilterStack context.
- * @param filterStack The FilterStack to apply (encoded as JSON)
- */
-fun NavHostController.navigateToAccountsView(filterStack: FilterStack) {
-    val encodedFilterStack = URLEncoder.encode(
-        Json.encodeToString(filterStack),
-        StandardCharsets.UTF_8.toString()
-    )
-    navigate(Screen.AccountsView.createRouteWithFilterStack(encodedFilterStack))
-}
+// Note: FilterStack navigation extensions removed as part of filter system cleanup

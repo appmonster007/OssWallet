@@ -54,8 +54,8 @@ fun CashFlowCard(
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
     onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
-    onClickIncome: () -> Unit = {},
-    onClickExpense: () -> Unit = {}
+    onClickIncome: (TimelineRange) -> Unit = {},
+    onClickExpense: (TimelineRange) -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
@@ -126,7 +126,7 @@ fun CashFlowCard(
                     currentTheme = currentTheme,
                     precision = precision,
                     modifier = Modifier.weight(1f),
-                    onClick = onClickIncome
+                    onClick = { onClickIncome(timelineRange) }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->
@@ -150,7 +150,7 @@ fun CashFlowCard(
                     currentTheme = currentTheme,
                     precision = precision,
                     modifier = Modifier.weight(1f),
-                    onClick = onClickExpense
+                    onClick = { onClickExpense(timelineRange) }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->

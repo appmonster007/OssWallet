@@ -15,10 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonBudgetProgress
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -31,6 +35,7 @@ data class BudgetSettings(
 fun BudgetsCard(
     onManageClick: () -> Unit,
     onBudgetClick: (String) -> Unit = {},
+    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
     budgets: List<Budget>,
     baseCurrency: String,
     cardId: String,
@@ -38,10 +43,23 @@ fun BudgetsCard(
     headerModifier: Modifier = Modifier,
     precision: Int = 2,
     showProgressLabels: Boolean = true,
+    timelineRange: TimelineRange = TimelineRange.AllTime,
     onShowProgressLabelsChange: (String, Boolean) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {}
 ) {
     var showSettings by remember { mutableStateOf(false) }
+
+    val timelineLabel = when (timelineRange) {
+        is TimelineRange.AllTime -> "All Time"
+        is TimelineRange.ThisPeriod -> timelineRange.period.label
+        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.CustomRange -> {
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(java.time.ZoneId.systemDefault())
+            val start = formatter.format(java.time.Instant.ofEpochMilli(timelineRange.start))
+            val end = formatter.format(java.time.Instant.ofEpochMilli(timelineRange.end))
+            "$start - $end"
+        }
+    }
 
     Card(
         modifier = modifier,
@@ -54,15 +72,29 @@ fun BudgetsCard(
                 title = "BUDGET TRACKING",
                 modifier = headerModifier,
                 trailing = {
-                    IconButton(
-                        onClick = { showSettings = true },
-                        modifier = Modifier.size(24.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.Default.MoreHoriz,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.primary
+                        Text(
+                            text = timelineLabel.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                fontSize = 10.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             )
@@ -73,7 +105,13 @@ fun BudgetsCard(
             ) {
                 budgets.forEach { budget ->
                     Box(
-                        modifier = Modifier.clickable { onBudgetClick(budget.category) }
+                        modifier = Modifier.clickable {
+                            onBudgetClick(budget.category)
+                            if (onRecordsClick != null) {
+                                val (start, end) = TimelineService.getDateRange(timelineRange)
+                                onRecordsClick(RecordsFilterContext.Custom(categoryIds = listOf(budget.category), startDate = start, endDate = end))
+                            }
+                        }
                     ) {
                         AeonBudgetProgress(
                             label = budget.category,

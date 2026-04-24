@@ -4,10 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.forAccount
+import com.osscabinet.ossWallet.domain.model.forCategory
+import com.osscabinet.ossWallet.domain.model.forIncome
+import com.osscabinet.ossWallet.domain.model.forExpense
+import com.osscabinet.ossWallet.domain.model.withDateRange
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,13 +31,17 @@ class TransactionViewModel(
     private val analyticsViewModel: AnalyticsViewModel
 ) : ViewModel() {
 
-    private val _recordsFilter = MutableStateFlow(TransactionFilter())
-    val recordsFilter = _recordsFilter.asStateFlow()
-
+    // Replace multiple filter states with single FilterManager
+    private val recordsFilterManager = FilterManager()
+    
+    // Expose merged filter as StateFlow directly from FilterManager
+    val recordsFilter: StateFlow<TransactionFilter> = recordsFilterManager.mergedFilter
+    
+    // Keep account detail filter separate (used in AccountDetailScreen)
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
 
-    // Track the initial filter context from navigation
+    // Track the initial filter context from navigation (for backward compatibility)
     private val _initialFilterContext = MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
     val initialFilterContext = _initialFilterContext.asStateFlow()
 
@@ -62,10 +72,10 @@ class TransactionViewModel(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                _recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
+                recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
                 accountRepository.getAllAccounts(profileId),
                 analyticsViewModel.uiState,
-                _recordsFilter
+                recordsFilter
             ) { filteredTransactions, accounts, analyticsState, currentFilter ->
                 val rates = analyticsState.exchangeRates
                 val precision = analyticsState.decimalPrecision
@@ -89,7 +99,7 @@ class TransactionViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun updateRecordsFilter(newFilter: TransactionFilter) {
-        _recordsFilter.value = newFilter
+        recordsFilterManager.setFilter("manual", newFilter)
         _recordsFilterInitialized.value = true
     }
 
@@ -98,11 +108,37 @@ class TransactionViewModel(
     }
 
     fun setRecordsAccountFilter(accountId: String?) {
-        _recordsFilter.value = _recordsFilter.value.copy(accountIds = if (accountId != null) listOf(accountId) else emptyList())
+        if (accountId != null) {
+            recordsFilterManager.setFilter("account", TransactionFilter().forAccount(accountId))
+        } else {
+            recordsFilterManager.removeFilter("account")
+        }
+    }
+
+    fun setRecordsCategoryFilter(categoryId: Long?) {
+        if (categoryId != null) {
+            recordsFilterManager.setFilter("category", TransactionFilter().forCategory(categoryId))
+        } else {
+            recordsFilterManager.removeFilter("category")
+        }
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        _recordsFilter.value = _recordsFilter.value.copy(startDate = start, endDate = end)
+        if (start != null || end != null) {
+            recordsFilterManager.setFilter("date", TransactionFilter().withDateRange(start, end))
+        } else {
+            recordsFilterManager.removeFilter("date")
+        }
+    }
+
+    fun setIncomeTypeFilter(isIncome: Boolean?) {
+        if (isIncome != null) {
+            recordsFilterManager.setFilter("type", TransactionFilter().run {
+                if (isIncome) forIncome() else forExpense()
+            })
+        } else {
+            recordsFilterManager.removeFilter("type")
+        }
     }
 
     fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
@@ -110,7 +146,7 @@ class TransactionViewModel(
     }
 
     fun clearRecordsFilters() {
-        _recordsFilter.value = TransactionFilter()
+        recordsFilterManager.clear()
         _recordsFilterInitialized.value = false
     }
 
@@ -121,9 +157,12 @@ class TransactionViewModel(
     /**
      * Initialize the filter from a navigation context
      * This should be called when the screen opens with a context parameter
+     * Converts RecordsFilterContext to TransactionFilter and sets it in FilterManager
      */
     fun initializeRecordsFilter(context: RecordsFilterContext) {
         _initialFilterContext.value = context
+        recordsFilterManager.clear()
+        
         val filter = when (context) {
             is RecordsFilterContext.None -> TransactionFilter()
             is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(context.accountId))
@@ -149,7 +188,8 @@ class TransactionViewModel(
                 queryPayee = context.queryPayee
             )
         }
-        _recordsFilter.value = filter
+        
+        recordsFilterManager.setFilter("initial", filter)
         _recordsFilterInitialized.value = true
     }
 
@@ -185,7 +225,7 @@ class TransactionViewModel(
                 )
             }
         }
-        return _recordsFilter.value != initialFilter
+        return recordsFilter.value != initialFilter
     }
 
     /**

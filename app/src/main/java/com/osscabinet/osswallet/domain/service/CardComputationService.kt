@@ -286,7 +286,7 @@ class CardComputationServiceImpl(
         // Calculate total net balance for percentage calculation
         val totalNetBalance = transactionCategoryMap.values.sumOf { txs ->
             txs.sumOf { tx ->
-                val amountInBase = convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                val amountInBase = CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                 amountInBase // Already signed (positive for income, negative for expense)
             }
         }
@@ -294,10 +294,10 @@ class CardComputationServiceImpl(
         return transactionCategoryMap.map { (category, txs) ->
             val categoryEntity = categoryMap[category]
             val income = txs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
             val expense = txs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
             }
             val netBalance = income - expense
             val percentage = if (totalNetBalance.abs() > BigDecimal.ZERO) {
@@ -316,10 +316,10 @@ class CardComputationServiceImpl(
                 subCategories.map { subCat ->
                     val subTxs = txs.filter { it.category == subCat.name }
                     val subIncome = subTxs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                        convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                     }
                     val subExpense = subTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                        convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                        CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
                     }
                     val subNetBalance = subIncome - subExpense
                     val subPercentage = if (netBalance.abs() > BigDecimal.ZERO) {
@@ -377,10 +377,10 @@ class CardComputationServiceImpl(
             }
             
             val income = bucketTransactions.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
             val expense = bucketTransactions.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
             }
             
             // Calculate running balance
@@ -430,14 +430,14 @@ class CardComputationServiceImpl(
         
         val totalExpense = transactionCategoryMap.values.sumOf { txs ->
             txs.sumOf { tx ->
-                convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
             }
         }
         
         return transactionCategoryMap.map { (category, txs) ->
             val categoryEntity = categoryMap[category]
             val expense = txs.sumOf { tx ->
-                convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
             }
             val percentage = if (totalExpense > BigDecimal.ZERO) {
                 (expense / totalExpense).toFloat()
@@ -455,7 +455,7 @@ class CardComputationServiceImpl(
                 subCategories.map { subCat ->
                     val subTxs = txs.filter { it.category == subCat.name }
                     val subExpense = subTxs.sumOf { tx ->
-                        convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                        CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
                     }
                     val subPercentage = if (expense > BigDecimal.ZERO) {
                         (subExpense / expense).toFloat()
@@ -500,22 +500,6 @@ class CardComputationServiceImpl(
         } else {
             transactions
         }
-    }
-
-    /**
-     * Helper method to convert amount to base currency.
-     * TODO: This should be moved to a dedicated currency conversion service.
-     */
-    private fun convertAmount(
-        amount: BigDecimal,
-        fromCurrency: String,
-        toCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): BigDecimal {
-        if (fromCurrency == toCurrency) return amount
-        val rate = exchangeRates[fromCurrency] ?: BigDecimal.ONE
-        return (amount * rate).setScale(precision, java.math.RoundingMode.HALF_UP)
     }
 
     /**

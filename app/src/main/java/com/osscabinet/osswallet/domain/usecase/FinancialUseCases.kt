@@ -152,30 +152,6 @@ class FinancialUseCases(
         return Pair(incomeBreakdown.toMap(), expenseBreakdown.toMap())
     }
 
-    /**
-     * Sums transactions by currency and type (income/expense)
-     * @param transactions List of transactions to sum
-     * @param currency The currency to filter by
-     * @param transactionType Whether to sum income or expense transactions
-     * @return Total amount for the specified currency and type
-     * @deprecated Use sign-based filtering instead
-     */
-    private fun sumTransactionsByCurrencyAndType(
-        transactions: List<Transaction>,
-        currency: String,
-        transactionType: String
-    ): BigDecimal {
-        // Use sign-based filtering for compatibility
-        val isIncome = transactionType == "income"
-        return transactions.filter { 
-            it.currency == currency && 
-            (if (isIncome) it.amount.signum() >= 0 else it.amount.signum() < 0)
-        }.fold(BigDecimal.ZERO) { acc, t -> 
-            // Amount already carries the sign (positive for income, negative for expense)
-            acc.add(t.amount)
-        }
-    }
-
     fun calculateNetWorth(
         accounts: List<Account>,
         allTransactions: List<Transaction>,
@@ -208,8 +184,12 @@ class FinancialUseCases(
         val currencies = filteredTransactions.map { it.currency }.distinct().sorted()
 
         val breakdown = currencies.map { curr ->
-            val income = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "income")
-            val expense = sumTransactionsByCurrencyAndType(filteredTransactions, curr, transactionType = "expense")
+            val income = filteredTransactions
+                .filter { it.currency == curr && it.amount.signum() >= 0 }
+                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            val expense = filteredTransactions
+                .filter { it.currency == curr && it.amount.signum() < 0 }
+                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount.abs()) }
 
             val incomeInBase = CurrencyService.convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
             val expenseInBase = CurrencyService.convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)

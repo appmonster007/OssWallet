@@ -67,26 +67,3 @@ fun getCurrencyName(currencyCode: String?): String {
 fun getAllCurrencies(): List<String> {
     return Currency.getAvailableCurrencies().map { it.currencyCode }.sorted()
 }
-
-// Business logic functions - delegate to domain service
-// These are kept for backward compatibility but should be replaced with direct calls to CurrencyService
-@Deprecated("Use CurrencyService.convertAmount instead")
-fun convertAmount(
-    amount: BigDecimal,
-    fromCurrency: String,
-    toCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    precision: Int = 2
-): BigDecimal {
-    return CurrencyService.convertAmount(amount, fromCurrency, toCurrency, exchangeRates, precision)
-}
-
-@Deprecated("Use CurrencyService.calculateTotalInCurrency instead")
-fun calculateTotalInCurrency(
-    currencyTotals: Map<String, BigDecimal>,
-    targetCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
-    precision: Int = 2
-): BigDecimal {
-    return CurrencyService.calculateTotalInCurrency(currencyTotals, targetCurrency, exchangeRates, precision)
-}

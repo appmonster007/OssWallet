@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
-import com.osscabinet.ossWallet.ui.util.convertAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
@@ -145,7 +145,7 @@ fun AccountHeroCard(
                         )
                     )
                     if (account.currencyCode != baseCurrency) {
-                        val convertedBalance = convertAmount(balance, account.currencyCode, baseCurrency, exchangeRates, precision)
+                        val convertedBalance = CurrencyService.convertAmount(balance, account.currencyCode, baseCurrency, exchangeRates, precision)
                         Text(
                             text = "≈ ${formatCurrencyRight(convertedBalance, baseCurrency, precision)}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),

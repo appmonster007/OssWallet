@@ -34,8 +34,7 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
         val id = _insertTransaction(transaction)
-        val updateAmount = if (transaction.transactionType == "income") transaction.amount else transaction.amount.negate()
-        accountDao.updateBalance(transaction.accountId, updateAmount)
+        accountDao.updateBalance(transaction.accountId, transaction.amount)
         return id
     }
 
@@ -51,20 +50,16 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
         _deleteTransaction(transaction)
-        val updateAmount = if (transaction.transactionType == "income") transaction.amount.negate() else transaction.amount
-        accountDao.updateBalance(transaction.accountId, updateAmount)
+        accountDao.updateBalance(transaction.accountId, transaction.amount)
     }
 
     @Transaction
     open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
         // Reverse old transaction impact
-        val reverseAmount = if (oldTransaction.transactionType == "income") oldTransaction.amount.negate() else oldTransaction.amount
-        accountDao.updateBalance(oldTransaction.accountId, reverseAmount)
+        accountDao.updateBalance(oldTransaction.accountId, oldTransaction.amount)
 
         // Apply new transaction impact
         insertTransaction(newTransaction)
-        val applyAmount = if (newTransaction.transactionType == "income") newTransaction.amount else newTransaction.amount.negate()
-        accountDao.updateBalance(newTransaction.accountId, applyAmount)
     }
 
     @Query("SELECT * FROM transactions WHERE profileId = :profileId")

@@ -132,8 +132,7 @@ class DatabaseSeeder @Inject constructor(
                 transactionDao.insertTransaction(transactionWithCategoryId)
 
                 // Update account balance
-                val updateAmount = if (transaction.transactionType == "income") transaction.amount else transaction.amount.negate()
-                accountDao.updateBalance(transaction.accountId, updateAmount)
+                accountDao.updateBalance(transaction.accountId, transaction.amount)
 
                 successfulTransactions++
             } catch (e: Exception) {

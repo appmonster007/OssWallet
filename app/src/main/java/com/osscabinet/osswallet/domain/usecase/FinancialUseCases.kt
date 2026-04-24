@@ -145,7 +145,7 @@ class FinancialUseCases(
             if (tx.amount.signum() >= 0) {
                 incomeBreakdown[tx.currency] = (incomeBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
             } else {
-                expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount.abs())
+                expenseBreakdown[tx.currency] = (expenseBreakdown[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
             }
         }
 
@@ -189,7 +189,7 @@ class FinancialUseCases(
                 .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
             val expense = filteredTransactions
                 .filter { it.currency == curr && it.amount.signum() < 0 }
-                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount.abs()) }
+                .fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
 
             val incomeInBase = CurrencyService.convertAmount(income, curr, baseCurrency, exchangeRates, precision + 4)
             val expenseInBase = CurrencyService.convertAmount(expense, curr, baseCurrency, exchangeRates, precision + 4)

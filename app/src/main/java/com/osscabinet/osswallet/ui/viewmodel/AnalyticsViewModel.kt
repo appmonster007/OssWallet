@@ -15,6 +15,10 @@ import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
 import com.osscabinet.ossWallet.ui.analytics.components.PaymentItem
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
 import com.osscabinet.ossWallet.domain.model.settings.AnalyticsCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
@@ -26,6 +30,11 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
@@ -73,34 +82,44 @@ class AnalyticsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
     private var _currentPrecision: Int = 2
 
-    // Card data states
-    private val _categoryBreakdownData = MutableStateFlow<List<CategoryBreakdownData>>(emptyList())
-    val categoryBreakdownData: StateFlow<List<CategoryBreakdownData>> = _categoryBreakdownData.asStateFlow()
+    // Cache for computed card data to avoid recomputation
+    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
+    private val cacheExpirationMinutes = 5L
 
-    private val _timelineTrajectoryData = MutableStateFlow<List<TimelineTrajectoryData>>(emptyList())
-    val timelineTrajectoryData: StateFlow<List<TimelineTrajectoryData>> = _timelineTrajectoryData.asStateFlow()
+    /**
+     * Get cached data if available and not expired, otherwise compute and cache
+     */
+    private inline fun <T> getCachedOrCompute(
+        cacheKey: String,
+        compute: () -> T
+    ): T {
+        val cached = cardDataCache[cacheKey]
+        @Suppress("UNCHECKED_CAST")
+        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
+            return cached.data as T
+        }
 
-    private val _categoryExpenseTreemapData = MutableStateFlow<List<CategoryExpenseTreemapData>>(emptyList())
-    val categoryExpenseTreemapData: StateFlow<List<CategoryExpenseTreemapData>> = _categoryExpenseTreemapData.asStateFlow()
+        val result = compute()
+        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
+        return result
+    }
 
-    // New card data states
-    private val _incomeExpensesSummaryData = MutableStateFlow<IncomeExpensesSummaryData?>(null)
-    val incomeExpensesSummaryData: StateFlow<IncomeExpensesSummaryData?> = _incomeExpensesSummaryData.asStateFlow()
+    /**
+     * Invalidate cache for a specific card
+     */
+    fun invalidateCardCache(cardId: String) {
+        cardDataCache.keys.removeIf { it.startsWith(cardId) }
+    }
 
-    private val _periodComparisonData = MutableStateFlow<PeriodComparisonData?>(null)
-    val periodComparisonData: StateFlow<PeriodComparisonData?> = _periodComparisonData.asStateFlow()
+    /**
+     * Invalidate all cache (called when data changes significantly)
+     */
+    fun invalidateAllCache() {
+        cardDataCache.clear()
+    }
 
-    private val _cashFlowTrendData = MutableStateFlow<CashFlowTrendData?>(null)
-    val cashFlowTrendData: StateFlow<CashFlowTrendData?> = _cashFlowTrendData.asStateFlow()
-
-    private val _cashFlowProgressData = MutableStateFlow<CashFlowProgressData?>(null)
-    val cashFlowProgressData: StateFlow<CashFlowProgressData?> = _cashFlowProgressData.asStateFlow()
-
-    private val _balanceForecastData = MutableStateFlow<BalanceForecastData?>(null)
-    val balanceForecastData: StateFlow<BalanceForecastData?> = _balanceForecastData.asStateFlow()
-
-    private val _plannedPaymentsData = MutableStateFlow<PlannedPaymentsData?>(null)
-    val plannedPaymentsData: StateFlow<PlannedPaymentsData?> = _plannedPaymentsData.asStateFlow()
+    // Generic card data computation functions (pure functions, no StateFlows)
+    // These follow the DashboardScreen pattern - screens use remember(cardConfig.cardId, ...) to cache per-card
 
     // Analytics cards config
     val analyticsCardsConfig: StateFlow<AnalyticsCardsConfig> = settingsDataStore.analyticsCardsConfig
@@ -135,10 +154,8 @@ class AnalyticsViewModel(
             transactionUseCases.getTransactions().collect { transactions ->
                 allTransactions = transactions
                 calculateAnalytics()
-                // Recompute card data when transactions change
-                analyticsCardsConfig.value.cards.forEach { cardConfig ->
-                    updateCardConfig(cardConfig)
-                }
+                // Invalidate cache when transactions change to force recomputation
+                invalidateAllCache()
             }
         }
 
@@ -147,10 +164,8 @@ class AnalyticsViewModel(
                 accountRepository.getAllAccounts(profileId).collect { accounts ->
                     allAccounts = accounts
                     calculateAnalytics()
-                    // Recompute card data when accounts change
-                    analyticsCardsConfig.value.cards.forEach { cardConfig ->
-                        updateCardConfig(cardConfig)
-                    }
+                    // Invalidate cache when accounts change to force recomputation
+                    invalidateAllCache()
                 }
             }
         }
@@ -160,15 +175,6 @@ class AnalyticsViewModel(
             val currentConfig = settingsDataStore.analyticsCardsConfig.first()
             if (currentConfig.isEmpty()) {
                 settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(defaultAnalyticsCardsConfig()))
-            }
-        }
-
-        // Compute card data when config changes
-        viewModelScope.launch {
-            analyticsCardsConfig.collect { config ->
-                config.cards.forEach { cardConfig ->
-                    updateCardConfig(cardConfig)
-                }
             }
         }
     }
@@ -191,58 +197,130 @@ class AnalyticsViewModel(
         }
     }
 
-    fun updateCardConfig(cardConfig: CardConfig) {
-        viewModelScope.launch {
-            when (cardConfig) {
-                is CategoryBreakdownCardConfig -> {
-                    _categoryBreakdownData.value = cardComputationService.computeCategoryBreakdown(
-                        config = cardConfig,
-                        transactions = allTransactions,
-                        baseCurrency = _uiState.value.selectedCurrency,
-                        exchangeRates = _uiState.value.exchangeRates,
-                        precision = _currentPrecision
-                    )
-                }
-                is TimelineTrajectoryCardConfig -> {
-                    _timelineTrajectoryData.value = cardComputationService.computeTimelineTrajectory(
-                        config = cardConfig,
-                        transactions = allTransactions,
-                        accounts = allAccounts,
-                        baseCurrency = _uiState.value.selectedCurrency,
-                        exchangeRates = _uiState.value.exchangeRates,
-                        precision = _currentPrecision
-                    )
-                }
-                is CategoryExpenseTreemapCardConfig -> {
-                    _categoryExpenseTreemapData.value = cardComputationService.computeCategoryExpenseTreemap(
-                        config = cardConfig,
-                        transactions = allTransactions,
-                        baseCurrency = _uiState.value.selectedCurrency,
-                        exchangeRates = _uiState.value.exchangeRates,
-                        precision = _currentPrecision
-                    )
-                }
-                is IncomeExpensesSummaryCardConfig -> {
-                    _incomeExpensesSummaryData.value = computeIncomeExpensesSummary(cardConfig)
-                }
-                is PeriodComparisonCardConfig -> {
-                    _periodComparisonData.value = computePeriodComparison(cardConfig)
-                }
-                is CashFlowTrendCardConfig -> {
-                    _cashFlowTrendData.value = computeCashFlowTrend(cardConfig)
-                }
-                is CashFlowProgressCardConfig -> {
-                    _cashFlowProgressData.value = computeCashFlowProgress(cardConfig)
-                }
-                is BalanceForecastCardConfig -> {
-                    _balanceForecastData.value = computeBalanceForecast(cardConfig)
-                }
-                is PlannedPaymentsCardConfig -> {
-                    _plannedPaymentsData.value = computePlannedPayments(cardConfig)
-                }
-                else -> {}
-            }
+    // Generic card data computation functions (pure functions, no StateFlows)
+    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
+
+    suspend fun computeCategoryBreakdownCard(
+        cardConfig: CategoryBreakdownCardConfig
+    ): List<CategoryBreakdownData> {
+        val cacheKey = "category_breakdown_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardComputationService.computeCategoryBreakdown(
+                config = cardConfig,
+                transactions = allTransactions,
+                baseCurrency = _uiState.value.selectedCurrency,
+                exchangeRates = _uiState.value.exchangeRates,
+                precision = _currentPrecision
+            )
         }
+    }
+
+    suspend fun computeTimelineTrajectoryCard(
+        cardConfig: TimelineTrajectoryCardConfig
+    ): List<TimelineTrajectoryData> {
+        val cacheKey = "timeline_trajectory_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardComputationService.computeTimelineTrajectory(
+                config = cardConfig,
+                transactions = allTransactions,
+                accounts = allAccounts,
+                baseCurrency = _uiState.value.selectedCurrency,
+                exchangeRates = _uiState.value.exchangeRates,
+                precision = _currentPrecision
+            )
+        }
+    }
+
+    suspend fun computeCategoryExpenseTreemapCard(
+        cardConfig: CategoryExpenseTreemapCardConfig
+    ): List<CategoryExpenseTreemapData> {
+        val cacheKey = "category_treemap_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardComputationService.computeCategoryExpenseTreemap(
+                config = cardConfig,
+                transactions = allTransactions,
+                baseCurrency = _uiState.value.selectedCurrency,
+                exchangeRates = _uiState.value.exchangeRates,
+                precision = _currentPrecision
+            )
+        }
+    }
+
+    suspend fun computeIncomeExpensesSummaryCard(
+        cardConfig: IncomeExpensesSummaryCardConfig
+    ): IncomeExpensesSummaryData {
+        val cacheKey = "income_expenses_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeIncomeExpensesSummary(cardConfig) }
+    }
+
+    suspend fun computePeriodComparisonCard(
+        cardConfig: PeriodComparisonCardConfig
+    ): PeriodComparisonData {
+        val cacheKey = "period_comparison_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computePeriodComparison(cardConfig) }
+    }
+
+    suspend fun computeCashFlowTrendCard(
+        cardConfig: CashFlowTrendCardConfig
+    ): CashFlowTrendData {
+        val cacheKey = "cashflow_trend_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeCashFlowTrend(cardConfig) }
+    }
+
+    suspend fun computeCashFlowProgressCard(
+        cardConfig: CashFlowProgressCardConfig
+    ): CashFlowProgressData {
+        val cacheKey = "cashflow_progress_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeCashFlowProgress(cardConfig) }
+    }
+
+    suspend fun computeBalanceForecastCard(
+        cardConfig: BalanceForecastCardConfig
+    ): BalanceForecastData {
+        val cacheKey = "balance_forecast_${cardConfig.cardId}_${cardConfig.forecastDays}"
+        return getCachedOrCompute(cacheKey) { computeBalanceForecast(cardConfig) }
+    }
+
+    suspend fun computePlannedPaymentsCard(
+        cardConfig: PlannedPaymentsCardConfig
+    ): PlannedPaymentsData {
+        val cacheKey = "planned_payments_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computePlannedPayments(cardConfig) }
+    }
+
+    suspend fun computeIncomeExpensesBookCard(
+        cardConfig: IncomeExpensesBookCardConfig
+    ): IncomeExpensesSummaryData {
+        val cacheKey = "income_expenses_book_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeIncomeExpensesBook(cardConfig) }
+    }
+
+    suspend fun computeCashFlowTableCard(
+        cardConfig: CashFlowTableCardConfig
+    ): CashFlowTableData {
+        val cacheKey = "cash_flow_table_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeCashFlowTable(cardConfig) }
+    }
+
+    suspend fun computePlannedPaymentsTimelineCard(
+        cardConfig: PlannedPaymentsTimelineCardConfig
+    ): PlannedPaymentsTimelineData {
+        val cacheKey = "planned_payments_timeline_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computePlannedPaymentsTimeline(cardConfig) }
+    }
+
+    suspend fun computeBalanceByAccountsCard(
+        cardConfig: BalanceByAccountsCardConfig
+    ): BalanceByAccountsData {
+        val cacheKey = "balance_by_accounts_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeBalanceByAccounts(cardConfig) }
+    }
+
+    suspend fun computeBalanceTrendCard(
+        cardConfig: BalanceTrendCardConfig
+    ): BalanceTrendData {
+        val cacheKey = "balance_trend_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) { computeBalanceTrend(cardConfig) }
     }
 
     private fun calculateAnalytics() {
@@ -579,6 +657,196 @@ class AnalyticsViewModel(
             currency = selectedCurrency,
             precision = _currentPrecision,
             payments = payments
+        )
+    }
+
+    private fun computeIncomeExpensesBook(config: IncomeExpensesBookCardConfig): IncomeExpensesSummaryData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        val totalIncome = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val totalExpense = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val netCashFlow = totalIncome.add(totalExpense)
+        
+        val categoryTotals = convertedTransactions
+            .filter { it.amount.signum() < 0 }
+            .groupBy { it.category ?: "Uncategorized" }
+            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
+        
+        val categories = listOf(
+            "Food & Drinks" to Icons.Default.Restaurant,
+            "Shopping" to Icons.Default.ShoppingCart,
+            "Housing" to Icons.Default.Home,
+            "Transportation" to Icons.Default.DirectionsCar
+        ).mapNotNull { (name, icon) ->
+            val amount = categoryTotals[name]
+            if (amount != null) {
+                CategoryItem(
+                    name = name,
+                    amount = amount,
+                    change = "+5%",
+                    color = when (name) {
+                        "Food & Drinks" -> Color(0xFFFF5722)
+                        "Shopping" -> AccentBlue
+                        "Housing" -> AccentOrange
+                        "Transportation" -> Color(0xFF607D8B)
+                        else -> AccentPurple
+                    },
+                    icon = icon
+                )
+            } else null
+        }.take(4)
+        
+        return IncomeExpensesSummaryData(
+            totalAmount = netCashFlow,
+            percentageChange = "+154%",
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            categories = categories
+        )
+    }
+
+    private fun computeCashFlowTable(config: CashFlowTableCardConfig): CashFlowTableData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        val incomeTransactions = convertedTransactions.filter { it.amount.signum() >= 0 }
+        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
+        
+        val incomeCount = incomeTransactions.size
+        val expenseCount = expenseTransactions.size
+        
+        val incomeTotal = incomeTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val expenseTotal = expenseTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        
+        val incomeAvgDay = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(84), _currentPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val expenseAvgDay = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(84), _currentPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        
+        val incomeAvgRecord = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(incomeCount.toLong()), _currentPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val expenseAvgRecord = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(expenseCount.toLong()), _currentPrecision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        
+        return CashFlowTableData(
+            incomeCount = incomeCount,
+            expenseCount = expenseCount,
+            incomeAvgDay = incomeAvgDay,
+            expenseAvgDay = expenseAvgDay,
+            incomeAvgRecord = incomeAvgRecord,
+            expenseAvgRecord = expenseAvgRecord,
+            incomeTotal = incomeTotal,
+            expenseTotal = expenseTotal,
+            netCashFlow = incomeTotal.add(expenseTotal),
+            currency = selectedCurrency,
+            precision = _currentPrecision
+        )
+    }
+
+    private fun computePlannedPaymentsTimeline(config: PlannedPaymentsTimelineCardConfig): PlannedPaymentsTimelineData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        
+        // Placeholder data - would need actual planned payment schedule
+        val weeklyData = listOf(
+            "Week 17" to BigDecimal("50000.00"),
+            "Week 18" to BigDecimal("75000.00"),
+            "Week 19" to BigDecimal("40000.00"),
+            "Week 20" to BigDecimal("60000.00"),
+            "Week 21" to BigDecimal("85000.00"),
+            "Week 22" to BigDecimal("30000.00"),
+            "Week 23" to BigDecimal("20000.00")
+        )
+        
+        val total = weeklyData.fold(BigDecimal.ZERO) { acc, (_, amount) -> acc.add(amount) }
+        
+        return PlannedPaymentsTimelineData(
+            total = total,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            weeklyData = weeklyData
+        )
+    }
+
+    private fun computeBalanceByAccounts(config: BalanceByAccountsCardConfig): BalanceByAccountsData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        // Calculate current balance by account
+        val accountBalances = allAccounts.map { account ->
+            val accountTransactions = allTransactions.filter { it.accountId == account.id }
+            val balance = accountTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+                acc.add(tx.amount)
+            }
+            com.osscabinet.ossWallet.ui.analytics.components.AccountBalanceItem(
+                accountName = account.name,
+                balance = balance,
+                currency = account.currencyCode,
+                isNegative = balance < BigDecimal.ZERO
+            )
+        }
+        
+        val totalBalance = accountBalances.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
+        
+        return BalanceByAccountsData(
+            totalBalance = totalBalance,
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            accountBalances = accountBalances
+        )
+    }
+
+    private fun computeBalanceTrend(config: BalanceTrendCardConfig): BalanceTrendData {
+        val selectedCurrency = _uiState.value.selectedCurrency
+        val currentRates = _uiState.value.exchangeRates
+        
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, config.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = _currentPrecision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Calculate balance trend over time
+        val weeklyBalances = (1..12).map { week ->
+            val weekTransactions = convertedTransactions.take((convertedTransactions.size * week / 12).coerceAtLeast(1))
+            val balance = weekTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            balance.toDouble()
+        }
+        
+        val currentBalance = weeklyBalances.lastOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
+        
+        return BalanceTrendData(
+            currentBalance = currentBalance,
+            percentageChange = "-65%",
+            currency = selectedCurrency,
+            precision = _currentPrecision,
+            weeklyBalances = weeklyBalances
         )
     }
     

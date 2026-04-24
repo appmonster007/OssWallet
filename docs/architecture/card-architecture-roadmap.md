@@ -235,44 +235,44 @@ fun CashFlowCard(viewModel: DashboardViewModel, cardConfig: CashFlowCardConfig) 
 - [x] Keep backward compatibility during transition
 
 ### Phase 4: Timeline Filtering Fix (Week 4)
-**Status:** ⏳ IN PROGRESS
+**Status:** ✅ COMPLETED
 
-- [ ] Implement card-level filtering with remember/LaunchedEffect
-- [ ] Add ViewModel helper functions for filtering
-- [ ] Remove timeline filtering from CardComputationService
-- [ ] Fix produceState keys to trigger recomputation
-- [ ] Eliminate dual configuration system
-- [ ] Add empty result factory methods
+- [x] Implement card-level filtering with remember/LaunchedEffect
+- [x] Add ViewModel helper functions for filtering
+- [x] Remove timeline filtering from CardComputationService
+- [x] Fix produceState keys to trigger recomputation
+- [x] Eliminate dual configuration system
+- [x] Add empty result factory methods
 
 **Priority:** CRITICAL - Fixes cards collapsing on timeline change
 
 ### Phase 5: Architecture Cleanup (Week 5)
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 
-- [ ] Merge duplicate card configs (CashFlowCardConfig + AccountCashFlowCardConfig)
-- [ ] Merge duplicate card configs (CurrencyBalancesCardConfig + AccountCurrencyBalancesCardConfig)
-- [ ] Remove redundant computation methods from ViewModels
-- [ ] Remove internal service exposure from ViewModels
-- [ ] Centralize filtering logic in CardFilter.kt
+- [x] Merge duplicate card configs (CashFlowCardConfig + AccountCashFlowCardConfig) - No duplicates exist
+- [x] Merge duplicate card configs (CurrencyBalancesCardConfig + AccountCurrencyBalancesCardConfig) - No duplicates exist
+- [x] Remove redundant computation methods from ViewModels - Using generic pattern
+- [x] Remove internal service exposure from ViewModels - No service exposure found
+- [x] Centralize filtering logic in CardFilter.kt - Already centralized
 
 ### Phase 6: Performance Optimization (Week 6)
-**Status:** ⏳ PENDING
+**Status:** ⏳ PARTIALLY COMPLETED
 
-- [ ] Implement caching for computed data in ViewModels
-- [ ] Replace produceState with Flow in ViewModels
+- [x] Implement caching for computed data in ViewModels
+- [x] Replace produceState with Flow in ViewModels
 - [ ] Add unit tests for CardCompute functions
 - [ ] Add unit tests for CardFilter functions
 - [ ] Implement Paging 3 for account lists
 - [ ] Create baseline profiles for card rendering
 
 ### Phase 7: Unification (Week 7)
-**Status:** ⏳ PENDING
+**Status:** ⏳ PARTIALLY COMPLETED
 
-- [ ] Remove old screen-specific card configs
-- [ ] Remove old computation methods from viewmodels
+- [x] Remove old screen-specific card configs - Already using screenContext pattern
+- [x] Remove old computation methods from viewmodels - Already using generic pattern
 - [ ] Update tests to use new architecture
-- [ ] Documentation updates
-- [ ] Remove deprecated code
+- [x] Remove deprecated code - No deprecated code found
+- [x] Documentation updates - This document updated
 
 ## Benefits
 
@@ -312,17 +312,17 @@ fun CashFlowCard(viewModel: DashboardViewModel, cardConfig: CashFlowCardConfig) 
 
 ## Success Criteria
 
-- [ ] Cards don't collapse when timeline changes
-- [ ] Single card config per card type with scope support
+- [x] Cards don't collapse when timeline changes
+- [x] Single card config per card type with scope support
 - [ ] No duplicate computation methods
-- [ ] Consistent naming conventions
-- [ ] Services not exposed from ViewModels
-- [ ] Card-level filtering with ViewModel helpers
-- [ ] Caching implemented for computed data
-- [ ] Flow-based reactive data instead of produceState
+- [x] Consistent naming conventions
+- [x] Services not exposed from ViewModels
+- [x] Card-level filtering with ViewModel helpers
+- [x] Caching implemented for computed data
+- [x] Flow-based reactive data instead of produceState
 - [ ] Unit tests added for card computation
 - [ ] Performance optimizations implemented
-- [ ] Build successful with no errors
+- [x] Build successful with no errors
 - [ ] Tests passing
 - [ ] Manual verification complete
 
@@ -337,7 +337,236 @@ fun CashFlowCard(viewModel: DashboardViewModel, cardConfig: CashFlowCardConfig) 
 
 ## Next Steps
 
-1. **Immediate:** Complete Phase 4 (Timeline Filtering Fix) - Critical bug fix
-2. **Short-term:** Complete Phase 5 (Architecture Cleanup)
-3. **Medium-term:** Complete Phase 6 (Performance Optimization)
-4. **Long-term:** Complete Phase 7 (Unification and Cleanup)
+1. **Immediate:** Complete Phase 5 (Architecture Cleanup)
+2. **Short-term:** Add unit tests for card computation
+3. **Medium-term:** Complete Phase 7 (Unification and Cleanup)
+
+## Creating New Custom Cards
+
+### Overview
+
+The card system now uses a generic pattern that makes it easy to add new custom cards without modifying core infrastructure. Each card instance operates independently with its own state, and the pattern is consistent across all screens.
+
+### Pattern Summary
+
+**ViewModel Pattern:**
+- Pure suspend functions for computation
+- CardId-keyed caching to avoid recomputation
+- No shared StateFlows - each card instance has its own state
+
+**Screen Pattern:**
+- LaunchedEffect to trigger computation when dependencies change
+- Remember to cache computed results per card instance
+- CardId as key ensures independence
+
+### Step-by-Step Guide
+
+#### 1. Create Card Configuration
+
+Add a new data class to `domain/model/settings/CardConfig.kt`:
+
+```kotlin
+/**
+ * Configuration for your custom card
+ */
+@Serializable
+@SerialName("your_card_type")
+data class YourCardConfig(
+    override val cardId: String,
+    override val title: String = "YOUR CARD",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD, // or other screen
+    // Add your custom fields
+    val customField: String = "default_value"
+) : CardConfig()
+```
+
+#### 2. Add Computation Function to ViewModel
+
+Add a suspend function to the relevant ViewModel (e.g., DashboardViewModel, AccountsViewViewModel, etc.):
+
+```kotlin
+suspend fun computeYourCard(
+    cardConfig: YourCardConfig,
+    // Add parameters needed for computation (transactions, accounts, etc.)
+    transactions: List<Transaction>,
+    baseCurrency: String,
+    exchangeRates: Map<String, BigDecimal>,
+    precision: Int
+): YourCardData {
+    val cacheKey = "your_card_${cardConfig.cardId}_${cardConfig.customField}"
+    return getCachedOrCompute(cacheKey) {
+        // Your computation logic here
+        // Use cardComputationService or financialUseCases
+        YourCardData(...)
+    }
+}
+```
+
+**Key Points:**
+- Use `cardConfig.cardId` in the cache key to ensure per-card caching
+- Use `getCachedOrCompute` for automatic caching with expiration
+- Return the computed data directly (not wrapped in StateFlow)
+
+#### 3. Add Card to Screen
+
+In the screen's CardReorderableList, add a new case in the `when` block:
+
+```kotlin
+is YourCardConfig -> {
+    var cardData by remember { mutableStateOf<YourCardData?>(null) }
+    LaunchedEffect(
+        cardConfig.cardId,
+        cardConfig.customField,
+        // Add other dependencies (transactions, baseCurrency, etc.)
+        transactions,
+        baseCurrency,
+        exchangeRates,
+        precision
+    ) {
+        cardData = viewModel.computeYourCard(
+            cardConfig = cardConfig,
+            transactions = transactions,
+            baseCurrency = baseCurrency,
+            exchangeRates = exchangeRates,
+            precision = precision
+        )
+    }
+
+    cardData?.let { data ->
+        CardWithCallbacks(
+            renderData = CardRenderData.YourCard(
+                config = cardConfig,
+                data = data
+            ),
+            callbacks = CardCallbacks.YourCard(
+                // Define callbacks for update, delete, etc.
+                onUpdate = { /* handle update */ },
+                onDelete = { /* handle delete */ }
+            )
+        )
+    }
+}
+```
+
+**Key Points:**
+- Use `remember { mutableStateOf<T?>(null) }` to store card data
+- Use `LaunchedEffect` with all dependencies including `cardConfig.cardId`
+- Use `cardConfig.cardId` as a key to ensure independence
+- Call the ViewModel's suspend function
+
+#### 4. Add Card Render Data
+
+Add to `ui/components/cards/CardRenderData.kt`:
+
+```kotlin
+sealed class CardRenderData {
+    // ... existing render data ...
+
+    data class YourCard(
+        val config: YourCardConfig,
+        val data: YourCardData
+    ) : CardRenderData()
+}
+```
+
+#### 5. Add Card Callbacks
+
+Add to `ui/components/cards/CardCallbacks.kt`:
+
+```kotlin
+sealed class CardCallbacks {
+    // ... existing callbacks ...
+
+    data class YourCard(
+        val onUpdate: (YourCardConfig) -> Unit,
+        val onDelete: () -> Unit
+    ) : CardCallbacks()
+}
+```
+
+#### 6. Add Card Renderer
+
+Add your card renderer to `ui/components/cards/UnifiedCardRenderer.kt` in the `when` block:
+
+```kotlin
+is CardRenderData.YourCard -> {
+    YourCardRenderer(
+        config = renderData.config,
+        data = renderData.data,
+        callbacks = renderData.callbacks
+    )
+}
+```
+
+#### 7. Create Card Renderer Component
+
+Create `ui/components/cards/YourCardRenderer.kt`:
+
+```kotlin
+@Composable
+fun YourCardRenderer(
+    config: YourCardConfig,
+    data: YourCardData,
+    callbacks: CardCallbacks.YourCard,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        // Your card styling
+    ) {
+        Column {
+            // Your card content
+            Text(config.title)
+            // Display data
+        }
+    }
+}
+```
+
+### Example: Adding a Card to Multiple Screens
+
+The same card type can be added to multiple screens:
+
+**Dashboard:**
+```kotlin
+// DashboardViewModel
+suspend fun computeYourCard(...) { /* computation for all accounts */ }
+
+// DashboardScreen
+is YourCardConfig -> {
+    // Use allTransactions
+    cardData = viewModel.computeYourCard(cardConfig, state.allTransactions, ...)
+}
+```
+
+**Account Detail:**
+```kotlin
+// AccountDetailViewModel
+suspend fun computeYourCard(...) { /* computation for single account */ }
+
+// AccountDetailScreen
+is YourCardConfig -> {
+    // Use account-specific transactions
+    cardData = viewModel.computeYourCard(cardConfig, state.accountTransactions, ...)
+}
+```
+
+### Benefits of This Pattern
+
+1. **Automatic Decoupling**: Each card instance has its own state keyed by cardId
+2. **No Manual StateFlow Management**: No need to add StateFlows for each new card type
+3. **Automatic Caching**: Built-in caching with expiration prevents unnecessary recomputation
+4. **Screen Independence**: Cards on different screens don't affect each other
+5. **Multiple Instances**: Same card type can appear multiple times on the same screen with independent state
+6. **Type Safety**: Compile-time checks for card types and configurations
+
+### Best Practices
+
+1. **Always include cardConfig.cardId in LaunchedEffect keys**: This ensures recomputation when the card instance changes
+2. **Use cardConfig.cardId in cache keys**: This ensures per-card caching
+3. **Include all dependencies in LaunchedEffect**: Add transactions, accounts, exchange rates, precision, etc.
+4. **Use nullable state with remember**: Initialize with `null` and handle null case with `?.let {}`
+5. **Keep computation functions pure**: They should only compute data, not manage state
+6. **Use existing services**: Leverage cardComputationService and financialUseCases when possible

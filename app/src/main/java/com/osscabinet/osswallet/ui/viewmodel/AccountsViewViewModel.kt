@@ -79,86 +79,88 @@ class AccountsViewViewModel(
         cardDataCache.clear()
     }
 
-    // Flow-based card data computation for NetWorthCard
-    private val _netWorthCardData = MutableStateFlow<Pair<BigDecimal, CashFlowResult>?>(null)
-    val netWorthCardData: StateFlow<Pair<BigDecimal, CashFlowResult>?> = _netWorthCardData.asStateFlow()
+    // Generic card data computation functions (pure functions, no StateFlows)
+    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
 
-    fun computeNetWorthCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "networth_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeNetWorth(
-                    accounts = accounts,
-                    transactions = transactions,
-                    engine = financialUseCasesCardComputationAdapter,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _netWorthCardData.value = result
+    suspend fun computeNetWorthCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<BigDecimal, CashFlowResult> {
+        val cacheKey = "networth_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeNetWorth(
+                accounts = accounts,
+                transactions = transactions,
+                engine = financialUseCasesCardComputationAdapter,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 
-    // Flow-based card data computation for CurrencyBalancesCard
-    private val _currencyBalancesCardData = MutableStateFlow<List<CurrencyAggregationItem>?>(null)
-    val currencyBalancesCardData: StateFlow<List<CurrencyAggregationItem>?> = _currencyBalancesCardData.asStateFlow()
-
-    fun computeCurrencyBalancesCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeCurrencyTotals(
-                    accounts = accounts,
-                    transactions = transactions,
-                    engine = financialUseCasesCardComputationAdapter,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _currencyBalancesCardData.value = result
+    suspend fun computeCurrencyBalancesCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<CurrencyAggregationItem> {
+        val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeCurrencyTotals(
+                accounts = accounts,
+                transactions = transactions,
+                engine = financialUseCasesCardComputationAdapter,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 
-    // Flow-based card data computation for CashFlowCard
-    private val _cashFlowCardData = MutableStateFlow<CashFlowResult?>(null)
-    val cashFlowCardData: StateFlow<CashFlowResult?> = _cashFlowCardData.asStateFlow()
-
-    fun computeCashFlowCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeCashFlow(
-                    transactions = transactions,
-                    engine = financialUseCasesCardComputationAdapter,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _cashFlowCardData.value = result
+    suspend fun computeCashFlowCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeCashFlow(
+                transactions = transactions,
+                engine = financialUseCasesCardComputationAdapter,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 
-    // Flow-based card data computation for AccountsCard
-    private val _accountsCardData = MutableStateFlow<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null)
-    val accountsCardData: StateFlow<Pair<List<Account>, Map<String, AccountSummaryItem>>?> = _accountsCardData.asStateFlow()
-
-    fun computeAccountsCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "accounts_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeAccountStats(
-                    accounts = accounts,
-                    transactions = transactions,
-                    engine = cardComputationService,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _accountsCardData.value = result
+    suspend fun computeAccountsCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        val cacheKey = "accounts_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeAccountStats(
+                accounts = accounts,
+                transactions = transactions,
+                engine = cardComputationService,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 

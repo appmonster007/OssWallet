@@ -77,44 +77,46 @@ class AccountDetailViewModel(
         cardDataCache.clear()
     }
 
-    // Flow-based card data computation for CashFlowCard
-    private val _cashFlowCardData = MutableStateFlow<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(null)
-    val cashFlowCardData: StateFlow<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?> = _cashFlowCardData.asStateFlow()
+    // Generic card data computation functions (pure functions, no StateFlows)
+    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
 
-    fun computeCashFlowCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeCashFlow(
-                    transactions = transactions,
-                    engine = cardComputationService,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _cashFlowCardData.value = result
+    suspend fun computeCashFlowCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): com.osscabinet.ossWallet.domain.usecase.CashFlowResult {
+        val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeCashFlow(
+                transactions = transactions,
+                engine = cardComputationService,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 
-    // Flow-based card data computation for CurrencyBalancesCard
-    private val _currencyBalancesCardData = MutableStateFlow<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(null)
-    val currencyBalancesCardData: StateFlow<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?> = _currencyBalancesCardData.asStateFlow()
-
-    fun computeCurrencyBalancesCard(cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig, accounts: List<Account>, transactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int) {
-        viewModelScope.launch {
-            val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
-            val result = getCachedOrCompute(cacheKey) {
-                cardConfig.computeCurrencyTotals(
-                    accounts = accounts,
-                    transactions = transactions,
-                    engine = cardComputationService,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
-                )
-            }
-            _currencyBalancesCardData.value = result
+    suspend fun computeCurrencyBalancesCard(
+        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig,
+        accounts: List<Account>,
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem> {
+        val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
+        return getCachedOrCompute(cacheKey) {
+            cardConfig.computeCurrencyTotals(
+                accounts = accounts,
+                transactions = transactions,
+                engine = cardComputationService,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
+            )
         }
     }
 

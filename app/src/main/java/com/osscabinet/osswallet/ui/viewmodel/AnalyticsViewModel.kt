@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
 import com.osscabinet.ossWallet.ui.analytics.components.PaymentItem
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
+import com.osscabinet.ossWallet.ui.analytics.components.AccountBalanceItem
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
 import com.osscabinet.ossWallet.domain.model.settings.AnalyticsCardsConfig
@@ -168,6 +169,7 @@ class AnalyticsViewModel(
         viewModelScope.launch {
             transactionUseCases.getTransactions().collect { transactions ->
                 allTransactions = transactions
+                _uiState.update { it.copy(allTransactions = transactions) }
                 calculateAnalytics()
                 // Invalidate cache when transactions change to force recomputation
                 invalidateAllCache()
@@ -178,6 +180,7 @@ class AnalyticsViewModel(
             settingsDataStore.currentProfileId.collect { profileId ->
                 accountRepository.getAllAccounts(profileId).collect { accounts ->
                     allAccounts = accounts
+                    _uiState.update { it.copy(accounts = accounts) }
                     calculateAnalytics()
                     // Invalidate cache when accounts change to force recomputation
                     invalidateAllCache()
@@ -213,8 +216,326 @@ class AnalyticsViewModel(
     }
 
     // Generic card data computation functions (pure functions, no StateFlows)
-    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
+    // These follow the DashboardScreen pattern - screens use produceState to call them with explicit parameters
 
+    // NEW: Card compute functions that accept explicit parameters (like DashboardScreen)
+    suspend fun computeCategoryBreakdownForCard(
+        cardConfig: CategoryBreakdownCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeCategoryBreakdown(
+        config = cardConfig,
+        transactions = allTransactions,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
+    suspend fun computeTimelineTrajectoryForCard(
+        cardConfig: TimelineTrajectoryCardConfig,
+        allTransactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeTimelineTrajectory(
+        config = cardConfig,
+        transactions = allTransactions,
+        accounts = accounts,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
+    suspend fun computeCategoryExpenseTreemapForCard(
+        cardConfig: CategoryExpenseTreemapCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ) = cardComputationService.computeCategoryExpenseTreemap(
+        config = cardConfig,
+        transactions = allTransactions,
+        baseCurrency = baseCurrency,
+        exchangeRates = exchangeRates,
+        precision = precision
+    )
+
+    suspend fun computeIncomeExpensesSummaryForCard(
+        cardConfig: IncomeExpensesSummaryCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): IncomeExpensesSummaryData {
+        val selectedCurrency = baseCurrency
+        val currentRates = exchangeRates
+        
+        // Filter transactions based on timeline range
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // Group transactions by category
+        val categoryGroups = filteredTransactions.groupBy { it.categoryId }
+        
+        // Calculate total per category
+        val categories = categoryGroups.map { (categoryId, transactions) ->
+            val categoryTotal = transactions.sumOf { it.amount }
+            CategoryItem(
+                name = categoryId.toString(), // TODO: Get actual category name
+                amount = categoryTotal,
+                change = "0%", // TODO: Calculate actual change
+                color = PositiveAmountColor, // TODO: Use actual category color
+                icon = Icons.Filled.Label // TODO: Use actual category icon
+            )
+        }
+        
+        val totalAmount = categories.sumOf { it.amount }
+        val percentageChange = "0%" // TODO: Calculate actual percentage change
+        
+        return IncomeExpensesSummaryData(
+            totalAmount = totalAmount,
+            percentageChange = percentageChange,
+            currency = selectedCurrency,
+            precision = precision,
+            categories = categories
+        )
+    }
+
+    suspend fun computePeriodComparisonForCard(
+        cardConfig: PeriodComparisonCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): PeriodComparisonData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        val currentValue = filteredTransactions.sumOf { it.amount }
+        
+        // TODO: Calculate chart data for period comparison
+        val chartData = emptyList<Double>()
+        
+        return PeriodComparisonData(
+            currentValue = currentValue,
+            currency = baseCurrency,
+            precision = precision,
+            chartData = chartData
+        )
+    }
+
+    suspend fun computeCashFlowTrendForCard(
+        cardConfig: CashFlowTrendCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowTrendData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // TODO: Calculate bar and line data for cash flow trend
+        val barData = emptyList<Double>()
+        val lineData = emptyList<Double>()
+        
+        return CashFlowTrendData(
+            barData = barData,
+            lineData = lineData
+        )
+    }
+
+    suspend fun computeCashFlowProgressForCard(
+        cardConfig: CashFlowProgressCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowProgressData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        val income = filteredTransactions.filter { it.amount > BigDecimal.ZERO }.sumOf { it.amount }
+        val expenses = filteredTransactions.filter { it.amount < BigDecimal.ZERO }.sumOf { it.amount.abs() }
+        
+        return CashFlowProgressData(
+            income = income,
+            expenses = expenses,
+            currency = baseCurrency,
+            precision = precision
+        )
+    }
+
+    suspend fun computeBalanceForecastForCard(
+        cardConfig: BalanceForecastCardConfig,
+        allTransactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): BalanceForecastData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // TODO: Calculate forecast balance and chart data
+        val forecastBalance = accounts.sumOf { it.balance }
+        val chartData = emptyList<Triple<Double, Double, Double>>()
+        
+        return BalanceForecastData(
+            forecastBalance = forecastBalance,
+            currency = baseCurrency,
+            precision = precision,
+            chartData = chartData
+        )
+    }
+
+    suspend fun computePlannedPaymentsForCard(
+        cardConfig: PlannedPaymentsCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): PlannedPaymentsData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // TODO: Calculate planned payments
+        val total = BigDecimal.ZERO
+        val payments = emptyList<PaymentItem>()
+        
+        return PlannedPaymentsData(
+            total = total,
+            currency = baseCurrency,
+            precision = precision,
+            payments = payments
+        )
+    }
+
+    suspend fun computeIncomeExpensesBookForCard(
+        cardConfig: IncomeExpensesBookCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): IncomeExpensesBookData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        val incomeTotal = filteredTransactions.filter { it.amount > BigDecimal.ZERO }.sumOf { it.amount }
+        val expenseTotal = filteredTransactions.filter { it.amount < BigDecimal.ZERO }.sumOf { it.amount.abs() }
+        val incomeCount = filteredTransactions.count { it.amount > BigDecimal.ZERO }
+        val expenseCount = filteredTransactions.count { it.amount < BigDecimal.ZERO }
+        
+        return IncomeExpensesBookData(
+            incomeTotal = incomeTotal,
+            expenseTotal = expenseTotal,
+            incomeCount = incomeCount,
+            expenseCount = expenseCount,
+            currency = baseCurrency,
+            precision = precision
+        )
+    }
+
+    suspend fun computeCashFlowTableForCard(
+        cardConfig: CashFlowTableCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowTableData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        val incomeCount = filteredTransactions.count { it.amount > BigDecimal.ZERO }
+        val expenseCount = filteredTransactions.count { it.amount < BigDecimal.ZERO }
+        val incomeTotal = filteredTransactions.filter { it.amount > BigDecimal.ZERO }.sumOf { it.amount }
+        val expenseTotal = filteredTransactions.filter { it.amount < BigDecimal.ZERO }.sumOf { it.amount.abs() }
+        val netCashFlow = incomeTotal - expenseTotal
+        
+        // TODO: Calculate average day and average record
+        val incomeAvgDay = BigDecimal.ZERO
+        val expenseAvgDay = BigDecimal.ZERO
+        val incomeAvgRecord = BigDecimal.ZERO
+        val expenseAvgRecord = BigDecimal.ZERO
+        
+        return CashFlowTableData(
+            incomeCount = incomeCount,
+            expenseCount = expenseCount,
+            incomeAvgDay = incomeAvgDay,
+            expenseAvgDay = expenseAvgDay,
+            incomeAvgRecord = incomeAvgRecord,
+            expenseAvgRecord = expenseAvgRecord,
+            incomeTotal = incomeTotal,
+            expenseTotal = expenseTotal,
+            netCashFlow = netCashFlow,
+            currency = baseCurrency,
+            precision = precision
+        )
+    }
+
+    suspend fun computePlannedPaymentsTimelineForCard(
+        cardConfig: PlannedPaymentsTimelineCardConfig,
+        allTransactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): PlannedPaymentsTimelineData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // TODO: Calculate weekly data for planned payments timeline
+        val total = BigDecimal.ZERO
+        val weeklyData = emptyList<Pair<String, BigDecimal>>()
+        
+        return PlannedPaymentsTimelineData(
+            total = total,
+            currency = baseCurrency,
+            precision = precision,
+            weeklyData = weeklyData
+        )
+    }
+
+    suspend fun computeBalanceByAccountsForCard(
+        cardConfig: BalanceByAccountsCardConfig,
+        allTransactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): BalanceByAccountsData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        val totalBalance = accounts.sumOf { it.balance }
+        
+        // TODO: Calculate account balances
+        val accountBalances = emptyList<AccountBalanceItem>()
+        
+        return BalanceByAccountsData(
+            totalBalance = totalBalance,
+            currency = baseCurrency,
+            precision = precision,
+            accountBalances = accountBalances
+        )
+    }
+
+    suspend fun computeBalanceTrendForCard(
+        cardConfig: BalanceTrendCardConfig,
+        allTransactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): BalanceTrendData {
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        val currentBalance = accounts.sumOf { it.balance }
+        
+        // TODO: Calculate percentage change and weekly balances
+        val percentageChange = "0%"
+        val weeklyBalances = emptyList<Double>()
+        
+        return BalanceTrendData(
+            currentBalance = currentBalance,
+            percentageChange = percentageChange,
+            currency = baseCurrency,
+            precision = precision,
+            weeklyBalances = weeklyBalances
+        )
+    }
+
+    // OLD: Card compute functions that use internal state (deprecated, kept for backward compatibility)
     suspend fun computeCategoryBreakdownCard(
         cardConfig: CategoryBreakdownCardConfig
     ): List<CategoryBreakdownData> {
@@ -1247,6 +1568,9 @@ data class AnalyticsUiState(
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val decimalPrecision: Int = 2,
     val isLoading: Boolean = false,
-    val hasLoadedExchangeRates: Boolean = false
+    val hasLoadedExchangeRates: Boolean = false,
+    // Data needed for card computation (like DashboardScreen)
+    val allTransactions: List<Transaction> = emptyList(),
+    val accounts: List<Account> = emptyList()
 )
 

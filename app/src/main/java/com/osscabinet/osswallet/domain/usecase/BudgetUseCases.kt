@@ -23,7 +23,7 @@ class BudgetUseCases(
             budgets.map { budget ->
                 val spent = transactions
                     .filter { it.amount.signum() < 0 && it.category.equals(budget.category, ignoreCase = true) }
-                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount.abs()) }
+                    .fold(BigDecimal.ZERO) { acc, t -> acc.add(t.amount) }
                 budget.copy(spent = spent.abs())
             }
         }

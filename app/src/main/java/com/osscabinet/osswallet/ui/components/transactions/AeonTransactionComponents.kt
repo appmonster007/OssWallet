@@ -93,10 +93,10 @@ fun AeonTransactionList(
 
             val expenseByCurrency = weekTransactions.filter { it.transaction.amount.signum() < 0 }
                 .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount.abs()) } }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val weekExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
 
-            val weekNetBase = weekIncomeBase.subtract(weekExpenseBase)
+            val weekNetBase = weekIncomeBase.add(weekExpenseBase)
 
             val weekEndTimestamp = weekEnd.time
             // Calculate cumulative closing balances for all accounts in the filtered list up to this week's end
@@ -354,7 +354,7 @@ fun AeonWeeklyHeader(
                         allWeekCurrencies.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
                             val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
-                            val net = inc.subtract(exp)
+                            val net = inc.add(exp)
                             val bal = closingBalancesByCurrency[curr]
 
                             Row(

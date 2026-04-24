@@ -139,10 +139,10 @@ fun RecentActivitiesCard(
 
             val expenseByCurrency = dayTransactions.filter { it.transaction.amount.signum() < 0 }
                 .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount.abs()) } }
+                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
             val dayExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, decimalPrecision)
 
-            val dayNetBase = dayIncomeBase.subtract(dayExpenseBase)
+            val dayNetBase = dayIncomeBase.add(dayExpenseBase)
 
             // Calculate closing balance at end of day
             val dayEndTimestamp = dayTransactions.maxOf { it.transaction.timestamp }
@@ -392,7 +392,7 @@ fun DailyHeader(
                         allCurrencies.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
                             val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
-                            val net = inc.subtract(exp)
+                            val net = inc.add(exp)
                             val bal = closingBalancesByCurrency[curr]
 
                             Row(

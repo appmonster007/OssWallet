@@ -297,9 +297,9 @@ class CardComputationServiceImpl(
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
             val expense = txs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
-            val netBalance = income - expense
+            val netBalance = income + expense
             val percentage = if (totalNetBalance.abs() > BigDecimal.ZERO) {
                 (netBalance.abs() / totalNetBalance.abs()).toFloat()
             } else 0f
@@ -319,9 +319,9 @@ class CardComputationServiceImpl(
                         CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                     }
                     val subExpense = subTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                        CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                     }
-                    val subNetBalance = subIncome - subExpense
+                    val subNetBalance = subIncome + subExpense
                     val subPercentage = if (netBalance.abs() > BigDecimal.ZERO) {
                         (subNetBalance.abs() / netBalance.abs()).toFloat()
                     } else 0f
@@ -380,7 +380,7 @@ class CardComputationServiceImpl(
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
             val expense = bucketTransactions.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
             
             // Calculate running balance
@@ -430,17 +430,17 @@ class CardComputationServiceImpl(
         
         val totalExpense = transactionCategoryMap.values.sumOf { txs ->
             txs.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
         }
         
         return transactionCategoryMap.map { (category, txs) ->
             val categoryEntity = categoryMap[category]
             val expense = txs.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
-            val percentage = if (totalExpense > BigDecimal.ZERO) {
-                (expense / totalExpense).toFloat()
+            val percentage = if (totalExpense.abs() > BigDecimal.ZERO) {
+                (expense.abs() / totalExpense.abs()).toFloat()
             } else 0f
             
             // Get category color from database, or use default
@@ -455,10 +455,10 @@ class CardComputationServiceImpl(
                 subCategories.map { subCat ->
                     val subTxs = txs.filter { it.category == subCat.name }
                     val subExpense = subTxs.sumOf { tx ->
-                        CurrencyService.convertAmount(tx.amount.abs(), tx.currency, baseCurrency, exchangeRates, precision)
+                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
                     }
-                    val subPercentage = if (expense > BigDecimal.ZERO) {
-                        (subExpense / expense).toFloat()
+                    val subPercentage = if (expense.abs() > BigDecimal.ZERO) {
+                        (subExpense.abs() / expense.abs()).toFloat()
                     } else 0f
                     
                     CategoryExpenseTreemapData(

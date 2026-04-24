@@ -139,7 +139,8 @@ fun AnalyticsScreen(
                                 config = cardConfig,
                                 data = data ?: emptyList()
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -155,7 +156,8 @@ fun AnalyticsScreen(
                                 config = cardConfig,
                                 data = data ?: emptyList()
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -171,7 +173,8 @@ fun AnalyticsScreen(
                                 config = cardConfig,
                                 data = data ?: emptyList()
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -193,7 +196,8 @@ fun AnalyticsScreen(
                                     categories = emptyList<com.osscabinet.ossWallet.ui.analytics.components.CategoryItem>()
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -214,7 +218,8 @@ fun AnalyticsScreen(
                                     chartData = emptyList<Double>()
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -233,7 +238,8 @@ fun AnalyticsScreen(
                                     lineData = emptyList<Double>()
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -254,7 +260,8 @@ fun AnalyticsScreen(
                                     precision = decimalPrecision
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -296,7 +303,8 @@ fun AnalyticsScreen(
                                     payments = emptyList<com.osscabinet.ossWallet.ui.analytics.components.PaymentItem>()
                                 )
                             ),
-                            callbacks = CardCallbacks.Analytics(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -318,7 +326,8 @@ fun AnalyticsScreen(
                                     categories = emptyList<com.osscabinet.ossWallet.ui.analytics.components.CategoryItem>()
                                 )
                             ),
-                            callbacks = CardCallbacks.IncomeExpensesBook(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -346,7 +355,8 @@ fun AnalyticsScreen(
                                     precision = decimalPrecision
                                 )
                             ),
-                            callbacks = CardCallbacks.CashFlowTable(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -367,7 +377,8 @@ fun AnalyticsScreen(
                                     weeklyData = emptyList<Pair<String, java.math.BigDecimal>>()
                                 )
                             ),
-                            callbacks = CardCallbacks.PlannedPaymentsTimeline(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -388,7 +399,8 @@ fun AnalyticsScreen(
                                     accountBalances = emptyList<com.osscabinet.ossWallet.ui.analytics.components.AccountBalanceItem>()
                                 )
                             ),
-                            callbacks = CardCallbacks.BalanceByAccounts(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )
@@ -410,7 +422,8 @@ fun AnalyticsScreen(
                                     weeklyBalances = emptyList<Double>()
                                 )
                             ),
-                            callbacks = CardCallbacks.BalanceTrend(
+                            callbacks = CardCallbacks.AnalyticsWithTimeline(
+                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
                                 onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
                                 onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
                             )

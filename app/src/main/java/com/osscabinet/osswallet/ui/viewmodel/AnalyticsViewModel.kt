@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
@@ -433,6 +434,35 @@ class AnalyticsViewModel(
     suspend fun removeCard(cardId: String) {
         val currentConfig = analyticsCardsConfig.value
         val newCards = currentConfig.cards.filter { it.cardId != cardId }
+        val updatedConfig = AnalyticsCardsConfig(newCards)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+    }
+    
+    suspend fun updateCardTimelineRange(cardId: String, newTimelineRange: TimelineRange) {
+        val currentConfig = analyticsCardsConfig.value
+        val newCards = currentConfig.cards.map { card ->
+            if (card.cardId == cardId) {
+                when (card) {
+                    is CategoryBreakdownCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is TimelineTrajectoryCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is CategoryExpenseTreemapCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is IncomeExpensesSummaryCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is PeriodComparisonCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is CashFlowTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is CashFlowProgressCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is BalanceForecastCardConfig -> card // BalanceForecast doesn't have timelineRange
+                    is PlannedPaymentsCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is IncomeExpensesBookCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is CashFlowTableCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is PlannedPaymentsTimelineCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is BalanceByAccountsCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    is BalanceTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
+                    else -> card
+                }
+            } else {
+                card
+            }
+        }
         val updatedConfig = AnalyticsCardsConfig(newCards)
         settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
     }

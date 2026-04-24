@@ -453,79 +453,11 @@ class DashboardViewModel(
 
     // ============================================================
     // OLD METHODS (TO BE REMOVED IN PHASE 2)
-    // These will be removed in Phase 2: Architecture Cleanup
+    // These have been removed - compute functions are now in CardCompute.kt as extension functions
     // ============================================================
 
     // Helper functions to compute data for a specific card based on its config
-    suspend fun computeNetWorthForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,
-        accounts: List<Account>,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): Pair<BigDecimal, CashFlowResult> {
-        return cardComputationService.computeNetWorth(
-            config = cardConfig,
-            accounts = accounts,
-            transactions = allTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
-
-    suspend fun computeCurrencyTotalsForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig,
-        accounts: List<Account>,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): List<CurrencyAggregationItem> {
-        return cardComputationService.computeCurrencyTotals(
-            config = cardConfig,
-            accounts = accounts,
-            transactions = allTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
-
-    suspend fun computeCashFlowForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): CashFlowResult {
-        return cardComputationService.computeCashFlow(
-            config = cardConfig,
-            transactions = allTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
-
-    suspend fun computeAccountStatsForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig,
-        accounts: List<Account>,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        return cardComputationService.computeAccountStats(
-            config = cardConfig,
-            accounts = accounts,
-            transactions = allTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
+    // These have been moved to CardCompute.kt as extension functions for unified logic
 
     // NEW: Card ViewState computation functions
     // These functions compute lean, pre-formatted ViewStates for each card
@@ -961,6 +893,9 @@ class DashboardViewModel(
                         cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
                     }
                     is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> {
+                        cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
+                    }
+                    is com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig -> {
                         cardStates[cardConfig.cardId] = NetWorthCardViewState.loading(cardConfig.cardId) // Placeholder
                     }
                 }

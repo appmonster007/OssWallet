@@ -44,6 +44,8 @@ import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.computeCashFlowWithCardComputationService
+import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotalsWithCardComputationService
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
@@ -336,7 +338,7 @@ fun AccountDetailScreen(
             AccountDetailCardTypeSelectionDialog(
                 onDismiss = { showAddCardDialog = false },
                 onCardTypeSelected = { cardType ->
-                    cardManagerViewModel.addAccountDetailCard(cardType)
+                    cardManagerViewModel.addAccountDetailCard(cardType, accountId)
                     showAddCardDialog = false
                 }
             )
@@ -347,7 +349,7 @@ fun AccountDetailScreen(
 @Composable
 fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
-    cardsConfig: com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardsConfig,
+    cardsConfig: com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig,
     cardManagerViewModel: CardManagerViewModel,
     accountDetailViewModel: AccountDetailViewModel,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
@@ -394,19 +396,19 @@ fun DynamicAccountDetailCards(
                             precision = state.decimalPrecision
                         ),
                         callbacks = CardCallbacks.AccountHero(
-                            onShowCurrencyBadgesChange = { show ->
-                                accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardConfig.cardId, show)
+                            onShowCurrencyBadgesChange = { cardId, show ->
+                                accountDetailViewModel.updateCardHeroShowCurrencyBadges(cardId, show)
                             },
                             onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccount(accountId)) },
                             onDelete = { accountDetailViewModel.removeAccountDetailCard(cardConfig.cardId) }
                         )
                     )
                 }
-                is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig -> {
+                is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig -> {
                     val cashFlowResult by produceState<com.osscabinet.ossWallet.domain.usecase.CashFlowResult?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
-                        value = accountDetailViewModel.computeCashFlowForCard(
-                            cardConfig = cardConfig,
-                            accountTransactions = state.allAccountTransactions,
+                        value = cardConfig.computeCashFlowWithCardComputationService(
+                            allTransactions = state.allAccountTransactions,
+                            cardComputationService = accountDetailViewModel.cardComputationService,
                             baseCurrency = state.account.currencyCode,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
@@ -415,18 +417,18 @@ fun DynamicAccountDetailCards(
 
                     cashFlowResult?.let { result ->
                         CardWithCallbacks(
-                            renderData = CardRenderData.AccountCashFlow(
+                            renderData = CardRenderData.CashFlow(
                                 config = cardConfig,
                                 cashFlowResult = result,
                                 baseCurrency = state.account.currencyCode,
                                 precision = state.decimalPrecision
                             ),
-                            callbacks = CardCallbacks.AccountCashFlow(
-                                onShowBaseConversionChange = { show ->
-                                    accountDetailViewModel.updateCardCashFlowShowBaseConversion(cardConfig.cardId, show)
+                            callbacks = CardCallbacks.CashFlow(
+                                onShowBaseConversionChange = { cardId, show ->
+                                    accountDetailViewModel.updateCardCashFlowShowBaseConversion(cardId, show)
                                 },
-                                onTimelineRangeChange = { range ->
-                                    accountDetailViewModel.updateCardCashFlowTimelineRange(cardConfig.cardId, range)
+                                onTimelineRangeChange = { cardId, range ->
+                                    accountDetailViewModel.updateCardCashFlowTimelineRange(cardId, range)
                                 },
                                 onClickIncome = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = true)) },
                                 onClickExpense = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.ByAccountAndType(accountId, isIncome = false)) },
@@ -435,12 +437,12 @@ fun DynamicAccountDetailCards(
                         )
                     }
                 }
-                is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig -> {
+                is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig -> {
                     val currencyTotals by produceState<List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
-                        value = accountDetailViewModel.computeCurrencyTotalsForCard(
-                            cardConfig = cardConfig,
-                            account = state.account,
-                            accountTransactions = state.allAccountTransactions,
+                        value = cardConfig.computeCurrencyTotalsWithCardComputationService(
+                            accounts = listOf(state.account),
+                            allTransactions = state.allAccountTransactions,
+                            cardComputationService = accountDetailViewModel.cardComputationService,
                             baseCurrency = state.baseCurrency,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
@@ -449,21 +451,21 @@ fun DynamicAccountDetailCards(
 
                     currencyTotals?.let { totals ->
                         CardWithCallbacks(
-                            renderData = CardRenderData.AccountCurrencyBalances(
+                            renderData = CardRenderData.CurrencyBalances(
                                 config = cardConfig,
                                 currencyTotals = totals,
                                 baseCurrency = state.baseCurrency,
                                 precision = state.decimalPrecision
                             ),
-                            callbacks = CardCallbacks.AccountCurrencyBalances(
-                                onLayoutChange = { layout ->
-                                    accountDetailViewModel.updateCardCurrencyBalancesLayout(cardConfig.cardId, layout)
+                            callbacks = CardCallbacks.CurrencyBalances(
+                                onLayoutChange = { cardId, layout ->
+                                    accountDetailViewModel.updateCardCurrencyBalancesLayout(cardId, layout)
                                 },
-                                onShowBaseConversionChange = { show ->
-                                    accountDetailViewModel.updateCardCurrencyBalancesShowBaseConversion(cardConfig.cardId, show)
+                                onShowBaseConversionChange = { cardId, show ->
+                                    accountDetailViewModel.updateCardCurrencyBalancesShowBaseConversion(cardId, show)
                                 },
-                                onTimelineRangeChange = { range ->
-                                    accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardConfig.cardId, range)
+                                onTimelineRangeChange = { cardId, range ->
+                                    accountDetailViewModel.updateCardCurrencyBalancesTimelineRange(cardId, range)
                                 },
                                 onCurrencyClick = { currency, timelineRange ->
                                     val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
@@ -494,7 +496,7 @@ fun DynamicAccountDetailCards(
         AccountDetailCardTypeSelectionDialog(
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
-                cardManagerViewModel.addAccountDetailCard(cardType)
+                cardManagerViewModel.addAccountDetailCard(cardType, accountId)
                 onShowAddCardDialogChange(false)
             }
         )
@@ -530,12 +532,12 @@ fun AccountDetailCardTypeSelectionDialog(
             CardTypeOptionData(
                 title = "Cash Flow",
                 description = "Track income and expenses for this account",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CASH_FLOW) }
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.CASH_FLOW) }
             ),
             CardTypeOptionData(
                 title = "Currency Balances",
                 description = "Show currency breakdown for this account",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_CURRENCY_BALANCES) }
+                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.CURRENCY_BALANCES) }
             )
         )
     )
@@ -543,7 +545,7 @@ fun AccountDetailCardTypeSelectionDialog(
 
 @Composable
 fun DeleteAccountDetailCardsDialog(
-    cardsConfig: List<com.osscabinet.ossWallet.domain.model.settings.AccountDetailCardConfig>,
+    cardsConfig: List<com.osscabinet.ossWallet.domain.model.settings.CardConfig>,
     onDismiss: () -> Unit,
     onDeleteCards: (List<String>) -> Unit
 ) {

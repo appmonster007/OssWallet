@@ -22,7 +22,7 @@ class AccountDetailViewModel(
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: CardManagerViewModel,
-    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
+    internal val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
 
     fun updateCurrencyBalancesLayout(layout: String) {
@@ -81,7 +81,7 @@ class AccountDetailViewModel(
     fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
-                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                if (config is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
                     config.copy(showBaseConversion = show)
                 } else config
             }
@@ -91,7 +91,7 @@ class AccountDetailViewModel(
     fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
-                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig) {
+                if (config is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
                     config.copy(timelineRange = range)
                 } else config
             }
@@ -101,7 +101,7 @@ class AccountDetailViewModel(
     fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
         viewModelScope.launch {
             cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
-                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                if (config is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
                     config.copy(layout = layout)
                 } else config
             }
@@ -111,7 +111,7 @@ class AccountDetailViewModel(
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
-                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                if (config is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
                     config.copy(showBaseConversion = show)
                 } else config
             }
@@ -121,7 +121,7 @@ class AccountDetailViewModel(
     fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardManagerViewModel.updateAccountDetailCard(cardId) { config ->
-                if (config is com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig) {
+                if (config is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
                     config.copy(timelineRange = range)
                 } else config
             }
@@ -134,63 +134,7 @@ class AccountDetailViewModel(
         }
     }
 
-    // Card-specific compute methods
-    suspend fun computeCashFlowForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountCashFlowCardConfig,
-        accountTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): CashFlowResult {
-        // Convert AccountCashFlowCardConfig to CashFlowCardConfig with accountId
-        val unifiedConfig = com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
-            cardId = cardConfig.cardId,
-            title = cardConfig.title,
-            isEnabled = cardConfig.isEnabled,
-            order = cardConfig.order,
-            showBaseConversion = cardConfig.showBaseConversion,
-            timelineRange = cardConfig.timelineRange,
-            accountId = accountId // Set accountId for account scope
-        )
-        
-        return cardComputationService.computeCashFlow(
-            config = unifiedConfig,
-            transactions = accountTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
-
-    suspend fun computeCurrencyTotalsForCard(
-        cardConfig: com.osscabinet.ossWallet.domain.model.settings.AccountCurrencyBalancesCardConfig,
-        account: Account,
-        accountTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ): List<CurrencyAggregationItem> {
-        // Convert AccountCurrencyBalancesCardConfig to CurrencyBalancesCardConfig with accountId
-        val unifiedConfig = com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
-            cardId = cardConfig.cardId,
-            title = cardConfig.title,
-            isEnabled = cardConfig.isEnabled,
-            order = cardConfig.order,
-            layout = cardConfig.layout,
-            showBaseConversion = cardConfig.showBaseConversion,
-            timelineRange = cardConfig.timelineRange,
-            accountId = accountId // Set accountId for account scope
-        )
-        
-        return cardComputationService.computeCurrencyTotals(
-            config = unifiedConfig,
-            accounts = listOf(account),
-            transactions = accountTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
-        )
-    }
+    // Card-specific compute methods now use unified extension functions from CardCompute.kt
 
     val uiState: StateFlow<AccountDetailUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->

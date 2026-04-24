@@ -130,20 +130,26 @@ class AnalyticsViewModel(
     // Generic card data computation functions (pure functions, no StateFlows)
     // These follow the DashboardScreen pattern - screens use remember(cardConfig.cardId, ...) to cache per-card
 
-    // Analytics cards config
-    val analyticsCardsConfig: StateFlow<AnalyticsCardsConfig> = settingsDataStore.analyticsCardsConfig
-        .map { configStr ->
-            if (configStr.isEmpty()) {
-                defaultAnalyticsCardsConfig()
-            } else {
-                try {
-                    Json.decodeFromString<AnalyticsCardsConfig>(configStr)
-                } catch (e: Exception) {
-                    defaultAnalyticsCardsConfig()
+    // Analytics cards config - using MutableStateFlow for immediate updates (like DashboardScreen)
+    private val _analyticsCardsConfig = MutableStateFlow(defaultAnalyticsCardsConfig())
+    val analyticsCardsConfig: StateFlow<AnalyticsCardsConfig> = _analyticsCardsConfig.asStateFlow()
+
+    init {
+        // Load analytics cards config from DataStore on initialization
+        viewModelScope.launch {
+            settingsDataStore.analyticsCardsConfig.collect { configStr ->
+                if (configStr.isEmpty()) {
+                    _analyticsCardsConfig.value = defaultAnalyticsCardsConfig()
+                } else {
+                    try {
+                        _analyticsCardsConfig.value = Json.decodeFromString<AnalyticsCardsConfig>(configStr)
+                    } catch (e: Exception) {
+                        _analyticsCardsConfig.value = defaultAnalyticsCardsConfig()
+                    }
                 }
             }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), defaultAnalyticsCardsConfig())
+    }
 
     init {
         viewModelScope.launch {
@@ -433,60 +439,62 @@ class AnalyticsViewModel(
 
     // Card management methods
     suspend fun addCard(cardConfig: CardConfig) {
-        val currentConfig = analyticsCardsConfig.value
-        val newCards = currentConfig.cards + cardConfig
-        val updatedConfig = AnalyticsCardsConfig(newCards)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+        _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
+            cards = _analyticsCardsConfig.value.cards + cardConfig
+        )
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun removeCard(cardId: String) {
-        val currentConfig = analyticsCardsConfig.value
-        val newCards = currentConfig.cards.filter { it.cardId != cardId }
-        val updatedConfig = AnalyticsCardsConfig(newCards)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+        _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
+            cards = _analyticsCardsConfig.value.cards.filter { it.cardId != cardId }
+        )
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
     
     suspend fun updateCardTimelineRange(cardId: String, newTimelineRange: TimelineRange) {
-        val currentConfig = analyticsCardsConfig.value
-        val newCards = currentConfig.cards.map { card ->
-            if (card.cardId == cardId) {
-                when (card) {
-                    is CategoryBreakdownCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is TimelineTrajectoryCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is CategoryExpenseTreemapCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is IncomeExpensesSummaryCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is PeriodComparisonCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is CashFlowTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is CashFlowProgressCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is BalanceForecastCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is PlannedPaymentsCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is IncomeExpensesBookCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is CashFlowTableCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is PlannedPaymentsTimelineCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is BalanceByAccountsCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    is BalanceTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
-                    else -> card
+        // Update MutableStateFlow directly (like DashboardScreen)
+        _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
+            cards = _analyticsCardsConfig.value.cards.map { card ->
+                if (card.cardId == cardId) {
+                    when (card) {
+                        is CategoryBreakdownCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is TimelineTrajectoryCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is CategoryExpenseTreemapCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is IncomeExpensesSummaryCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is PeriodComparisonCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is CashFlowTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is CashFlowProgressCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is BalanceForecastCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is PlannedPaymentsCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is IncomeExpensesBookCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is CashFlowTableCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is PlannedPaymentsTimelineCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is BalanceByAccountsCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        is BalanceTrendCardConfig -> card.copy(timelineRange = newTimelineRange)
+                        else -> card
+                    }
+                } else {
+                    card
                 }
-            } else {
-                card
             }
-        }
-        val updatedConfig = AnalyticsCardsConfig(newCards)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+        )
+        // Save to DataStore for persistence
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun updateCardConfigById(cardId: String, update: (CardConfig) -> CardConfig) {
-        val currentConfig = analyticsCardsConfig.value
-        val newCards = currentConfig.cards.map { card ->
-            if (card.cardId == cardId) update(card) else card
-        }
-        val updatedConfig = AnalyticsCardsConfig(newCards)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+        _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
+            cards = _analyticsCardsConfig.value.cards.map { card ->
+                if (card.cardId == cardId) update(card) else card
+            }
+        )
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun reorderCards(newOrder: List<CardConfig>) {
-        val updatedConfig = AnalyticsCardsConfig(newOrder)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(updatedConfig))
+        _analyticsCardsConfig.value = AnalyticsCardsConfig(newOrder)
+        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     // Computation methods for new card types

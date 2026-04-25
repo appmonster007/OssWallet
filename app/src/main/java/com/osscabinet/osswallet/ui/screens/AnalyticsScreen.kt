@@ -130,7 +130,25 @@ fun AnalyticsScreen(
             // Analytics Cards from config
             CardReorderableList(
                 items = cardsConfig.cards.sortedBy { it.order },
-                key = { it.cardId },
+                key = { card ->
+                    when (card) {
+                        is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> "${card.cardId}_${card.timelineRange}"
+                        else -> card.cardId
+                    }
+                },
                 onReorder = { reorderedCards ->
                     coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
                 },

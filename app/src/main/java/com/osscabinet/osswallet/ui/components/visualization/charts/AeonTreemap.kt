@@ -2,7 +2,10 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -57,21 +60,44 @@ fun AeonTreemap(
             computeTreemapLayout(nodes, Rect(0f, 0f, widthPx, heightPx), totalValue)
         }
 
+        fun findNodeAt(offset: Offset): AeonTreemapNode? {
+            return layouts.find { it.second.contains(offset) }?.first
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .semantics {
+                    contentDescription = "Treemap showing distribution. Drag or tap boxes for details."
+                }
                 .pointerInput(nodes) {
-                    detectTapGestures(
-                        onPress = { offset ->
+                    detectDragGestures(
+                        onDragStart = { offset ->
                             touchPoint = offset
-                            selectedNode = layouts.find { it.second.contains(offset) }?.first
+                            selectedNode = findNodeAt(offset)
                         },
-                        onLongPress = {
-                            // Consumes long press to prevent card reordering
+                        onDrag = { change, _ ->
+                            touchPoint = change.position
+                            selectedNode = findNodeAt(change.position)
                         },
-                        onTap = {
+                        onDragEnd = {
                             selectedNode = null
                             touchPoint = null
+                        },
+                        onDragCancel = {
+                            selectedNode = null
+                            touchPoint = null
+                        }
+                    )
+                }
+                .pointerInput(nodes) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            selectedNode = findNodeAt(offset)
+                            touchPoint = offset
+                        },
+                        onLongPress = {
+                            // Consumes to prevent reordering during interaction
                         }
                     )
                 }

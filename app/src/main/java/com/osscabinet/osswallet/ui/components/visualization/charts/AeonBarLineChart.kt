@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -90,22 +93,31 @@ fun AeonBarLineChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
+        fun findIndex(offsetX: Float): Int {
+            val total = barData.size
+            val step = (widthPx - 2 * padding) / (total - 1).coerceAtLeast(1)
+            return ((offsetX - padding + step / 2) / step).toInt().coerceIn(0, total - 1)
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .semantics {
+                    contentDescription = "Bar and line chart comparison. Drag or tap to explore values."
+                }
+                .pointerInput(barData, lineData) {
+                    detectDragGestures(
+                        onDragStart = { offset -> selectedIndex = findIndex(offset.x) },
+                        onDrag = { change, _ -> selectedIndex = findIndex(change.position.x) },
+                        onDragEnd = { selectedIndex = null },
+                        onDragCancel = { selectedIndex = null }
+                    )
+                }
                 .pointerInput(barData, lineData) {
                     detectTapGestures(
-                        onPress = { offset ->
-                            val total = barData.size
-                            val step = (widthPx - 2 * padding) / (total - 1).coerceAtLeast(1)
-                            val index = ((offset.x - padding + step / 2) / step).toInt().coerceIn(0, total - 1)
-                            selectedIndex = index
-                        },
+                        onTap = { offset -> selectedIndex = findIndex(offset.x) },
                         onLongPress = {
-                            // Consumes long press to prevent card reordering
-                        },
-                        onTap = {
-                            selectedIndex = null
+                            // Consumes to avoid parent reordering
                         }
                     )
                 }

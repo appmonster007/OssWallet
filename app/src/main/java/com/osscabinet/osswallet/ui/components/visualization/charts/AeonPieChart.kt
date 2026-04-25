@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -79,39 +82,61 @@ fun AeonPieChart(
         val center = Offset(widthPx / 2, heightPx / 2)
         val radius = (widthPx.coerceAtMost(heightPx) / 2) * 0.8f
 
+        fun findSliceAt(offset: Offset): AeonPieChartSlice? {
+            val dx = offset.x - center.x
+            val dy = offset.y - center.y
+            val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+            
+            if (distance <= radius && (!isDonut || distance >= radius * 0.6f)) {
+                var angle = atan2(dy, dx) * (180 / PI).toFloat()
+                if (angle < 0) angle += 360f
+                
+                var currentAngle = 0f
+                slices.forEach { slice ->
+                    val sweepAngle = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                    if (angle >= currentAngle && angle <= currentAngle + sweepAngle) {
+                        return slice
+                    }
+                    currentAngle += sweepAngle
+                }
+            }
+            return null
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .semantics {
+                    contentDescription = "Pie chart showing ${slices.joinToString { it.label }}. Drag or tap slices for details."
+                }
                 .pointerInput(slices) {
-                    detectTapGestures(
-                        onPress = { offset ->
+                    detectDragGestures(
+                        onDragStart = { offset ->
                             touchPoint = offset
-                            val dx = offset.x - center.x
-                            val dy = offset.y - center.y
-                            val distance = kotlin.math.sqrt(dx * dx + dy * dy)
-                            
-                            if (distance <= radius && (!isDonut || distance >= radius * 0.6f)) {
-                                var angle = atan2(dy, dx) * (180 / PI).toFloat()
-                                if (angle < 0) angle += 360f
-                                
-                                var currentAngle = 0f
-                                slices.forEach { slice ->
-                                    val sweepAngle = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
-                                    if (angle >= currentAngle && angle <= currentAngle + sweepAngle) {
-                                        selectedSlice = slice
-                                        return@detectTapGestures
-                                    }
-                                    currentAngle += sweepAngle
-                                }
-                            }
-                            selectedSlice = null
+                            selectedSlice = findSliceAt(offset)
                         },
-                        onLongPress = {
-                            // Consumes long press to prevent card reordering
+                        onDrag = { change, _ ->
+                            touchPoint = change.position
+                            selectedSlice = findSliceAt(change.position)
                         },
-                        onTap = {
+                        onDragEnd = { 
                             selectedSlice = null
                             touchPoint = null
+                        },
+                        onDragCancel = { 
+                            selectedSlice = null
+                            touchPoint = null
+                        }
+                    )
+                }
+                .pointerInput(slices) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            selectedSlice = findSliceAt(offset)
+                            touchPoint = offset
+                        },
+                        onLongPress = {
+                            // Consumes
                         }
                     )
                 }

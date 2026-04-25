@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -85,32 +88,49 @@ fun AeonLineChart(
             return padding + (index.toFloat() / (total - 1)) * (w - 2 * padding)
         }
 
+        fun findClosestPoint(offsetX: Float): Pair<AeonLineChartSeries, AeonLineChartPoint>? {
+            var closest: Pair<AeonLineChartSeries, AeonLineChartPoint>? = null
+            var minDistance = Float.MAX_VALUE
+            series.forEach { s ->
+                s.dataPoints.forEachIndexed { index, p ->
+                    val dx = indexToX(index, s.dataPoints.size)
+                    val distance = abs(offsetX - dx)
+                    if (distance < minDistance && distance < 100f) {
+                        minDistance = distance
+                        closest = s to p
+                    }
+                }
+            }
+            return closest
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .semantics {
+                    contentDescription = "Line chart showing ${series.joinToString { it.name }}. " +
+                            "Drag or tap to explore data points."
+                }
+                .pointerInput(series) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            selectedPoint = findClosestPoint(offset.x)
+                        },
+                        onDrag = { change, _ ->
+                            selectedPoint = findClosestPoint(change.position.x)
+                        },
+                        onDragEnd = { selectedPoint = null },
+                        onDragCancel = { selectedPoint = null }
+                    )
+                }
                 .pointerInput(series) {
                     detectTapGestures(
-                        onPress = { offset ->
-                            var closest: Pair<AeonLineChartSeries, AeonLineChartPoint>? = null
-                            var minDistance = Float.MAX_VALUE
-                            
-                            series.forEach { s ->
-                                s.dataPoints.forEachIndexed { index, p ->
-                                    val dx = indexToX(index, s.dataPoints.size)
-                                    val distance = abs(offset.x - dx)
-                                    if (distance < minDistance && distance < 50f) {
-                                        minDistance = distance
-                                        closest = s to p
-                                    }
-                                }
-                            }
-                            selectedPoint = closest
+                        onTap = { offset ->
+                            selectedPoint = findClosestPoint(offset.x)
                         },
                         onLongPress = {
-                            // Consumes long press to prevent card reordering
-                        },
-                        onTap = {
-                            selectedPoint = null
+                            // Already handled by parent if needed, but here we consume 
+                            // to ensure reordering doesn't start while exploring data
                         }
                     )
                 }

@@ -2,550 +2,586 @@ package com.osscabinet.ossWallet.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import com.osscabinet.ossWallet.ui.components.CardReorderableList
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.settings.CardConfig
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
-import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
-import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
-import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard
-import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryCard
-import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonCard
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendCard
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressCard
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastCard
-import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsCard
-import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
-import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
+import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
+import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData
+import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
+import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
+import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.*
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel,
-    onBackClick: () -> Unit
+    accountViewModel: AccountViewModel,
+    templateViewModel: TemplateViewModel,
+    settingsViewModel: SettingsViewModel,
+    onBackClick: () -> Unit,
+    onAccountsViewClick: () -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onBudgetsClick: () -> Unit,
+    onLoansClick: () -> Unit,
+    onExchangeRatesClick: () -> Unit,
+    onTemplatesClick: () -> Unit,
+    onManageAccountsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onAccountClick: (String) -> Unit,
+    onAddClick: (Int?, String?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
+    val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
+    val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
+    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
-    var navTriggered by remember { mutableStateOf(false) }
-    var showAddCardDialog by remember { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
-    
-    // Reset navTriggered when returning to this screen
-    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        navTriggered = false
-    }
+    var showAddCardDialog by remember { mutableStateOf(false) }
 
-    val navigate: (() -> Unit) -> Unit = { action ->
-        if (!navTriggered) {
-            navTriggered = true
-            action()
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
-                navigationIcon = {
-                    IconButton(onClick = { navigate { onBackClick() } }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showAddCardDialog = true }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add card",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                currentProfile = currentProfile,
+                nonArchivedAccounts = nonArchivedAccounts,
+                starredTemplates = starredTemplates,
+                selectedDestination = "analytics",
+                onDashboardClick = { onBackClick() },
+                onAccountsViewClick = { onAccountsViewClick() },
+                onRecordsClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
+                onAnalyticsClick = { coroutineScope.launch { drawerState.close() } },
+                onBudgetsClick = { onBudgetsClick() },
+                onLoansClick = { onLoansClick() },
+                onExchangeRatesClick = { onExchangeRatesClick() },
+                onTemplatesClick = { onTemplatesClick() },
+                onManageAccountsClick = { onManageAccountsClick() },
+                onSettingsClick = { onSettingsClick() },
+                onAccountClick = { id -> onAccountClick(id) },
+                onTemplateClick = { template -> onAddClick(template.transactionType, template.name) },
+                onCloseDrawer = { coroutineScope.launch { drawerState.close() } }
             )
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            AnalyticsHeroSection(
-                uiState.currentBalance,
-                uiState.selectedCurrency,
-                decimalPrecision,
-                modifier = Modifier.padding(24.dp)
-            )
-
-            // Analytics Cards from config
-            CardReorderableList(
-                items = cardsConfig.cards.sortedBy { it.order },
-                key = { card ->
-                    when (card) {
-                        is com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        is com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig -> "${card.cardId}_${card.timelineRange}"
-                        else -> card.cardId
-                    }
-                },
-                onReorder = { reorderedCards ->
-                    coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
-                },
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp)
-            ) { cardConfig, isDragging, dragModifier ->
-                val cardWithCallbacks = when (cardConfig) {
-                    is CategoryBreakdownCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeCategoryBreakdownForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
+                    navigationIcon = {
+                        IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { showAddCardDialog = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add card",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.CategoryBreakdown(
-                                config = cardConfig,
-                                data = cardData ?: emptyList()
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
                     }
-                    is TimelineTrajectoryCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeTimelineTrajectoryForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                accounts = uiState.accounts,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.TimelineTrajectory(
-                                config = cardConfig,
-                                data = cardData ?: emptyList()
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is CategoryExpenseTreemapCardConfig -> {
-                        val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeCategoryExpenseTreemapForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.CategoryExpenseTreemap(
-                                config = cardConfig,
-                                data = cardData ?: emptyList()
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is IncomeExpensesSummaryCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeIncomeExpensesSummaryForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.IncomeExpensesSummary(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData(
-                                    totalAmount = BigDecimal.ZERO,
-                                    percentageChange = "0%",
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    categories = emptyList<com.osscabinet.ossWallet.ui.analytics.components.CategoryItem>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is PeriodComparisonCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computePeriodComparisonForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.PeriodComparison(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData(
-                                    currentValue = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    chartData = emptyList<Double>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is CashFlowTrendCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeCashFlowTrendForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.CashFlowTrend(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData(
-                                    barData = emptyList<Double>(),
-                                    lineData = emptyList<Double>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is CashFlowProgressCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeCashFlowProgressForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.CashFlowProgress(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData(
-                                    income = BigDecimal.ZERO,
-                                    expenses = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is BalanceForecastCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeBalanceForecastForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                accounts = uiState.accounts,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.BalanceForecast(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData(
-                                    forecastBalance = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    chartData = emptyList<Triple<Double, Double, Double>>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is PlannedPaymentsCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computePlannedPaymentsForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.PlannedPayments(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData(
-                                    total = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    payments = emptyList<com.osscabinet.ossWallet.ui.analytics.components.PaymentItem>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is IncomeExpensesBookCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeIncomeExpensesBookForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.IncomeExpensesBook(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData(
-                                    incomeTotal = BigDecimal.ZERO,
-                                    expenseTotal = BigDecimal.ZERO,
-                                    incomeCount = 0,
-                                    expenseCount = 0,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is CashFlowTableCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeCashFlowTableForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.CashFlowTable(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData(
-                                    incomeCount = 0,
-                                    expenseCount = 0,
-                                    incomeAvgDay = BigDecimal.ZERO,
-                                    expenseAvgDay = BigDecimal.ZERO,
-                                    incomeAvgRecord = BigDecimal.ZERO,
-                                    expenseAvgRecord = BigDecimal.ZERO,
-                                    incomeTotal = BigDecimal.ZERO,
-                                    expenseTotal = BigDecimal.ZERO,
-                                    netCashFlow = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is PlannedPaymentsTimelineCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computePlannedPaymentsTimelineForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.PlannedPaymentsTimeline(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData(
-                                    total = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    weeklyData = emptyList<Pair<String, java.math.BigDecimal>>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is BalanceByAccountsCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeBalanceByAccountsForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                accounts = uiState.accounts,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.BalanceByAccounts(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData(
-                                    totalBalance = BigDecimal.ZERO,
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    accountBalances = emptyList<com.osscabinet.ossWallet.ui.analytics.components.AccountBalanceItem>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    is BalanceTrendCardConfig -> {
-                        val cardData by produceState<com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
-                            value = viewModel.computeBalanceTrendForCard(
-                                cardConfig = cardConfig,
-                                allTransactions = uiState.allTransactions,
-                                accounts = uiState.accounts,
-                                baseCurrency = uiState.selectedCurrency,
-                                exchangeRates = uiState.exchangeRates,
-                                precision = decimalPrecision
-                            )
-                        }
-                        CardWithCallbacks(
-                            renderData = CardRenderData.BalanceTrend(
-                                config = cardConfig,
-                                data = cardData ?: com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData(
-                                    currentBalance = BigDecimal.ZERO,
-                                    percentageChange = "0%",
-                                    currency = uiState.selectedCurrency,
-                                    precision = decimalPrecision,
-                                    weeklyBalances = emptyList<Double>()
-                                )
-                            ),
-                            callbacks = CardCallbacks.AnalyticsWithTimeline(
-                                onTimelineRangeChange = { cardId, range -> coroutineScope.launch { viewModel.updateCardTimelineRange(cardId, range) } },
-                                onUpdate = { coroutineScope.launch { viewModel.updateCardConfigById(cardConfig.cardId) { it } } },
-                                onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
-                            )
-                        )
-                    }
-                    else -> null
-                }
-                
-                cardWithCallbacks?.let {
-                    UnifiedCardRenderer(
-                        renderData = it.renderData,
-                        callbacks = it.callbacks
+                )
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    AnalyticsHeroSection(
+                        uiState.currentBalance,
+                        uiState.selectedCurrency,
+                        decimalPrecision,
+                        modifier = Modifier.padding(24.dp)
                     )
+
+                    // Analytics Cards from config
+                    CardReorderableList(
+                        items = cardsConfig.cards.sortedBy { it.order },
+                        key = { it.cardId },
+                        onReorder = { reorderedCards ->
+                            coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(32.dp)
+                    ) { cardConfig, isDragging, dragModifier ->
+                        val cardWithCallbacks = when (cardConfig) {
+                            is CategoryBreakdownCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeCategoryBreakdownForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.CategoryBreakdown(
+                                        config = cardConfig,
+                                        data = cardData ?: emptyList()
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is TimelineTrajectoryCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeTimelineTrajectoryForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        accounts = uiState.accounts,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.TimelineTrajectory(
+                                        config = cardConfig,
+                                        data = cardData ?: emptyList()
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is CategoryExpenseTreemapCardConfig -> {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeCategoryExpenseTreemapForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.CategoryExpenseTreemap(
+                                        config = cardConfig,
+                                        data = cardData ?: emptyList()
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is IncomeExpensesSummaryCardConfig -> {
+                                val cardData by produceState<IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeIncomeExpensesSummaryForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.IncomeExpensesSummary(
+                                        config = cardConfig,
+                                        data = cardData ?: IncomeExpensesSummaryData(
+                                            totalAmount = BigDecimal.ZERO,
+                                            percentageChange = "0%",
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            categories = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is PeriodComparisonCardConfig -> {
+                                val cardData by produceState<PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computePeriodComparisonForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.PeriodComparison(
+                                        config = cardConfig,
+                                        data = cardData ?: PeriodComparisonData(
+                                            currentValue = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            chartData = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is CashFlowTrendCardConfig -> {
+                                val cardData by produceState<CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeCashFlowTrendForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.CashFlowTrend(
+                                        config = cardConfig,
+                                        data = cardData ?: CashFlowTrendData(
+                                            barData = emptyList(),
+                                            lineData = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is CashFlowProgressCardConfig -> {
+                                val cardData by produceState<CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeCashFlowProgressForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.CashFlowProgress(
+                                        config = cardConfig,
+                                        data = cardData ?: CashFlowProgressData(
+                                            income = BigDecimal.ZERO,
+                                            expenses = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is BalanceForecastCardConfig -> {
+                                val cardData by produceState<BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeBalanceForecastForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        accounts = uiState.accounts,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.BalanceForecast(
+                                        config = cardConfig,
+                                        data = cardData ?: BalanceForecastData(
+                                            forecastBalance = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            chartData = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is PlannedPaymentsCardConfig -> {
+                                val cardData by produceState<PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computePlannedPaymentsForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.PlannedPayments(
+                                        config = cardConfig,
+                                        data = cardData ?: PlannedPaymentsData(
+                                            total = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            payments = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is IncomeExpensesBookCardConfig -> {
+                                val cardData by produceState<IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeIncomeExpensesBookForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.IncomeExpensesBook(
+                                        config = cardConfig,
+                                        data = cardData ?: IncomeExpensesBookData(
+                                            incomeTotal = BigDecimal.ZERO,
+                                            expenseTotal = BigDecimal.ZERO,
+                                            incomeCount = 0,
+                                            expenseCount = 0,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is CashFlowTableCardConfig -> {
+                                val cardData by produceState<CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeCashFlowTableForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.CashFlowTable(
+                                        config = cardConfig,
+                                        data = cardData ?: CashFlowTableData(
+                                            incomeCount = 0,
+                                            expenseCount = 0,
+                                            incomeAvgDay = BigDecimal.ZERO,
+                                            expenseAvgDay = BigDecimal.ZERO,
+                                            incomeAvgRecord = BigDecimal.ZERO,
+                                            expenseAvgRecord = BigDecimal.ZERO,
+                                            incomeTotal = BigDecimal.ZERO,
+                                            expenseTotal = BigDecimal.ZERO,
+                                            netCashFlow = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is PlannedPaymentsTimelineCardConfig -> {
+                                val cardData by produceState<PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computePlannedPaymentsTimelineForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.PlannedPaymentsTimeline(
+                                        config = cardConfig,
+                                        data = cardData ?: PlannedPaymentsTimelineData(
+                                            total = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            weeklyData = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is BalanceByAccountsCardConfig -> {
+                                val cardData by produceState<BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeBalanceByAccountsForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        accounts = uiState.accounts,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.BalanceByAccounts(
+                                        config = cardConfig,
+                                        data = cardData ?: BalanceByAccountsData(
+                                            totalBalance = BigDecimal.ZERO,
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            accountBalances = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            is BalanceTrendCardConfig -> {
+                                val cardData by produceState<BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                    value = viewModel.computeBalanceTrendForCard(
+                                        cardConfig = cardConfig,
+                                        allTransactions = uiState.allTransactions,
+                                        accounts = uiState.accounts,
+                                        baseCurrency = uiState.selectedCurrency,
+                                        exchangeRates = uiState.exchangeRates,
+                                        precision = decimalPrecision
+                                    )
+                                }
+                                CardWithCallbacks(
+                                    renderData = CardRenderData.BalanceTrend(
+                                        config = cardConfig,
+                                        data = cardData ?: BalanceTrendData(
+                                            currentBalance = BigDecimal.ZERO,
+                                            percentageChange = "0%",
+                                            currency = uiState.selectedCurrency,
+                                            precision = decimalPrecision,
+                                            weeklyBalances = emptyList()
+                                        )
+                                    ),
+                                    callbacks = CardCallbacks.Analytics(
+                                        onUpdate = { updatedConfig ->
+                                            coroutineScope.launch {
+                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
+                                            }
+                                        },
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                    )
+                                )
+                            }
+                            else -> null
+                        }
+
+                        cardWithCallbacks?.let {
+                            UnifiedCardRenderer(
+                                renderData = it.renderData,
+                                callbacks = it.callbacks,
+                                headerModifier = dragModifier
+                            )
+                        }
+                    }
                 }
+
+                AeonExpandableFab(
+                    onAddClick = { type, name -> onAddClick(type, name) },
+                    templates = allTemplates,
+                    fabPaddingBottom = 16.dp
+                )
             }
         }
     }
-    
+
     if (showAddCardDialog) {
         val analyticsCardOptions = listOf(
             CardTypeOptionData(
@@ -728,7 +764,7 @@ fun AnalyticsScreen(
                 onClick = {
                     coroutineScope.launch {
                         viewModel.addCard(
-                            com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig(
+                            IncomeExpensesBookCardConfig(
                                 cardId = "analytics_income_expenses_book_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "INCOME & EXPENSES BOOK",
@@ -748,7 +784,7 @@ fun AnalyticsScreen(
                 onClick = {
                     coroutineScope.launch {
                         viewModel.addCard(
-                            com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig(
+                            CashFlowTableCardConfig(
                                 cardId = "analytics_cash_flow_table_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "CASH FLOW TABLE",
@@ -766,7 +802,7 @@ fun AnalyticsScreen(
                 onClick = {
                     coroutineScope.launch {
                         viewModel.addCard(
-                            com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig(
+                            PlannedPaymentsTimelineCardConfig(
                                 cardId = "analytics_planned_payments_timeline_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "PLANNED PAYMENTS TIMELINE",
@@ -784,7 +820,7 @@ fun AnalyticsScreen(
                 onClick = {
                     coroutineScope.launch {
                         viewModel.addCard(
-                            com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig(
+                            BalanceByAccountsCardConfig(
                                 cardId = "analytics_balance_by_accounts_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "BALANCE BY ACCOUNTS",
@@ -802,7 +838,7 @@ fun AnalyticsScreen(
                 onClick = {
                     coroutineScope.launch {
                         viewModel.addCard(
-                            com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig(
+                            BalanceTrendCardConfig(
                                 cardId = "analytics_balance_trend_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "BALANCE TREND",
@@ -840,32 +876,6 @@ fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int =
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("On track for goal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
             }
-        }
-    }
-}
-
-@Composable
-fun InsightSection(currency: String, precision: Int = 2, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    ) {
-        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("INTELLIGENCE INSIGHT", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary))
-            }
-            Text(
-                "Based on your current trajectory, your net worth will increase by 4.2% by the end of Q4. Consider increasing your 'Travel' budget by ${formatCurrencyRight(BigDecimal("400.0"), currency, precision)} for your upcoming trip.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

@@ -70,7 +70,7 @@ fun AeonLineChart(
         
         // Add 10% padding to the range
         val rangeY = (maxY - minY).abs()
-        val padY = if (rangeY == BigDecimal.ZERO) BigDecimal.ONE else rangeY.multiply(BigDecimal("0.1"))
+        val padY = if (rangeY.signum() == 0) BigDecimal.ONE else rangeY.multiply(BigDecimal("0.1"))
         val effectiveMinY = minY - padY
         val effectiveMaxY = maxY + padY
         val effectiveRangeY = effectiveMaxY - effectiveMinY

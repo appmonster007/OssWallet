@@ -93,7 +93,7 @@ fun CashFlowProgressCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                val incomeProgress = if (data.expenses.abs() > BigDecimal.ZERO) {
+                val incomeProgress = if (data.expenses.abs().signum() > 0) {
                     data.income.divide(data.expenses.abs(), 2, java.math.RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1f)
                 } else 0f
                 

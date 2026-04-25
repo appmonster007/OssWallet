@@ -5,21 +5,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,12 +16,11 @@ import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapDat
 import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
-import com.osscabinet.ossWallet.ui.components.visualization.charts.CategoryExpenseTreemap
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
-/**
- * Category Expense Treemap Card with treemap visualization.
- * Integrates TimelineFilterBar for timeline range selection.
- */
 @Composable
 fun CategoryExpenseTreemapCard(
     config: CategoryExpenseTreemapCardConfig,
@@ -48,32 +36,53 @@ fun CategoryExpenseTreemapCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with settings button only
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier.fillMaxWidth(),
                 trailing = {
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Row {
+                        IconButton(onClick = { showSettings = true }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             )
             
-            // Treemap
-            CategoryExpenseTreemap(
-                data = data,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp),
-                showLabels = config.showLabels
-            )
+                    .height(350.dp)
+            ) {
+                if (data.isNotEmpty()) {
+                    val nodes = data.map { item ->
+                        AeonTreemapNode(
+                            name = item.category,
+                            value = item.expense.abs(),
+                            color = Color(item.colorHex)
+                        )
+                    }
+                    
+                    AeonTreemap(
+                        nodes = nodes,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text("No expense data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
     }
     
@@ -96,54 +105,24 @@ private fun CategoryExpenseTreemapSettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
         dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
+            TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Delete")
             }
         },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
+        title = { Text(config.title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("TIMELINE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.primary)
                         TimelineFilterBar(
                             currentRange = config.timelineRange,
                             onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
@@ -154,4 +133,24 @@ private fun CategoryExpenseTreemapSettingsDialog(
             }
         }
     )
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CategoryExpenseTreemapCardPreview() {
+    OssWalletTheme {
+        CategoryExpenseTreemapCard(
+            config = CategoryExpenseTreemapCardConfig(
+                cardId = "preview",
+                title = "CATEGORY EXPENSES"
+            ),
+            data = listOf(
+                CategoryExpenseTreemapData("Rent", null, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
+                CategoryExpenseTreemapData("Food", null, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.225f),
+                CategoryExpenseTreemapData("Transport", null, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.075f),
+                CategoryExpenseTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f)
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+    }
 }

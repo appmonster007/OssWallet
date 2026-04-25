@@ -1,27 +1,12 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -31,12 +16,11 @@ import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
-import com.osscabinet.ossWallet.ui.components.visualization.charts.CategoryBreakdownPieChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
-/**
- * Category Breakdown Card with pie chart visualization.
- * Integrates TimelineFilterBar for timeline range selection.
- */
 @Composable
 fun CategoryBreakdownCard(
     config: CategoryBreakdownCardConfig,
@@ -52,35 +36,57 @@ fun CategoryBreakdownCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with settings button only
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier.fillMaxWidth(),
                 trailing = {
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Row {
+                        IconButton(onClick = { showSettings = true }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             )
             
-            // Pie Chart
-            CategoryBreakdownPieChart(
-                data = data,
+            // Refined Visualization
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
-                showLabels = config.showLabels
-            )
+                    .height(300.dp)
+            ) {
+                if (data.isNotEmpty()) {
+                    val slices = data.map { item ->
+                        AeonPieChartSlice(
+                            value = item.netBalance.abs(),
+                            label = item.category,
+                            color = Color(item.colorHex)
+                        )
+                    }
+                    
+                    AeonPieChart(
+                        slices = slices,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text("No category data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
             
-            // Legend
-            if (config.showLegend) {
+            // Optimized Legend
+            if (config.showLegend && data.isNotEmpty()) {
                 CategoryLegend(data = data)
             }
         }
@@ -96,60 +102,50 @@ fun CategoryBreakdownCard(
     }
 }
 
-/**
- * Legend for category breakdown pie chart.
- * Shows total amount instead of percentage breakdown.
- */
 @Composable
 fun CategoryLegend(data: List<CategoryBreakdownData>) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         data.take(5).forEach { item ->
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Color indicator
-                Box(
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(16.dp)
-                        .background(Color(item.colorHex))
-                )
+                Surface(
+                    modifier = Modifier.size(12.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = Color(item.colorHex)
+                ) {}
                 
-                // Category name and amount
                 Text(
-                    text = "${item.category}: ${formatCurrency(item.netBalance)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
+                    text = item.category,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f)
                 )
                 
-                // Subcategory indicator
-                if (item.hasSubcategories) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Has subcategories",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = formatCurrency(item.netBalance),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (item.netBalance < BigDecimal.ZERO) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
             }
         }
         
         if (data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 24.dp)
             )
         }
     }
 }
 
-private fun formatCurrency(amount: java.math.BigDecimal): String {
-    return if (amount >= java.math.BigDecimal.ZERO) {
+private fun formatCurrency(amount: BigDecimal): String {
+    return if (amount >= BigDecimal.ZERO) {
         "+$amount"
     } else {
         amount.toString()
@@ -168,33 +164,21 @@ private fun CategoryBreakdownSettingsDialog(
         dismissButton = {
             TextButton(
                 onClick = onDelete,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Delete")
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
+            TextButton(onClick = onDismiss) { Text("Done") }
         },
         title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
+            Text(config.title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(20.dp),
@@ -206,10 +190,7 @@ private fun CategoryBreakdownSettingsDialog(
                     ) {
                         Text(
                             "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
                             color = MaterialTheme.colorScheme.primary
                         )
 
@@ -223,4 +204,23 @@ private fun CategoryBreakdownSettingsDialog(
             }
         }
     )
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CategoryBreakdownCardPreview() {
+    OssWalletTheme {
+        CategoryBreakdownCard(
+            config = CategoryBreakdownCardConfig(
+                cardId = "preview",
+                title = "CATEGORY BREAKDOWN"
+            ),
+            data = listOf(
+                CategoryBreakdownData("Food", null, BigDecimal("450.00"), BigDecimal.ZERO, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.3f),
+                CategoryBreakdownData("Rent", null, BigDecimal("1200.00"), BigDecimal.ZERO, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
+                CategoryBreakdownData("Transport", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.1f)
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+    }
 }

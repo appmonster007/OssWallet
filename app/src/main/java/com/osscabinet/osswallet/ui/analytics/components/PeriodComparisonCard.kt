@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -106,48 +111,127 @@ fun PeriodComparisonCard(
                 }
             }
             
-            // Interactive line chart
+            // Interactive line chart with proper scales
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(200.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { /* Handle chart click */ },
-                contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Simple line chart visualization using Canvas-like approach
-                    if (data.chartData.isNotEmpty()) {
+                if (data.chartData.isNotEmpty()) {
+                    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        val width = size.width
+                        val height = size.height
+                        val padding = 40f
+                        
+                        // Calculate min and max for scaling
                         val maxValue = data.chartData.maxOrNull() ?: 1.0
                         val minValue = data.chartData.minOrNull() ?: 0.0
-                        val range = maxValue - minValue
+                        val valueRange = (maxValue - minValue).takeIf { it > 0 } ?: 1.0
                         
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            data.chartData.forEachIndexed { index, value ->
-                                val normalizedHeight = if (range > 0) {
-                                    ((value - minValue) / range).toFloat()
-                                } else {
-                                    0.5f
-                                }
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .width(12.dp)
-                                        .height(100.dp * normalizedHeight.coerceIn(0.1f, 1.0f))
-                                        .background(
-                                            if (index == data.chartData.size - 1) AccentBlue 
-                                            else AccentBlue.copy(alpha = 0.5f),
-                                            RoundedCornerShape(4.dp)
-                                        )
-                                )
-                            }
+                        // Helper functions for mapping
+                        fun valueToY(value: Double): Float {
+                            val normalized = ((value - minValue) / valueRange).toFloat()
+                            return height - padding - (normalized * (height - 2 * padding))
                         }
-                    } else {
+                        
+                        fun indexToX(index: Int): Float {
+                            return padding + (index.toFloat() / (data.chartData.size - 1).coerceAtLeast(1)) * (width - 2 * padding)
+                        }
+                        
+                        // Draw grid lines (horizontal)
+                        val gridPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.parseColor("#E0E0E0")
+                            strokeWidth = 1f
+                            isAntiAlias = true
+                        }
+                        
+                        for (i in 0..4) {
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawLine(
+                                start = Offset(padding, y),
+                                end = Offset(width - padding, y),
+                                color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw axes
+                        drawLine(
+                            start = Offset(padding, padding),
+                            end = Offset(padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        drawLine(
+                            start = Offset(padding, height - padding),
+                            end = Offset(width - padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        // Draw line chart
+                        val path = Path()
+                        data.chartData.forEachIndexed { index, value ->
+                            val x = indexToX(index)
+                            val y = valueToY(value)
+                            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        
+                        drawPath(
+                            path = path,
+                            color = AccentBlue,
+                            style = Stroke(width = 3f)
+                        )
+                        
+                        // Draw points
+                        data.chartData.forEachIndexed { index, value ->
+                            val x = indexToX(index)
+                            val y = valueToY(value)
+                            drawCircle(
+                                color = AccentBlue,
+                                radius = 6f,
+                                center = Offset(x, y)
+                            )
+                        }
+                        
+                        // Draw Y-axis labels
+                        val labelPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.DKGRAY
+                            textSize = 24f
+                            isAntiAlias = true
+                        }
+                        
+                        for (i in 0..4) {
+                            val value = minValue + (i * valueRange / 4)
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                String.format("%.0f", value),
+                                padding - 35f,
+                                y + 8f,
+                                labelPaint
+                            )
+                        }
+                        
+                        // Draw X-axis labels (period numbers)
+                        for (i in 0 until data.chartData.size.coerceAtMost(6)) {
+                            val index = (i * (data.chartData.size - 1) / 5).coerceAtMost(data.chartData.size - 1)
+                            val x = indexToX(index)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                "P${index + 1}",
+                                x - 10f,
+                                height - padding + 30f,
+                                labelPaint
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             "No data available",
                             style = MaterialTheme.typography.bodySmall,

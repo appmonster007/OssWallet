@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,45 +126,148 @@ fun BalanceTrendCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Simple line chart visualization
+            // Area chart with proper scales
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(200.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
             ) {
                 if (data.weeklyBalances.isNotEmpty()) {
-                    val maxBalance = data.weeklyBalances.maxOrNull() ?: 0.0
-                    val minBalance = data.weeklyBalances.minOrNull() ?: 0.0
-                    val range = maxBalance - minBalance
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        data.weeklyBalances.forEach { balance ->
-                            val normalizedHeight = if (range > 0) {
-                                ((balance - minBalance) / range).coerceIn(0.0, 1.0)
-                            } else 0.5
+                    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        val width = size.width
+                        val height = size.height
+                        val padding = 40f
+                        
+                        // Calculate min and max for scaling
+                        val maxBalance = data.weeklyBalances.maxOrNull() ?: 1.0
+                        val minBalance = data.weeklyBalances.minOrNull() ?: 0.0
+                        val valueRange = (maxBalance - minBalance).takeIf { it > 0 } ?: 1.0
+                        
+                        // Helper functions for mapping
+                        fun valueToY(value: Double): Float {
+                            val normalized = ((value - minBalance) / valueRange).toFloat()
+                            return height - padding - (normalized * (height - 2 * padding))
+                        }
+                        
+                        fun indexToX(index: Int): Float {
+                            return padding + (index.toFloat() / (data.weeklyBalances.size - 1).coerceAtLeast(1)) * (width - 2 * padding)
+                        }
+                        
+                        // Draw grid lines (horizontal)
+                        for (i in 0..4) {
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawLine(
+                                start = Offset(padding, y),
+                                end = Offset(width - padding, y),
+                                color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw axes
+                        drawLine(
+                            start = Offset(padding, padding),
+                            end = Offset(padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        drawLine(
+                            start = Offset(padding, height - padding),
+                            end = Offset(width - padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        // Draw area chart
+                        val areaPath = Path()
+                        val linePath = Path()
+                        
+                        data.weeklyBalances.forEachIndexed { index, balance ->
+                            val x = indexToX(index)
+                            val y = valueToY(balance)
                             
-                            Box(
-                                modifier = Modifier
-                                    .width(8.dp)
-                                    .height((normalizedHeight * 80).dp)
-                                    .background(AccentBlue, RoundedCornerShape(4.dp))
+                            if (index == 0) {
+                                areaPath.moveTo(x, height - padding)
+                                areaPath.lineTo(x, y)
+                                linePath.moveTo(x, y)
+                            } else {
+                                areaPath.lineTo(x, y)
+                                linePath.lineTo(x, y)
+                            }
+                        }
+                        
+                        // Close the area path
+                        areaPath.lineTo(indexToX(data.weeklyBalances.size - 1), height - padding)
+                        areaPath.close()
+                        
+                        // Draw filled area
+                        drawPath(
+                            path = areaPath,
+                            color = AccentBlue.copy(alpha = 0.3f)
+                        )
+                        
+                        // Draw line on top
+                        drawPath(
+                            path = linePath,
+                            color = AccentBlue,
+                            style = Stroke(width = 3f)
+                        )
+                        
+                        // Draw points
+                        data.weeklyBalances.forEachIndexed { index, balance ->
+                            val x = indexToX(index)
+                            val y = valueToY(balance)
+                            drawCircle(
+                                color = AccentBlue,
+                                radius = 5f,
+                                center = Offset(x, y)
+                            )
+                        }
+                        
+                        // Draw Y-axis labels
+                        val labelPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.DKGRAY
+                            textSize = 24f
+                            isAntiAlias = true
+                        }
+                        
+                        for (i in 0..4) {
+                            val value = minBalance + (i * valueRange / 4)
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                String.format("%.0f", value),
+                                padding - 35f,
+                                y + 8f,
+                                labelPaint
+                            )
+                        }
+                        
+                        // Draw X-axis labels (week numbers)
+                        for (i in 0 until data.weeklyBalances.size.coerceAtMost(6)) {
+                            val index = (i * (data.weeklyBalances.size - 1) / 5).coerceAtMost(data.weeklyBalances.size - 1)
+                            val x = indexToX(index)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                "W${index + 1}",
+                                x - 10f,
+                                height - padding + 30f,
+                                labelPaint
                             )
                         }
                     }
                 } else {
-                    Text(
-                        "No data available",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No data available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

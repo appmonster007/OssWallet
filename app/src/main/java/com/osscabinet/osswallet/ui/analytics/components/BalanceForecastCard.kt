@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,7 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -123,97 +129,166 @@ fun BalanceForecastCard(
                 )
             }
             
-            // Interactive waterfall chart
+            // Interactive waterfall chart with proper scales
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(220.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { selectedPointIndex = null },
-                contentAlignment = Alignment.Center
+                    .clickable { selectedPointIndex = null }
             ) {
                 if (data.chartData.isNotEmpty()) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        val maxBalance = data.chartData.maxOfOrNull { it.first } ?: 1.0
-                        val minBalance = data.chartData.minOfOrNull { it.third } ?: 0.0
-                        val range = maxBalance - minBalance
+                    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        val width = size.width
+                        val height = size.height
+                        val padding = 40f
                         
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            data.chartData.forEachIndexed { index, (income, expense, balance) ->
-                                val normalizedHeight = if (range > 0) {
-                                    ((balance - minBalance) / range).toFloat()
-                                } else {
-                                    0.5f
-                                }
-                                val isSelected = selectedPointIndex == index
-                                
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    // Income bar (top)
-                                    if (income > 0) {
-                                        val incomeHeight = (income / maxBalance).toFloat().coerceIn(0f, 0.3f)
-                                        Box(
-                                            modifier = Modifier
-                                                .width(10.dp)
-                                                .height(100.dp * incomeHeight)
-                                                .background(
-                                                    PositiveAmountColor.copy(alpha = 0.7f),
-                                                    RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-                                                )
-                                        )
-                                    }
-                                    
-                                    // Balance bar (middle)
-                                    Box(
-                                        modifier = Modifier
-                                            .width(10.dp)
-                                            .height(100.dp * normalizedHeight.coerceIn(0.1f, 1.0f))
-                                            .background(
-                                                if (balance >= 0) AccentBlue else NegativeAmountColor,
-                                                RoundedCornerShape(4.dp)
-                                            )
-                                            .clickable { selectedPointIndex = index },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (isSelected) {
-                                            Text(
-                                                balance.toInt().toString(),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White
-                                            )
-                                        }
-                                    }
-                                    
-                                    // Expense bar (bottom)
-                                    if (expense > 0) {
-                                        val expenseHeight = (expense / maxBalance).toFloat().coerceIn(0f, 0.3f)
-                                        Box(
-                                            modifier = Modifier
-                                                .width(10.dp)
-                                                .height(100.dp * expenseHeight)
-                                                .background(
-                                                    NegativeAmountColor.copy(alpha = 0.7f),
-                                                    RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp)
-                                                )
-                                        )
-                                    }
-                                }
-                            }
+                        // Calculate min and max for scaling from all three series
+                        val allValues = data.chartData.flatMap { listOf(it.first, it.second, it.third) }
+                        val maxValue = allValues.maxOrNull() ?: 1.0
+                        val minValue = allValues.minOrNull() ?: 0.0
+                        val valueRange = (maxValue - minValue).takeIf { it > 0 } ?: 1.0
+                        
+                        // Helper functions for mapping
+                        fun valueToY(value: Double): Float {
+                            val normalized = ((value - minValue) / valueRange).toFloat()
+                            return height - padding - (normalized * (height - 2 * padding))
+                        }
+                        
+                        fun indexToX(index: Int): Float {
+                            return padding + (index.toFloat() / (data.chartData.size - 1).coerceAtLeast(1)) * (width - 2 * padding)
+                        }
+                        
+                        // Draw grid lines (horizontal)
+                        for (i in 0..4) {
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawLine(
+                                start = Offset(padding, y),
+                                end = Offset(width - padding, y),
+                                color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw axes
+                        drawLine(
+                            start = Offset(padding, padding),
+                            end = Offset(padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        drawLine(
+                            start = Offset(padding, height - padding),
+                            end = Offset(width - padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        // Draw zero line (if range includes both positive and negative)
+                        if (minValue < 0 && maxValue > 0) {
+                            val zeroY = valueToY(0.0)
+                            drawLine(
+                                start = Offset(padding, zeroY),
+                                end = Offset(width - padding, zeroY),
+                                color = Color.Gray,
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw optimistic line (green)
+                        val optimisticPath = Path()
+                        data.chartData.forEachIndexed { index, (optimistic, _, _) ->
+                            val x = indexToX(index)
+                            val y = valueToY(optimistic)
+                            if (index == 0) optimisticPath.moveTo(x, y) else optimisticPath.lineTo(x, y)
+                        }
+                        drawPath(
+                            path = optimisticPath,
+                            color = PositiveAmountColor.copy(alpha = 0.5f),
+                            style = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
+                        )
+                        
+                        // Draw realistic line (blue)
+                        val realisticPath = Path()
+                        data.chartData.forEachIndexed { index, (_, realistic, _) ->
+                            val x = indexToX(index)
+                            val y = valueToY(realistic)
+                            if (index == 0) realisticPath.moveTo(x, y) else realisticPath.lineTo(x, y)
+                        }
+                        drawPath(
+                            path = realisticPath,
+                            color = AccentBlue,
+                            style = Stroke(width = 3f)
+                        )
+                        
+                        // Draw pessimistic line (red)
+                        val pessimisticPath = Path()
+                        data.chartData.forEachIndexed { index, (_, _, pessimistic) ->
+                            val x = indexToX(index)
+                            val y = valueToY(pessimistic)
+                            if (index == 0) pessimisticPath.moveTo(x, y) else pessimisticPath.lineTo(x, y)
+                        }
+                        drawPath(
+                            path = pessimisticPath,
+                            color = NegativeAmountColor.copy(alpha = 0.5f),
+                            style = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
+                        )
+                        
+                        // Draw points on realistic line
+                        data.chartData.forEachIndexed { index, (_, realistic, _) ->
+                            val x = indexToX(index)
+                            val y = valueToY(realistic)
+                            drawCircle(
+                                color = AccentBlue,
+                                radius = 6f,
+                                center = Offset(x, y)
+                            )
+                        }
+                        
+                        // Draw Y-axis labels
+                        val labelPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.DKGRAY
+                            textSize = 24f
+                            isAntiAlias = true
+                        }
+                        
+                        for (i in 0..4) {
+                            val value = minValue + (i * valueRange / 4)
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                String.format("%.0f", value),
+                                padding - 35f,
+                                y + 8f,
+                                labelPaint
+                            )
+                        }
+                        
+                        // Draw X-axis labels (forecast periods)
+                        for (i in 0 until data.chartData.size.coerceAtMost(6)) {
+                            val index = (i * (data.chartData.size - 1) / 5).coerceAtMost(data.chartData.size - 1)
+                            val x = indexToX(index)
+                            val daysLabel = (index * forecastDays / (data.chartData.size - 1)).toInt()
+                            drawContext.canvas.nativeCanvas.drawText(
+                                "+${daysLabel}d",
+                                x - 15f,
+                                height - padding + 30f,
+                                labelPaint
+                            )
                         }
                     }
                 } else {
-                    Text(
-                        "No data available",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No data available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

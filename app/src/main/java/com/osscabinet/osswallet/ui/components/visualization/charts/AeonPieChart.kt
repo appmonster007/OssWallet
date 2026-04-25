@@ -65,7 +65,13 @@ fun AeonPieChart(
         }
     }
 
-    val total = slices.sumOf { it.value }
+    val total = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
+    if (total.signum() == 0) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No data to display", style = MaterialTheme.typography.bodySmall)
+        }
+        return
+    }
 
     BoxWithConstraints(modifier = modifier) {
         val widthPx = constraints.maxWidth.toFloat()

@@ -73,7 +73,7 @@ fun AeonBarLineChart(
         val maxY = allValues.maxOf { it }
         
         val range = (maxY - minY).abs()
-        val paddingY = if (range == BigDecimal.ZERO) BigDecimal.ONE else range.multiply(BigDecimal("0.1"))
+        val paddingY = if (range.signum() == 0) BigDecimal.ONE else range.multiply(BigDecimal("0.1"))
         val effectiveMinY = minY - paddingY
         val effectiveMaxY = maxY + paddingY
         val effectiveRange = effectiveMaxY - effectiveMinY

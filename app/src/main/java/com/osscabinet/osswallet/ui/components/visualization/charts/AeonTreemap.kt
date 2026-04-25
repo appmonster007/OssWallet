@@ -50,8 +50,8 @@ fun AeonTreemap(
     val totalValue = nodes.sumOf { it.value }
 
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
+        val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+        val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
         
         val layouts = remember(nodes, widthPx, heightPx) {
             computeTreemapLayout(nodes, Rect(0f, 0f, widthPx, heightPx), totalValue)
@@ -65,6 +65,9 @@ fun AeonTreemap(
                         onPress = { offset ->
                             touchPoint = offset
                             selectedNode = layouts.find { it.second.contains(offset) }?.first
+                        },
+                        onLongPress = {
+                            // Consumes long press to prevent card reordering
                         },
                         onTap = {
                             selectedNode = null
@@ -164,7 +167,7 @@ private fun computeTreemapLayout(
     bounds: Rect,
     totalValue: BigDecimal
 ): List<Pair<AeonTreemapNode, Rect>> {
-    if (nodes.isEmpty() || totalValue == BigDecimal.ZERO) return emptyList()
+    if (nodes.isEmpty() || totalValue.signum() == 0) return emptyList()
     
     val result = mutableListOf<Pair<AeonTreemapNode, Rect>>()
     val sortedNodes = nodes.sortedByDescending { it.value }

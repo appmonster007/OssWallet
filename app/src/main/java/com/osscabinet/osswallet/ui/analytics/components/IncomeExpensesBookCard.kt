@@ -44,6 +44,7 @@ fun IncomeExpensesBookCard(
     config: IncomeExpensesBookCardConfig,
     data: IncomeExpensesBookData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (IncomeExpensesBookCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -65,6 +66,7 @@ fun IncomeExpensesBookCard(
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

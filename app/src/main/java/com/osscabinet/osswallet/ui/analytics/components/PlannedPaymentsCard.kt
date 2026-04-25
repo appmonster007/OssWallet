@@ -30,6 +30,7 @@ fun PlannedPaymentsCard(
     config: PlannedPaymentsCardConfig,
     data: PlannedPaymentsData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (PlannedPaymentsCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -52,6 +53,7 @@ fun PlannedPaymentsCard(
             // Header
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

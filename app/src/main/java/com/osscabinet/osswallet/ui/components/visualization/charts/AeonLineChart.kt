@@ -59,8 +59,8 @@ fun AeonLineChart(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val w = constraints.maxWidth.toFloat()
-        val h = constraints.maxHeight.toFloat()
+        val w = with(density) { maxWidth.toPx() }
+        val h = with(density) { maxHeight.toPx() }
         val padding = 60f
         
         // Dynamic scaling logic
@@ -105,6 +105,9 @@ fun AeonLineChart(
                                 }
                             }
                             selectedPoint = closest
+                        },
+                        onLongPress = {
+                            // Consumes long press to prevent card reordering
                         },
                         onTap = {
                             selectedPoint = null

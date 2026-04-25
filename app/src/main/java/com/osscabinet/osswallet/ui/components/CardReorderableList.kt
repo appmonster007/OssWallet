@@ -16,12 +16,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
@@ -79,6 +83,10 @@ fun <T> CardReorderableList(
     var touchOffsetOnItem by remember { mutableFloatStateOf(0f) }
     var draggedItemHeight by remember { mutableIntStateOf(0) }
     var lastSwapTime by remember { mutableLongStateOf(0L) }
+
+    // Hit test tracking for handles
+    var listCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val handleBounds = remember { mutableStateMapOf<Any, Rect>() }
 
     val currentItems by rememberUpdatedState(items)
     val currentOnReorder by rememberUpdatedState(onReorder)
@@ -192,6 +200,7 @@ fun <T> CardReorderableList(
 
     Box(
         modifier = modifier
+            .onGloballyPositioned { listCoordinates = it }
             .pointerInput(Unit) {
                 // Centralized gesture detection on the container to prevent disposal-induced cancellations
                 detectDragGesturesAfterLongPress(
@@ -201,11 +210,21 @@ fun <T> CardReorderableList(
                             offset.y.toInt() in it.offset..(it.offset + it.size)
                         }
                         if (item != null) {
-                            draggedKey = item.key
-                            draggedItemHeight = item.size
-                            touchOffsetOnItem = offset.y - item.offset
-                            currentPointerY = offset.y
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            // Hit test: only start drag if the touch is within the reported handle bounds
+                            val itemKey = item.key
+                            val bounds = handleBounds[itemKey]
+                            
+                            // If a handle is defined, restrict drag to it. 
+                            // If no handle is defined (empty map entry), we allow full-card drag as fallback?
+                            // No, user specifically asked for "only drag if pressed on respective cards header".
+                            // So we strictly require handle match.
+                            if (bounds != null && bounds.contains(offset)) {
+                                draggedKey = itemKey
+                                draggedItemHeight = item.size
+                                touchOffsetOnItem = offset.y - item.offset
+                                currentPointerY = offset.y
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
                         }
                     },
                     onDrag = { change, dragAmount ->
@@ -230,8 +249,15 @@ fun <T> CardReorderableList(
                 items = items,
                 key = { _, item -> key(item) }
             ) { _, item ->
-                val isDragging = draggedKey == key(item)
+                val itemKey = key(item)
+                val isDragging = draggedKey == itemKey
                 
+                // Construct the drag handle modifier
+                val dragModifier = Modifier.onGloballyPositioned { coords ->
+                    val listCoords = listCoordinates ?: return@onGloballyPositioned
+                    handleBounds[itemKey] = listCoords.localBoundingBoxOf(coords)
+                }
+
                 // M3 Background Dimming
                 val alpha by animateFloatAsState(
                     targetValue = if (draggedKey != null && !isDragging) 0.6f else 1.0f,
@@ -269,7 +295,7 @@ fun <T> CardReorderableList(
                     }
                     else {
                         // Normal Item
-                        itemContent(item, false, Modifier)
+                        itemContent(item, false, dragModifier)
                     }
                 }
             }

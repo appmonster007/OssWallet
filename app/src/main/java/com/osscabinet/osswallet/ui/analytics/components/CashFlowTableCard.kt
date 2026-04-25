@@ -43,6 +43,7 @@ fun CashFlowTableCard(
     config: CashFlowTableCardConfig,
     data: CashFlowTableData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (CashFlowTableCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -64,6 +65,7 @@ fun CashFlowTableCard(
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

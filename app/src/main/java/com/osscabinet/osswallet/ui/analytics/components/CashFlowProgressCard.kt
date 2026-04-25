@@ -28,6 +28,7 @@ fun CashFlowProgressCard(
     config: CashFlowProgressCardConfig,
     data: CashFlowProgressData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (CashFlowProgressCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -50,6 +51,7 @@ fun CashFlowProgressCard(
             // Header
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

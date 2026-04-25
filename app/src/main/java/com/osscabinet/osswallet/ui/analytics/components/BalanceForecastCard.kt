@@ -32,6 +32,7 @@ fun BalanceForecastCard(
     config: BalanceForecastCardConfig,
     data: BalanceForecastData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (BalanceForecastCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -55,6 +56,7 @@ fun BalanceForecastCard(
             // Header
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

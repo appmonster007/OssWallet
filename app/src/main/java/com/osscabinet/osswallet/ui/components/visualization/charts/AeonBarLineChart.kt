@@ -64,8 +64,8 @@ fun AeonBarLineChart(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
+        val widthPx = with(density) { maxWidth.toPx() }
+        val heightPx = with(density) { maxHeight.toPx() }
         val padding = 60f
 
         val allValues = barData + lineData
@@ -100,6 +100,9 @@ fun AeonBarLineChart(
                             val step = (widthPx - 2 * padding) / (total - 1).coerceAtLeast(1)
                             val index = ((offset.x - padding + step / 2) / step).toInt().coerceIn(0, total - 1)
                             selectedIndex = index
+                        },
+                        onLongPress = {
+                            // Consumes long press to prevent card reordering
                         },
                         onTap = {
                             selectedIndex = null

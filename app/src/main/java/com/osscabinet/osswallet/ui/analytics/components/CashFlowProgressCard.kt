@@ -1,27 +1,13 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +16,10 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.ui.components.visualization.AeonProgressBar
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
@@ -46,75 +34,105 @@ fun CashFlowProgressCard(
     var showSettings by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
         ) {
             // Header
-            Column {
-                AeonFlowSectionHeader(
-                    title = config.title,
-                    trailing = {
+            AeonFlowSectionHeader(
+                title = config.title,
+                trailing = {
+                    Row {
                         IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                         }
                     }
-                )
-                Text(
-                    config.subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                config.subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Income progress
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Income", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    formatCurrencyRight(data.income, data.currency, data.precision),
-                    color = MaterialTheme.colorScheme.onSurface
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Income",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        formatCurrencyRight(data.income, data.currency, data.precision),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                val incomeProgress = if (data.expenses.abs() > BigDecimal.ZERO) {
+                    data.income.divide(data.expenses.abs(), 2, java.math.RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1f)
+                } else 0f
+                
+                AeonProgressBar(
+                    progress = incomeProgress,
+                    color = PositiveAmountColor,
+                    height = 12.dp
                 )
             }
-            val incomeProgress = if (data.expenses.abs() > BigDecimal.ZERO) {
-                data.income.divide(data.expenses.abs(), 2, java.math.RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1f)
-            } else 0f
-            LinearProgressIndicator(
-                progress = { incomeProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .padding(vertical = 4.dp)
-                    .clip(CircleShape),
-                color = PositiveAmountColor,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
             
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Expenses progress
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Expenses", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    formatCurrencyRight(data.expenses, data.currency, data.precision),
-                    color = MaterialTheme.colorScheme.onSurface
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Expenses",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        formatCurrencyRight(data.expenses, data.currency, data.precision),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                AeonProgressBar(
+                    progress = 1f,
+                    color = NegativeAmountColor,
+                    height = 12.dp
                 )
             }
-            LinearProgressIndicator(
-                progress = { 1f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .padding(vertical = 4.dp)
-                    .clip(CircleShape),
-                color = NegativeAmountColor,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
         }
     }
     
@@ -203,3 +221,24 @@ data class CashFlowProgressData(
     val currency: String,
     val precision: Int
 )
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CashFlowProgressCardPreview() {
+    OssWalletTheme {
+        CashFlowProgressCard(
+            config = CashFlowProgressCardConfig(
+                cardId = "preview",
+                title = "CASH FLOW PROGRESS",
+                subtitle = "Monthly target vs actual"
+            ),
+            data = CashFlowProgressData(
+                income = BigDecimal("5000.00"),
+                expenses = BigDecimal("3500.00"),
+                currency = "USD",
+                precision = 2
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}

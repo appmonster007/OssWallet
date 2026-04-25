@@ -588,7 +588,22 @@ fun OssWalletNavGraph(
         composable(Screen.Analytics.route) {
             AnalyticsScreen(
                 viewModel = analyticsViewModel,
-                onBackClick = safePopBackStack
+                accountViewModel = accountViewModel,
+                templateViewModel = templateViewModel,
+                settingsViewModel = settingsViewModel,
+                onBackClick = safePopBackStack,
+                onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
+                onRecordsClick = { context -> navController.navigateToRecords(context) },
+                onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
+                onLoansClick = { navController.navigate(Screen.Loans.route) },
+                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
+                onAddClick = { type, template ->
+                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
+                }
             )
         }
 

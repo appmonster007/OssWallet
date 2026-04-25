@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +59,7 @@ fun IncomeExpensesSummaryCard(
     config: IncomeExpensesSummaryCardConfig,
     data: IncomeExpensesSummaryData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (IncomeExpensesSummaryCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onCategoryClick: ((String) -> Unit)? = null
@@ -78,6 +81,7 @@ fun IncomeExpensesSummaryCard(
             // Header
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -122,6 +126,11 @@ fun IncomeExpensesSummaryCard(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = {
+                                // Consumes long press to prevent card reordering
+                            })
+                        }
                         .then(
                             if (onCategoryClick != null) {
                                 Modifier.clickable {

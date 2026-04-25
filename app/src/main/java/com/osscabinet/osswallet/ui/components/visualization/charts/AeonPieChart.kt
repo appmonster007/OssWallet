@@ -74,8 +74,8 @@ fun AeonPieChart(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
+        val widthPx = with(density) { maxWidth.toPx() }
+        val heightPx = with(density) { maxHeight.toPx() }
         val center = Offset(widthPx / 2, heightPx / 2)
         val radius = (widthPx.coerceAtMost(heightPx) / 2) * 0.8f
 
@@ -105,6 +105,9 @@ fun AeonPieChart(
                                 }
                             }
                             selectedSlice = null
+                        },
+                        onLongPress = {
+                            // Consumes long press to prevent card reordering
                         },
                         onTap = {
                             selectedSlice = null

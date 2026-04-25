@@ -197,6 +197,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() },
                 onCategoryClick = null // Can be added later for navigation
@@ -214,6 +215,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -230,6 +232,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -246,6 +249,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -262,6 +266,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -278,6 +283,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -377,6 +383,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -393,6 +400,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -409,6 +417,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -425,6 +434,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )
@@ -441,6 +451,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = renderData.data,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() }
             )

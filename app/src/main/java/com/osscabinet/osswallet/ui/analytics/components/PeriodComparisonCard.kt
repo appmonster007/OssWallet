@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ fun PeriodComparisonCard(
     config: PeriodComparisonCardConfig,
     data: PeriodComparisonData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (PeriodComparisonCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -54,6 +57,7 @@ fun PeriodComparisonCard(
             // Header
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
@@ -100,6 +104,11 @@ fun PeriodComparisonCard(
                                 tab,
                                 style = MaterialTheme.typography.labelMedium
                             )
+                        },
+                        modifier = Modifier.pointerInput(Unit) {
+                            detectTapGestures(onLongPress = {
+                                // Consumes long press to prevent card reordering
+                            })
                         }
                     )
                 }

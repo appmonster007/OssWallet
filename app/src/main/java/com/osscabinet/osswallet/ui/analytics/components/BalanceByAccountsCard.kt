@@ -44,6 +44,7 @@ fun BalanceByAccountsCard(
     config: BalanceByAccountsCardConfig,
     data: BalanceByAccountsData,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (BalanceByAccountsCardConfig) -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -65,6 +66,7 @@ fun BalanceByAccountsCard(
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
+                modifier = headerModifier,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {

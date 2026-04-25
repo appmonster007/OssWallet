@@ -227,7 +227,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryBreakdown(
         config = cardConfig,
-        transactions = allTransactions,
+        transactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -242,7 +242,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeTimelineTrajectory(
         config = cardConfig,
-        transactions = allTransactions,
+        transactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange),
         accounts = accounts,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
@@ -257,7 +257,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryExpenseTreemap(
         config = cardConfig,
-        transactions = allTransactions,
+        transactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -696,33 +696,58 @@ class AnalyticsViewModel(
         precision: Int
     ): PlannedPaymentsData {
         val selectedCurrency = baseCurrency
+        val currentRates = exchangeRates
         
-        // Note: This uses placeholder data. To implement properly, you would need:
-        // 1. A data model for planned/recurring transactions
-        // 2. Query the database for planned payments within the timeline range
-        // 3. Calculate progress based on actual vs planned amounts
-        val payments = listOf(
-            PaymentItem(
-                name = "Financial investments",
-                amount = BigDecimal("210000.00"),
-                progress = 0.6f,
-                color = AccentPurple
-            ),
-            PaymentItem(
-                name = "Transfer, withdraw",
-                amount = BigDecimal("105000.00"),
-                progress = 0.4f,
-                color = PositiveAmountColor
-            ),
-            PaymentItem(
-                name = "Rent",
-                amount = BigDecimal("45675.00"),
-                progress = 0.8f,
-                color = AccentOrange
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = precision + 4
             )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Group transactions by category for planned payments
+        val categoryTotals = convertedTransactions
+            .filter { it.amount.signum() < 0 } // Only expenses
+            .groupBy { it.category ?: "Uncategorized" }
+            .mapValues { entry -> 
+                entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.abs() 
+            }
+        
+        // Calculate total planned amount
+        val total = categoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        
+        // Create payment items from category data
+        val categoryColors = listOf(
+            AccentPurple,
+            PositiveAmountColor,
+            AccentOrange,
+            Color(0xFF4CAF50),
+            Color(0xFFE91E63),
+            Color(0xFF9C27B0),
+            Color(0xFF00BCD4)
         )
         
-        val total = payments.fold(BigDecimal.ZERO) { acc, payment -> acc.add(payment.amount) }
+        val payments = categoryTotals.entries.mapIndexed { index, entry ->
+            val amount = entry.value
+            val progress = if (total > BigDecimal.ZERO) {
+                (amount.divide(total, 2, RoundingMode.HALF_UP).toFloat()).coerceAtMost(1.0f)
+            } else {
+                0f
+            }
+            val color = categoryColors.getOrElse(index % categoryColors.size) { AccentPurple }
+            
+            PaymentItem(
+                name = entry.key,
+                amount = amount,
+                progress = progress,
+                color = color
+            )
+        }.sortedByDescending { it.amount }
         
         return PlannedPaymentsData(
             total = total,
@@ -830,20 +855,61 @@ class AnalyticsViewModel(
         precision: Int
     ): PlannedPaymentsTimelineData {
         val selectedCurrency = baseCurrency
+        val currentRates = exchangeRates
         
-        // Note: This uses placeholder data. To implement properly, you would need:
-        // 1. A data model for planned/recurring transactions
-        // 2. Query the database for planned payments within the timeline range
-        // 3. Group payments by week based on due dates
-        val weeklyData = listOf(
-            "Week 17" to BigDecimal("50000.00"),
-            "Week 18" to BigDecimal("75000.00"),
-            "Week 19" to BigDecimal("40000.00"),
-            "Week 20" to BigDecimal("60000.00"),
-            "Week 21" to BigDecimal("85000.00"),
-            "Week 22" to BigDecimal("30000.00"),
-            "Week 23" to BigDecimal("20000.00")
-        )
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        val convertedTransactions = filteredTransactions.map { tx ->
+            val convertedAmount = CurrencyService.convertAmount(
+                amount = tx.amount,
+                fromCurrency = tx.currency,
+                toCurrency = selectedCurrency,
+                exchangeRates = currentRates,
+                precision = precision + 4
+            )
+            tx.copy(amount = convertedAmount)
+        }
+        
+        // Filter for expense transactions (planned payments are typically expenses)
+        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
+        
+        // Group transactions by week based on timestamp
+        val calendar = java.util.Calendar.getInstance()
+        val now = System.currentTimeMillis()
+        
+        // Determine number of weeks based on timeline range
+        val numWeeks = when (cardConfig.timelineRange) {
+            is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> {
+                when (cardConfig.timelineRange.period) {
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_7_DAYS -> 1
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS -> 4
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS -> 12
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_6_MONTHS -> 24
+                    com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_1_YEAR -> 52
+                    else -> 12
+                }
+            }
+            else -> 12
+        }
+        
+        val weekMillis = 7 * 24 * 60 * 60 * 1000L
+        
+        val weeklyData = (0 until numWeeks).map { weekIndex ->
+            val weekEnd = now - (weekIndex * weekMillis)
+            val weekStart = weekEnd - weekMillis
+            
+            val weekTransactions = expenseTransactions.filter { 
+                it.timestamp >= weekStart && it.timestamp < weekEnd 
+            }
+            
+            val weekTotal = weekTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            
+            // Calculate week number in year for label
+            calendar.timeInMillis = weekStart
+            val weekOfYear = calendar.get(java.util.Calendar.WEEK_OF_YEAR)
+            val year = calendar.get(java.util.Calendar.YEAR)
+            
+            "Week $weekOfYear ($year)" to weekTotal.abs()
+        }.reversed()
         
         val total = weeklyData.fold(BigDecimal.ZERO) { acc, (_, amount) -> acc.add(amount) }
         
@@ -866,16 +932,31 @@ class AnalyticsViewModel(
         val selectedCurrency = baseCurrency
         val currentRates = exchangeRates
         
-        // Calculate current balance by account
+        // Filter transactions based on timeline range
+        val filteredTransactions = filterTransactionsByTimeline(allTransactions, cardConfig.timelineRange)
+        
+        // Calculate balance by account using filtered transactions
         val accountBalances = accounts.map { account ->
-            val accountTransactions = allTransactions.filter { it.accountId == account.id }
-            val balance = accountTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-                acc.add(tx.amount)
+            val accountTransactions = filteredTransactions.filter { it.accountId == account.id }
+            
+            // Convert account transactions to selected currency
+            val convertedTransactions = accountTransactions.map { tx ->
+                val convertedAmount = CurrencyService.convertAmount(
+                    amount = tx.amount,
+                    fromCurrency = tx.currency,
+                    toCurrency = selectedCurrency,
+                    exchangeRates = currentRates,
+                    precision = precision + 4
+                )
+                convertedAmount
             }
+            
+            val balance = convertedTransactions.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+            
             AccountBalanceItem(
                 accountName = account.name,
                 balance = balance,
-                currency = account.currencyCode,
+                currency = selectedCurrency,
                 isNegative = balance < BigDecimal.ZERO
             )
         }

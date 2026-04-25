@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,97 +99,159 @@ fun CashFlowTrendCard(
                 }
             }
             
-            // Interactive bar + line chart
+            // Interactive bar + line chart with proper scales
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(220.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { selectedBarIndex = null },
-                contentAlignment = Alignment.Center
+                    .clickable { selectedBarIndex = null }
             ) {
                 if (data.barData.isNotEmpty() && data.lineData.isNotEmpty()) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        // Bar chart for cash flow
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            data.barData.forEachIndexed { index, value ->
-                                val maxValue = data.barData.maxOrNull() ?: 1.0
-                                val normalizedHeight = if (maxValue > 0) {
-                                    (value / maxValue).toFloat()
-                                } else {
-                                    0.1f
-                                }
-                                val isSelected = selectedBarIndex == index
-                                
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(16.dp)
-                                            .height(120.dp * normalizedHeight.coerceIn(0.1f, 1.0f))
-                                            .background(
-                                                if (value >= 0) PositiveAmountColor else NegativeAmountColor,
-                                                RoundedCornerShape(4.dp)
-                                            )
-                                            .clickable { selectedBarIndex = index },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (isSelected) {
-                                            Text(
-                                                value.toString(),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color.White
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                    Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        val width = size.width
+                        val height = size.height
+                        val padding = 40f
+                        
+                        // Calculate min and max for scaling
+                        val allValues = data.barData + data.lineData
+                        val maxValue = allValues.maxOrNull() ?: 1.0
+                        val minValue = allValues.minOrNull() ?: 0.0
+                        val valueRange = (maxValue - minValue).takeIf { it > 0 } ?: 1.0
+                        
+                        // Helper functions for mapping
+                        fun valueToY(value: Double): Float {
+                            val normalized = ((value - minValue) / valueRange).toFloat()
+                            return height - padding - (normalized * (height - 2 * padding))
                         }
                         
-                        Spacer(modifier = Modifier.height(8.dp))
+                        fun indexToX(index: Int): Float {
+                            return padding + (index.toFloat() / (data.barData.size - 1).coerceAtLeast(1)) * (width - 2 * padding)
+                        }
                         
-                        // Line chart for trend overlay
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            data.lineData.forEachIndexed { index, value ->
-                                val maxValue = data.lineData.maxOrNull() ?: 1.0
-                                val normalizedHeight = if (maxValue > 0) {
-                                    (value / maxValue).toFloat()
-                                } else {
-                                    0.1f
-                                }
-                                
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .background(
-                                                AccentBlue,
-                                                CircleShape
-                                            )
-                                    )
-                                }
-                            }
+                        // Draw grid lines (horizontal)
+                        for (i in 0..4) {
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawLine(
+                                start = Offset(padding, y),
+                                end = Offset(width - padding, y),
+                                color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw axes
+                        drawLine(
+                            start = Offset(padding, padding),
+                            end = Offset(padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        drawLine(
+                            start = Offset(padding, height - padding),
+                            end = Offset(width - padding, height - padding),
+                            color = Color.Gray,
+                            strokeWidth = 2f
+                        )
+                        
+                        // Draw zero line (if range includes both positive and negative)
+                        if (minValue < 0 && maxValue > 0) {
+                            val zeroY = valueToY(0.0)
+                            drawLine(
+                                start = Offset(padding, zeroY),
+                                end = Offset(width - padding, zeroY),
+                                color = Color.Gray,
+                                strokeWidth = 1f
+                            )
+                        }
+                        
+                        // Draw bar chart for cash flow
+                        val barWidth = (width - 2 * padding) / data.barData.size * 0.6f
+                        data.barData.forEachIndexed { index, value ->
+                            val x = indexToX(index)
+                            val y = valueToY(value)
+                            val barColor = if (value >= 0) PositiveAmountColor else NegativeAmountColor
+                            
+                            // Draw bar from zero line or bottom
+                            val barTop = if (value >= 0) y else valueToY(0.0)
+                            val barBottom = if (value >= 0) valueToY(0.0) else y
+                            
+                            drawRoundRect(
+                                color = barColor,
+                                topLeft = Offset(x - barWidth / 2, barTop),
+                                size = androidx.compose.ui.geometry.Size(barWidth, (barBottom - barTop).coerceAtLeast(1f)),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f)
+                            )
+                        }
+                        
+                        // Draw line chart for cumulative trend
+                        val path = Path()
+                        data.lineData.forEachIndexed { index, value ->
+                            val x = indexToX(index)
+                            val y = valueToY(value)
+                            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        }
+                        
+                        drawPath(
+                            path = path,
+                            color = AccentBlue,
+                            style = Stroke(width = 3f)
+                        )
+                        
+                        // Draw points on line
+                        data.lineData.forEachIndexed { index, value ->
+                            val x = indexToX(index)
+                            val y = valueToY(value)
+                            drawCircle(
+                                color = AccentBlue,
+                                radius = 5f,
+                                center = Offset(x, y)
+                            )
+                        }
+                        
+                        // Draw Y-axis labels
+                        val labelPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.DKGRAY
+                            textSize = 24f
+                            isAntiAlias = true
+                        }
+                        
+                        for (i in 0..4) {
+                            val value = minValue + (i * valueRange / 4)
+                            val y = height - padding - (i * (height - 2 * padding) / 4)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                String.format("%.0f", value),
+                                padding - 35f,
+                                y + 8f,
+                                labelPaint
+                            )
+                        }
+                        
+                        // Draw X-axis labels (period numbers)
+                        for (i in 0 until data.barData.size.coerceAtMost(6)) {
+                            val index = (i * (data.barData.size - 1) / 5).coerceAtMost(data.barData.size - 1)
+                            val x = indexToX(index)
+                            drawContext.canvas.nativeCanvas.drawText(
+                                "P${index + 1}",
+                                x - 10f,
+                                height - padding + 30f,
+                                labelPaint
+                            )
                         }
                     }
                 } else {
-                    Text(
-                        "No data available",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No data available",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

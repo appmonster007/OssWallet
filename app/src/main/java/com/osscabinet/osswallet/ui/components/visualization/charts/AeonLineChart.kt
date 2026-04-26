@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.semantics.contentDescription
@@ -27,8 +28,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.util.formatShortNumber
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
@@ -53,7 +56,7 @@ fun AeonLineChart(
         return
     }
 
-    var selectedPoint by remember { mutableStateOf<Pair<AeonLineChartSeries, AeonLineChartPoint>?>(null) }
+    var selectedIndex by remember { mutableIntStateOf(-1) }
     val density = LocalDensity.current
 
     val animationProgress = remember { Animatable(0f) }
@@ -66,10 +69,18 @@ fun AeonLineChart(
         }
     }
 
+    val verticalGuideColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    
     BoxWithConstraints(modifier = modifier) {
-        val w = with(density) { maxWidth.toPx() }
-        val h = with(density) { maxHeight.toPx() }
-        val padding = 60f
+        val w = constraints.maxWidth.toFloat()
+        val h = constraints.maxHeight.toFloat()
+        val leftPadding = with(density) { 50.dp.toPx() }
+        val bottomPadding = with(density) { 30.dp.toPx() }
+        val topPadding = with(density) { 15.dp.toPx() }
+        val rightPadding = with(density) { 15.dp.toPx() }
+        
+        val chartWidth = w - leftPadding - rightPadding
+        val chartHeight = h - bottomPadding - topPadding
         
         // Dynamic scaling logic
         val allPoints = series.flatMap { it.dataPoints.map { p -> p.y } }
@@ -86,37 +97,43 @@ fun AeonLineChart(
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
         
-        // Add 10% padding to the range
+        // Add 15% padding to the range for better visual breathing room
         val rangeY = (maxY - minY).abs()
-        val padY = if (rangeY.signum() == 0) BigDecimal.ONE else rangeY.multiply(BigDecimal("0.1"))
+        val padY = if (rangeY.signum() == 0) BigDecimal.ONE else rangeY.multiply(BigDecimal("0.15"))
         val effectiveMinY = minY - padY
         val effectiveMaxY = maxY + padY
-        val effectiveRangeY = effectiveMaxY - effectiveMinY
+        val effectiveRangeY = (effectiveMaxY - effectiveMinY).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
 
         fun valueToY(value: BigDecimal): Float {
             val normalized = (value - effectiveMinY).divide(effectiveRangeY, 10, RoundingMode.HALF_UP).toFloat()
-            return h - padding - (normalized * (h - 2 * padding))
+            return topPadding + chartHeight - (normalized * chartHeight)
         }
 
         fun indexToX(index: Int, total: Int): Float {
-            if (total <= 1) return w / 2
-            return padding + (index.toFloat() / (total - 1)) * (w - 2 * padding)
+            if (total <= 1) return leftPadding + chartWidth / 2
+            return leftPadding + (index.toFloat() / (total - 1)) * chartWidth
         }
 
-        fun findClosestPoint(offsetX: Float): Pair<AeonLineChartSeries, AeonLineChartPoint>? {
-            var closest: Pair<AeonLineChartSeries, AeonLineChartPoint>? = null
+        fun findClosestIndex(offsetX: Float): Int {
+            if (series.isEmpty()) return -1
+            
+            // Use the first series that has data points
+            val referenceSeries = series.firstOrNull { it.dataPoints.isNotEmpty() } ?: return -1
+            val totalPoints = referenceSeries.dataPoints.size
+            
+            var closestIndex = -1
             var minDistance = Float.MAX_VALUE
-            series.forEach { s ->
-                s.dataPoints.forEachIndexed { index, p ->
-                    val dx = indexToX(index, s.dataPoints.size)
-                    val distance = abs(offsetX - dx)
-                    if (distance < minDistance && distance < 100f) {
-                        minDistance = distance
-                        closest = s to p
-                    }
+            
+            for (i in 0 until totalPoints) {
+                val dx = indexToX(i, totalPoints)
+                val distance = abs(offsetX - dx)
+                if (distance < minDistance) {
+                    minDistance = distance
+                    closestIndex = i
                 }
             }
-            return closest
+            
+            return if (minDistance < 100f) closestIndex else -1
         }
 
         Canvas(
@@ -129,40 +146,51 @@ fun AeonLineChart(
                 .pointerInput(series) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            selectedPoint = findClosestPoint(offset.x)
+                            selectedIndex = findClosestIndex(offset.x)
                         },
                         onDrag = { change, _ ->
-                            selectedPoint = findClosestPoint(change.position.x)
+                            selectedIndex = findClosestIndex(change.position.x)
                         },
-                        onDragEnd = { selectedPoint = null },
-                        onDragCancel = { selectedPoint = null }
+                        onDragEnd = { selectedIndex = -1 },
+                        onDragCancel = { selectedIndex = -1 }
                     )
                 }
                 .pointerInput(series) {
                     detectTapGestures(
                         onTap = { offset ->
-                            selectedPoint = findClosestPoint(offset.x)
-                        },
-                        onLongPress = {
-                            // Already handled by parent if needed, but here we consume 
-                            // to ensure reordering doesn't start while exploring data
+                            selectedIndex = findClosestIndex(offset.x)
                         }
                     )
                 }
         ) {
-            // 1. Draw Grid System
+            // 1. Draw Grid System and Y-Axis Labels
             if (showGrid) {
                 val gridColor = Color.Gray.copy(alpha = 0.2f)
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                
+                val labelPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.GRAY
+                    textSize = 10.sp.toPx()
+                    textAlign = android.graphics.Paint.Align.RIGHT
+                    isAntiAlias = true
+                    alpha = 140
+                }
+
                 for (i in 0..4) {
-                    val y = padding + (i * (h - 2 * padding) / 4)
+                    val ratio = i.toFloat() / 4
+                    val yValue = effectiveMinY + effectiveRangeY.multiply(BigDecimal(ratio.toString()))
+                    val yPos = valueToY(yValue)
+                    
                     drawLine(
                         color = gridColor,
-                        start = Offset(padding, y),
-                        end = Offset(w - padding, y),
-                        strokeWidth = 1f,
-                        pathEffect = dashEffect
+                        start = Offset(leftPadding, yPos),
+                        end = Offset(w - rightPadding, yPos),
+                        strokeWidth = 0.5.dp.toPx()
+                    )
+
+                    drawContext.canvas.nativeCanvas.drawText(
+                        formatShortNumber(yValue),
+                        leftPadding - 12.dp.toPx(),
+                        yPos + 4.dp.toPx(),
+                        labelPaint
                     )
                 }
             }
@@ -177,14 +205,14 @@ fun AeonLineChart(
                         s.dataPoints.forEachIndexed { index, _ ->
                             val x = indexToX(index, s.dataPoints.size)
                             val y = valueToY(intervals[index].second)
-                            val animY = h - padding - (h - padding - y) * animationProgress.value
+                            val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
                             if (index == 0) confidencePath.moveTo(x, animY) else confidencePath.lineTo(x, animY)
                         }
                         // Bottom boundary (reverse)
-                        for (index in s.dataPoints.size - 1 downTo 0) {
+                        for (index in (s.dataPoints.size - 1) downTo 0) {
                             val x = indexToX(index, s.dataPoints.size)
                             val y = valueToY(intervals[index].first)
-                            val animY = h - padding - (h - padding - y) * animationProgress.value
+                            val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
                             confidencePath.lineTo(x, animY)
                         }
                         confidencePath.close()
@@ -201,11 +229,11 @@ fun AeonLineChart(
                 s.dataPoints.forEachIndexed { index, point ->
                     val x = indexToX(index, s.dataPoints.size)
                     val y = valueToY(point.y)
-                    val animY = h - padding - (h - padding - y) * animationProgress.value
+                    val animY = topPadding + chartHeight - (topPadding + chartHeight - y) * animationProgress.value
 
                     if (index == 0) {
                         linePath.moveTo(x, animY)
-                        areaPath.moveTo(x, h - padding)
+                        areaPath.moveTo(x, topPadding + chartHeight)
                         areaPath.lineTo(x, animY)
                     } else {
                         linePath.lineTo(x, animY)
@@ -213,7 +241,7 @@ fun AeonLineChart(
                     
                     if (index == s.dataPoints.size - 1) {
                         areaPath.lineTo(x, animY)
-                        areaPath.lineTo(x, h - padding)
+                        areaPath.lineTo(x, topPadding + chartHeight)
                         areaPath.close()
                     } else if (index > 0) {
                         areaPath.lineTo(x, animY)
@@ -224,9 +252,9 @@ fun AeonLineChart(
                     drawPath(
                         path = areaPath,
                         brush = Brush.verticalGradient(
-                            colors = listOf(s.color.copy(alpha = 0.3f), Color.Transparent),
-                            startY = padding,
-                            endY = h - padding
+                            colors = listOf(s.color.copy(alpha = 0.2f), Color.Transparent),
+                            startY = topPadding,
+                            endY = topPadding + chartHeight
                         )
                     )
                 }
@@ -235,75 +263,104 @@ fun AeonLineChart(
                     path = linePath,
                     color = s.color,
                     style = Stroke(
-                        width = 3.dp.toPx(),
+                        width = 3.5.dp.toPx(),
                         cap = StrokeCap.Round,
                         join = StrokeJoin.Round,
-                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(20f, 10f)) else null
+                        pathEffect = if (s.isDashed) PathEffect.dashPathEffect(floatArrayOf(15f, 15f)) else null
                     )
                 )
 
-                s.dataPoints.forEachIndexed { index, point ->
-                    val x = indexToX(index, s.dataPoints.size)
-                    val y = valueToY(point.y)
-                    val animY = h - padding - (h - padding - y) * animationProgress.value
-                    
-                    drawCircle(color = Color.White, radius = 4.dp.toPx(), center = Offset(x, animY))
-                    drawCircle(color = s.color, radius = 4.dp.toPx(), center = Offset(x, animY), style = Stroke(width = 2.dp.toPx()))
-                }
+                // Draw end points only if selected or for specific emphasis if needed
+                // For now, removing plotted dots as requested for simplicity
             }
 
-            selectedPoint?.let { (s, p) ->
-                val x = indexToX(s.dataPoints.indexOf(p), s.dataPoints.size)
+            if (selectedIndex != -1) {
+                val x = indexToX(selectedIndex, series[0].dataPoints.size)
                 drawLine(
-                    color = s.color.copy(alpha = 0.5f),
-                    start = Offset(x, padding),
-                    end = Offset(x, h - padding),
+                    color = verticalGuideColor,
+                    start = Offset(x, topPadding),
+                    end = Offset(x, topPadding + chartHeight),
                     strokeWidth = 1.dp.toPx(),
                     pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                 )
+                
+                // Draw focus dots for all series at this index
+                series.forEach { s ->
+                    if (selectedIndex < s.dataPoints.size) {
+                        val p = s.dataPoints[selectedIndex]
+                        val y = valueToY(p.y)
+                        drawCircle(color = Color.White, radius = 5.dp.toPx(), center = Offset(x, y))
+                        drawCircle(color = s.color, radius = 5.dp.toPx(), center = Offset(x, y), style = Stroke(width = 2.dp.toPx()))
+                    }
+                }
             }
         }
 
-        selectedPoint?.let { (s, p) ->
-            val index = s.dataPoints.indexOf(p)
-            val x = indexToX(index, s.dataPoints.size)
-            val y = valueToY(p.y)
-            
-            // Boundary-aware tooltip
-            val tooltipWidth = 140.dp
-            val tooltipHeight = 80.dp
-            val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
-            val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
+        if (selectedIndex != -1) {
+            val referenceSeries = series.firstOrNull { selectedIndex < it.dataPoints.size }
+            if (referenceSeries != null) {
+                val totalPoints = referenceSeries.dataPoints.size
+                val x = indexToX(selectedIndex, totalPoints)
+                val label = referenceSeries.dataPoints[selectedIndex].label
+                
+                // Boundary-aware multi-series tooltip
+                val tooltipWidth = 180.dp
+                val tooltipHeight = (40 + series.size * 25).dp // Dynamic height based on number of series
+                val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
+                val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
 
-            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, w - tooltipWidthPx)
-            val yPos = (y - tooltipHeightPx - 20f).coerceIn(0f, h - tooltipHeightPx)
+                val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, w - tooltipWidthPx)
+                // Show tooltip above the middle of the chart
+                val yPos = (topPadding).coerceIn(0f, h - tooltipHeightPx)
 
-            Surface(
-                modifier = Modifier
-                    .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
-                    .width(tooltipWidth)
-                    .clip(RoundedCornerShape(12.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                border = androidx.compose.foundation.BorderStroke(1.dp, s.color.copy(alpha = 0.5f))
-            ) {
-                Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(p.label ?: "Point ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatCurrencyRight(p.y, currency, precision), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = s.color)
-                    
-                    if (onNavigateToRecords != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { onNavigateToRecords(p) },
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, s.color.copy(alpha = 0.5f))
-                        ) {
-                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = s.color)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("See Records", style = MaterialTheme.typography.labelSmall, color = s.color)
+                Surface(
+                    modifier = Modifier
+                        .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
+                        .width(tooltipWidth)
+                        .clip(RoundedCornerShape(12.dp)),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        if (label != null) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                        
+                        series.forEach { s ->
+                            if (selectedIndex < s.dataPoints.size) {
+                                val p = s.dataPoints[selectedIndex]
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(s.color, RoundedCornerShape(2.dp))
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = s.name,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = formatCurrencyRight(p.y, currency, precision),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -329,6 +386,20 @@ fun AeonLineChartPreview() {
                             AeonLineChartPoint(3f, BigDecimal("1800.00"), "Apr"),
                             AeonLineChartPoint(4f, BigDecimal("2100.00"), "May"),
                             AeonLineChartPoint(5f, BigDecimal("1900.00"), "Jun")
+                        )
+                    ),
+                    AeonLineChartSeries(
+                        name = "Expense",
+                        color = Color(0xFFF44336),
+                        isDashed = true,
+                        fillGradient = false,
+                        dataPoints = listOf(
+                            AeonLineChartPoint(0f, BigDecimal("500.00"), "Jan"),
+                            AeonLineChartPoint(1f, BigDecimal("800.00"), "Feb"),
+                            AeonLineChartPoint(2f, BigDecimal("700.00"), "Mar"),
+                            AeonLineChartPoint(3f, BigDecimal("900.00"), "Apr"),
+                            AeonLineChartPoint(4f, BigDecimal("1200.00"), "May"),
+                            AeonLineChartPoint(5f, BigDecimal("1000.00"), "Jun")
                         )
                     )
                 )

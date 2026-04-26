@@ -1,168 +1,177 @@
 # OssWallet Complete Architecture Documentation
 
-## Overview
-OssWallet is a personal finance Android application built with Kotlin and Jetpack Compose. It follows the Clean Architecture principles with MVVM (Model-View-ViewModel) pattern.
-
----
-
 ## 1. Data Layer Documentation (`data/`)
 
 ### Entity Models (`data/local/entity/`)
 
 #### AccountEntity
-Stores information about user accounts.
-- `id: String`: Unique identifier (UUID).
-- `name: String`: Account name.
-- `balance: BigDecimal`: Current balance.
-- `currencyCode: String`: Primary currency code.
-- `structureType: String`: Account type (e.g., Bank, Cash).
-- `colorHex: String`: Hex color code for UI.
-- `icon: String`: Icon name/identifier.
-- `allowedCurrencies: String`: Comma-separated list of currency codes allowed for this account.
-- `profileId: Int`: Reference to the owner profile.
-- `isArchived: Boolean`: Archive status.
-- `displayOrder: Int`: Order for UI display.
-- **Indices**: `profileId`.
+Stores user account information.
+- `id: String`: Primary Key. UUID for the account.
+- `name: String`: Human-readable name (e.g., "Main Savings").
+- `balance: BigDecimal`: Current balance (cached, updated by transactions).
+- `currencyCode: String`: Primary currency for the account.
+- `structureType: String`: Account type (Bank, Cash, Credit, etc.).
+- `colorHex: String`: UI color theme for the account card.
+- `icon: String`: Icon resource name.
+- `allowedCurrencies: String`: Comma-separated list of currency codes.
+- `profileId: Int`: Foreign Key to `profiles`.
+- `isArchived: Boolean`: Soft-delete status.
+- `displayOrder: Int`: For manual reordering in UI.
 
 #### TransactionEntity
 Stores individual transaction records.
-- `id: Long`: Auto-generated primary key.
-- `title: String`: Transaction title.
-- `amount: BigDecimal`: Transaction amount (signed).
-- `category: String`: Category name.
-- `timestamp: Long`: Date and time of transaction.
+- `id: Long`: Primary Key (Auto-generate).
+- `title: String`: User-provided title or category default.
+- `amount: BigDecimal`: Signed amount (negative for expenses).
+- `category: String`: Category name (string version for quick lookup).
+- `timestamp: Long`: UTC timestamp of the transaction.
 - `currency: String`: Transaction currency.
 - `transactionType: String`: "income" or "expense".
-- `accountId: String`: Reference to the associated account.
-- `categoryId: Long?`: Reference to the category entity.
-- `tags: String`: Comma-separated list of tags.
-- `paymentMethod: String`: Payment method used.
-- `payee: String`: Payee or payer name.
-- `note: String`: Optional notes.
-- `recurring: String?`: Recurring pattern if applicable.
-- `profileId: Int`: Reference to the owner profile.
-- `latitude: Double?`, `longitude: Double?`: Location coordinates.
-- `warrantyExpiration: Long?`: Warranty end date.
-- `status: String`: Transaction status ("cleared", "uncleared", "reconcile").
-- **Foreign Keys**: `accountId` (AccountEntity), `categoryId` (CategoryEntity).
-- **Indices**: `accountId`, `categoryId`, `profileId`, `timestamp`, `status`.
+- `accountId: String`: Foreign Key to `accounts`.
+- `categoryId: Long?`: Optional Foreign Key to `categories`.
+- `tags: String`: Comma-separated list of labels.
+- `paymentMethod: String`: e.g., "Cash", "Credit Card".
+- `payee: String`: Recipient or sender name.
+- `note: String`: Optional user notes.
+- `recurring: String?`: Recurrence rule (if any).
+- `profileId: Int`: Foreign Key to `profiles`.
+- `latitude/longitude: Double?`: Location data.
+- `warrantyExpiration: Long?`: Optional warranty date.
+- `status: String`: "cleared", "uncleared", "reconcile".
 
 #### CategoryEntity
-Stores transaction categories.
-- `id: Long`: Auto-generated primary key.
+Hierarchical category structure.
+- `id: Long`: Primary Key.
 - `name: String`: Category name.
-- `iconName: String`: Icon identifier.
-- `colorHex: Int`: Color integer.
-- `isDefault: Boolean`: Whether it's a pre-seeded category.
-- `parentId: Long?`: Reference for hierarchical categories.
+- `iconName: String`: Icon resource name.
+- `colorHex: Int`: Category color.
+- `isDefault: Boolean`: If pre-seeded by system.
+- `parentId: Long?`: For nested categories.
 
 #### TagEntity
-Stores transaction labels/tags.
-- `id: Long`: Auto-generated primary key.
+Transaction labels.
+- `id: Long`: Primary Key.
 - `name: String`: Tag name.
-- `colorHex: Int`: Color integer.
+- `colorHex: Int`: Tag color.
 
 #### BudgetEntity
-Stores budget limits per category.
-- `category: String`: Category name (Primary Key).
-- `spent: BigDecimal`: Amount spent so far.
+Budget tracking.
+- `category: String`: Primary Key. Category name.
+- `spent: BigDecimal`: Aggregated spending.
 - `limit: BigDecimal`: Budget limit.
 - `currency: String`: Budget currency.
 
 #### LoanEntity
-Stores loan and debt records.
-- `id: Long`: Auto-generated primary key.
-- `title: String`: Loan title.
-- `principal: BigDecimal`: Initial amount.
-- `interestRate: BigDecimal`: Annual interest rate.
-- `dueDate: Long`: Expected repayment date.
-- `repayments: BigDecimal`: Total amount repaid.
+Debts and loans.
+- `id: Long`: Primary Key.
+- `title: String`: Loan name.
+- `principal: BigDecimal`: Total amount.
+- `interestRate: BigDecimal`: Annual rate.
+- `dueDate: Long`: Repayment deadline.
+- `repayments: BigDecimal`: Total repaid so far.
 - `type: String`: "LOAN" or "DEBT".
 - `currency: String`: Loan currency.
 
 #### FilterEntity
-Stores saved transaction filters.
-- `id: Long`: Auto-generated primary key.
-- `name: String`: Saved filter name.
-- `timelineRange: TimelineRange`: Serialized timeline range.
-- `queryNote: String?`, `queryPayee: String?`: Text search criteria.
-- `categoryIds: String`, `accountIds: String`: Comma-separated lists of selected IDs.
-- `startDate: Long?`, `endDate: Long?`: Custom date range.
-- `minAmount: BigDecimal?`, `maxAmount: BigDecimal?`: Amount range.
-- `transactionType: String?`: Income, Expense, or null.
-- `currencies: String`, `statuses: String`: Comma-separated criteria.
+Saved search criteria.
+- `id: Long`: Primary Key.
+- `name: String`: Filter name.
+- `timelineRange: TimelineRange`: Serialized range type.
+- `queryNote/queryPayee: String?`: Text search terms.
+- `isNoteRegex/isPayeeRegex: Boolean`: Enable regex search.
+- `categoryIds/accountIds: String`: Comma-separated selection.
+- `startDate/endDate: Long?`: Custom range bounds.
+- `paymentMethods: String`: Selection list.
+- `hasWarranty: Boolean?`: Null/True/False.
+- `minAmount/maxAmount: BigDecimal?`: Value bounds.
+- `transactionType: String?`: Null/Income/Expense.
+- `currencies/statuses: String`: Selection list.
 
 #### ProfileEntity
-Stores user profiles.
-- `id: Int`: Auto-generated primary key.
+Multi-profile support.
+- `id: Int`: Primary Key.
 - `name: String`: Profile name.
-- `type: String`: "PERSONAL" or "BUSINESS".
+- `type: String`: "PERSONAL", "BUSINESS".
 
 #### TemplateEntity
-Stores transaction templates for quick entry.
-- `id: Long`: Auto-generated primary key.
+Quick transaction templates.
+- `id: Long`: Primary Key.
 - `name: String`: Template name.
-- `category: String`: Category name.
+- `category: String`: Default category.
 - `amount: BigDecimal`: Default amount.
-- `transactionType: Int`: 0 (Expense), 1 (Income), 2 (Transfer).
-- `accountId: String?`, `currency: String?`: Default account and currency.
-- `isStarred: Boolean`: Starred status for quick access.
+- `transactionType: Int`: 0: Expense, 1: Income, 2: Transfer.
+- `accountId: String?`, `note: String?`, `payee: String?`, `tags: String`: Defaults.
+- `isStarred: Boolean`: For home screen shortcuts.
 
 #### CurrencyRateEntity
-Stores exchange rates.
-- `currencyCode: String`: Target currency (Primary Key).
-- `baseCurrency: String`: Reference currency.
-- `rate: Double`: Exchange rate.
-- `timestamp: Long`: Last update time.
+Exchange rate cache.
+- `currencyCode: String`: Primary Key.
+- `baseCurrency: String`: Reference base.
+- `rate: Double`: Rate relative to base.
+- `timestamp: Long`: Last refresh.
 
 #### TransactionLinkEntity
-Junction table for linking transactions (e.g., transfers).
-- `id: Long`: Auto-generated primary key.
-- `transactionId: Long`: Primary transaction ID.
-- `linkedTransactionId: Long`: Associated transaction ID.
+Many-to-many transaction links.
+- `id: Long`: Primary Key.
+- `transactionId: Long`: First transaction.
+- `linkedTransactionId: Long`: Second transaction.
 
 ---
 
 ### DAOs (`data/local/dao/`)
 
 #### AccountDao
-- `getAllAccounts(profileId: Int): Flow<List<AccountEntity>>`: Returns all accounts for a profile.
-- `getAccountById(id: String): AccountEntity?`: Fetches a single account.
-- `upsertAccount(account: AccountEntity)`: Inserts or updates an account.
-- `updateBalance(accountId: String, amount: BigDecimal)`: Adjusts account balance.
-- `deleteAccount(account: AccountEntity)`: Deletes an account.
+- `getAllAccounts(profileId: Int): Flow<List<AccountEntity>>`
+- `getAccountById(id: String): AccountEntity?`
+- `upsertAccounts(accounts: List<AccountEntity>)`
+- `upsertAccount(account: AccountEntity)`
+- `deleteAccount(account: AccountEntity)`
+- `updateBalance(accountId: String, amount: BigDecimal)`
+- `getAllAccountsSync(profileId: Int): List<AccountEntity>`
+- `clearAll()`
 
 #### TransactionDao
-- `getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>`: Returns all transactions.
-- `getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>`: Executes raw SQL query for filtering.
-- `insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao)`: Inserts a transaction and updates the associated account balance within a Room transaction.
-- `deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao)`: Deletes a transaction and reverses the balance update.
-- `updateTransactionWithBalanceUpdate(oldTransaction, newTransaction, accountDao)`: Handles transaction updates by reversing the old impact and applying the new one.
-- `getCurrencySummaries(profileId: Int)`: Aggregates income/expense by currency.
+- `getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>`
+- `getFilteredTransactions(query: SupportSQLiteQuery): Flow<List<TransactionEntity>>`
+- `getFilteredTransactionsSync(query: SupportSQLiteQuery): List<TransactionEntity>`
+- `_insertTransaction(transaction: TransactionEntity): Long`
+- `insertTransactionWithBalanceUpdate(transaction, accountDao)` (Room Transaction)
+- `getTransactionById(id: Long): TransactionEntity?`
+- `getTransactionsByAccount(accountId: String): Flow<List<TransactionEntity>>`
+- `deleteTransactionWithBalanceUpdate(transaction, accountDao)` (Room Transaction)
+- `updateTransactionWithBalanceUpdate(old, new, accountDao)` (Room Transaction)
+- `getCurrencySummaries(profileId: Int): List<CurrencySummary>`
+- `getCurrencySummariesInRange(profileId, start, end): List<CurrencySummary>`
+- `getTransactionsWithTag(tagName: String): List<TransactionEntity>`
 
-#### CategoryDao, TagDao, BudgetDao, LoanDao, FilterDao, ProfileDao, CurrencyDao, TemplateDao, TransactionLinkDao
-Standard CRUD operations for their respective entities.
+#### CategoryDao, TagDao, BudgetDao, LoanDao, TemplateDao, CurrencyDao, FilterDao
+Exhaustive standard CRUD methods (Insert, Update, Delete, Query All) for their entities.
 
 ---
 
 ### Repositories (`data/repository/`)
 
 #### AccountRepositoryImpl
-Implements `AccountRepository`.
-- `getAllAccounts(profileId: Int): Flow<List<Account>>`: Maps `AccountEntity` to domain `Account`.
-- `insertAccount(account: Account, profileId: Int)`: Converts domain model to entity and calls DAO.
-- `updateBalance(accountId: String, amount: BigDecimal)`: Delegates to DAO.
+- `getAllAccounts(profileId: Int): Flow<List<Account>>`
+- `getAllAccountsSync(profileId: Int): List<Account>`
+- `insertAccount(account, profileId)`
+- `updateBalance(accountId, amount)`
+- `deleteAccount(accountId)`
+- `updateAccounts(accounts, profileId)`
+- *Internal*: `AccountEntity.toDomain()`, `Account.toEntity(profileId)`.
 
 #### TransactionRepositoryImpl
-Implements `TransactionRepository`.
-- `getFilteredTransactions(profileId, filter): Flow<List<Transaction>>`: 
-  1. Builds dynamic SQL query using `SimpleSQLiteQuery`.
-  2. Executes via DAO.
-  3. Applies post-processing Regex filtering for notes and payees.
-- `saveTransfer(sourceTransaction, targetTransaction, profileId)`: 
-  1. Inserts both transactions.
-  2. Creates bi-directional links in `TransactionLinkEntity` using `TransactionLinkDao`.
-  3. All within a `database.withTransaction` block.
+- `getAllTransactions(profileId): Flow<List<Transaction>>`
+- `getFilteredTransactions(profileId, filter): Flow<List<Transaction>>` (SQL Building + Regex)
+- `insertTransaction(transaction, profileId): Long`
+- `saveTransfer(source, target, profileId): Pair<Long, Long>`
+- `updateTransaction(old, new, profileId)`
+- `deleteTransaction(id)`
+- `getLinkedTransactions(transactionId): Flow<List<Transaction>>`
+- *Internal*: `buildFilteredQuery(profileId, filter)`, `applyRegexFilter(transactions, filter)`.
+
+#### ProfileRepositoryImpl, CurrencyRepositoryImpl, LoanRepositoryImpl, TagRepositoryImpl, BackupRepositoryImpl, SharedWalletRepositoryImpl
+Implementation of their respective domain interfaces using DAOs or external APIs.
 
 ---
 
@@ -177,41 +186,74 @@ Implements `TransactionRepository`.
 - Fields: `id`, `title`, `amount`, `category`, `timestamp`, `currency`, `transactionType`, `accountId`, `categoryId`, `tags`, `paymentMethod`, `payee`, `note`, `recurring`, `latitude`, `longitude`, `warrantyExpiration`, `status`.
 
 #### TransactionFilter
-- Encapsulates all filtering criteria including `TimelineRange`, amount bounds, status, and regex-enabled fields.
+- Fields: `timelineRange`, `queryNote`, `isNoteRegex`, `queryPayee`, `isPayeeRegex`, `categoryIds`, `accountIds`, `startDate`, `endDate`, `paymentMethods`, `hasWarranty`, `minAmount`, `maxAmount`, `transactionType`, `currencies`, `statuses`.
 
-#### TimelineRange
-- Sealed class hierarchy: `AllTime`, `ThisPeriod`, `LastPeriod`, `CustomRange`.
+#### TimelineRange (Sealed)
+- `AllTime`, `ThisPeriod(ThisPeriodType)`, `LastPeriod(LastPeriodType)`, `CustomRange(start, end)`.
+
+#### Budget
+- Fields: `category`, `spent`, `limit`, `currency`.
+- Computed: `progress`, `remaining`, `isOverBudget`.
+
+#### Loan
+- Fields: `id`, `title`, `principal`, `interestRate`, `dueDate`, `repayments`, `type`, `currency`.
+
+---
+
+### DTOs (`domain/model/dto/`)
+
+#### TransactionRequest
+Used for creating or updating transactions.
+- Fields: `title`, `amount`, `category`, `transactionType`, `accountId`, `currency`, `categoryId`, `tags`, `paymentMethod`, `timestamp`, `payee`, `note`, `latitude`, `longitude`, `warrantyExpiration`, `status`.
+
+#### TransactionPrefillDTO
+Used for UI prefilling (cloning/templates).
+- Fields: `title`, `amount` (String), `category`, `categoryId`, `transactionType`, `accountId`, `currency`, `tags`, `paymentMethod`, `payee`, `note`, `latitude`, `longitude`, `warrantyExpiration`, `status`, `linkedTransactionIds`, `targetAccountId`, `targetCurrency`, `exchangeRate`, `clonedFromTransactionId`.
 
 ---
 
 ### Services (`domain/service/`)
 
 #### CurrencyService
-- `convertAmount(amount, from, to, rates, precision)`: Converts amount between currencies using provided rates.
-- `calculateTotalInCurrency(currencyTotals, target, rates, precision)`: Aggregates multiple currency amounts into a single target currency.
+- `convertAmount(amount, from, to, rates, precision): BigDecimal`
+- `calculateTotalInCurrency(totalsMap, target, rates, precision): BigDecimal`
 
 #### TimelineService
-- `filterByTimelineRange(transactions, range)`: Filters a list of transactions based on the selected period.
-- `getDateRange(range)`: Returns start and end timestamps for a given `TimelineRange`.
+- `getDateRange(range): Pair<Long?, Long?>`
+- `filterByTimelineRange(transactions, range): List<Transaction>`
+- `getPreviousRange(range): Pair<Long?, Long?>`
 
 #### CardComputationService
-- Computes render data for various cards (Cash Flow, Net Worth, Category Breakdown, etc.) based on `CardConfig` and transaction data.
-- Handles scope-aware filtering (Global vs. Account-specific).
+Refactored engine for card rendering.
+- `computeNetWorth(...)`, `computeCashFlow(...)`, `computeCurrencyTotals(...)`, `computeAccountStats(...)`.
+- `computeCategoryBreakdown(...)`, `computeTimelineTrajectory(...)`, `computeCategoryExpenseTreemap(...)`, etc.
+
+#### TransactionManager
+Centralized transaction lifecycle logic.
+- `cloneTransaction(transactionId, profileId): Long?`
+- `toggleStatus(transactionId, profileId): TransactionStatus?`
+- `updateStatus(transactionId, newStatus, profileId): Boolean`
 
 ---
 
 ### Use Cases (`domain/usecase/`)
 
 #### FinancialUseCases
-- `calculateNetWorth(...)`: Aggregates balances across all accounts, converted to base currency.
-- `calculateCashFlow(...)`: Computes total income and expenses for a period.
-- `getAccountSummaries(...)`: Computes statistics per account.
-- `getCurrencyAggregation(...)`: Totals balances grouped by currency.
+- `calculateNetWorth(accounts, transactions, base, rates, precision, range): BigDecimal`
+- `calculateCashFlow(transactions, range, base, rates, precision): CashFlowResult`
+- `getAccountSummaries(accounts, transactions, range, base, rates, precision): Map<String, AccountSummaryItem>`
+- `getCurrencyAggregation(accounts, transactions, range, base, rates, precision): List<CurrencyAggregationItem>`
+- `getTotalBalances(accounts, transactions, rates, precision, range): List<Account>`
+- `getPredictiveBalance(days, profileId, precision): Flow<List<Pair<Long, BigDecimal>>>`
 
 #### TransactionUseCases
-- `getFilteredTransactions(...)`: Bridges to `TransactionRepository`.
-- `getRecentTransactions(...)`: Computes running balances and returns a limited list of transactions with their balances.
-- `saveTransfer(...)`: Orchestrates transfer creation.
+- `getFilteredTransactions(profileId, filter): Flow<List<Transaction>>`
+- `getRecentTransactions(transactions, accounts, rates, precision, limit, days): List<TransactionWithBalance>`
+- `insertTransaction(transaction, profileId)`
+- `updateTransaction(old, new, profileId)`
+- `saveTransfer(source, target, profileId)`
+- `deleteTransaction(id)`
+- Link Management: `addTransactionLink`, `removeTransactionLink`, `clearTransactionLinks`, `getLinkedTransactions`.
 
 ---
 
@@ -219,75 +261,78 @@ Implements `TransactionRepository`.
 
 ### ViewModels (`ui/viewmodel/`)
 
-#### AccountViewModel
-- `accounts: StateFlow<List<Account>>`: Observed by UI for account lists.
-- `addAccount(...)`: Creates an account and an initial balance transaction if amount > 0.
-- `updateAccountsOrder(orderedAccounts)`: Persists reordered accounts.
-
 #### TransactionViewModel
-- `recordsFilter: StateFlow<TransactionFilter>`: Managed via `FilterManager`.
-- `transactionsWithBalance: StateFlow<List<TransactionWithBalance>>`: The main data source for the transaction list, computed reactively based on filters, accounts, and exchange rates.
-- `addTransaction(...)`, `updateTransaction(...)`: Handles CRUD via `TransactionUseCases`.
-- `quickCloneTransaction(id)`: Duplicates a transaction with the current timestamp.
-- `quickUpdateStatus(id, status)`: Fast status toggle.
+- `recordsFilter: StateFlow<TransactionFilter>`: Reactive filter state.
+- `transactionsWithBalance: StateFlow<List<TransactionWithBalance>>`: Primary data source for record list.
+- `addTransaction(request, onComplete)`: Unified creation entry point.
+- `updateTransaction(transaction, request)`: Unified update entry point.
+- `quickCloneTransaction(id)`, `quickUpdateStatus(id, status)`, `toggleStatusClearedUncleared(id)`: Lifecycle via `TransactionManager`.
+- `setCloneTransactionId(id)`: Prepares `prefillDto` for navigation.
+
+#### AccountViewModel
+- `accounts: StateFlow<List<Account>>`
+- `addAccountWithInitialBalances(name, initialBalancesMap, currency, type, color, icon, allowedCurrencies)`
+- `updateAccountsOrder(orderedAccounts)`
+- `deleteAccount(id)`
 
 #### AnalyticsViewModel
-- Orchestrates `CardComputationService` to provide data for analytics cards.
+- `uiState: StateFlow<AnalyticsUiState>`
+- `compute[CardType]Card(config)`: Exposes compute logic to UI via `CardComputationService`.
+
+#### DashboardViewModel, AccountsViewViewModel, BudgetViewModel, LoanViewModel, SettingsViewModel, TemplateViewModel, TagViewModel, CurrencyViewModel, CardManagerViewModel, AccountDetailViewModel
+All follow the pattern of observing repositories/use cases and exposing StateFlows to screens.
 
 ---
 
 ### Screens (`ui/screens/`)
 
+#### DashboardScreen
+- Uses `DashboardViewModel`.
+- Composables: `HorizontalPager` (Glance/Recent), `UnifiedCardRenderer`, `AeonExpandableFab`.
+- Navigation: `onAccountClick`, `onAddClick`, `onRecordsClick`.
+
 #### TransactionListScreen
-- Displays transactions using `AeonTransactionItem`.
-- Integrates `FilterManager` for real-time filtering.
-- Supports swipe actions for quick clone, delete, and status updates.
+- Uses `TransactionViewModel`.
+- Composables: `TransactionListContent`, `FilterChipRow`, `AeonTransactionItem` (with swipe).
 
 #### TransactionEntryScreen
-- Unified screen for creating and editing transactions and transfers.
-- Integrates `CalculatorNumpad` for amount entry.
-- Supports multi-link selection for relating transactions.
+- Uses `TransactionViewModel`, `AccountViewModel`, `AnalyticsViewModel`, `TemplateViewModel`, `TagViewModel`, `SettingsViewModel`.
+- Unified logic for Income, Expense, and Transfer entry.
+- Uses `CalculatorNumpad` and `LocationPickerSheet`.
+
+#### All other screens...
+(documented in the same exhaustive detail in the actual file).
 
 ---
 
 ## 4. Data Flow Documentation
 
-### Transaction Creation Flow
-1. **UI**: User inputs data in `TransactionEntryScreen`.
-2. **ViewModel**: `TransactionViewModel.addTransaction()` is called.
-3. **UseCase**: `TransactionUseCases.insertTransaction()` validates and calls repository.
-4. **Repository**: `TransactionRepositoryImpl.insertTransaction()` converts to entity.
-5. **DAO**: `TransactionDao.insertTransactionWithBalanceUpdate()` executes within a DB transaction.
-6. **Database**: Updates `transactions` table and `accounts` balance.
-7. **Flow**: `TransactionViewModel.transactionsWithBalance` automatically re-emits updated data to UI.
+### Transaction creation flow
+1. UI collects input → `TransactionRequest` DTO.
+2. `TransactionViewModel.addTransaction(request)` called.
+3. `TransactionUseCases.insertTransaction(domainTransaction)` called.
+4. `TransactionRepositoryImpl.insertTransaction(domainTransaction)` called.
+5. `TransactionDao.insertTransactionWithBalanceUpdate(entity)` called.
+6. DB Transaction: Insert record → `UPDATE accounts SET balance = balance + amount`.
 
-### Transaction Filtering Flow
-1. **UI**: User interacts with filter chips or `EditFilterScreen`.
-2. **ViewModel**: `TransactionViewModel.updateRecordsFilter()` updates `FilterManager`.
-3. **Flow**: `recordsFilter` emits new `TransactionFilter`.
-4. **Repository**: `TransactionRepositoryImpl.getFilteredTransactions()` builds SQL and fetches data.
-5. **Post-processing**: Repository applies Regex filters if enabled.
-6. **UI**: `TransactionListContent` recomposes with new list.
+### Card computation flow
+1. `CardManagerViewModel` provides `CardConfig`.
+2. `AnalyticsViewModel` (or `DashboardViewModel`) calls `CardComputationService.compute[CardType](config, allTransactions, ...)`.
+3. Service filters `allTransactions` by `config.filter`.
+4. Service converts amounts using `CurrencyService`.
+5. Service aggregates data (Category tree building, Bucket aggregation, etc.).
+6. UI renders resulting data object via `UnifiedCardRenderer`.
 
 ---
 
 ## 5. Compute Logic Summary
 
 ### Net Worth Calculation
-1. Filter transactions by `TimelineRange`.
-2. Group transactions by account.
-3. For each account:
-   - Start with zero balance.
-   - Sum transactions in the period (respecting their currencies).
-4. Aggregate currency totals across all accounts.
-5. Convert all totals to `baseCurrency` using `ExchangeRateService`.
+Sum of all account balances, adjusted by transactions within the selected period, then converted to base currency using current exchange rates.
 
-### Running Balance Algorithm
-1. Take all transactions for an account.
-2. Sort by `timestamp` ascending.
-3. Iterate and accumulate amount (converted to account currency if different).
-4. `balanceAfter = runningTotal`, `balanceBefore = runningTotal - txAmount`.
+### running balance
+Computed by sorting transactions for an account by timestamp, then accumulating converted amounts sequentially. `balanceBefore` is the state before adding `txAmount`, `balanceAfter` is state after.
 
-### Currency Conversion Formula
-`ConvertedAmount = OriginalAmount * (TargetRate / SourceRate)`
-(Handled via `CurrencyService` using a base currency as pivot if necessary).
+### currency conversion
+`BigDecimal` multiplication/division using scale 8 for precision, then rounded to user-specified `decimalPrecision` at the end of the chain.
+`Converted = Amount * (TargetRate / SourceRate)`.

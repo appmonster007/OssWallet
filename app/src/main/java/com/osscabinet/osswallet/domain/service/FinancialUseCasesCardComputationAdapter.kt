@@ -6,21 +6,17 @@ import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
-import com.osscabinet.ossWallet.ui.components.cards.filterAccounts
-import com.osscabinet.ossWallet.ui.components.cards.filterTransactions
 import java.math.BigDecimal
 
 /**
  * Adapter that implements CardComputationEngine using FinancialUseCases.
  * This allows FinancialUseCases to be used interchangeably with CardComputationService
  * for card data computation.
- * 
- * Note: Filtering is handled by CardFilter extension functions on CardConfig,
- * so this adapter does not need to implement filtering logic.
  */
 class FinancialUseCasesCardComputationAdapter(
     private val financialUseCases: FinancialUseCases
@@ -29,25 +25,23 @@ class FinancialUseCasesCardComputationAdapter(
     override suspend fun computeNetWorth(
         config: NetWorthCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        allTransactions: List<Transaction>,
+        context: ComputationContext
     ): Pair<BigDecimal, CashFlowResult> {
         val netWorth = financialUseCases.calculateNetWorth(
             accounts = accounts,
-            allTransactions = transactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            allTransactions = allTransactions,
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision,
             timelineRange = config.timelineRange
         )
         val cashFlow = financialUseCases.calculateCashFlow(
-            allTransactions = transactions,
+            allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
         return Pair(netWorth, cashFlow)
     }
@@ -55,58 +49,52 @@ class FinancialUseCasesCardComputationAdapter(
     override suspend fun computeCurrencyTotals(
         config: CurrencyBalancesCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        allTransactions: List<Transaction>,
+        context: ComputationContext
     ): List<CurrencyAggregationItem> {
         return financialUseCases.getCurrencyAggregation(
             accounts = accounts,
-            allTransactions = transactions,
+            allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
     }
 
     override suspend fun computeCashFlow(
         config: CashFlowCardConfig,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        allTransactions: List<Transaction>,
+        context: ComputationContext
     ): CashFlowResult {
         return financialUseCases.calculateCashFlow(
-            allTransactions = transactions,
+            allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
     }
 
     override suspend fun computeAccountStats(
         config: AccountsCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        allTransactions: List<Transaction>,
+        context: ComputationContext
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
         val accountStats = financialUseCases.getAccountSummaries(
             accounts = accounts,
-            allTransactions = transactions,
+            allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
         val updatedAccounts = financialUseCases.getTotalBalances(
             accounts = accounts,
-            allTransactions = transactions,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            allTransactions = allTransactions,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision,
             timelineRange = config.timelineRange
         )
         return Pair(updatedAccounts, accountStats)

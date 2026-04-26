@@ -86,4 +86,20 @@ object FilterService {
             matchesWarranty && inWarrantyRange && matchesPaymentMethod
         }
     }
+
+    /**
+     * Creates a filter for the period immediately preceding the current filter's timeline range.
+     * Useful for period-over-period comparison.
+     */
+    fun getPreviousPeriodFilter(currentFilter: TransactionFilter): TransactionFilter {
+        val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
+        return currentFilter.copy(
+            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
+                start = prevStart ?: 0L,
+                end = prevEnd ?: System.currentTimeMillis()
+            ),
+            startDate = null,
+            endDate = null
+        )
+    }
 }

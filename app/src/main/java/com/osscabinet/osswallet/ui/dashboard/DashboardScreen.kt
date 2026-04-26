@@ -538,7 +538,7 @@ fun DashboardContent(
                     )
                 }
                 is AccountsCardConfig -> {
-                    val accountStats = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
+                    val (updatedAccounts, accountStats) = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         dashboardViewModel.computeAccountStats(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
@@ -546,16 +546,6 @@ fun DashboardContent(
                             baseCurrency = state.baseCurrency,
                             exchangeRates = state.exchangeRates,
                             precision = state.decimalPrecision
-                        )
-                    }
-
-                    val updatedAccounts = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.getTotalBalances(
-                            accounts = state.accounts,
-                            transactions = state.allTransactions,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision,
-                            timelineRange = cardConfig.timelineRange
                         )
                     }
 

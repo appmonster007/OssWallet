@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardScope
@@ -78,117 +79,89 @@ interface CardComputationService : CardComputationEngine {
     suspend fun computeCategoryBreakdown(
         config: CategoryBreakdownCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CategoryBreakdownData>
 
     suspend fun computeTimelineTrajectory(
         config: TimelineTrajectoryCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<TimelineTrajectoryData>
 
     suspend fun computeCategoryExpenseTreemap(
         config: CategoryExpenseTreemapCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CategoryExpenseTreemapData>
 
     suspend fun computeIncomeExpensesSummary(
         config: IncomeExpensesSummaryCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): IncomeExpensesSummaryData
 
     suspend fun computePeriodComparison(
         config: PeriodComparisonCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PeriodComparisonData
 
     suspend fun computeCashFlowTrend(
         config: CashFlowTrendCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowTrendData
 
     suspend fun computeCashFlowProgress(
         config: CashFlowProgressCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowProgressData
 
     suspend fun computeBalanceForecast(
         config: BalanceForecastCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceForecastData
 
     suspend fun computePlannedPayments(
         config: PlannedPaymentsCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PlannedPaymentsData
 
     suspend fun computeIncomeExpensesBook(
         config: IncomeExpensesBookCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): IncomeExpensesBookData
 
     suspend fun computeCashFlowTable(
         config: CashFlowTableCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowTableData
 
     suspend fun computePlannedPaymentsTimeline(
         config: PlannedPaymentsTimelineCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PlannedPaymentsTimelineData
 
     suspend fun computeBalanceByAccounts(
         config: BalanceByAccountsCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceByAccountsData
 
     suspend fun computeBalanceTrend(
         config: BalanceTrendCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceTrendData
 }
 
@@ -204,9 +177,7 @@ class CardComputationServiceImpl(
     override suspend fun computeCashFlow(
         config: CashFlowCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowResult {
         // Determine scope based on accountIds in filter
         val accountId = config.filter.accountIds.firstOrNull()
@@ -224,9 +195,9 @@ class CardComputationServiceImpl(
         return financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
     }
 
@@ -234,9 +205,7 @@ class CardComputationServiceImpl(
         config: CurrencyBalancesCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CurrencyAggregationItem> {
         // Determine scope based on accountIds in filter
         val accountId = config.filter.accountIds.firstOrNull()
@@ -262,9 +231,9 @@ class CardComputationServiceImpl(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
     }
 
@@ -272,9 +241,7 @@ class CardComputationServiceImpl(
         config: NetWorthCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): Pair<BigDecimal, CashFlowResult> {
         // Filter allTransactions based on scope (NetWorthCardConfig is currently GLOBAL only)
         val filteredTransactions = filterTransactionsByScope(
@@ -295,18 +262,18 @@ class CardComputationServiceImpl(
         val netWorth = financialUseCases.calculateNetWorth(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision,
             timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
 
         val cashFlow = financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
 
         return Pair(netWorth, cashFlow)
@@ -316,9 +283,7 @@ class CardComputationServiceImpl(
         config: AccountsCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
         // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
         // Use TimelineRange.AllTime since filtering is done at card level
@@ -326,16 +291,16 @@ class CardComputationServiceImpl(
             accounts = accounts,
             allTransactions = allTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            baseCurrency = context.baseCurrency,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision
         )
         // Update accounts with timeline-filtered balances
         val updatedAccounts = financialUseCases.getTotalBalances(
             accounts = accounts,
             allTransactions = allTransactions,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            exchangeRates = context.exchangeRates,
+            precision = context.precision,
             timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
         return Pair(updatedAccounts, accountStats)
@@ -344,9 +309,7 @@ class CardComputationServiceImpl(
     override suspend fun computeCategoryBreakdown(
         config: CategoryBreakdownCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CategoryBreakdownData> {
         val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
         val accountId = config.filter.accountIds.firstOrNull()
@@ -380,10 +343,10 @@ class CardComputationServiceImpl(
             // Current category's OWN allTransactions (not its children's)
             val ownTxs = txs.filter { it.category == categoryName }
             val ownIncome = ownTxs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
             }
             val ownExpense = ownTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
             }
 
             // Aggregate: Own + Children
@@ -405,7 +368,7 @@ class CardComputationServiceImpl(
         }
 
         val totalNetGlobal = filteredByScope.sumOf { tx ->
-            CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+            CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
         }.abs()
 
         // Root Level: Categories with no parent
@@ -419,9 +382,7 @@ class CardComputationServiceImpl(
         config: TimelineTrajectoryCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<TimelineTrajectoryData> {
         val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
         val accountId = config.filter.accountIds.firstOrNull()
@@ -437,10 +398,10 @@ class CardComputationServiceImpl(
             }
             
             val income = bucketTransactions.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
             }
             val expense = bucketTransactions.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
             }
             
             // Calculate running balance
@@ -448,9 +409,9 @@ class CardComputationServiceImpl(
             val priorBalance = financialUseCases.calculateNetWorth(
                 accounts = if (scope == CardScope.ACCOUNT && accountId != null) accounts.filter { it.id == accountId } else accounts,
                 allTransactions = priorTransactions,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision,
+                baseCurrency = context.baseCurrency,
+                exchangeRates = context.exchangeRates,
+                precision = context.precision,
                 timelineRange = config.filter.timelineRange
             )
             
@@ -468,9 +429,7 @@ class CardComputationServiceImpl(
     override suspend fun computeCategoryExpenseTreemap(
         config: CategoryExpenseTreemapCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CategoryExpenseTreemapData> {
         val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
         val accountId = config.filter.accountIds.firstOrNull()
@@ -499,7 +458,7 @@ class CardComputationServiceImpl(
             }.sortedByDescending { it.expense.abs() }
 
             val ownExpense = txs.filter { it.category == categoryName }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
             }
 
             val totalExpense = ownExpense + childrenData.sumOf { it.expense }
@@ -516,7 +475,7 @@ class CardComputationServiceImpl(
         }
 
         val totalExpenseGlobal = expenseTransactions.sumOf { tx ->
-            CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+            CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
         }.abs()
 
         val rootCategories = allCategories.filter { it.parentId == null }
@@ -528,20 +487,18 @@ class CardComputationServiceImpl(
     override suspend fun computeIncomeExpensesSummary(
         config: IncomeExpensesSummaryCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): IncomeExpensesSummaryData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -552,9 +509,9 @@ class CardComputationServiceImpl(
                 val convertedAmount = CurrencyService.convertAmount(
                     amount = tx.amount,
                     fromCurrency = tx.currency,
-                    toCurrency = baseCurrency,
+                    toCurrency = context.baseCurrency,
                     exchangeRates = currentRates,
-                    precision = precision + 4
+                    precision = context.precision + 4
                 )
                 tx.copy(amount = convertedAmount)
             }
@@ -627,8 +584,8 @@ class CardComputationServiceImpl(
         return IncomeExpensesSummaryData(
             totalAmount = totalAmount,
             percentageChange = deltaPercentage,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             categories = categories,
             savingsRate = savingsRate,
             incomeTotal = totalIncome,
@@ -639,20 +596,18 @@ class CardComputationServiceImpl(
     override suspend fun computePeriodComparison(
         config: PeriodComparisonCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PeriodComparisonData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -663,9 +618,9 @@ class CardComputationServiceImpl(
                 val convertedAmount = CurrencyService.convertAmount(
                     amount = tx.amount,
                     fromCurrency = tx.currency,
-                    toCurrency = baseCurrency,
+                    toCurrency = context.baseCurrency,
                     exchangeRates = currentRates,
-                    precision = precision + 4
+                    precision = context.precision + 4
                 )
                 tx.copy(amount = convertedAmount)
             }
@@ -740,8 +695,8 @@ class CardComputationServiceImpl(
 
         return PeriodComparisonData(
             currentValue = currentValue,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             chartData = chartData,
             ghostData = ghostData,
             runRate = prevTotal,
@@ -752,20 +707,18 @@ class CardComputationServiceImpl(
     override suspend fun computeCashFlowTrend(
         config: CashFlowTrendCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowTrendData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -773,7 +726,7 @@ class CardComputationServiceImpl(
         val prevFilter = getPreviousPeriodFilter(config.filter)
         val prevTransactions = FilterService.filterTransactions(allTransactions, prevFilter)
             .map { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, currentRates, precision + 4)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision + 4)
             }
         val prevTotal = prevTransactions.sumOf { it }
         val currentTotal = convertedTransactions.sumOf { it.amount }
@@ -804,7 +757,7 @@ class CardComputationServiceImpl(
 
         val mean = dailyData.average()
         val variance = dailyData.map { (it - mean) * (it - mean) }.average()
-        val volatility = Math.sqrt(variance).toBigDecimal().setScale(precision, RoundingMode.HALF_UP)
+        val volatility = Math.sqrt(variance).toBigDecimal().setScale(context.precision, RoundingMode.HALF_UP)
 
         val lineData = dailyData.runningReduce { acc, d -> acc + d }
 
@@ -820,20 +773,18 @@ class CardComputationServiceImpl(
     override suspend fun computeCashFlowProgress(
         config: CashFlowProgressCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowProgressData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -844,8 +795,8 @@ class CardComputationServiceImpl(
         return CashFlowProgressData(
             income = income,
             expenses = expenses,
-            currency = baseCurrency,
-            precision = precision
+            currency = context.baseCurrency,
+            precision = context.precision
         )
     }
 
@@ -853,20 +804,18 @@ class CardComputationServiceImpl(
         config: BalanceForecastCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceForecastData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -888,7 +837,7 @@ class CardComputationServiceImpl(
         
         val totalNetFlow = convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
         val avgDailyNetFlow = if (daysInPeriod > 0) {
-            totalNetFlow.divide(BigDecimal.valueOf(daysInPeriod), precision, RoundingMode.HALF_UP)
+            totalNetFlow.divide(BigDecimal.valueOf(daysInPeriod), context.precision, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
 
         val dailyNetFlows = convertedTransactions.groupBy { (it.timestamp / (24 * 60 * 60 * 1000L)) }
@@ -904,9 +853,9 @@ class CardComputationServiceImpl(
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             acc.add(convertedAmount)
         }
@@ -918,9 +867,9 @@ class CardComputationServiceImpl(
                 it.timestamp > now && it.timestamp < now + (config.forecastDays * 24 * 60 * 60 * 1000L)
             }
             val totalPlanned = plannedPayments.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, currentRates, precision)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision)
             }
-            val dailyPlannedFlow = totalPlanned.divide(BigDecimal.valueOf(config.forecastDays.toLong()), precision, RoundingMode.HALF_UP)
+            val dailyPlannedFlow = totalPlanned.divide(BigDecimal.valueOf(config.forecastDays.toLong()), context.precision, RoundingMode.HALF_UP)
             forecastDailyFlow = forecastDailyFlow.add(dailyPlannedFlow)
         }
 
@@ -943,8 +892,8 @@ class CardComputationServiceImpl(
         
         return BalanceForecastData(
             forecastBalance = forecastBalance,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             chartData = chartData,
             projectedZeroDate = projectedZeroDate,
             currentLiquidCash = currentBalance
@@ -954,20 +903,18 @@ class CardComputationServiceImpl(
     override suspend fun computePlannedPayments(
         config: PlannedPaymentsCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PlannedPaymentsData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -1010,8 +957,8 @@ class CardComputationServiceImpl(
         
         return PlannedPaymentsData(
             total = total,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             payments = payments
         )
     }
@@ -1019,20 +966,18 @@ class CardComputationServiceImpl(
     override suspend fun computeIncomeExpensesBook(
         config: IncomeExpensesBookCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): IncomeExpensesBookData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -1048,28 +993,26 @@ class CardComputationServiceImpl(
             expenseTotal = totalExpense,
             incomeCount = incomeTransactions.size,
             expenseCount = expenseTransactions.size,
-            currency = baseCurrency,
-            precision = precision
+            currency = context.baseCurrency,
+            precision = context.precision
         )
     }
 
     override suspend fun computeCashFlowTable(
         config: CashFlowTableCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowTableData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -1083,11 +1026,11 @@ class CardComputationServiceImpl(
         val incomeTotal = incomeTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
         val expenseTotal = expenseTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
         
-        val incomeAvgDay = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(84), precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-        val expenseAvgDay = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(84), precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val incomeAvgDay = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(84), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val expenseAvgDay = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(84), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
         
-        val incomeAvgRecord = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(incomeCount.toLong()), precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-        val expenseAvgRecord = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(expenseCount.toLong()), precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val incomeAvgRecord = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(incomeCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val expenseAvgRecord = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(expenseCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
         
         return CashFlowTableData(
             incomeCount = incomeCount,
@@ -1099,28 +1042,26 @@ class CardComputationServiceImpl(
             incomeTotal = incomeTotal,
             expenseTotal = expenseTotal,
             netCashFlow = incomeTotal.add(expenseTotal),
-            currency = baseCurrency,
-            precision = precision
+            currency = context.baseCurrency,
+            precision = context.precision
         )
     }
 
     override suspend fun computePlannedPaymentsTimeline(
         config: PlannedPaymentsTimelineCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): PlannedPaymentsTimelineData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         val convertedTransactions = filteredTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -1162,8 +1103,8 @@ class CardComputationServiceImpl(
         
         return PlannedPaymentsTimelineData(
             total = total,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             weeklyData = weeklyData
         )
     }
@@ -1172,24 +1113,22 @@ class CardComputationServiceImpl(
         config: BalanceByAccountsCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceByAccountsData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
         
         val accountBalances = accounts.map { account ->
             val accountTransactions = filteredTransactions.filter { it.accountId == account.id }
             val convertedTransactions = accountTransactions.map { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, currentRates, precision + 4)
+                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision + 4)
             }
             val balance = convertedTransactions.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
             AccountBalanceItem(
                 accountName = account.name,
                 balance = balance,
-                currency = baseCurrency,
+                currency = context.baseCurrency,
                 isNegative = balance < BigDecimal.ZERO
             )
         }
@@ -1198,8 +1137,8 @@ class CardComputationServiceImpl(
         
         return BalanceByAccountsData(
             totalBalance = totalBalance,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             accountBalances = accountBalances
         )
     }
@@ -1208,19 +1147,17 @@ class CardComputationServiceImpl(
         config: BalanceTrendCardConfig,
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BalanceTrendData {
-        val currentRates = exchangeRates
+        val currentRates = context.exchangeRates
         
         val convertedTransactions = allTransactions.map { tx ->
             val convertedAmount = CurrencyService.convertAmount(
                 amount = tx.amount,
                 fromCurrency = tx.currency,
-                toCurrency = baseCurrency,
+                toCurrency = context.baseCurrency,
                 exchangeRates = currentRates,
-                precision = precision + 4
+                precision = context.precision + 4
             )
             tx.copy(amount = convertedAmount)
         }
@@ -1267,8 +1204,8 @@ class CardComputationServiceImpl(
         return BalanceTrendData(
             currentBalance = currentBalance,
             percentageChange = percentageChange,
-            currency = baseCurrency,
-            precision = precision,
+            currency = context.baseCurrency,
+            precision = context.precision,
             weeklyBalances = weeklyBalances
         )
     }

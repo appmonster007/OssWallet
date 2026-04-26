@@ -8,26 +8,16 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.dashboard.model.*
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
+import com.osscabinet.ossWallet.domain.util.CachedCardData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.util.concurrent.TimeUnit
-
-/**
- * Cache entry for computed card data with timestamp for expiration
- */
-internal data class CachedCardData<T>(
-    val timestamp: Long,
-    val data: T
-) {
-    fun isExpired(expirationMinutes: Long = 5): Boolean {
-        val elapsedMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - timestamp)
-        return elapsedMinutes >= expirationMinutes
-    }
-}
+import java.math.RoundingMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountDetailViewModel(
@@ -77,9 +67,6 @@ class AccountDetailViewModel(
         cardDataCache.clear()
     }
 
-    // Generic card data computation functions (pure functions, no StateFlows)
-    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
-
     suspend fun computeCashFlowCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
         transactions: List<Transaction>,
@@ -92,9 +79,7 @@ class AccountDetailViewModel(
             cardConfig.computeCashFlow(
                 transactions = transactions,
                 engine = cardComputationService,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }
@@ -113,9 +98,7 @@ class AccountDetailViewModel(
                 accounts = accounts,
                 transactions = transactions,
                 engine = cardComputationService,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }
@@ -235,8 +218,6 @@ class AccountDetailViewModel(
             invalidateCardCache(cardId)
         }
     }
-
-    // Card-specific compute methods now use unified extension functions from CardCompute.kt
 
     val uiState: StateFlow<AccountDetailUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->

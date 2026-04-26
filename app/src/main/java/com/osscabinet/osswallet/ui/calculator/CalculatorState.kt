@@ -4,31 +4,52 @@ import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import java.math.BigDecimal
 
 /**
- * Calculator state management adapted from Calc-OS patterns
- * Uses Compose state for reactive UI updates
+ * Token types for the financial expression engine
  */
-data class CalculatorState(
-    val display: String = "0",
-    val expression: String = "",
-    val memory: BigDecimal = BigDecimal.ZERO,
-    val history: List<CalculationHistoryItem> = emptyList(),
-    val isError: Boolean = false,
-    val isCalculated: Boolean = false
-) {
-    companion object {
-        const val MAX_HISTORY_SIZE = 100
+sealed class Token {
+    data class Number(val value: String) : Token()
+    data class Operator(val symbol: Char) : Token()
+    data class Parenthesis(val symbol: Char) : Token()
+    object Percent : Token()
+    object UnaryMinus : Token()
+    
+    fun toDisplayString(): String = when (this) {
+        is Number -> value
+        is Operator -> when (symbol) {
+            '*' -> "×"
+            '/' -> "÷"
+            '-' -> "−"
+            else -> symbol.toString()
+        }
+        is Parenthesis -> symbol.toString()
+        is Percent -> "%"
+        is UnaryMinus -> "−"
+    }
+
+    fun toInternalString(): String = when (this) {
+        is Number -> value
+        is Operator -> symbol.toString()
+        is Parenthesis -> symbol.toString()
+        is Percent -> "%"
+        is UnaryMinus -> "-"
     }
 }
 
-data class CalculationHistoryItem(
-    val expression: String,
-    val result: BigDecimal,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
 /**
- * Calculator actions - MVI pattern for state updates
+ * Calculator state management for token-based expression engine
  */
+data class CalculatorState(
+    val display: String = "0",
+    val tokens: List<Token> = emptyList(),
+    val ghostResult: String = "",
+    val isError: Boolean = false,
+    val isCalculated: Boolean = false,
+    val transactionType: String = "income"
+) {
+    val expression: String get() = tokens.joinToString("") { it.toInternalString() }
+    val displayExpression: String get() = tokens.joinToString("") { it.toDisplayString() }
+}
+
 sealed class CalculatorAction {
     data class AppendNumber(val number: String) : CalculatorAction()
     data class AppendOperator(val operator: Char) : CalculatorAction()
@@ -36,129 +57,185 @@ sealed class CalculatorAction {
     object Clear : CalculatorAction()
     object Backspace : CalculatorAction()
     object Equals : CalculatorAction()
-    data class MemoryAdd(val value: BigDecimal) : CalculatorAction()
-    data class MemorySubtract(val value: BigDecimal) : CalculatorAction()
-    object MemoryRecall : CalculatorAction()
-    object MemoryClear : CalculatorAction()
+    object Percent : CalculatorAction()
+    data class SetInitialType(val type: String) : CalculatorAction()
 }
 
 /**
- * Calculator state reducer
+ * Deterministic reducer for the financial expression engine
  */
-fun calculatorReducer(state: CalculatorState, action: CalculatorAction): CalculatorState {
+fun calculatorReducer(
+    state: CalculatorState, 
+    action: CalculatorAction, 
+    evaluator: ExpressionEvaluator = ExpressionEvaluator()
+): CalculatorState {
     return when (action) {
+        is CalculatorAction.SetInitialType -> {
+            val initialTokens = if (action.type == "expense") listOf(Token.UnaryMinus) else emptyList()
+            state.copy(
+                transactionType = action.type,
+                tokens = initialTokens,
+                display = if (action.type == "expense") "-0" else "0"
+            )
+        }
+
         is CalculatorAction.AppendNumber -> {
-            val newExpression = if (state.isCalculated) {
-                action.number
-            } else {
-                state.expression + action.number
+            val currentTokens = if (state.isCalculated) emptyList() else state.tokens
+            val lastToken = currentTokens.lastOrNull()
+            
+            val newTokens = when (lastToken) {
+                is Token.Number -> {
+                    // Prevent multiple decimals
+                    if (action.number == "." && lastToken.value.contains(".")) {
+                        currentTokens
+                    } else {
+                        currentTokens.dropLast(1) + Token.Number(lastToken.value + action.number)
+                    }
+                }
+                is Token.Percent, is Token.Parenthesis -> {
+                    if (lastToken is Token.Parenthesis && lastToken.symbol == '(') {
+                        currentTokens + Token.Number(action.number)
+                    } else {
+                        // Implicit multiplication: 5% 2 -> 5% * 2
+                        currentTokens + Token.Operator('*') + Token.Number(action.number)
+                    }
+                }
+                else -> currentTokens + Token.Number(action.number)
             }
-            state.copy(
-                expression = newExpression,
-                display = evaluateExpression(newExpression),
-                isCalculated = false,
-                isError = false
-            )
+            
+            updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
-        
+
         is CalculatorAction.AppendOperator -> {
-            val newExpression = state.expression + action.operator
-            state.copy(
-                expression = newExpression,
-                display = evaluateExpression(newExpression),
-                isCalculated = false,
-                isError = false
-            )
+            if (state.tokens.isEmpty()) {
+                // Empty + Operator toggles type
+                val newType = if (action.operator == '-') "expense" else "income"
+                val newTokens = if (newType == "expense") listOf(Token.UnaryMinus) else emptyList()
+                return state.copy(transactionType = newType, tokens = newTokens, display = if (newType == "expense") "-0" else "0")
+            }
+
+            val lastToken = state.tokens.lastOrNull()
+            val newTokens = when (lastToken) {
+                is Token.Operator -> state.tokens.dropLast(1) + Token.Operator(action.operator)
+                is Token.UnaryMinus -> {
+                    if (action.operator == '+') emptyList() else state.tokens
+                }
+                else -> state.tokens + Token.Operator(action.operator)
+            }
+            updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
-        
+
         is CalculatorAction.AppendParenthesis -> {
-            val newExpression = state.expression + action.parenthesis
-            state.copy(
-                expression = newExpression,
-                display = evaluateExpression(newExpression),
-                isCalculated = false,
-                isError = false
-            )
+            val lastToken = state.tokens.lastOrNull()
+            val openCount = state.tokens.count { it is Token.Parenthesis && it.symbol == '(' }
+            val closeCount = state.tokens.count { it is Token.Parenthesis && it.symbol == ')' }
+
+            val newTokens = if (openCount > closeCount) {
+                // If there's an open parenthesis, try to close it if the last token allows
+                if (lastToken is Token.Number || lastToken is Token.Percent || (lastToken is Token.Parenthesis && lastToken.symbol == ')')) {
+                    state.tokens + Token.Parenthesis(')')
+                } else {
+                    // Otherwise open a new one (e.g. after an operator or '(')
+                    state.tokens + Token.Parenthesis('(')
+                }
+            } else {
+                // No open parentheses to close, so open a new one
+                if (lastToken is Token.Number || lastToken is Token.Percent || (lastToken is Token.Parenthesis && lastToken.symbol == ')')) {
+                    // Implicit multiplication
+                    state.tokens + Token.Operator('*') + Token.Parenthesis('(')
+                } else {
+                    state.tokens + Token.Parenthesis('(')
+                }
+            }
+            updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
-        
+
+        CalculatorAction.Percent -> {
+            val lastToken = state.tokens.lastOrNull()
+            val newTokens = if (lastToken is Token.Number || (lastToken is Token.Parenthesis && lastToken.symbol == ')')) {
+                state.tokens + Token.Percent
+            } else {
+                state.tokens
+            }
+            updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
+        }
+
         CalculatorAction.Clear -> {
+            val initialTokens = if (state.transactionType == "expense") listOf(Token.UnaryMinus) else emptyList()
             state.copy(
-                display = "0",
-                expression = "",
+                tokens = initialTokens,
+                display = if (state.transactionType == "expense") "-0" else "0",
+                ghostResult = "",
                 isError = false,
                 isCalculated = false
             )
         }
-        
+
         CalculatorAction.Backspace -> {
-            val newExpression = if (state.expression.isNotEmpty()) {
-                state.expression.dropLast(1)
-            } else {
-                ""
-            }
-            state.copy(
-                expression = newExpression,
-                display = if (newExpression.isNotEmpty()) evaluateExpression(newExpression) else "0",
-                isCalculated = false
-            )
-        }
-        
-        CalculatorAction.Equals -> {
-            val result = evaluateExpressionToBigDecimal(state.expression)
-            val historyItem = CalculationHistoryItem(
-                expression = state.expression,
-                result = result
-            )
-            val newHistory = listOf(historyItem) + state.history
-                .take(CalculatorState.MAX_HISTORY_SIZE)
+            if (state.tokens.isEmpty()) return state
             
-            state.copy(
-                display = result.stripTrailingZeros().toPlainString(),
-                expression = "",
-                history = newHistory,
-                isCalculated = true,
-                isError = false
-            )
+            val lastToken = state.tokens.last()
+            val newTokens = when (lastToken) {
+                is Token.Number -> {
+                    if (lastToken.value.length > 1) {
+                        state.tokens.dropLast(1) + Token.Number(lastToken.value.dropLast(1))
+                    } else {
+                        state.tokens.dropLast(1)
+                    }
+                }
+                else -> state.tokens.dropLast(1)
+            }
+            updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)
         }
-        
-        is CalculatorAction.MemoryAdd -> {
-            val currentMemory = state.memory
-            val valueToAdd = state.display.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            state.copy(memory = currentMemory.add(valueToAdd))
-        }
-        
-        is CalculatorAction.MemorySubtract -> {
-            val currentMemory = state.memory
-            val valueToSubtract = state.display.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            state.copy(memory = currentMemory.subtract(valueToSubtract))
-        }
-        
-        CalculatorAction.MemoryRecall -> {
-            state.copy(display = state.memory.stripTrailingZeros().toPlainString())
-        }
-        
-        CalculatorAction.MemoryClear -> {
-            state.copy(memory = BigDecimal.ZERO)
+
+        CalculatorAction.Equals -> {
+            val result = evaluateTokens(state.tokens, evaluator)
+            if (result == null) {
+                state.copy(isError = true, display = "Error")
+            } else {
+                val absoluteResult = result.abs().stripTrailingZeros().toPlainString()
+                val newType = if (result.signum() < 0) "expense" else "income"
+                state.copy(
+                    display = absoluteResult,
+                    tokens = listOf(Token.Number(absoluteResult)),
+                    isCalculated = true,
+                    transactionType = newType,
+                    ghostResult = ""
+                )
+            }
         }
     }
 }
 
-private fun evaluateExpression(expr: String): String {
-    if (expr.isEmpty()) return "0"
-    return try {
-        val evaluator = ExpressionEvaluator()
-        evaluator.evaluate(expr).stripTrailingZeros().toPlainString()
-    } catch (e: Exception) {
-        "Error"
+private fun updateStateWithTokens(
+    state: CalculatorState, 
+    newTokens: List<Token>, 
+    evaluator: ExpressionEvaluator
+): CalculatorState {
+    val ghost = if (newTokens.isNotEmpty()) {
+        evaluateTokens(newTokens, evaluator)?.abs()?.stripTrailingZeros()?.toPlainString() ?: ""
+    } else ""
+    
+    val displayVal = if (newTokens.isEmpty()) {
+        "0"
+    } else {
+        val last = newTokens.last()
+        if (last is Token.Number) last.value else ghost.ifEmpty { "0" }
     }
+
+    return state.copy(
+        tokens = newTokens,
+        display = displayVal,
+        ghostResult = if (ghost == displayVal) "" else ghost,
+        isError = false
+    )
 }
 
-private fun evaluateExpressionToBigDecimal(expr: String): BigDecimal {
-    if (expr.isEmpty()) return BigDecimal.ZERO
+private fun evaluateTokens(tokens: List<Token>, evaluator: ExpressionEvaluator): BigDecimal? {
+    if (tokens.isEmpty()) return BigDecimal.ZERO
     return try {
-        val evaluator = ExpressionEvaluator()
-        evaluator.evaluate(expr)
-    } catch (e: Exception) {
-        BigDecimal.ZERO
+        evaluator.evaluateTokens(tokens)
+    } catch (_: Exception) {
+        null
     }
 }

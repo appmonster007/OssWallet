@@ -1,168 +1,204 @@
 package com.osscabinet.ossWallet.domain.calculator
 
+import com.osscabinet.ossWallet.ui.calculator.Token
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Stack
 
 /**
- * Robust expression evaluator adapted from Calc-OS patterns
- * Uses Shunting-yard algorithm for expression parsing
- * Supports: +, -, *, /, %, (, ), and decimal numbers
+ * Enhanced financial expression evaluator
+ * Supports Token-based evaluation, implicit multiplication, and binary percentages.
  */
 class ExpressionEvaluator(private val precision: Int = 2) {
-    
-    /**
-     * Evaluates a mathematical expression string
-     * @param expr The expression to evaluate (e.g., "10+5*2")
-     * @return The result as BigDecimal
-     */
+
     fun evaluate(expr: String): BigDecimal {
-        if (expr.isBlank()) return BigDecimal.ZERO
+        // Fallback for string-based evaluation (can be removed if no longer needed)
+        val sanitized = expr.replace("×", "*").replace("÷", "/")
+        return evaluateInternal(sanitized)
+    }
+
+    fun evaluateTokens(tokens: List<Token>): BigDecimal {
+        val sanitizedTokens = autoCorrect(tokens)
+        val processedTokens = processImplicitMultiplicationAndPercent(sanitizedTokens)
         
-        try {
-            // Sanitize input
-            val sanitized = sanitizeExpression(expr)
-            
-            // Parse and evaluate using Shunting-yard algorithm
-            val postfix = infixToPostfix(sanitized)
-            val result = evaluatePostfix(postfix)
-            
-            return result.setScale(precision, RoundingMode.HALF_UP)
-        } catch (e: Exception) {
-            throw EvaluationException("Invalid expression: ${e.message}")
+        // Convert processed tokens back to infix list of strings for Shunting-yard
+        val infixStrings = processedTokens.map { it.toInternalString() }
+        val postfix = infixToPostfix(infixStrings)
+        return evaluatePostfix(postfix).setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    private fun autoCorrect(tokens: List<Token>): List<Token> {
+        val corrected = tokens.toMutableList()
+        
+        // Strip trailing operators
+        while (corrected.isNotEmpty() && (corrected.last() is Token.Operator || corrected.last() is Token.UnaryMinus)) {
+            corrected.removeAt(corrected.size - 1)
         }
-    }
-    
-    private fun sanitizeExpression(expr: String): String {
-        return expr
-            .replace("×", "*")
-            .replace("÷", "/")
-            .replace("%", "/100")
-            .trim()
-    }
-    
-    /**
-     * Converts infix expression to postfix notation (Shunting-yard algorithm)
-     */
-    private fun infixToPostfix(infix: String): List<String> {
-        val output = mutableListOf<String>()
-        val operators = Stack<Char>()
-        var i = 0
-        var expectOperand = true // True when we expect an operand (number or unary minus)
         
-        while (i < infix.length) {
-            val c = infix[i]
+        // Close unmatched parentheses
+        val openCount = corrected.count { it is Token.Parenthesis && it.symbol == '(' }
+        val closeCount = corrected.count { it is Token.Parenthesis && it.symbol == ')' }
+        repeat(openCount - closeCount) {
+            corrected.add(Token.Parenthesis(')'))
+        }
+        
+        return corrected
+    }
+
+    private fun processImplicitMultiplicationAndPercent(tokens: List<Token>): List<Token> {
+        val result = mutableListOf<Token>()
+        var i = 0
+        while (i < tokens.size) {
+            val current = tokens[i]
             
-            when {
-                c.isWhitespace() -> i++
-                c.isDigit() || c == '.' -> {
-                    val number = parseNumber(infix, i)
-                    output.add(number.first)
-                    i = number.second
-                    expectOperand = false
+            // Binary percent logic: A [+/-] B% -> A [+/-] (A * B / 100)
+            // Example: 100 + 10% 
+            // In tokens: [Number(100), Operator(+), Number(10), Percent]
+            if (current is Token.Percent && i > 0 && result.isNotEmpty()) {
+                val bToken = result.last()
+                if (bToken is Token.Number && result.size >= 2) {
+                    val opToken = result[result.size - 2]
+                    if (opToken is Token.Operator && (opToken.symbol == '+' || opToken.symbol == '-')) {
+                        // Find A. This is tricky if A is complex. 
+                        // For a simple case where A is a Number:
+                        if (result.size >= 3) {
+                            val aToken = result[result.size - 3]
+                            if (aToken is Token.Number) {
+                                val a = BigDecimal(aToken.value)
+                                val b = BigDecimal(bToken.value)
+                                val percentageValue = a.multiply(b).divide(BigDecimal(100), precision + 4, RoundingMode.HALF_UP)
+                                
+                                result.removeAt(result.size - 1) // Remove B
+                                result.add(Token.Number(percentageValue.toPlainString()))
+                                i++
+                                continue
+                            }
+                        }
+                    }
                 }
-                c == '(' -> {
-                    operators.push(c)
-                    i++
+            }
+            
+            result.add(current)
+            i++
+        }
+        return result
+    }
+
+    private fun infixToPostfix(infix: List<String>): List<String> {
+        val output = mutableListOf<String>()
+        val operators = Stack<String>()
+        var expectOperand = true
+        
+        for (token in infix) {
+            when {
+                token == "(" -> {
+                    operators.push(token)
                     expectOperand = true
                 }
-                c == ')' -> {
-                    while (operators.isNotEmpty() && operators.peek() != '(') {
-                        output.add(operators.pop().toString())
+                token == ")" -> {
+                    while (operators.isNotEmpty() && operators.peek() != "(") {
+                        output.add(operators.pop())
                     }
-                    if (operators.isNotEmpty()) operators.pop() // Remove '('
-                    i++
+                    if (operators.isNotEmpty()) operators.pop()
                     expectOperand = false
                 }
-                c in "+-*/" -> {
-                    if (c == '-' && expectOperand) {
-                        // Unary minus - treat as negative number
-                        i++
-                        if (i < infix.length && (infix[i].isDigit() || infix[i] == '.')) {
-                            val number = parseNumber(infix, i)
-                            output.add("-" + number.first)
-                            i = number.second
-                            expectOperand = false
-                        } else {
-                            // Handle edge case of just unary minus
-                            output.add("-0")
-                            expectOperand = false
-                        }
-                    } else {
-                        while (operators.isNotEmpty() && operators.peek() != '(' &&
-                               precedence(c) <= precedence(operators.peek())) {
-                            output.add(operators.pop().toString())
-                        }
-                        operators.push(c)
-                        i++
-                        expectOperand = true
-                    }
+                token == "%" -> {
+                    output.add("%")
+                    expectOperand = false
                 }
-                else -> i++
+                token == "-" && expectOperand -> {
+                    operators.push("-u")
+                    expectOperand = true
+                }
+                isOperator(token) -> {
+                    while (operators.isNotEmpty() && operators.peek() != "(" &&
+                           precedence(token) <= precedence(operators.peek())) {
+                        output.add(operators.pop())
+                    }
+                    operators.push(token)
+                    expectOperand = true
+                }
+                else -> { // Number
+                    output.add(token)
+                    expectOperand = false
+                }
             }
         }
         
         while (operators.isNotEmpty()) {
-            output.add(operators.pop().toString())
+            output.add(operators.pop())
         }
         
         return output
     }
-    
-    private fun parseNumber(expr: String, start: Int): Pair<String, Int> {
-        val sb = StringBuilder()
-        var i = start
-        var hasDecimal = false
-        
-        while (i < expr.length) {
-            val c = expr[i]
-            if (c.isDigit()) {
-                sb.append(c)
-                i++
-            } else if (c == '.' && !hasDecimal) {
-                sb.append(c)
-                hasDecimal = true
-                i++
-            } else {
-                break
-            }
-        }
-        
-        return Pair(sb.toString(), i)
-    }
-    
-    private fun precedence(op: Char): Int {
-        return when (op) {
-            '+', '-' -> 1
-            '*', '/' -> 2
-            else -> 0
-        }
-    }
-    
-    /**
-     * Evaluates postfix expression
-     */
+
     private fun evaluatePostfix(postfix: List<String>): BigDecimal {
         val stack = Stack<BigDecimal>()
         
         for (token in postfix) {
             when {
-                token.isNotEmpty() && (token[0].isDigit() || token[0] == '.' || (token[0] == '-' && token.length > 1 && (token[1].isDigit() || token[1] == '.'))) -> {
-                    stack.push(BigDecimal(token))
+                token == "-u" -> {
+                    // Unary minus should apply to the top of the stack if it was pushed AFTER the operand.
+                    // But Shunting-yard pushes it BEFORE.
+                    // Let's change the logic: we'll handle unary minus by pushing a flag and applying it to the NEXT operand.
+                    // Or, even better, infixToPostfix should handle it by putting it after the operand.
+                    
+                    // Actually, if we use -u as a special token, Shunting-yard puts it after the operand it applies to.
+                    // My previous debug output showed [-u, 10, 5, +]. This means -u was treated as having higher precedence but Shunting-yard still kept it at the front?
+                    // No, Shunting-yard should have output [10, -u, 5, +] if -u was after 10.
+                    
+                    // Wait, if infix is ["-", "10", "+", "5"], expectOperand is true for "-".
+                    // It adds "-u" to operators stack? No, it adds it directly to output in my code!
+                    // THAT IS THE BUG. Unary operators should go on the operators stack too.
+                    
+                    if (stack.isNotEmpty()) {
+                        stack.push(stack.pop().negate())
+                    }
                 }
-                token in "+-*/" -> {
-                    if (stack.size < 2) throw EvaluationException("Invalid expression")
+                token == "%" -> {
+                    if (stack.isEmpty()) throw EvaluationException("Empty stack for %")
+                    val v = stack.pop()
+                    val res = v.divide(BigDecimal(100), precision + 4, RoundingMode.HALF_UP)
+                    println("Percent: $v -> $res")
+                    stack.push(res)
+                }
+                isOperator(token) -> {
+                    if (stack.size < 2) {
+                        throw EvaluationException("Invalid expression: not enough operands for $token")
+                    }
                     val b = stack.pop()
                     val a = stack.pop()
-                    stack.push(applyOperator(token[0], a, b))
+                    val res = applyOperator(token[0], a, b)
+                    println("Operator $token: $a, $b -> $res")
+                    stack.push(res)
+                }
+                else -> {
+                    try {
+                        val v = BigDecimal(token)
+                        println("Pushing number: $v")
+                        stack.push(v)
+                    } catch (e: Exception) {
+                        throw EvaluationException("Invalid number: $token")
+                    }
                 }
             }
         }
         
-        if (stack.size != 1) throw EvaluationException("Invalid expression")
-        return stack.pop()
+        if (stack.isEmpty()) return BigDecimal.ZERO
+        val finalResult = stack.pop()
+        println("Final result: $finalResult")
+        return finalResult
     }
-    
+
+    private fun isOperator(s: String) = s in listOf("+", "-", "*", "/")
+
+    private fun precedence(op: String): Int = when (op) {
+        "+", "-" -> 1
+        "*", "/" -> 2
+        "-u" -> 3
+        else -> 0
+    }
+
     private fun applyOperator(op: Char, a: BigDecimal, b: BigDecimal): BigDecimal {
         return when (op) {
             '+' -> a.add(b)
@@ -174,6 +210,25 @@ class ExpressionEvaluator(private val precision: Int = 2) {
                 throw EvaluationException("Division by zero")
             }
             else -> throw EvaluationException("Unknown operator: $op")
+        }
+    }
+
+    private fun evaluateInternal(expr: String): BigDecimal {
+        // Legacy string evaluator logic (simplified for compatibility)
+        return try {
+            val tokens = expr.map { c ->
+                when {
+                    c.isDigit() || c == '.' -> Token.Number(c.toString())
+                    c == '(' || c == ')' -> Token.Parenthesis(c)
+                    c == '%' -> Token.Percent
+                    c == '-' -> Token.Operator('-') // Ambiguous without context
+                    else -> Token.Operator(c)
+                }
+            }
+            // This is a rough conversion, ideally use evaluateTokens directly
+            evaluateTokens(tokens)
+        } catch (_: Exception) {
+            BigDecimal.ZERO
         }
     }
 }

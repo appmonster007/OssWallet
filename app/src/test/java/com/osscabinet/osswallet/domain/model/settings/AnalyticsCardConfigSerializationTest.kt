@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.settings
 
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.encodeToString
@@ -25,10 +26,12 @@ class AnalyticsCardConfigSerializationTest {
             cardId = "test_category_breakdown",
             order = 0,
             title = "CATEGORY BREAKDOWN",
-            timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
             showLabels = true,
             showLegend = true,
-            accountId = "test_account"
+            filter = TransactionFilter(
+                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                accountIds = listOf("test_account")
+            )
         )
         val serialized = json.encodeToString(config)
         val deserialized = json.decodeFromString<CategoryBreakdownCardConfig>(serialized)
@@ -37,7 +40,7 @@ class AnalyticsCardConfigSerializationTest {
         assertEquals(config.title, deserialized.title)
         assertEquals(config.showLabels, deserialized.showLabels)
         assertEquals(config.showLegend, deserialized.showLegend)
-        assertEquals(config.accountId, deserialized.accountId)
+        assertEquals(config.filter.accountIds[0], deserialized.filter.accountIds[0])
     }
 
     @Test
@@ -46,11 +49,13 @@ class AnalyticsCardConfigSerializationTest {
             cardId = "test_timeline_trajectory",
             order = 1,
             title = "TIMELINE TRAJECTORY",
-            timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
             showBalance = true,
             showExpense = true,
             showIncome = true,
-            accountId = "test_account"
+            filter = TransactionFilter(
+                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                accountIds = listOf("test_account")
+            )
         )
         val serialized = json.encodeToString(config)
         val deserialized = json.decodeFromString<TimelineTrajectoryCardConfig>(serialized)
@@ -60,7 +65,7 @@ class AnalyticsCardConfigSerializationTest {
         assertEquals(config.showBalance, deserialized.showBalance)
         assertEquals(config.showExpense, deserialized.showExpense)
         assertEquals(config.showIncome, deserialized.showIncome)
-        assertEquals(config.accountId, deserialized.accountId)
+        assertEquals(config.filter.accountIds[0], deserialized.filter.accountIds[0])
     }
 
     @Test
@@ -69,9 +74,11 @@ class AnalyticsCardConfigSerializationTest {
             cardId = "test_category_expense_treemap",
             order = 2,
             title = "CATEGORY EXPENSES",
-            timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
             showLabels = true,
-            accountId = "test_account"
+            filter = TransactionFilter(
+                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                accountIds = listOf("test_account")
+            )
         )
         val serialized = json.encodeToString(config)
         val deserialized = json.decodeFromString<CategoryExpenseTreemapCardConfig>(serialized)
@@ -79,7 +86,7 @@ class AnalyticsCardConfigSerializationTest {
         assertEquals(config.order, deserialized.order)
         assertEquals(config.title, deserialized.title)
         assertEquals(config.showLabels, deserialized.showLabels)
-        assertEquals(config.accountId, deserialized.accountId)
+        assertEquals(config.filter.accountIds[0], deserialized.filter.accountIds[0])
     }
 
     @Test

@@ -58,7 +58,6 @@ class SharedWalletRepositoryImpl(
     override suspend fun addTransactionToWallet(walletId: String, transaction: Transaction) {
         // Mock sync to cloud
         delay(500)
-        println("Synced transaction ${transaction.title} to cloud wallet $walletId")
     }
 
     override suspend fun syncTransactions(walletId: String) {

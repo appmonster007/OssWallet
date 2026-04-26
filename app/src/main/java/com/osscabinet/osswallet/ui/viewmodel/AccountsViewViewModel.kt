@@ -6,6 +6,9 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.util.CachedCardData
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
+import com.osscabinet.ossWallet.domain.util.toEnum
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
@@ -181,7 +184,7 @@ class AccountsViewViewModel(
                 val savedOrder = settings.layout.sectionOrder
                 if (savedOrder != null) {
                     try {
-                        val sections = savedOrder.split(",").map { AccountsViewSection.valueOf(it) }
+                        val sections = savedOrder.splitByComma().map { it.toEnum<AccountsViewSection>() }
                         _sectionOrder.value = sections
                     } catch (e: Exception) {
                         // Keep default order on error
@@ -194,7 +197,7 @@ class AccountsViewViewModel(
     fun updateSectionOrder(newOrder: List<AccountsViewSection>) {
         _sectionOrder.value = newOrder
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinToString(",") { it.name })) }
+            settingsDataStore.updateAccountsViewSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinByComma { it.name })) }
         }
     }
 

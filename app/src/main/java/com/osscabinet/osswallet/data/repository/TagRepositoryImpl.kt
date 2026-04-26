@@ -4,6 +4,8 @@ import com.osscabinet.ossWallet.data.local.dao.TagDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
 import kotlinx.coroutines.flow.Flow
 
 class TagRepositoryImpl(
@@ -19,8 +21,8 @@ class TagRepositoryImpl(
     override suspend fun deleteTagAndRemoveFromTransactions(tag: TagEntity) {
         val transactions = transactionDao.getTransactionsWithTag(tag.name)
         val updatedTransactions = transactions.map { tx ->
-            val currentTags = tx.tags.split(",").filter { it.isNotBlank() && it != tag.name }
-            tx.copy(tags = currentTags.joinToString(","))
+            val currentTags = tx.tags.splitByComma().filter { it.isNotBlank() && it != tag.name }
+            tx.copy(tags = currentTags.joinByComma())
         }
         transactionDao.updateTransactions(updatedTransactions)
         tagDao.deleteTag(tag)

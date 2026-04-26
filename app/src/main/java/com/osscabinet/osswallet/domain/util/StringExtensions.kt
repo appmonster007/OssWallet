@@ -12,6 +12,10 @@ fun String.splitByComma(): List<String> {
     }
 }
 
-fun List<String>.joinByComma(): String {
+fun <T> List<T>.joinByComma(): String {
     return this.joinToString(",")
+}
+
+fun <T> List<T>.joinByComma(transform: (T) -> CharSequence): String {
+    return this.joinToString(",", transform = transform)
 }

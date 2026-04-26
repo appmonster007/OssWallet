@@ -741,7 +741,7 @@ private fun BalanceEditSheet(
                 CalculatorNumpad(
                     amount = currentBalance,
                     onAmountChange = onBalanceChange,
-                    onTransactionTypeChange = { /* Not needed for initial balance */ },
+                    transactionType = "income", // Initial balance is always positive
                     decimalPrecision = decimalPrecision,
                     onDone = onDismiss,
                     modifier = Modifier.padding(8.dp)

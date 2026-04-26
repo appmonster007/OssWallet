@@ -142,7 +142,7 @@ fun TransactionEntryScreen(
             
             val request = TransactionRequest(
                 title = title.ifBlank { category },
-                amount = amountValue,
+                amount = if (isIncome || isTransfer) amountValue else amountValue.negate(),
                 category = category,
                 transactionType = if (isIncome) "income" else "expense",
                 accountId = accId,
@@ -274,7 +274,11 @@ fun TransactionEntryContent(
     LaunchedEffect(existingTransaction, accounts, prefillDto) {
         if (isEditMode && existingTransaction != null) {
             title = existingTransaction.title
-            amount = existingTransaction.amount.toPlainString()
+            amount = if (existingTransaction.transactionType == "expense") {
+                "-${existingTransaction.amount.abs().toPlainString()}"
+            } else {
+                existingTransaction.amount.abs().toPlainString()
+            }
             category = existingTransaction.category
             selectedCategoryId = existingTransaction.categoryId
             selectedTags = existingTransaction.tags
@@ -369,14 +373,6 @@ fun TransactionEntryContent(
                             selectedCurrency = acc.currencyCode
                         }
                     }
-                } else {
-                    when (initialTemplate) {
-                        "Grocery Run" -> { category = "Food"; transactionType = 0; title = "Grocery Run" }
-                        "Salary Deposit" -> { category = "Salary"; transactionType = 1; title = "Salary Deposit" }
-                        "Rent Payment" -> { category = "Rent"; transactionType = 0; title = "Rent Payment" }
-                        "Coffee" -> { category = "Food"; transactionType = 0; title = "Coffee" }
-                    }
-                    selectedTemplateName = initialTemplate
                 }
             }
             
@@ -410,6 +406,7 @@ fun TransactionEntryContent(
     }
 
     val isIncome = transactionType == 1
+    val isExpense = transactionType == 0
     val isTransfer = transactionType == 2
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -605,13 +602,16 @@ fun TransactionEntryContent(
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
 
-                                    val prefix = when {
-                                        isIncome -> "+"
-                                        isTransfer -> ""
-                                        else -> "-"
+                                    val displayAmount = if (amount.ifEmpty { "0.00" }.toBigDecimalOrNull() != null) {
+                                        val parsedAmount = amount.ifEmpty { "0.00" }.toBigDecimal()
+                                        when {
+                                            isExpense -> "-${parsedAmount.abs().toPlainString()}"
+                                            else -> parsedAmount.abs().toPlainString()
+                                        }
+                                    } else {
+                                        amount.ifEmpty { "0.00" }
                                     }
-                                    val displayAmount = amount.ifEmpty { "0.00" }
-                                    val fullText = "$prefix$displayAmount"
+                                    val fullText = "$displayAmount"
                                     AdaptiveAmountText(
                                         text = fullText,
                                         color = when {
@@ -1130,14 +1130,8 @@ fun TransactionEntryContent(
                         amount = amount,
                         onAmountChange = { 
                             amount = it
-                            // Auto-toggle transaction type based on value sign
-                            val typeString = determineTransactionType(it)
-                            transactionType = if (typeString == "income") 1 else 0
                         },
-                        onTransactionTypeChange = { 
-                            // Convert string to int: "income" -> 1, "expense" -> 0
-                            transactionType = if (it == "income") 1 else 0
-                        },
+                        transactionType = if (isIncome) "income" else "expense",
                         decimalPrecision = decimalPrecision,
                         onDone = { isNumpadVisible = false },
                         modifier = Modifier.padding(8.dp)

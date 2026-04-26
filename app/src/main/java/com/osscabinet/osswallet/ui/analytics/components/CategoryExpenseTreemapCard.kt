@@ -48,6 +48,29 @@ fun CategoryExpenseTreemapCard(
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryExpenseTreemapData>>(data)) }
     val currentData = navigationStack.last()
     
+    // Grouping logic for "Other" category
+    val groupedData = remember(currentData) {
+        val sorted = currentData.sortedByDescending { it.expense.abs() }
+        if (sorted.size > 12) {
+            val top = sorted.take(10)
+            val others = sorted.drop(10)
+            val otherSum = others.sumOf { it.expense }
+            val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+            
+            top + CategoryExpenseTreemapData(
+                category = "Other",
+                categoryId = -1L,
+                expense = otherSum,
+                colorHex = 0xFF9E9E9E.toInt(), // Grey
+                percentage = otherPercentage,
+                hasSubcategories = true,
+                subcategoryData = others
+            )
+        } else {
+            sorted
+        }
+    }
+    
     // Sync with external data changes
     LaunchedEffect(data) {
         navigationStack = listOf(data)
@@ -98,8 +121,8 @@ fun CategoryExpenseTreemapCard(
                     .fillMaxWidth()
                     .height(300.dp)
             ) {
-                if (currentData.isNotEmpty()) {
-                    val rootNodes = currentData.sortedByDescending { it.expense.abs() }.mapIndexed { index, item ->
+                if (groupedData.isNotEmpty()) {
+                    val rootNodes = groupedData.mapIndexed { index, item ->
                         val baseColor = if (navigationStack.size > 1) {
                             // Find the parent item in the previous level of navigation stack
                             val prevStack = navigationStack[navigationStack.size - 2]
@@ -110,7 +133,7 @@ fun CategoryExpenseTreemapCard(
                         }
                         
                         val displayColor = if (navigationStack.size > 1) {
-                            baseColor.generateShade(index, currentData.size)
+                            baseColor.generateShade(index, groupedData.size)
                         } else {
                             baseColor
                         }
@@ -134,13 +157,13 @@ fun CategoryExpenseTreemapCard(
                             // Interaction feedback
                         },
                         onDrillInClick = { node ->
-                            val clickedItem = currentData.find { it.category == node.name }
+                            val clickedItem = groupedData.find { it.category == node.name }
                             if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
                                 navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
                             }
                         },
                         onNavigateToRecords = { node ->
-                            val clickedItem = currentData.find { it.categoryId == node.id }
+                            val clickedItem = groupedData.find { it.category == node.name }
                             val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
                             onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(

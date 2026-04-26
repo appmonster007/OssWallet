@@ -179,6 +179,11 @@ fun CategoryExpenseTreemapCard(
                     }
                 }
             }
+
+            // Consistent Legend for Treemap
+            if (config.showLegend && groupedData.isNotEmpty()) {
+                TreemapLegend(data = groupedData)
+            }
         }
     }
     
@@ -199,10 +204,61 @@ fun CategoryExpenseTreemapCard(
                 checked = config.showLabels,
                 onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
             )
+            AeonSettingsToggle(
+                label = "SHOW LEGEND",
+                description = "Display list of categories beneath the map",
+                checked = config.showLegend,
+                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+            )
         }
     }
 }
 
+@Composable
+fun TreemapLegend(data: List<CategoryExpenseTreemapData>) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        data.take(5).forEach { item ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(12.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = Color(item.colorHex)
+                ) {}
+                
+                Text(
+                    text = item.category,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                
+                Text(
+                    text = formatCurrency(item.expense),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        
+        if (data.size > 5) {
+            Text(
+                text = "+${data.size - 5} more categories",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 24.dp)
+            )
+        }
+    }
+}
+
+private fun formatCurrency(amount: BigDecimal): String {
+    return amount.toString()
+}
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun CategoryExpenseTreemapCardPreview() {
@@ -210,12 +266,27 @@ fun CategoryExpenseTreemapCardPreview() {
         CategoryExpenseTreemapData("Housing", null, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
         CategoryExpenseTreemapData("Food", null, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.2f),
         CategoryExpenseTreemapData("Transport", null, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.1f),
-        CategoryExpenseTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f)
+        CategoryExpenseTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
+        CategoryExpenseTreemapData("Misc 1", null, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 2", null, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 3", null, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 4", null, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 5", null, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 6", null, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 7", null, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 8", null, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 9", null, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryExpenseTreemapData("Misc 10", null, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
     )
 
      OssWalletTheme {
         CategoryExpenseTreemapCard(
-            config = CategoryExpenseTreemapCardConfig(cardId = "preview", title = "CATEGORY EXPENSES"),
+            config = CategoryExpenseTreemapCardConfig(
+                cardId = "preview", 
+                title = "CATEGORY EXPENSES",
+                showLabels = true,
+                showLegend = true
+            ),
             data = sampleData
         )
     }

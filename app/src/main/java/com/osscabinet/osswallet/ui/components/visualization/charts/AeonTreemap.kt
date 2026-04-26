@@ -133,100 +133,132 @@ fun AeonTreemap(
                     )
                 }
         ) {
+            // 1. Draw Ambient Shadow (Background depth for the whole treemap)
+            drawRoundRect(
+                color = Color.Black.copy(alpha = 0.04f),
+                topLeft = Offset(-2.dp.toPx(), -2.dp.toPx()),
+                size = Size(widthPx + 4.dp.toPx(), heightPx + 4.dp.toPx()),
+                cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+            )
+
             layouts.forEach { (node, rect) ->
-                val cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                val isSelected = selectedNode == node
+                val cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
                 
-                // Base Color with rounding
+                // Modern Look: Precise radial gaps (spacing between rectangles)
+                val gap = 2.dp.toPx()
+                val drawRect = Rect(
+                    rect.left + gap / 2,
+                    rect.top + gap / 2,
+                    rect.right - gap / 2,
+                    rect.bottom - gap / 2
+                )
+                
+                if (drawRect.width <= 0 || drawRect.height <= 0) return@forEach
+
+                // 2. Base Segment Color
                 drawRoundRect(
                     color = node.color,
-                    topLeft = Offset(rect.left, rect.top),
-                    size = Size(rect.width, rect.height),
+                    topLeft = Offset(drawRect.left, drawRect.top),
+                    size = Size(drawRect.width, drawRect.height),
                     cornerRadius = cornerRadius
                 )
                 
-                // Subtle Top-to-Bottom Gradient for Depth
-                drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.12f),
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.08f)
-                        )
-                    ),
-                    topLeft = Offset(rect.left, rect.top),
-                    size = Size(rect.width, rect.height),
-                    cornerRadius = cornerRadius
-                )
-                
-                // Glossy Highlight at the Top
-                drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.08f),
-                            Color.Transparent
+                // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
+                if (drawRect.width > 20.dp.toPx() && drawRect.height > 20.dp.toPx()) {
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = 0.15f),
+                        topLeft = Offset(drawRect.left + 1.dp.toPx(), drawRect.top + 1.dp.toPx()),
+                        size = Size(drawRect.width - 2.dp.toPx(), drawRect.height - 2.dp.toPx()),
+                        cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                    )
+                    
+                    // Subtle Top Glow
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.White.copy(alpha = 0.1f), Color.Transparent),
+                            startY = drawRect.top,
+                            endY = drawRect.top + drawRect.height * 0.4f
                         ),
-                        startY = rect.top,
-                        endY = rect.top + rect.height * 0.3f
-                    ),
-                    topLeft = Offset(rect.left, rect.top),
-                    size = Size(rect.width, rect.height),
-                    cornerRadius = cornerRadius
-                )
+                        topLeft = Offset(drawRect.left, drawRect.top),
+                        size = Size(drawRect.width, drawRect.height),
+                        cornerRadius = cornerRadius
+                    )
+                }
                 
-                // Refined border for segments
-                drawRoundRect(
-                    color = Color.White.copy(alpha = 0.3f),
-                    topLeft = Offset(rect.left, rect.top),
-                    size = Size(rect.width, rect.height),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
-                    cornerRadius = cornerRadius
-                )
+                // 4. Selection Highlight
+                if (isSelected) {
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = 0.3f),
+                        topLeft = Offset(drawRect.left, drawRect.top),
+                        size = Size(drawRect.width, drawRect.height),
+                        cornerRadius = cornerRadius,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                    )
+                }
             }
         }
 
         // Overlay labels for larger segments
         if (showLabels) {
             layouts.forEach { (node, rect) ->
-                val rectWidthDp = with(density) { rect.width.toDp() }
-                val rectHeightDp = with(density) { rect.height.toDp() }
+                val gap = with(density) { 2.dp.toPx() }
+                val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
+                val rectWidthDp = with(density) { drawRect.width.toDp() }
+                val rectHeightDp = with(density) { drawRect.height.toDp() }
                 
-                if (rectWidthDp > 50.dp && rectHeightDp > 35.dp) {
+                // Show labels if box is reasonably large
+                val showText = rectWidthDp > 40.dp && rectHeightDp > 28.dp
+                // Show only subcategory indicator if box is too small for text but large enough for icon
+                val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > 16.dp && rectHeightDp > 16.dp
+
+                if (showText || showOnlyIcon) {
                     val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
                     val labelColor = if (node.color.luminance() > 0.5f) Color.Black else Color.White
 
                     Box(
                         modifier = Modifier
-                            .offset(x = with(density) { rect.left.toDp() }, y = with(density) { rect.top.toDp() })
+                            .offset(x = with(density) { drawRect.left.toDp() }, y = with(density) { drawRect.top.toDp() })
                             .size(rectWidthDp, rectHeightDp)
-                            .padding(6.dp)
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
                             .clipToBounds(),
-                        contentAlignment = Alignment.TopStart
+                        contentAlignment = if (showText) Alignment.TopStart else Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    node.name,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                                    color = labelColor,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                                if (node.hasSubcategories) {
-                                    Image(
-                                        painter = disclosurePainter,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(12.dp).padding(start = 2.dp),
-                                        colorFilter = ColorFilter.tint(iconTint)
+                        if (showText) {
+                            Column(horizontalAlignment = Alignment.Start) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        node.name,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                        color = labelColor,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
+                                    if (node.hasSubcategories) {
+                                        Image(
+                                            painter = disclosurePainter,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(10.dp).padding(start = 2.dp),
+                                            colorFilter = ColorFilter.tint(iconTint)
+                                        )
+                                    }
                                 }
+                                Text(
+                                    formatCurrencyRight(node.value, currency, precision),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
+                                    color = labelColor.copy(alpha = 0.85f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                            Text(
-                                formatCurrencyRight(node.value, currency, precision),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 10.sp),
-                                color = labelColor.copy(alpha = 0.85f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                        } else if (showOnlyIcon) {
+                            Image(
+                                painter = disclosurePainter,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                colorFilter = ColorFilter.tint(iconTint)
                             )
                         }
                     }

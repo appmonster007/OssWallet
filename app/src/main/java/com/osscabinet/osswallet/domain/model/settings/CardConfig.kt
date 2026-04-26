@@ -184,6 +184,7 @@ data class CategoryExpenseTreemapCardConfig(
     override val order: Int = 7,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
+    val showLegend: Boolean = true,
     val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig()
 

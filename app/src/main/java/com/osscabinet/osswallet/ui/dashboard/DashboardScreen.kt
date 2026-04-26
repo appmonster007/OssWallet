@@ -601,7 +601,7 @@ fun DashboardContent(
                     } else null
                 }
                 is CategoryBreakdownCardConfig -> {
-                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
+                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter.timelineRange, key3 = state) {
                         value = dashboardViewModel.computeCategoryBreakdownForCard(
                             cardConfig = cardConfig,
                             allTransactions = state.allTransactions,
@@ -625,7 +625,7 @@ fun DashboardContent(
                     }
                 }
                 is TimelineTrajectoryCardConfig -> {
-                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
+                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter.timelineRange, key3 = state) {
                         value = dashboardViewModel.computeTimelineTrajectoryForCard(
                             cardConfig = cardConfig,
                             allTransactions = state.allTransactions,
@@ -650,7 +650,7 @@ fun DashboardContent(
                     }
                 }
                 is CategoryExpenseTreemapCardConfig -> {
-                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = state) {
+                    val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter.timelineRange, key3 = state) {
                         value = dashboardViewModel.computeCategoryExpenseTreemapForCard(
                             cardConfig = cardConfig,
                             allTransactions = state.allTransactions,

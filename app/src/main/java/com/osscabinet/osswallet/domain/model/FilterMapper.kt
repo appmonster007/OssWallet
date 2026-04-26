@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 
 fun FilterEntity.toDomain(): TransactionFilter {
     return TransactionFilter(
+        timelineRange = timelineRange,
         queryNote = queryNote,
         isNoteRegex = isNoteRegex,
         queryPayee = queryPayee,
@@ -28,6 +29,7 @@ fun TransactionFilter.toEntity(name: String, id: Long = 0): FilterEntity {
     return FilterEntity(
         id = id,
         name = name,
+        timelineRange = timelineRange,
         queryNote = queryNote,
         isNoteRegex = isNoteRegex,
         queryPayee = queryPayee,

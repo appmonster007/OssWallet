@@ -1,41 +1,34 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.AccentOrange
-import com.osscabinet.ossWallet.ui.theme.AccentPurple
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
@@ -46,196 +39,159 @@ fun IncomeExpensesBookCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (IncomeExpensesBookCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Income and Expenses Summary
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Total Income",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.incomeTotal, data.currency, data.precision),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = AccentBlue
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                BookRow("Income", data.incomeTotal, data.incomeCount, PositiveAmountColor, data.currency, data.precision) {
+                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        isIncome = true,
+                        startDate = config.filter.startDate,
+                        endDate = config.filter.endDate,
+                        accountIds = config.filter.accountIds,
+                        categoryIds = config.filter.categoryIds.map { it.toString() },
+                        currencies = config.filter.currencies
+                    ))
+                }
+                BookRow("Expenses", data.expenseTotal, data.expenseCount, NegativeAmountColor, data.currency, data.precision) {
+                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        isIncome = false,
+                        startDate = config.filter.startDate,
+                        endDate = config.filter.endDate,
+                        accountIds = config.filter.accountIds,
+                        categoryIds = config.filter.categoryIds.map { it.toString() },
+                        currencies = config.filter.currencies
+                    ))
                 }
                 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Total Expenses",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.expenseTotal, data.currency, data.precision),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = AccentOrange
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Net Balance
-            val netBalance = data.incomeTotal.add(data.expenseTotal)
-            Surface(
-                color = if (netBalance.signum() >= 0) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.errorContainer
-                },
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text("NET BALANCE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                     Text(
-                        "Net Balance",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        formatCurrencyRight(netBalance, data.currency, data.precision),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (netBalance.signum() >= 0) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onErrorContainer
-                        }
+                        formatCurrencyRight(data.incomeTotal.add(data.expenseTotal), data.currency, data.precision),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Transaction count
-            Text(
-                "Total Transactions: ${data.incomeCount + data.expenseCount}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (config.showShareButton) {
+                OutlinedButton(
+                    onClick = { /* Share Logic */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Share, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Share Summary")
+                }
+            }
         }
-        
-        if (showSettings) {
-            IncomeExpensesBookSettingsDialog(
-                config = config,
-                onUpdate = onUpdate,
-                onDismiss = { showSettings = false },
-                onDelete = onDelete
+    }
+    
+    if (showSettings) {
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
+            onDismiss = { showSettings = false },
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
+        ) {
+            AeonSettingsToggle(
+                label = "SHOW SHARE BUTTON",
+                checked = config.showShareButton,
+                onCheckedChange = { onUpdate(config.copy(showShareButton = it)) }
             )
         }
     }
 }
 
 @Composable
-private fun IncomeExpensesBookSettingsDialog(
-    config: IncomeExpensesBookCardConfig,
-    onUpdate: (IncomeExpensesBookCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
+private fun BookRow(label: String, amount: BigDecimal, count: Int, color: Color, currency: String, precision: Int, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("$count Transactions", style = MaterialTheme.typography.labelExtraSmall, color = MaterialTheme.colorScheme.outline)
         }
-    )
+        Text(
+            formatCurrencyRight(amount, currency, precision),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = color
+        )
+    }
+}
+
+data class IncomeExpensesBookData(
+    val incomeTotal: BigDecimal,
+    val expenseTotal: BigDecimal,
+    val incomeCount: Int,
+    val expenseCount: Int,
+    val currency: String,
+    val precision: Int
+)
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun IncomeExpensesBookCardPreview() {
+    OssWalletTheme {
+        IncomeExpensesBookCard(
+            config = IncomeExpensesBookCardConfig(cardId = "preview", title = "INCOME & EXPENSES BOOK"),
+            data = IncomeExpensesBookData(
+                incomeTotal = BigDecimal("5000.00"),
+                expenseTotal = BigDecimal("-3450.00"),
+                incomeCount = 12,
+                expenseCount = 45,
+                currency = "USD",
+                precision = 2
+            )
+        )
+    }
 }

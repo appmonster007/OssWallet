@@ -12,6 +12,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +48,9 @@ fun AeonBarLineChart(
     barColorPositive: Color = Color(0xFF00C853),
     barColorNegative: Color = Color(0xFFB3261E),
     lineColor: Color = Color(0xFF2979FF),
-    animate: Boolean = true
+    animate: Boolean = true,
+    smaData: List<Double>? = null,
+    onNavigateToRecords: ((Int) -> Unit)? = null
 ) {
     if (barData.isEmpty() || lineData.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -72,6 +78,13 @@ fun AeonBarLineChart(
         val padding = 60f
 
         val allValues = barData + lineData
+        if (allValues.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No data available", style = MaterialTheme.typography.bodySmall)
+            }
+            return@BoxWithConstraints
+        }
+
         val minY = allValues.minOf { it }
         val maxY = allValues.maxOf { it }
         
@@ -168,7 +181,23 @@ fun AeonBarLineChart(
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
-            // 4. Draw selection highlight
+            // 4. Draw SMA (Smooth Moving Average)
+            smaData?.let { sma ->
+                val smaPath = Path()
+                sma.forEachIndexed { index, value ->
+                    val x = indexToX(index, sma.size)
+                    val y = valueToY(value.toBigDecimal())
+                    val animatedY = heightPx - padding - (heightPx - padding - y) * animationProgress.value
+                    if (index == 0) smaPath.moveTo(x, animatedY) else smaPath.lineTo(x, animatedY)
+                }
+                drawPath(
+                    path = smaPath,
+                    color = lineColor.copy(alpha = 0.5f),
+                    style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+            }
+
+            // 5. Draw selection highlight
             selectedIndex?.let { index ->
                 val x = indexToX(index, barData.size)
                 drawLine(
@@ -187,24 +216,50 @@ fun AeonBarLineChart(
             val barVal = barData[index]
             val lineVal = lineData[index]
             
+            // Boundary-aware tooltip
+            val tooltipWidth = 160.dp
+            val tooltipHeight = 100.dp
+            val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
+            val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
+
+            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, widthPx - tooltipWidthPx)
+            val yPos = (padding - 10f).coerceIn(0f, heightPx - tooltipHeightPx)
+
             Surface(
                 modifier = Modifier
-                    .offset(x = (x / density.density).dp - 70.dp, y = (padding / density.density).dp - 40.dp)
-                    .width(140.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
+                    .width(tooltipWidth)
+                    .clip(RoundedCornerShape(12.dp)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, lineColor.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
-                    Text("Period ${index + 1}", style = MaterialTheme.typography.labelSmall)
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text("Period ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("Flow:", style = MaterialTheme.typography.labelSmall)
-                        Text(formatCurrencyRight(barVal, currency, precision), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
+                        Text(formatCurrencyRight(barVal, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative)
                     }
                     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("Trend:", style = MaterialTheme.typography.labelSmall)
-                        Text(formatCurrencyRight(lineVal, currency, precision), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = lineColor)
+                        Text(formatCurrencyRight(lineVal, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = lineColor)
+                    }
+                    
+                    if (onNavigateToRecords != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { onNavigateToRecords(index) },
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, lineColor.copy(alpha = 0.5f))
+                        ) {
+                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = lineColor)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("See Records", style = MaterialTheme.typography.labelSmall, color = lineColor)
+                        }
                     }
                 }
             }

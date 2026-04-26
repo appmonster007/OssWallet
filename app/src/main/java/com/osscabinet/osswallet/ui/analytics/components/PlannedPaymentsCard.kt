@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -14,9 +16,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import java.text.SimpleDateFormat
+import java.util.*
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import androidx.compose.foundation.clickable
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.AeonProgressBar
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.AccentOrange
@@ -32,7 +44,11 @@ fun PlannedPaymentsCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (PlannedPaymentsCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
@@ -54,6 +70,7 @@ fun PlannedPaymentsCard(
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
@@ -73,6 +90,60 @@ fun PlannedPaymentsCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Liquidity Risk Overview
+            if (data.payments.any { it.isAtRisk }) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                        Text(
+                            "Liquidity Risk: ${data.payments.count { it.isAtRisk }} payments exceed current cash",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+            
+            // Heatmap Timeline
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "OUTGOING VOLUME HEATMAP",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .drawBehind {
+                            val blocks = 14 // 2 weeks
+                            val blockWidth = size.width / blocks
+                            val maxVolume = data.dailyVolumeHeatmap.maxOfOrNull { it.second } ?: 1.0
+                            
+                            data.dailyVolumeHeatmap.takeLast(blocks).forEachIndexed { i, (_, volume) ->
+                                val alpha = (volume / maxVolume).toFloat().coerceIn(0.1f, 1.0f)
+                                drawRect(
+                                    color = AccentOrange.copy(alpha = alpha),
+                                    topLeft = Offset(i * blockWidth + 2.dp.toPx(), 0f),
+                                    size = Size(blockWidth - 4.dp.toPx(), size.height)
+                                )
+                            }
+                        }
+                )
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -96,21 +167,49 @@ fun PlannedPaymentsCard(
             // Payment items
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 data.payments.forEach { payment ->
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                    queryNote = payment.name,
+                                    startDate = config.filter.startDate,
+                                    endDate = config.filter.endDate,
+                                    accountIds = config.filter.accountIds,
+                                    categoryIds = config.filter.categoryIds.map { it.toString() },
+                                    currencies = config.filter.currencies
+                                ))
+                            }
+                            .padding(8.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                payment.name,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    payment.name,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (payment.isAtRisk) {
+                                    Icon(
+                                        Icons.Default.Warning,
+                                        null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
                             Text(
                                 formatCurrencyRight(payment.amount, data.currency, data.precision),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = if (payment.isAtRisk) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
                         
@@ -128,96 +227,34 @@ fun PlannedPaymentsCard(
     }
     
     if (showSettings) {
-        PlannedPaymentsSettingsDialog(
-            config = config,
-            onUpdate = onUpdate,
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
             onDismiss = { showSettings = false },
-            onDelete = onDelete
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
         )
     }
-}
-
-@Composable
-private fun PlannedPaymentsSettingsDialog(
-    config: PlannedPaymentsCardConfig,
-    onUpdate: (PlannedPaymentsCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    )
 }
 
 data class PlannedPaymentsData(
     val total: BigDecimal,
     val currency: String,
     val precision: Int,
-    val payments: List<PaymentItem>
+    val payments: List<PaymentItem>,
+    val currentLiquidCash: BigDecimal = BigDecimal.ZERO,
+    val dailyVolumeHeatmap: List<Pair<Long, Double>> = emptyList() // Timestamp to volume
 )
 
 data class PaymentItem(
     val name: String,
     val amount: BigDecimal,
     val progress: Float,
-    val color: Color
+    val color: Color,
+    val isAtRisk: Boolean = false
 )
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)

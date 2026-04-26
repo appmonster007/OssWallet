@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
 import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
@@ -42,6 +43,7 @@ import java.math.BigDecimal
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel,
     accountViewModel: AccountViewModel,
+    transactionViewModel: TransactionViewModel,
     templateViewModel: TemplateViewModel,
     settingsViewModel: SettingsViewModel,
     onBackClick: () -> Unit,
@@ -60,6 +62,8 @@ fun AnalyticsScreen(
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
@@ -123,13 +127,6 @@ fun AnalyticsScreen(
                         .padding(innerPadding)
                         .background(MaterialTheme.colorScheme.background)
                 ) {
-                    AnalyticsHeroSection(
-                        uiState.currentBalance,
-                        uiState.selectedCurrency,
-                        decimalPrecision,
-                        modifier = Modifier.padding(24.dp)
-                    )
-
                     // Analytics Cards from config
                     CardReorderableList(
                         items = cardsConfig.cards.sortedBy { it.order },
@@ -143,7 +140,7 @@ fun AnalyticsScreen(
                     ) { cardConfig, isDragging, dragModifier ->
                         val cardWithCallbacks = when (cardConfig) {
                             is CategoryBreakdownCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryBreakdownForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -163,12 +160,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is TimelineTrajectoryCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeTimelineTrajectoryForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -189,12 +187,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is CategoryExpenseTreemapCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryExpenseTreemapForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -214,12 +213,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is IncomeExpensesSummaryCardConfig -> {
-                                val cardData by produceState<IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeIncomeExpensesSummaryForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -245,12 +245,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is PeriodComparisonCardConfig -> {
-                                val cardData by produceState<PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePeriodComparisonForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -275,12 +276,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is CashFlowTrendCardConfig -> {
-                                val cardData by produceState<CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowTrendForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -303,12 +305,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is CashFlowProgressCardConfig -> {
-                                val cardData by produceState<CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowProgressForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -333,12 +336,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is BalanceForecastCardConfig -> {
-                                val cardData by produceState<BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<BalanceForecastData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeBalanceForecastForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -364,12 +368,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is PlannedPaymentsCardConfig -> {
-                                val cardData by produceState<PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePlannedPaymentsForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -394,12 +399,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is IncomeExpensesBookCardConfig -> {
-                                val cardData by produceState<IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeIncomeExpensesBookForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -426,12 +432,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is CashFlowTableCardConfig -> {
-                                val cardData by produceState<CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowTableForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -463,12 +470,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is PlannedPaymentsTimelineCardConfig -> {
-                                val cardData by produceState<PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePlannedPaymentsTimelineForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -493,12 +501,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is BalanceByAccountsCardConfig -> {
-                                val cardData by produceState<BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<BalanceByAccountsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeBalanceByAccountsForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -524,12 +533,13 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
                             is BalanceTrendCardConfig -> {
-                                val cardData by produceState<BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.timelineRange, key3 = uiState) {
+                                val cardData by produceState<BalanceTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeBalanceTrendForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -556,7 +566,8 @@ fun AnalyticsScreen(
                                                 viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
                                             }
                                         },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } }
+                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
+                                        onRecordsClick = onRecordsClick
                                     )
                                 )
                             }
@@ -567,7 +578,10 @@ fun AnalyticsScreen(
                             UnifiedCardRenderer(
                                 renderData = it.renderData,
                                 callbacks = it.callbacks,
-                                headerModifier = dragModifier
+                                headerModifier = dragModifier,
+                                accounts = nonArchivedAccounts,
+                                allCategories = allCategories,
+                                savedFilters = savedFilters
                             )
                         }
                     }
@@ -595,7 +609,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "CATEGORY BREAKDOWN",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
                                 showLabels = true,
                                 showLegend = true
                             )
@@ -615,7 +629,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_timeline_trajectory_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "TIMELINE TRAJECTORY",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
                                 showBalance = true,
                                 showExpense = true,
                                 showIncome = true
@@ -636,7 +650,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "CATEGORY EXPENSES",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
                                 showLabels = true
                             )
                         )
@@ -655,7 +669,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_income_expenses_summary_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "INCOME & EXPENSES",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)),
                                 showPercentage = true
                             )
                         )
@@ -674,7 +688,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_period_comparison_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "PERIOD COMPARISON",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)),
                                 selectedTab = "Income"
                             )
                         )
@@ -693,7 +707,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_cash_flow_trend_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "CASH FLOW TREND",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS))
                             )
                         )
                     }
@@ -712,7 +726,7 @@ fun AnalyticsScreen(
                                 order = cardsConfig.cards.size,
                                 title = "CASH FLOW",
                                 subtitle = "Am I spending less than I make?",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS))
                             )
                         )
                     }
@@ -750,7 +764,7 @@ fun AnalyticsScreen(
                                 order = cardsConfig.cards.size,
                                 title = "PLANNED PAYMENTS",
                                 subtitle = "Planned Payments by Category",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS))
                             )
                         )
                     }
@@ -769,7 +783,7 @@ fun AnalyticsScreen(
                                 order = cardsConfig.cards.size,
                                 title = "INCOME & EXPENSES BOOK",
                                 subtitle = "Want to see where your money goes?",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS),
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)),
                                 showShareButton = true
                             )
                         )
@@ -788,7 +802,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_cash_flow_table_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "CASH FLOW TABLE",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS))
                             )
                         )
                     }
@@ -806,7 +820,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_planned_payments_timeline_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "PLANNED PAYMENTS TIMELINE",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS))
                             )
                         )
                     }
@@ -824,7 +838,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_balance_by_accounts_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "BALANCE BY ACCOUNTS",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
                             )
                         )
                     }
@@ -842,7 +856,7 @@ fun AnalyticsScreen(
                                 cardId = "analytics_balance_trend_${System.currentTimeMillis()}",
                                 order = cardsConfig.cards.size,
                                 title = "BALANCE TREND",
-                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS)
+                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_12_WEEKS))
                             )
                         )
                     }
@@ -855,27 +869,5 @@ fun AnalyticsScreen(
             onDismiss = { showAddCardDialog = false },
             cardOptions = analyticsCardOptions
         )
-    }
-}
-
-@Composable
-fun AnalyticsHeroSection(balance: BigDecimal, currency: String, precision: Int = 2, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        AeonFlowSectionHeader(title = "PROJECTED BALANCE")
-        Text(
-            formatCurrencyRight(balance, currency, precision),
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum", color = MaterialTheme.colorScheme.onSurface)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Surface(
-            color = Color(0xFF4CAF50).copy(alpha = 0.2f),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("On track for goal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
-            }
-        }
     }
 }

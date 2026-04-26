@@ -589,6 +589,7 @@ fun OssWalletNavGraph(
             AnalyticsScreen(
                 viewModel = analyticsViewModel,
                 accountViewModel = accountViewModel,
+                transactionViewModel = transactionViewModel,
                 templateViewModel = templateViewModel,
                 settingsViewModel = settingsViewModel,
                 onBackClick = safePopBackStack,

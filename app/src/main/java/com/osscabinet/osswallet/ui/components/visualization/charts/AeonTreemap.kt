@@ -6,26 +6,42 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.util.generateShade
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -37,7 +53,11 @@ fun AeonTreemap(
     nodes: List<AeonTreemapNode>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = 2
+    precision: Int = 2,
+    showLabels: Boolean = true,
+    onNodeClick: (AeonTreemapNode) -> Unit = {},
+    onDrillInClick: (AeonTreemapNode) -> Unit = {},
+    onNavigateToRecords: (AeonTreemapNode) -> Unit = {}
 ) {
     if (nodes.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -49,12 +69,14 @@ fun AeonTreemap(
     var selectedNode by remember { mutableStateOf<AeonTreemapNode?>(null) }
     var touchPoint by remember { mutableStateOf<Offset?>(null) }
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+    val disclosurePainter = rememberVectorPainter(Icons.Default.AddCircle)
 
-    val totalValue = nodes.sumOf { it.value }
+    val totalValue = nodes.sumOf { it.value.abs() }
 
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-        val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
+        val widthPx = with(density) { maxWidth.toPx() }
+        val heightPx = with(density) { maxHeight.toPx() }
         
         val layouts = remember(nodes, widthPx, heightPx) {
             computeTreemapLayout(nodes, Rect(0f, 0f, widthPx, heightPx), totalValue)
@@ -93,7 +115,16 @@ fun AeonTreemap(
                 .pointerInput(nodes) {
                     detectTapGestures(
                         onTap = { offset ->
-                            selectedNode = findNodeAt(offset)
+                            val node = findNodeAt(offset)
+                            if (node != null) {
+                                if (node.hasSubcategories) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                } else {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                onNodeClick(node)
+                            }
+                            selectedNode = node
                             touchPoint = offset
                         },
                         onLongPress = {
@@ -103,47 +134,101 @@ fun AeonTreemap(
                 }
         ) {
             layouts.forEach { (node, rect) ->
-                drawRect(
+                val cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                
+                // Base Color with rounding
+                drawRoundRect(
                     color = node.color,
                     topLeft = Offset(rect.left, rect.top),
-                    size = androidx.compose.ui.geometry.Size(rect.width, rect.height)
+                    size = Size(rect.width, rect.height),
+                    cornerRadius = cornerRadius
                 )
                 
-                // Draw border for segments
-                drawRect(
-                    color = Color.White.copy(alpha = 0.5f),
+                // Subtle Top-to-Bottom Gradient for Depth
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.12f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.08f)
+                        )
+                    ),
                     topLeft = Offset(rect.left, rect.top),
-                    size = androidx.compose.ui.geometry.Size(rect.width, rect.height),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                    size = Size(rect.width, rect.height),
+                    cornerRadius = cornerRadius
+                )
+                
+                // Glossy Highlight at the Top
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.08f),
+                            Color.Transparent
+                        ),
+                        startY = rect.top,
+                        endY = rect.top + rect.height * 0.3f
+                    ),
+                    topLeft = Offset(rect.left, rect.top),
+                    size = Size(rect.width, rect.height),
+                    cornerRadius = cornerRadius
+                )
+                
+                // Refined border for segments
+                drawRoundRect(
+                    color = Color.White.copy(alpha = 0.3f),
+                    topLeft = Offset(rect.left, rect.top),
+                    size = Size(rect.width, rect.height),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx()),
+                    cornerRadius = cornerRadius
                 )
             }
         }
 
         // Overlay labels for larger segments
-        layouts.forEach { (node, rect) ->
-            if (rect.width > 60f && rect.height > 40f) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = (rect.left / density.density).dp, y = (rect.top / density.density).dp)
-                        .size((rect.width / density.density).dp, (rect.height / density.density).dp)
-                        .padding(4.dp),
-                    contentAlignment = Alignment.TopStart
-                ) {
-                    Column {
-                        Text(
-                            node.name,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            formatCurrencyRight(node.value, currency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                            color = Color.White.copy(alpha = 0.8f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+        if (showLabels) {
+            layouts.forEach { (node, rect) ->
+                val rectWidthDp = with(density) { rect.width.toDp() }
+                val rectHeightDp = with(density) { rect.height.toDp() }
+                
+                if (rectWidthDp > 50.dp && rectHeightDp > 35.dp) {
+                    val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
+                    val labelColor = if (node.color.luminance() > 0.5f) Color.Black else Color.White
+
+                    Box(
+                        modifier = Modifier
+                            .offset(x = with(density) { rect.left.toDp() }, y = with(density) { rect.top.toDp() })
+                            .size(rectWidthDp, rectHeightDp)
+                            .padding(6.dp)
+                            .clipToBounds(),
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    node.name,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
+                                    color = labelColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                                if (node.hasSubcategories) {
+                                    Image(
+                                        painter = disclosurePainter,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp).padding(start = 2.dp),
+                                        colorFilter = ColorFilter.tint(iconTint)
+                                    )
+                                }
+                            }
+                            Text(
+                                formatCurrencyRight(node.value, currency, precision),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 10.sp),
+                                color = labelColor.copy(alpha = 0.85f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -152,41 +237,36 @@ fun AeonTreemap(
         // Tooltip Overlay
         selectedNode?.let { node ->
             touchPoint?.let { point ->
-                Surface(
-                    modifier = Modifier
-                        .offset(
-                            x = (point.x / density.density).dp - 60.dp,
-                            y = (point.y / density.density).dp - 80.dp
-                        )
-                        .width(140.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 4.dp,
-                    shadowElevation = 4.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            node.name,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            formatCurrencyRight(node.value, currency, precision),
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = node.color
-                        )
+                AeonChartInteractionPopup(
+                    name = node.name,
+                    value = node.value,
+                    color = node.color,
+                    percentageOfTotal = node.percentageOfTotal,
+                    hasSubcategories = node.hasSubcategories,
+                    subcategoryCount = node.subcategoryCount,
+                    touchPoint = point,
+                    chartWidthPx = widthPx,
+                    chartHeightPx = heightPx,
+                    density = density.density,
+                    currency = currency,
+                    precision = precision,
+                    onDrillInClick = { 
+                        selectedNode = null
+                        onDrillInClick(node) 
+                    },
+                    onNavigateToRecords = { 
+                        selectedNode = null
+                        onNavigateToRecords(node) 
                     }
-                }
+                )
             }
         }
     }
 }
 
 /**
- * Simple Squarified Treemap algorithm implementation.
+ * Squarified Treemap algorithm implementation.
+ * Maintains aspect ratios as close to 1:1 as possible.
  */
 private fun computeTreemapLayout(
     nodes: List<AeonTreemapNode>,
@@ -196,51 +276,96 @@ private fun computeTreemapLayout(
     if (nodes.isEmpty() || totalValue.signum() == 0) return emptyList()
     
     val result = mutableListOf<Pair<AeonTreemapNode, Rect>>()
-    val sortedNodes = nodes.sortedByDescending { it.value }
+    val sortedNodes = nodes.sortedByDescending { it.value.abs() }
     
-    divide(sortedNodes, bounds, totalValue, result)
+    squarify(sortedNodes, emptyList(), bounds, totalValue, result)
     
     return result
 }
 
-private fun divide(
-    nodes: List<AeonTreemapNode>,
+private fun squarify(
+    remaining: List<AeonTreemapNode>,
+    currentRow: List<AeonTreemapNode>,
     bounds: Rect,
     total: BigDecimal,
     result: MutableList<Pair<AeonTreemapNode, Rect>>
 ) {
-    if (nodes.isEmpty()) return
-    if (nodes.size == 1) {
-        result.add(nodes[0] to bounds)
+    if (remaining.isEmpty()) {
+        if (currentRow.isNotEmpty()) {
+            layoutRow(currentRow, bounds, total, result)
+        }
         return
     }
 
-    // Split nodes into two groups
-    var halfValue = BigDecimal.ZERO
-    val targetHalf = total.divide(BigDecimal("2"), 10, RoundingMode.HALF_UP)
-    var splitIndex = 0
+    val nextNode = remaining.first()
+    val newRow = currentRow + nextNode
     
-    for (i in nodes.indices) {
-        halfValue = halfValue.add(nodes[i].value)
-        splitIndex = i
-        if (halfValue >= targetHalf) break
-    }
-
-    val firstPart = nodes.subList(0, splitIndex + 1)
-    val secondPart = nodes.subList(splitIndex + 1, nodes.size)
-    val firstTotal = halfValue
-    val secondTotal = total - halfValue
-
-    if (bounds.width > bounds.height) {
-        // Vertical split
-        val splitX = bounds.left + bounds.width * (firstTotal.divide(total, 10, RoundingMode.HALF_UP).toFloat())
-        divide(firstPart, Rect(bounds.left, bounds.top, splitX, bounds.bottom), firstTotal, result)
-        divide(secondPart, Rect(splitX, bounds.top, bounds.right, bounds.bottom), secondTotal, result)
+    if (currentRow.isEmpty() || worstAspectRatio(currentRow, bounds, total) >= worstAspectRatio(newRow, bounds, total)) {
+        squarify(remaining.drop(1), newRow, bounds, total, result)
     } else {
-        // Horizontal split
-        val splitY = bounds.top + bounds.height * (firstTotal.divide(total, 10, RoundingMode.HALF_UP).toFloat())
-        divide(firstPart, Rect(bounds.left, bounds.top, bounds.right, splitY), firstTotal, result)
-        divide(secondPart, Rect(bounds.left, splitY, bounds.right, bounds.bottom), secondTotal, result)
+        val newBounds = layoutRow(currentRow, bounds, total, result)
+        val remainingTotal = total - currentRow.sumOf { it.value.abs() }
+        squarify(remaining, emptyList(), newBounds, remainingTotal, result)
+    }
+}
+
+private fun worstAspectRatio(row: List<AeonTreemapNode>, bounds: Rect, total: BigDecimal): Float {
+    if (row.isEmpty()) return Float.MAX_VALUE
+    
+    val rowSum = row.sumOf { it.value.abs() }.toFloat()
+    val totalFloat = total.abs().toFloat()
+    val width = bounds.width
+    val height = bounds.height
+    val side = if (width > height) height else width
+    
+    val s = rowSum / totalFloat * (width * height)
+    val minV = row.minOf { it.value.abs() }.toFloat() / totalFloat * (width * height)
+    val maxV = row.maxOf { it.value.abs() }.toFloat() / totalFloat * (width * height)
+    
+    return maxOf(
+        (side * side * maxV) / (s * s),
+        (s * s) / (side * side * minV)
+    )
+}
+
+private fun layoutRow(
+    row: List<AeonTreemapNode>,
+    bounds: Rect,
+    total: BigDecimal,
+    result: MutableList<Pair<AeonTreemapNode, Rect>>
+): Rect {
+    val rowSum = row.sumOf { it.value.abs() }.toFloat()
+    val totalFloat = total.abs().toFloat()
+    val rowAreaRatio = rowSum / totalFloat
+    
+    if (bounds.width >= bounds.height) {
+        // Vertical strip
+        val rowWidth = bounds.width * rowAreaRatio
+        // IMPORTANT: Clip last row to fill bounds exactly
+        val actualRowWidth = if (rowSum >= totalFloat * 0.99f) bounds.width else rowWidth
+        
+        var currentY = bounds.top
+        row.forEachIndexed { index, node ->
+            val nodeHeight = (node.value.abs().toFloat() / rowSum) * bounds.height
+            val finalHeight = if (index == row.size - 1) bounds.bottom - currentY else nodeHeight
+            result.add(node to Rect(bounds.left, currentY, bounds.left + actualRowWidth, currentY + finalHeight))
+            currentY += finalHeight
+        }
+        return Rect(bounds.left + actualRowWidth, bounds.top, bounds.right, bounds.bottom)
+    } else {
+        // Horizontal strip
+        val rowHeight = bounds.height * rowAreaRatio
+        // IMPORTANT: Clip last row to fill bounds exactly
+        val actualRowHeight = if (rowSum >= totalFloat * 0.99f) bounds.height else rowHeight
+        
+        var currentX = bounds.left
+        row.forEachIndexed { index, node ->
+            val nodeWidth = (node.value.abs().toFloat() / rowSum) * bounds.width
+            val finalWidth = if (index == row.size - 1) bounds.right - currentX else nodeWidth
+            result.add(node to Rect(currentX, bounds.top, currentX + finalWidth, bounds.top + actualRowHeight))
+            currentX += finalWidth
+        }
+        return Rect(bounds.left, bounds.top + actualRowHeight, bounds.right, bounds.bottom)
     }
 }
 
@@ -251,12 +376,12 @@ fun AeonTreemapPreview() {
         Box(modifier = Modifier.size(400.dp, 300.dp).padding(16.dp)) {
             AeonTreemap(
                 nodes = listOf(
-                    AeonTreemapNode("Food", BigDecimal("500.00"), Color(0xFFFF5722)),
-                    AeonTreemapNode("Rent", BigDecimal("1200.00"), Color(0xFF2196F3)),
-                    AeonTreemapNode("Transport", BigDecimal("300.00"), Color(0xFF4CAF50)),
-                    AeonTreemapNode("Entertainment", BigDecimal("200.00"), Color(0xFF9C27B0)),
-                    AeonTreemapNode("Utilities", BigDecimal("150.00"), Color(0xFFFFC107)),
-                    AeonTreemapNode("Health", BigDecimal("100.00"), Color(0xFFE91E63))
+                    AeonTreemapNode("Food", BigDecimal("500.00"), Color(0xFFFF5722), emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Rent", BigDecimal("1200.00"), Color(0xFF2196F3), emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Transport", BigDecimal("300.00"), Color(0xFF4CAF50), emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Entertainment", BigDecimal("200.00"), Color(0xFF9C27B0), emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Utilities", BigDecimal("150.00"), Color(0xFFFFC107), emptyList(), emptyMap(), false, 0, 0f, null),
+                    AeonTreemapNode("Health", BigDecimal("100.00"), Color(0xFFE91E63), emptyList(), emptyMap(), false, 0, 0f, null)
                 )
             )
         }

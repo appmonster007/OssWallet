@@ -353,13 +353,13 @@ class CardManagerViewModel(
                 cardId = UUID.randomUUID().toString(),
                 order = 1,
                 screenContext = ScreenContext.ACCOUNT_DETAIL,
-                accountId = null // Will be set by screen
+                filter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
             ),
             CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = 2,
                 screenContext = ScreenContext.ACCOUNT_DETAIL,
-                accountId = null // Will be set by screen
+                filter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
             )
         )
         _accountDetailCardsConfig.value = DashboardCardsConfig(cards = defaultAccountDetailCards)
@@ -531,13 +531,13 @@ class CardManagerViewModel(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size,
                 screenContext = ScreenContext.ACCOUNT_DETAIL,
-                accountId = accountId
+                filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOfNotNull(accountId))
             )
             AccountDetailCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _accountDetailCardsConfig.value.cards.size,
                 screenContext = ScreenContext.ACCOUNT_DETAIL,
-                accountId = accountId
+                filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOfNotNull(accountId))
             )
         }
 

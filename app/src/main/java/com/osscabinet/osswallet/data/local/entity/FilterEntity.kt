@@ -2,12 +2,14 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 
 @Entity(tableName = "transaction_filters")
 data class FilterEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
+    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val queryNote: String? = null,
     val isNoteRegex: Boolean = false,
     val queryPayee: String? = null,

@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
 import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard
@@ -52,7 +54,10 @@ fun UnifiedCardRenderer(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = false,
-    currentTheme: String = "light"
+    currentTheme: String = "light",
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     when (renderData) {
         is CardRenderData.NetWorth -> {
@@ -148,7 +153,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -165,7 +174,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -182,7 +195,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -200,7 +217,10 @@ fun UnifiedCardRenderer(
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
                 onDelete = { cb.onDelete() },
-                onCategoryClick = null // Can be added later for navigation
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -217,7 +237,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -234,7 +258,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -251,7 +279,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -268,7 +300,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -285,7 +321,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -385,7 +425,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -402,7 +446,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -419,7 +467,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -436,7 +488,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -453,7 +509,11 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                onRecordsClick = { cb.onRecordsClick(it) },
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
     }
@@ -491,7 +551,10 @@ fun UnifiedCardListRenderer(
     cards: List<CardWithCallbacks>,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    showTitle: Boolean = false
+    showTitle: Boolean = false,
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     cards.forEach { card ->
         UnifiedCardRenderer(
@@ -499,7 +562,10 @@ fun UnifiedCardListRenderer(
             callbacks = card.callbacks,
             modifier = modifier,
             headerModifier = headerModifier,
-            showTitle = showTitle
+            showTitle = showTitle,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
         )
     }
 }

@@ -99,6 +99,49 @@ object TimelineService {
     }
 
     /**
+     * Gets the previous date range for a given timeline range.
+     * 
+     * @param timelineRange The current timeline range
+     * @return Pair of start and end timestamps in milliseconds
+     */
+    fun getPreviousRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
+        val (currentStart, currentEnd) = getDateRange(timelineRange)
+        if (currentStart == null || currentEnd == null) return Pair(null, null)
+
+        return when (timelineRange) {
+            is TimelineRange.ThisPeriod -> {
+                val start = Instant.ofEpochMilli(currentStart).atZone(ZoneId.systemDefault())
+                val prevStart: ZonedDateTime = when (timelineRange.period) {
+                    ThisPeriodType.TODAY -> start.minusDays(1)
+                    ThisPeriodType.WEEK -> start.minusWeeks(1)
+                    ThisPeriodType.MONTH -> start.minusMonths(1)
+                    ThisPeriodType.QUARTER -> start.minusMonths(3)
+                    ThisPeriodType.HALF_YEAR -> start.minusMonths(6)
+                    ThisPeriodType.YEAR -> start.minusYears(1)
+                }
+                val prevEnd: ZonedDateTime = when (timelineRange.period) {
+                    ThisPeriodType.TODAY -> prevStart.with(LocalTime.MAX)
+                    ThisPeriodType.WEEK -> prevStart.plusDays(6).with(LocalTime.MAX)
+                    ThisPeriodType.MONTH -> prevStart.with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.QUARTER -> prevStart.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.HALF_YEAR -> prevStart.plusMonths(5).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.YEAR -> prevStart.with(TemporalAdjusters.lastDayOfYear()).with(LocalTime.MAX)
+                }
+                Pair(prevStart.toInstant().toEpochMilli(), prevEnd.toInstant().toEpochMilli())
+            }
+            is TimelineRange.LastPeriod -> {
+                val duration = currentEnd - currentStart
+                Pair(currentStart - duration - 1000, currentStart - 1000)
+            }
+            is TimelineRange.CustomRange -> {
+                val duration = currentEnd - currentStart
+                Pair(currentStart - duration - 1000, currentStart - 1000)
+            }
+            else -> Pair(null, null)
+        }
+    }
+
+    /**
      * Filters a list of timestamped items by a timeline range.
      * 
      * @param items The list of items to filter

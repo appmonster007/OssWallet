@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -13,14 +15,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
+import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import androidx.compose.material.icons.filled.Info
 import java.math.BigDecimal
 
 @Composable
@@ -30,7 +39,11 @@ fun CashFlowTrendCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (CashFlowTrendCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
@@ -49,6 +62,7 @@ fun CashFlowTrendCard(
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
@@ -60,6 +74,26 @@ fun CashFlowTrendCard(
                     }
                 }
             )
+
+            if (data.percentageChange != "0.0%") {
+                val isNegative = data.percentageChange.startsWith("-")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Surface(
+                        color = (if (isNegative) NegativeAmountColor else PositiveAmountColor).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            "${data.percentageChange} vs Previous Period",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = if (isNegative) NegativeAmountColor else PositiveAmountColor
+                        )
+                    }
+                }
+            }
             
             Box(
                 modifier = Modifier
@@ -70,10 +104,20 @@ fun CashFlowTrendCard(
                     AeonBarLineChart(
                         barData = data.barData.map { it.toBigDecimal() },
                         lineData = data.lineData.map { it.toBigDecimal() },
+                        smaData = if (config.showSMA) data.smaData else null,
                         barColorPositive = PositiveAmountColor,
                         barColorNegative = NegativeAmountColor,
                         lineColor = AccentBlue,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        onNavigateToRecords = { _ ->
+                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                startDate = config.filter.startDate,
+                                endDate = config.filter.endDate,
+                                accountIds = config.filter.accountIds,
+                                categoryIds = config.filter.categoryIds.map { it.toString() },
+                                currencies = config.filter.currencies
+                            ))
+                        }
                     )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
@@ -90,17 +134,61 @@ fun CashFlowTrendCard(
                 LegendItem("Income", PositiveAmountColor)
                 LegendItem("Expenses", NegativeAmountColor)
                 LegendItem("Net Trend", AccentBlue, isLine = true)
+                if (config.showSMA) LegendItem("SMA", AccentBlue.copy(alpha = 0.5f), isLine = true)
+            }
+            
+            // Volatility Analysis
+            data.volatility?.let { vol ->
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                        Column {
+                            Text(
+                                "Cash Flow Volatility: $vol",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            if (vol.toDouble() > 1000) {
+                                Text(
+                                    "High volatility detected. Consider increasing emergency buffer.",
+                                    style = MaterialTheme.typography.labelExtraSmall,
+                                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
     
     if (showSettings) {
-        CashFlowTrendSettingsDialog(
-            config = config,
-            onUpdate = onUpdate,
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
             onDismiss = { showSettings = false },
-            onDelete = onDelete
-        )
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
+        ) {
+            // SMA Toggle
+            AeonSettingsToggle(
+                label = "SHOW SMA",
+                description = "Simple Moving Average for smoothing",
+                checked = config.showSMA,
+                onCheckedChange = { onUpdate(config.copy(showSMA = it)) }
+            )
+        }
     }
 }
 
@@ -118,47 +206,11 @@ private fun LegendItem(label: String, color: Color, isLine: Boolean = false) {
 
 data class CashFlowTrendData(
     val barData: List<Double>,
-    val lineData: List<Double>
+    val lineData: List<Double>,
+    val smaData: List<Double>? = null,
+    val volatility: BigDecimal? = null,
+    val percentageChange: String = "0.0%"
 )
-
-@Composable
-private fun CashFlowTrendSettingsDialog(
-    config: CashFlowTrendCardConfig,
-    onUpdate: (CashFlowTrendCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
-        dismissButton = {
-            TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        title = { Text(config.title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("TIMELINE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp), color = MaterialTheme.colorScheme.primary)
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable

@@ -89,9 +89,9 @@ class FilterManager {
      * Merge multiple TransactionFilters using AND logic.
      * 
      * Merge rules:
-     * - Lists (categoryIds, accountIds, etc.) are unioned (OR within the field, AND across filters)
+     * - Lists (categoryIds, accountIds, etc.) are unioned (OR within the field)
      * - Single values (transactionType, hasWarranty) use last non-null value
-     * - Ranges (startDate/endDate, minAmount/maxAmount) use min start and max end
+     * - Ranges (startDate/endDate, minAmount/maxAmount) use INTERSECTION (max start, min end)
      * - Boolean flags (isNoteRegex, isPayeeRegex) use OR logic
      * - Text fields (queryNote, queryPayee) are joined with space
      * 
@@ -102,20 +102,22 @@ class FilterManager {
         if (filters.isEmpty()) return TransactionFilter()
         
         return TransactionFilter(
+            timelineRange = filters.map { it.timelineRange }.lastOrNull { it != com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime } 
+                ?: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
             queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
             isNoteRegex = filters.any { it.isNoteRegex },
             queryPayee = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
             isPayeeRegex = filters.any { it.isPayeeRegex },
             categoryIds = filters.flatMap { it.categoryIds }.distinct(),
             accountIds = filters.flatMap { it.accountIds }.distinct(),
-            startDate = filters.mapNotNull { it.startDate }.minOrNull(),
-            endDate = filters.mapNotNull { it.endDate }.maxOrNull(),
+            startDate = filters.mapNotNull { it.startDate }.maxOrNull(),
+            endDate = filters.mapNotNull { it.endDate }.minOrNull(),
             paymentMethods = filters.flatMap { it.paymentMethods }.distinct(),
             hasWarranty = filters.mapNotNull { it.hasWarranty }.lastOrNull(),
-            warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.minOrNull(),
-            warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.maxOrNull(),
-            minAmount = filters.mapNotNull { it.minAmount }.minOrNull(),
-            maxAmount = filters.mapNotNull { it.maxAmount }.maxOrNull(),
+            warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.maxOrNull(),
+            warrantyExpirationEnd = filters.mapNotNull { it.warrantyExpirationEnd }.minOrNull(),
+            minAmount = filters.mapNotNull { it.minAmount }.maxOrNull(),
+            maxAmount = filters.mapNotNull { it.maxAmount }.minOrNull(),
             transactionType = filters.mapNotNull { it.transactionType }.lastOrNull(),
             currencies = filters.flatMap { it.currencies }.distinct(),
             statuses = filters.flatMap { it.statuses }.distinct()

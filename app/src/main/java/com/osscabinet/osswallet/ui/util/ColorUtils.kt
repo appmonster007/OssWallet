@@ -73,3 +73,24 @@ fun Color.toOnContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): C
     
     return Color(ColorUtils.HSLToColor(hsl))
 }
+
+/**
+ * Generates a variation of a color for sub-categories.
+ * It adjusts the lightness and saturation slightly to create a cohesive but distinct palette.
+ */
+fun Color.generateShade(index: Int, total: Int): Color {
+    if (total <= 1) return this
+    val hsl = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), hsl)
+    
+    // Spread lightness slightly (±15% from original)
+    val ratio = index.toFloat() / (total - 1).toFloat()
+    val lightnessAdjustment = (ratio - 0.5f) * 0.3f
+    hsl[2] = (hsl[2] + lightnessAdjustment).coerceIn(0.2f, 0.8f)
+    
+    // Slightly shift hue (±10 degrees)
+    val hueAdjustment = (ratio - 0.5f) * 20f
+    hsl[0] = (hsl[0] + hueAdjustment + 360f) % 360f
+    
+    return Color(ColorUtils.HSLToColor(hsl))
+}

@@ -12,6 +12,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +43,8 @@ fun AeonLineChart(
     currency: String = "USD",
     precision: Int = 2,
     showGrid: Boolean = true,
-    animate: Boolean = true
+    animate: Boolean = true,
+    onNavigateToRecords: ((AeonLineChartPoint) -> Unit)? = null
 ) {
     if (series.isEmpty() || series.all { it.dataPoints.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -67,9 +72,19 @@ fun AeonLineChart(
         val padding = 60f
         
         // Dynamic scaling logic
-        val allPoints = series.flatMap { it.dataPoints }
-        val minY = allPoints.minOf { it.y }
-        val maxY = allPoints.maxOf { it.y }
+        val allPoints = series.flatMap { it.dataPoints.map { p -> p.y } }
+        val confidencePoints = series.flatMap { s -> s.confidenceIntervals?.flatMap { listOf(it.first, it.second) } ?: emptyList() }
+        val allValues = allPoints + confidencePoints
+        
+        if (allValues.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No data available", style = MaterialTheme.typography.bodySmall)
+            }
+            return@BoxWithConstraints
+        }
+
+        val minY = allValues.minOf { it }
+        val maxY = allValues.maxOf { it }
         
         // Add 10% padding to the range
         val rangeY = (maxY - minY).abs()
@@ -154,6 +169,32 @@ fun AeonLineChart(
 
             // 2. Draw Data Series
             series.forEach { s ->
+                // Draw Confidence Interval (Shaded Area)
+                s.confidenceIntervals?.let { intervals ->
+                    if (intervals.size == s.dataPoints.size) {
+                        val confidencePath = Path()
+                        // Top boundary
+                        s.dataPoints.forEachIndexed { index, _ ->
+                            val x = indexToX(index, s.dataPoints.size)
+                            val y = valueToY(intervals[index].second)
+                            val animY = h - padding - (h - padding - y) * animationProgress.value
+                            if (index == 0) confidencePath.moveTo(x, animY) else confidencePath.lineTo(x, animY)
+                        }
+                        // Bottom boundary (reverse)
+                        for (index in s.dataPoints.size - 1 downTo 0) {
+                            val x = indexToX(index, s.dataPoints.size)
+                            val y = valueToY(intervals[index].first)
+                            val animY = h - padding - (h - padding - y) * animationProgress.value
+                            confidencePath.lineTo(x, animY)
+                        }
+                        confidencePath.close()
+                        drawPath(
+                            path = confidencePath,
+                            color = s.color.copy(alpha = 0.15f)
+                        )
+                    }
+                }
+
                 val linePath = Path()
                 val areaPath = Path()
                 
@@ -228,18 +269,43 @@ fun AeonLineChart(
             val x = indexToX(index, s.dataPoints.size)
             val y = valueToY(p.y)
             
+            // Boundary-aware tooltip
+            val tooltipWidth = 140.dp
+            val tooltipHeight = 80.dp
+            val tooltipWidthPx = with(density) { tooltipWidth.toPx() }
+            val tooltipHeightPx = with(density) { tooltipHeight.toPx() }
+
+            val xPos = (x - tooltipWidthPx / 2).coerceIn(0f, w - tooltipWidthPx)
+            val yPos = (y - tooltipHeightPx - 20f).coerceIn(0f, h - tooltipHeightPx)
+
             Surface(
                 modifier = Modifier
-                    .offset(x = (x / density.density).dp - 60.dp, y = (y / density.density).dp - 80.dp)
-                    .width(120.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
+                    .width(tooltipWidth)
+                    .clip(RoundedCornerShape(12.dp)),
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, s.color.copy(alpha = 0.5f))
             ) {
-                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(p.label ?: "Point ${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatCurrencyRight(p.y, currency, precision), style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = s.color)
+                    Text(formatCurrencyRight(p.y, currency, precision), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = s.color)
+                    
+                    if (onNavigateToRecords != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { onNavigateToRecords(p) },
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, s.color.copy(alpha = 0.5f))
+                        ) {
+                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = s.color)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("See Records", style = MaterialTheme.typography.labelSmall, color = s.color)
+                        }
+                    }
                 }
             }
         }

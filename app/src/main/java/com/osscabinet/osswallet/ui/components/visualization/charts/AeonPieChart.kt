@@ -7,11 +7,10 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +24,25 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import android.graphics.Paint
+import android.graphics.Rect
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.ZoomInMap
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
@@ -45,7 +62,10 @@ fun AeonPieChart(
     currency: String = "USD",
     precision: Int = 2,
     isDonut: Boolean = true,
-    animate: Boolean = true
+    animate: Boolean = true,
+    onSliceClick: (AeonPieChartSlice) -> Unit = {},
+    onDrillInClick: (AeonPieChartSlice) -> Unit = {},
+    onNavigateToRecords: (AeonPieChartSlice) -> Unit = {}
 ) {
     if (slices.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -57,6 +77,8 @@ fun AeonPieChart(
     var selectedSlice by remember { mutableStateOf<AeonPieChartSlice?>(null) }
     var touchPoint by remember { mutableStateOf<Offset?>(null) }
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+    val disclosurePainter = rememberVectorPainter(Icons.Default.AddCircle)
 
     val animationProgress = remember { Animatable(0f) }
     LaunchedEffect(slices) {
@@ -132,7 +154,16 @@ fun AeonPieChart(
                 .pointerInput(slices) {
                     detectTapGestures(
                         onTap = { offset ->
-                            selectedSlice = findSliceAt(offset)
+                            val slice = findSliceAt(offset)
+                            if (slice != null) {
+                                if (slice.hasSubcategories) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                } else {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                onSliceClick(slice)
+                            }
+                            selectedSlice = slice
                             touchPoint = offset
                         },
                         onLongPress = {
@@ -143,11 +174,12 @@ fun AeonPieChart(
         ) {
             var currentAngle = 0f
             slices.forEach { slice ->
-                val sweepAngle = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f) * animationProgress.value
+                val sliceSweep = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                val sweepAngle = sliceSweep * animationProgress.value
                 val isSelected = selectedSlice == slice
                 
                 val explodedRadius = if (isSelected) 10.dp.toPx() else 0f
-                val midAngle = (currentAngle + sweepAngle / 2) * (PI / 180).toFloat()
+                val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
                 val offset = Offset(
                     cos(midAngle.toDouble()).toFloat() * explodedRadius,
                     sin(midAngle.toDouble()).toFloat() * explodedRadius
@@ -162,56 +194,62 @@ fun AeonPieChart(
                     size = Size(radius * 2, radius * 2),
                     style = if (isDonut) Stroke(width = radius * 0.4f, cap = StrokeCap.Butt) else androidx.compose.ui.graphics.drawscope.Fill
                 )
+
+                // Visual marker for subcategories
+                if (slice.hasSubcategories && sliceSweep > 15f) {
+                    // Position marker in the middle of the arc's radial width
+                    // If donut, the thickness is radius * 0.4f. The middle of that thickness is at radius * 0.8f.
+                    // If full pie, the middle is radius * 0.5f.
+                    val markerRadius = if (isDonut) radius else radius * 0.5f
+                    val markerX = center.x + cos(midAngle.toDouble()).toFloat() * markerRadius + offset.x - 8.dp.toPx()
+                    val markerY = center.y + sin(midAngle.toDouble()).toFloat() * markerRadius + offset.y - 8.dp.toPx()
+                    
+                    val iconTint = if (slice.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
+                    
+                    translate(left = markerX, top = markerY) {
+                        with(disclosurePainter) {
+                            draw(
+                                size = Size(24.dp.toPx(), 24.dp.toPx()),
+//                                alpha = 0.7f,
+                                colorFilter = ColorFilter.tint(iconTint)
+                            )
+                        }
+                    }
+                }
                 
-                currentAngle += (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                currentAngle += sliceSweep
             }
         }
 
         // Tooltip Overlay
         selectedSlice?.let { slice ->
             touchPoint?.let { point ->
-                Surface(
-                    modifier = Modifier
-                        .offset(
-                            x = (point.x / density.density).dp - 60.dp,
-                            y = (point.y / density.density).dp - 80.dp
-                        )
-                        .width(140.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 4.dp,
-                    shadowElevation = 4.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            slice.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            formatCurrencyRight(slice.value, currency, precision),
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = slice.color
-                        )
-                        val percentage = slice.value.divide(total, 4, RoundingMode.HALF_UP).multiply(BigDecimal("100"))
-                        Text(
-                            "$percentage%",
-                            style = MaterialTheme.typography.labelExtraSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+                AeonChartInteractionPopup(
+                    name = slice.label,
+                    value = slice.value,
+                    color = slice.color,
+                    percentageOfTotal = slice.percentageOfTotal,
+                    hasSubcategories = slice.hasSubcategories,
+                    subcategoryCount = slice.subcategoryCount,
+                    touchPoint = point,
+                    chartWidthPx = widthPx,
+                    chartHeightPx = heightPx,
+                    density = density.density,
+                    currency = currency,
+                    precision = precision,
+                    onDrillInClick = { 
+                        selectedSlice = null
+                        onDrillInClick(slice) 
+                    },
+                    onNavigateToRecords = { 
+                        selectedSlice = null
+                        onNavigateToRecords(slice) 
                     }
-                }
+                )
             }
         }
     }
 }
-
-private val androidx.compose.material3.Typography.labelExtraSmall
-    @Composable
-    get() = labelSmall.copy(fontSize = 10.sp)
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable

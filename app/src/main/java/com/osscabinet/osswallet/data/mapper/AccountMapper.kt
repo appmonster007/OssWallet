@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
 
 /**
  * Mappers for Account data.
@@ -15,7 +17,7 @@ fun AccountEntity.toDomain() = Account(
     structureType = structureType,
     colorHex = colorHex,
     icon = icon,
-    allowedCurrencies = allowedCurrencies.split(",").filter { it.isNotBlank() },
+    allowedCurrencies = allowedCurrencies.splitByComma(),
     isArchived = isArchived,
     displayOrder = displayOrder
 )
@@ -28,7 +30,7 @@ fun Account.toEntity(profileId: Int) = AccountEntity(
     structureType = structureType,
     colorHex = colorHex,
     icon = icon,
-    allowedCurrencies = allowedCurrencies.joinToString(","),
+    allowedCurrencies = allowedCurrencies.joinByComma(),
     profileId = profileId,
     isArchived = isArchived,
     displayOrder = displayOrder

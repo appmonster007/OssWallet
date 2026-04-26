@@ -16,5 +16,6 @@ data class LoanEntity(
     val dueDate: Long,
     val repayments: BigDecimal,
     val type: String,
-    val currency: String
+    val currency: String,
+    val profileId: Int = 1
 )

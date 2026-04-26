@@ -168,8 +168,10 @@ fun CategoryExpenseTreemapCard(
 
                             onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
                                 categoryIds = categoryIds,
+                                accountIds = config.filter.accountIds,
                                 startDate = config.filter.startDate,
-                                endDate = config.filter.endDate
+                                endDate = config.filter.endDate,
+                                isIncome = false // All expenses
                             ))
                         }
                     )

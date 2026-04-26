@@ -86,211 +86,226 @@ fun AeonTreemap(
             return layouts.find { it.second.contains(offset) }?.first
         }
 
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .semantics {
-                    contentDescription = "Treemap showing distribution. Drag or tap boxes for details."
-                }
-                .pointerInput(nodes) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            touchPoint = offset
-                            selectedNode = findNodeAt(offset)
-                        },
-                        onDrag = { change, _ ->
-                            touchPoint = change.position
-                            selectedNode = findNodeAt(change.position)
-                        },
-                        onDragEnd = {
-                            selectedNode = null
-                            touchPoint = null
-                        },
-                        onDragCancel = {
-                            selectedNode = null
-                            touchPoint = null
-                        }
-                    )
-                }
-                .pointerInput(nodes) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            val node = findNodeAt(offset)
-                            if (node != null) {
-                                if (node.hasSubcategories) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                } else {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                }
-                                onNodeClick(node)
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics {
+                        contentDescription = "Treemap showing distribution. Drag or tap boxes for details."
+                    }
+                    .pointerInput(nodes) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                touchPoint = offset
+                                selectedNode = findNodeAt(offset)
+                            },
+                            onDrag = { change, _ ->
+                                touchPoint = change.position
+                                selectedNode = findNodeAt(change.position)
+                            },
+                            onDragEnd = {
+                                // Keep selection for tooltip
+                            },
+                            onDragCancel = {
+                                selectedNode = null
+                                touchPoint = null
                             }
-                            selectedNode = node
-                            touchPoint = offset
-                        },
-                        onLongPress = {
-                            // Consumes to prevent reordering during interaction
-                        }
-                    )
-                }
-        ) {
-            // 1. Draw Ambient Shadow (Background depth for the whole treemap)
-            drawRoundRect(
-                color = Color.Black.copy(alpha = 0.04f),
-                topLeft = Offset(-2.dp.toPx(), -2.dp.toPx()),
-                size = Size(widthPx + 4.dp.toPx(), heightPx + 4.dp.toPx()),
-                cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
-            )
-
-            layouts.forEach { (node, rect) ->
-                val isSelected = selectedNode == node
-                val cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
-                
-                // Modern Look: Precise radial gaps (spacing between rectangles)
-                val gap = 2.dp.toPx()
-                val drawRect = Rect(
-                    rect.left + gap / 2,
-                    rect.top + gap / 2,
-                    rect.right - gap / 2,
-                    rect.bottom - gap / 2
-                )
-                
-                if (drawRect.width <= 0 || drawRect.height <= 0) return@forEach
-
-                // 2. Base Segment Color
+                        )
+                    }
+                    .pointerInput(nodes) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                val node = findNodeAt(offset)
+                                if (node != null) {
+                                    if (node.hasSubcategories) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                    onNodeClick(node)
+                                }
+                                selectedNode = node
+                                touchPoint = offset
+                            },
+                            onLongPress = {
+                                // Consumes to prevent reordering during interaction
+                            }
+                        )
+                    }
+            ) {
+                // 1. Draw Ambient Shadow (Background depth for the whole treemap)
                 drawRoundRect(
-                    color = node.color,
-                    topLeft = Offset(drawRect.left, drawRect.top),
-                    size = Size(drawRect.width, drawRect.height),
-                    cornerRadius = cornerRadius
+                    color = Color.Black.copy(alpha = 0.04f),
+                    topLeft = Offset(-2.dp.toPx(), -2.dp.toPx()),
+                    size = Size(widthPx + 4.dp.toPx(), heightPx + 4.dp.toPx()),
+                    cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
                 )
-                
-                // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
-                if (drawRect.width > 20.dp.toPx() && drawRect.height > 20.dp.toPx()) {
-                    drawRoundRect(
-                        color = Color.White.copy(alpha = 0.15f),
-                        topLeft = Offset(drawRect.left + 1.dp.toPx(), drawRect.top + 1.dp.toPx()),
-                        size = Size(drawRect.width - 2.dp.toPx(), drawRect.height - 2.dp.toPx()),
-                        cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+
+                layouts.forEach { (node, rect) ->
+                    val isSelected = selectedNode == node
+                    val cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    
+                    // Modern Look: Precise radial gaps (spacing between rectangles)
+                    val gap = 2.dp.toPx()
+                    val drawRect = Rect(
+                        rect.left + gap / 2,
+                        rect.top + gap / 2,
+                        rect.right - gap / 2,
+                        rect.bottom - gap / 2
                     )
                     
-                    // Subtle Top Glow
+                    if (drawRect.width <= 0 || drawRect.height <= 0) return@forEach
+
+                    // 2. Base Segment Color
                     drawRoundRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.1f), Color.Transparent),
-                            startY = drawRect.top,
-                            endY = drawRect.top + drawRect.height * 0.4f
-                        ),
+                        color = node.color,
                         topLeft = Offset(drawRect.left, drawRect.top),
                         size = Size(drawRect.width, drawRect.height),
                         cornerRadius = cornerRadius
                     )
-                }
-                
-                // 4. Selection Highlight
-                if (isSelected) {
-                    drawRoundRect(
-                        color = Color.White.copy(alpha = 0.3f),
-                        topLeft = Offset(drawRect.left, drawRect.top),
-                        size = Size(drawRect.width, drawRect.height),
-                        cornerRadius = cornerRadius,
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
-                    )
+                    
+                    // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
+                    if (drawRect.width > 20.dp.toPx() && drawRect.height > 20.dp.toPx()) {
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.15f),
+                            topLeft = Offset(drawRect.left + 1.dp.toPx(), drawRect.top + 1.dp.toPx()),
+                            size = Size(drawRect.width - 2.dp.toPx(), drawRect.height - 2.dp.toPx()),
+                            cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                        )
+                        
+                        // Subtle Top Glow
+                        drawRoundRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.White.copy(alpha = 0.1f), Color.Transparent),
+                                startY = drawRect.top,
+                                endY = drawRect.top + drawRect.height * 0.4f
+                            ),
+                            topLeft = Offset(drawRect.left, drawRect.top),
+                            size = Size(drawRect.width, drawRect.height),
+                            cornerRadius = cornerRadius
+                        )
+                    }
+                    
+                    // 4. Selection Highlight
+                    if (isSelected) {
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.3f),
+                            topLeft = Offset(drawRect.left, drawRect.top),
+                            size = Size(drawRect.width, drawRect.height),
+                            cornerRadius = cornerRadius,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                        )
+                    }
                 }
             }
-        }
 
-        // Overlay labels for larger segments
-        if (showLabels) {
-            layouts.forEach { (node, rect) ->
-                val gap = with(density) { 2.dp.toPx() }
-                val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
-                val rectWidthDp = with(density) { drawRect.width.toDp() }
-                val rectHeightDp = with(density) { drawRect.height.toDp() }
-                
-                // Show labels if box is reasonably large
-                val showText = rectWidthDp > 40.dp && rectHeightDp > 28.dp
-                // Show only subcategory indicator if box is too small for text but large enough for icon
-                val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > 16.dp && rectHeightDp > 16.dp
+            // Dismissal layer for Tooltip
+            if (selectedNode != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                selectedNode = null
+                                touchPoint = null
+                            }
+                        }
+                )
+            }
 
-                if (showText || showOnlyIcon) {
-                    val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
-                    val labelColor = if (node.color.luminance() > 0.5f) Color.Black else Color.White
+            // Overlay labels for larger segments
+            if (showLabels) {
+                layouts.forEach { (node, rect) ->
+                    val gap = with(density) { 2.dp.toPx() }
+                    val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
+                    val rectWidthDp = with(density) { drawRect.width.toDp() }
+                    val rectHeightDp = with(density) { drawRect.height.toDp() }
+                    
+                    // Show labels if box is reasonably large
+                    val showText = rectWidthDp > 40.dp && rectHeightDp > 28.dp
+                    // Show only subcategory indicator if box is too small for text but large enough for icon
+                    val showOnlyIcon = !showText && node.hasSubcategories && rectWidthDp > 16.dp && rectHeightDp > 16.dp
 
-                    Box(
-                        modifier = Modifier
-                            .offset(x = with(density) { drawRect.left.toDp() }, y = with(density) { drawRect.top.toDp() })
-                            .size(rectWidthDp, rectHeightDp)
-                            .padding(horizontal = 6.dp, vertical = 4.dp)
-                            .clipToBounds(),
-                        contentAlignment = if (showText) Alignment.TopStart else Alignment.Center
-                    ) {
-                        if (showText) {
-                            Column(horizontalAlignment = Alignment.Start) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        node.name,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                        color = labelColor,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
-                                    if (node.hasSubcategories) {
-                                        Image(
-                                            painter = disclosurePainter,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(10.dp).padding(start = 2.dp),
-                                            colorFilter = ColorFilter.tint(iconTint)
+                    if (showText || showOnlyIcon) {
+                        val iconTint = if (node.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
+                        val labelColor = if (node.color.luminance() > 0.5f) Color.Black else Color.White
+
+                        Box(
+                            modifier = Modifier
+                                .offset(x = with(density) { drawRect.left.toDp() }, y = with(density) { drawRect.top.toDp() })
+                                .size(rectWidthDp, rectHeightDp)
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                                .clipToBounds(),
+                            contentAlignment = if (showText) Alignment.TopStart else Alignment.Center
+                        ) {
+                            if (showText) {
+                                Column(horizontalAlignment = Alignment.Start) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            node.name,
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                            color = labelColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
                                         )
+                                        if (node.hasSubcategories) {
+                                            Image(
+                                                painter = disclosurePainter,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(10.dp).padding(start = 2.dp),
+                                                colorFilter = ColorFilter.tint(iconTint)
+                                            )
+                                        }
                                     }
+                                    Text(
+                                        formatCurrencyRight(node.value, currency, precision),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
+                                        color = labelColor.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
-                                Text(
-                                    formatCurrencyRight(node.value, currency, precision),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium, fontSize = 9.sp),
-                                    color = labelColor.copy(alpha = 0.85f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                            } else {
+                                Image(
+                                    painter = disclosurePainter,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    colorFilter = ColorFilter.tint(iconTint)
                                 )
                             }
-                        } else if (showOnlyIcon) {
-                            Image(
-                                painter = disclosurePainter,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                colorFilter = ColorFilter.tint(iconTint)
-                            )
                         }
                     }
                 }
             }
-        }
 
-        // Tooltip Overlay
-        selectedNode?.let { node ->
-            touchPoint?.let { point ->
-                AeonChartInteractionPopup(
-                    name = node.name,
-                    value = node.value,
-                    color = node.color,
-                    percentageOfTotal = node.percentageOfTotal,
-                    hasSubcategories = node.hasSubcategories,
-                    subcategoryCount = node.subcategoryCount,
-                    touchPoint = point,
-                    chartWidthPx = widthPx,
-                    chartHeightPx = heightPx,
-                    density = density.density,
-                    currency = currency,
-                    precision = precision,
-                    onDrillInClick = { 
-                        selectedNode = null
-                        onDrillInClick(node) 
-                    },
-                    onNavigateToRecords = { 
-                        selectedNode = null
-                        onNavigateToRecords(node) 
-                    }
-                )
+            // Tooltip Overlay
+            selectedNode?.let { node ->
+                touchPoint?.let { point ->
+                    AeonChartInteractionPopup(
+                        name = node.name,
+                        value = node.value,
+                        color = node.color,
+                        percentageOfTotal = node.percentageOfTotal,
+                        hasSubcategories = node.hasSubcategories,
+                        subcategoryCount = node.subcategoryCount,
+                        touchPoint = point,
+                        chartWidthPx = widthPx,
+                        chartHeightPx = heightPx,
+                        density = density.density,
+                        currency = currency,
+                        precision = precision,
+                        onDrillInClick = { 
+                            selectedNode = null
+                            onDrillInClick(node) 
+                        },
+                        onNavigateToRecords = { 
+                            selectedNode = null
+                            onNavigateToRecords(node) 
+                        }
+                    )
+                }
             }
         }
     }

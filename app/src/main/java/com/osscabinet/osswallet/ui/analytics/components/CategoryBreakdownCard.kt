@@ -156,6 +156,7 @@ fun CategoryBreakdownCard(
                             
                             onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
                                 categoryIds = categoryIds,
+                                accountIds = config.filter.accountIds,
                                 startDate = config.filter.startDate,
                                 endDate = config.filter.endDate
                             ))

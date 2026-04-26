@@ -353,7 +353,10 @@ fun AddTemplateScreen(
             ) {
                 CalculatorNumpad(
                     amount = amount,
-                    onAmountChange = { amount = it },
+                    onAmountChange = { newAmount, newType -> 
+                        amount = newAmount
+                        transactionType = if (newType == "income") 1 else 0
+                    },
                     transactionType = if (isIncome) "income" else "expense",
                     decimalPrecision = decimalPrecision,
                     onDone = { isNumpadVisible = false },

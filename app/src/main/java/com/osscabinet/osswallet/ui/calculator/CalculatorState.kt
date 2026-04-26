@@ -107,11 +107,16 @@ fun calculatorReducer(
         }
 
         is CalculatorAction.AppendOperator -> {
-            if (state.tokens.isEmpty()) {
-                // Empty + Operator toggles type
+            if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
+                // Empty or just UnaryMinus + Operator toggles type
                 val newType = if (action.operator == '-') "expense" else "income"
                 val newTokens = if (newType == "expense") listOf(Token.UnaryMinus) else emptyList()
-                return state.copy(transactionType = newType, tokens = newTokens, display = if (newType == "expense") "-0" else "0")
+                return state.copy(
+                    transactionType = newType, 
+                    tokens = newTokens, 
+                    display = if (newType == "expense") "-0" else "0",
+                    isCalculated = false
+                )
             }
 
             val lastToken = state.tokens.lastOrNull()
@@ -119,6 +124,15 @@ fun calculatorReducer(
                 is Token.Operator -> state.tokens.dropLast(1) + Token.Operator(action.operator)
                 is Token.UnaryMinus -> {
                     if (action.operator == '+') emptyList() else state.tokens
+                }
+                is Token.Parenthesis -> {
+                    if (lastToken.symbol == '(' && action.operator == '-') {
+                        state.tokens + Token.UnaryMinus
+                    } else if (lastToken.symbol == '(') {
+                        state.tokens // Don't allow other operators right after (
+                    } else {
+                        state.tokens + Token.Operator(action.operator)
+                    }
                 }
                 else -> state.tokens + Token.Operator(action.operator)
             }
@@ -195,9 +209,18 @@ fun calculatorReducer(
             } else {
                 val absoluteResult = result.abs().stripTrailingZeros().toPlainString()
                 val newType = if (result.signum() < 0) "expense" else "income"
+                
+                // If the result is negative, we represent it as UnaryMinus + Number in tokens 
+                // to maintain consistent state for further operations
+                val newTokens = if (result.signum() < 0) {
+                    listOf(Token.UnaryMinus, Token.Number(absoluteResult))
+                } else {
+                    listOf(Token.Number(absoluteResult))
+                }
+
                 state.copy(
                     display = absoluteResult,
-                    tokens = listOf(Token.Number(absoluteResult)),
+                    tokens = newTokens,
                     isCalculated = true,
                     transactionType = newType,
                     ghostResult = ""

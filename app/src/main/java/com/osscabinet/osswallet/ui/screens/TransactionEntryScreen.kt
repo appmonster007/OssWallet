@@ -1128,8 +1128,11 @@ fun TransactionEntryContent(
                 ) {
                     CalculatorNumpad(
                         amount = amount,
-                        onAmountChange = { 
-                            amount = it
+                        onAmountChange = { newAmount, newType ->
+                            amount = newAmount
+                            if (transactionType != 2) { // Only sync type if not a transfer
+                                transactionType = if (newType == "income") 1 else 0
+                            }
                         },
                         transactionType = if (isIncome) "income" else "expense",
                         decimalPrecision = decimalPrecision,

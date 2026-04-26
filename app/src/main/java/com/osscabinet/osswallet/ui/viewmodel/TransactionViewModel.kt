@@ -402,18 +402,14 @@ class TransactionViewModel(
 
     // Link management methods
     fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        println("ViewModel: addTransactionLink called with txId=$transactionId, linkedId=$linkedTransactionId")
         viewModelScope.launch {
             transactionUseCases.addTransactionLink(transactionId, linkedTransactionId)
-            println("ViewModel: addTransactionLink completed")
         }
     }
 
     fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        println("ViewModel: removeTransactionLink called with txId=$transactionId, linkedId=$linkedTransactionId")
         viewModelScope.launch {
             transactionUseCases.removeTransactionLink(transactionId, linkedTransactionId)
-            println("ViewModel: removeTransactionLink completed")
         }
     }
 
@@ -428,7 +424,6 @@ class TransactionViewModel(
     }
 
     fun getLinkedTransactions(transactionId: Long): kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>> {
-        println("ViewModel: getLinkedTransactions called for txId=$transactionId")
         return transactionUseCases.getLinkedTransactions(transactionId)
     }
 }

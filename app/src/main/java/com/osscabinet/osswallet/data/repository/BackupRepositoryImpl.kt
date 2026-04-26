@@ -26,7 +26,8 @@ class BackupRepositoryImpl(
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
-    override suspend fun exportData(uri: Uri): Result<Unit> = runCatching {
+    override suspend fun exportData(uriString: String): Result<Unit> = runCatching {
+        val uri = Uri.parse(uriString)
         val backup = OssWalletBackup(
             profiles = profileDao.getAllProfilesSync().map { ProfileBackup(it.id, it.name, it.type) },
             accounts = accountDao.getAllAccountsSync().map { 
@@ -99,7 +100,8 @@ class BackupRepositoryImpl(
         }
     }
 
-    override suspend fun importData(uri: Uri): Result<Unit> = runCatching {
+    override suspend fun importData(uriString: String): Result<Unit> = runCatching {
+        val uri = Uri.parse(uriString)
         val jsonString = contentResolver.openInputStream(uri)?.use { inputStream ->
             BufferedReader(InputStreamReader(inputStream)).readText()
         } ?: throw Exception("Failed to open input stream")

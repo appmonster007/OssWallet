@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -62,7 +63,7 @@ fun AddTemplateScreen(
     var payee by remember { mutableStateOf(template?.payee ?: "") }
     var location by remember { mutableStateOf(template?.location ?: "") }
     var paymentMethod by remember { mutableStateOf(template?.paymentMethod ?: "Cash") }
-    var tags by remember { mutableStateOf(template?.tags?.split(",")?.filter { it.isNotBlank() } ?: emptyList<String>()) }
+    var tags by remember { mutableStateOf(template?.tags?.splitByComma() ?: emptyList<String>()) }
 
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
     

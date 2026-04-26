@@ -49,6 +49,7 @@ import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
@@ -359,7 +360,7 @@ fun TransactionEntryContent(
                     selectedTemplateName = template.name
                     template.note?.let { note = it }
                     if (template.tags.isNotEmpty()) {
-                        selectedTags = template.tags.split(",").filter { it.isNotBlank() }
+                        selectedTags = template.tags.splitByComma()
                     }
                     template.accountId?.let { id ->
                         val acc = accounts.find { it.id == id }

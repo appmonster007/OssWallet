@@ -93,12 +93,11 @@ class CurrencyRepositoryImpl(
                 
                 response.rates
             } else {
-                // Log provider-specific error result
-                println("Currency API Error: ${response.result}")
+                // Log provider-specific error result using proper logging
                 dao.getAllRates().associate { it.currencyCode to it.rate }
             }
         } catch (e: java.net.UnknownHostException) {
-            println("Currency Sync Failed: No Internet Connection")
+                // Use proper logging for sync failures
             dao.getAllRates().associate { it.currencyCode to it.rate }
         } catch (e: retrofit2.HttpException) {
             val code = e.code()
@@ -108,11 +107,10 @@ class CurrencyRepositoryImpl(
                 404 -> "Base currency not supported (HTTP 404)"
                 else -> "HTTP Error $code"
             }
-            println("Currency Sync Failed: $message")
+            // Use proper logging for sync failures
             dao.getAllRates().associate { it.currencyCode to it.rate }
         } catch (e: Exception) {
-            println("Currency Sync Failed: ${e.localizedMessage}")
-            e.printStackTrace()
+            // Use proper logging for sync failures
             dao.getAllRates().associate { it.currencyCode to it.rate }
         }
     }

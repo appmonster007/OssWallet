@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
@@ -60,12 +61,12 @@ class TransactionRepositoryImpl(
             args.add(filter.endDate)
         }
         if (filter.accountIds.isNotEmpty()) {
-            val placeholders = filter.accountIds.joinToString(",") { "?" }
+            val placeholders = filter.accountIds.joinByComma { "?" }
             queryBuilder.append(" AND accountId IN ($placeholders)")
             args.addAll(filter.accountIds)
         }
         if (filter.categoryIds.isNotEmpty()) {
-            val placeholders = filter.categoryIds.joinToString(",") { "?" }
+            val placeholders = filter.categoryIds.joinByComma { "?" }
             queryBuilder.append(" AND categoryId IN ($placeholders)")
             args.addAll(filter.categoryIds)
         }
@@ -82,7 +83,7 @@ class TransactionRepositoryImpl(
             args.add(filter.maxAmount)
         }
         if (filter.paymentMethods.isNotEmpty()) {
-            val placeholders = filter.paymentMethods.joinToString(",") { "?" }
+            val placeholders = filter.paymentMethods.joinByComma { "?" }
             queryBuilder.append(" AND paymentMethod IN ($placeholders)")
             args.addAll(filter.paymentMethods)
         }
@@ -100,7 +101,7 @@ class TransactionRepositoryImpl(
             args.add(filter.warrantyExpirationEnd)
         }
         if (filter.currencies.isNotEmpty()) {
-            val placeholders = filter.currencies.joinToString(",") { "?" }
+            val placeholders = filter.currencies.joinByComma { "?" }
             queryBuilder.append(" AND currency IN ($placeholders)")
             args.addAll(filter.currencies)
         }
@@ -115,7 +116,7 @@ class TransactionRepositoryImpl(
             args.add("%${filter.queryPayee}%")
         }
         if (filter.statuses.isNotEmpty()) {
-            val placeholders = filter.statuses.joinToString(",") { "?" }
+            val placeholders = filter.statuses.joinByComma { "?" }
             queryBuilder.append(" AND status IN ($placeholders)")
             args.addAll(filter.statuses.map { it.name })
         }
@@ -234,9 +235,7 @@ class TransactionRepositoryImpl(
     }
 
     override fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
-        println("Repository: getLinkedTransactions called for txId=$transactionId")
         return transactionLinkDao.getLinkedTransactions(transactionId).mapToDomain { entity ->
-            println("Repository: Found linked transaction for txId=$transactionId")
             entity.toDomain()
         }
     }

@@ -17,6 +17,9 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.dashboard.components.*
 import com.osscabinet.ossWallet.ui.dashboard.model.*
 import com.osscabinet.ossWallet.domain.formatter.TimelineFormatter
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
+import com.osscabinet.ossWallet.domain.util.toEnum
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.domain.service.CardComputationService
@@ -70,7 +73,7 @@ class DashboardViewModel(
                 val savedOrder = settings.layout.sectionOrder
                 if (savedOrder != null) {
                     try {
-                        val sections = savedOrder.split(",").map { DashboardSection.valueOf(it) }
+                        val sections = savedOrder.splitByComma().map { it.toEnum<DashboardSection>() }
                         _sectionOrder.value = sections
                     } catch (e: Exception) {
                         // Keep default order on error
@@ -83,7 +86,7 @@ class DashboardViewModel(
     fun updateSectionOrder(newOrder: List<DashboardSection>) {
         _sectionOrder.value = newOrder
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinToString(",") { it.name })) }
+            settingsDataStore.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinByComma { it.name })) }
         }
     }
 

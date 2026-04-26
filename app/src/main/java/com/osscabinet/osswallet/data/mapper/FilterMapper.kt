@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
 
 /**
  * Mappers for Filter data.
@@ -14,19 +16,19 @@ fun FilterEntity.toDomain(): TransactionFilter {
         isNoteRegex = isNoteRegex,
         queryPayee = queryPayee,
         isPayeeRegex = isPayeeRegex,
-        categoryIds = if (categoryIds.isEmpty()) emptyList() else categoryIds.split(",").map { it.toLong() },
-        accountIds = if (accountIds.isEmpty()) emptyList() else accountIds.split(","),
+        categoryIds = categoryIds.splitByComma().map { it.toLong() },
+        accountIds = accountIds.splitByComma(),
         startDate = startDate,
         endDate = endDate,
-        paymentMethods = if (paymentMethods.isEmpty()) emptyList() else paymentMethods.split(","),
+        paymentMethods = paymentMethods.splitByComma(),
         hasWarranty = hasWarranty,
         warrantyExpirationStart = warrantyExpirationStart,
         warrantyExpirationEnd = warrantyExpirationEnd,
         minAmount = minAmount,
         maxAmount = maxAmount,
         transactionType = transactionType,
-        currencies = if (currencies.isEmpty()) emptyList() else currencies.split(","),
-        statuses = if (statuses.isEmpty()) emptyList() else statuses.split(",").map { TransactionStatus.fromString(it) }
+        currencies = currencies.splitByComma(),
+        statuses = statuses.splitByComma().map { TransactionStatus.fromString(it) }
     )
 }
 
@@ -39,18 +41,18 @@ fun TransactionFilter.toEntity(name: String, id: Long = 0): FilterEntity {
         isNoteRegex = isNoteRegex,
         queryPayee = queryPayee,
         isPayeeRegex = isPayeeRegex,
-        categoryIds = categoryIds.joinToString(","),
-        accountIds = accountIds.joinToString(","),
+        categoryIds = categoryIds.joinByComma(),
+        accountIds = accountIds.joinByComma(),
         startDate = startDate,
         endDate = endDate,
-        paymentMethods = paymentMethods.joinToString(","),
+        paymentMethods = paymentMethods.joinByComma(),
         hasWarranty = hasWarranty,
         warrantyExpirationStart = warrantyExpirationStart,
         warrantyExpirationEnd = warrantyExpirationEnd,
         minAmount = minAmount,
         maxAmount = maxAmount,
         transactionType = transactionType,
-        currencies = currencies.joinToString(","),
-        statuses = statuses.joinToString(",") { it.name }
+        currencies = currencies.joinByComma(),
+        statuses = statuses.joinByComma { it.name }
     )
 }

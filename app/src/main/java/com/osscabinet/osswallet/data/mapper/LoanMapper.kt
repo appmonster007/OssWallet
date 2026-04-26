@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.util.toEnum
 
 /**
  * Mappers for Loan data.
@@ -14,7 +15,7 @@ fun LoanEntity.toDomain() = Loan(
     interestRate = interestRate,
     dueDate = dueDate,
     repayments = repayments,
-    type = LoanType.valueOf(type),
+    type = type.toEnum<LoanType>(),
     currency = currency
 )
 

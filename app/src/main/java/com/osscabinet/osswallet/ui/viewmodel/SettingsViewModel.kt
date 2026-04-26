@@ -214,13 +214,13 @@ class SettingsViewModel(
 
     fun exportBackup(uri: Uri) {
         viewModelScope.launch {
-            backupRepository.exportData(uri)
+            backupRepository.exportData(uri.toString())
         }
     }
 
     fun importBackup(uri: Uri) {
         viewModelScope.launch {
-            backupRepository.importData(uri)
+            backupRepository.importData(uri.toString())
         }
     }
 }

@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
@@ -416,14 +417,13 @@ fun DashboardContent(
                     ) { cardConfig, isDragging, dragModifier ->
             val cardWithCallbacks = when (cardConfig) {
                 is NetWorthCardConfig -> {
+                    val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
                     val netWorth = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         dashboardViewModel.computeNetWorth(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
+                            context = computationContext
                         )
                     }
 
@@ -431,9 +431,7 @@ fun DashboardContent(
                         dashboardViewModel.computeCashFlow(
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
+                            context = computationContext
                         )
                     }
 
@@ -470,14 +468,13 @@ fun DashboardContent(
                     )
                 }
                 is CurrencyBalancesCardConfig -> {
+                    val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
                     val currencyTotals = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         dashboardViewModel.computeCurrencyAggregation(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
+                            context = computationContext
                         )
                     }
 
@@ -505,13 +502,12 @@ fun DashboardContent(
                     )
                 }
                 is CashFlowCardConfig -> {
+                    val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
                     val cashFlowResult = remember(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         dashboardViewModel.computeCashFlow(
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
+                            context = computationContext
                         )
                     }
 
@@ -538,14 +534,13 @@ fun DashboardContent(
                     )
                 }
                 is AccountsCardConfig -> {
+                    val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
                     val (updatedAccounts, accountStats) = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
                         dashboardViewModel.computeAccountStats(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
+                            context = computationContext
                         )
                     }
 

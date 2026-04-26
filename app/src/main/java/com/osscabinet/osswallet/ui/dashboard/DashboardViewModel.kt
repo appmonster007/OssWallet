@@ -17,7 +17,6 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.dashboard.components.*
 import com.osscabinet.ossWallet.ui.dashboard.model.*
 import com.osscabinet.ossWallet.domain.formatter.TimelineFormatter
-import com.osscabinet.ossWallet.domain.formatter.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.domain.service.CardComputationService
@@ -313,16 +312,12 @@ class DashboardViewModel(
         accounts: List<Account>,
         transactions: List<Transaction>,
         timelineRange: TimelineRange,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): BigDecimal {
         return financialUseCases.calculateNetWorth(
             accounts = accounts,
             allTransactions = transactions,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            context = context,
             timelineRange = timelineRange
         )
     }
@@ -330,16 +325,12 @@ class DashboardViewModel(
     fun computeCashFlow(
         transactions: List<Transaction>,
         timelineRange: TimelineRange,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowResult {
         return financialUseCases.calculateCashFlow(
             allTransactions = transactions,
             timelineRange = timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            context = context
         )
     }
 
@@ -347,17 +338,13 @@ class DashboardViewModel(
         accounts: List<Account>,
         transactions: List<Transaction>,
         timelineRange: TimelineRange,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CurrencyAggregationItem> {
         return financialUseCases.getCurrencyAggregation(
             accounts = accounts,
             allTransactions = transactions,
             timelineRange = timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            context = context
         )
     }
 
@@ -365,24 +352,19 @@ class DashboardViewModel(
         accounts: List<Account>,
         transactions: List<Transaction>,
         timelineRange: TimelineRange,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
         val accountStats = financialUseCases.getAccountSummaries(
             accounts = accounts,
             allTransactions = transactions,
             timelineRange = timelineRange,
-            baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
-            precision = precision
+            context = context
         )
         // Update accounts with timeline-filtered balances
         val updatedAccounts = financialUseCases.getTotalBalances(
             accounts = accounts,
             allTransactions = transactions,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            context = context,
             timelineRange = timelineRange
         )
         return Pair(updatedAccounts, accountStats)
@@ -391,15 +373,13 @@ class DashboardViewModel(
     fun getTotalBalances(
         accounts: List<Account>,
         transactions: List<Transaction>,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int,
+        context: ComputationContext,
         timelineRange: TimelineRange
     ): List<Account> {
         return financialUseCases.getTotalBalances(
             accounts = accounts,
             allTransactions = transactions,
-            exchangeRates = exchangeRates,
-            precision = precision,
+            context = context,
             timelineRange = timelineRange
         )
     }
@@ -458,39 +438,33 @@ class DashboardViewModel(
 
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
+                val computationContext = ComputationContext(baseCurrency, rates, precision)
 
                 val globalCurrencyTotals = financialUseCases.getCurrencyAggregation(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val accountStats = financialUseCases.getAccountSummaries(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = dashboardSettings.accountsSection.timelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val updatedAccounts = financialUseCases.getTotalBalances(
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    exchangeRates = rates,
-                    precision = precision,
+                    context = computationContext,
                     timelineRange = dashboardSettings.accountsSection.timelineRange
                 )
 
                 val netWorth = financialUseCases.calculateNetWorth(
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision,
+                    context = computationContext,
                     timelineRange = dashboardSettings.netWorthSection.timelineRange
                 )
 
@@ -502,9 +476,7 @@ class DashboardViewModel(
                 val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = cashFlowTimelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 // Use cashFlowResult for Net Worth card if timeline ranges match, otherwise calculate separately
@@ -514,9 +486,7 @@ class DashboardViewModel(
                     financialUseCases.calculateCashFlow(
                         allTransactions = allTransactions,
                         timelineRange = netWorthTimelineRange,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = rates,
-                        precision = precision
+                        context = computationContext
                     )
                 }
 

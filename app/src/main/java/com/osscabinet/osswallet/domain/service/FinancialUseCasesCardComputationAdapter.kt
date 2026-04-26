@@ -31,17 +31,13 @@ class FinancialUseCasesCardComputationAdapter(
         val netWorth = financialUseCases.calculateNetWorth(
             accounts = accounts,
             allTransactions = allTransactions,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision,
+            context = context,
             timelineRange = config.timelineRange
         )
         val cashFlow = financialUseCases.calculateCashFlow(
             allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
         return Pair(netWorth, cashFlow)
     }
@@ -56,9 +52,7 @@ class FinancialUseCasesCardComputationAdapter(
             accounts = accounts,
             allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
     }
 
@@ -70,9 +64,7 @@ class FinancialUseCasesCardComputationAdapter(
         return financialUseCases.calculateCashFlow(
             allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
     }
 
@@ -86,15 +78,12 @@ class FinancialUseCasesCardComputationAdapter(
             accounts = accounts,
             allTransactions = allTransactions,
             timelineRange = config.timelineRange,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
         val updatedAccounts = financialUseCases.getTotalBalances(
             accounts = accounts,
             allTransactions = allTransactions,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision,
+            context = context,
             timelineRange = config.timelineRange
         )
         return Pair(updatedAccounts, accountStats)

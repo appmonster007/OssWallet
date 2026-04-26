@@ -215,7 +215,7 @@ fun EditBudgetScreen(
                 CalculatorNumpad(
                     amount = amount,
                     onAmountChange = { amount = it },
-                    onTransactionTypeChange = { /* Not needed for budgets */ },
+                    transactionType = "income", // Budgets are always positive
                     decimalPrecision = decimalPrecision,
                     onDone = { isNumpadVisible = false },
                     modifier = Modifier.padding(8.dp)

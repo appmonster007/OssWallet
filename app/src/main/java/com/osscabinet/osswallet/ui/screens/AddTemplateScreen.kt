@@ -354,7 +354,7 @@ fun AddTemplateScreen(
                 CalculatorNumpad(
                     amount = amount,
                     onAmountChange = { amount = it },
-                    onTransactionTypeChange = { /* Not needed for templates */ },
+                    transactionType = if (isIncome) "income" else "expense",
                     decimalPrecision = decimalPrecision,
                     onDone = { isNumpadVisible = false },
                     modifier = Modifier.padding(8.dp)

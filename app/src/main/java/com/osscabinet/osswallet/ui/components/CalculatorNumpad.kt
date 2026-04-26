@@ -33,7 +33,7 @@ import java.math.BigDecimal
 fun CalculatorNumpad(
     amount: String,
     onAmountChange: (String) -> Unit,
-    onTransactionTypeChange: ((String) -> Unit)? = null,
+    transactionType: String = "income", // "income", "expense", or "transfer"
     decimalPrecision: Int = 2,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -41,23 +41,20 @@ fun CalculatorNumpad(
     var state by remember { mutableStateOf(CalculatorState(display = amount)) }
     
     // Update display when amount changes from outside
-    LaunchedEffect(amount) {
+    LaunchedEffect(amount, transactionType) {
         if (!state.isCalculated) {
-            state = state.copy(display = amount)
+            // Parse the incoming amount to get the absolute value
+            val absoluteAmount = amount.toBigDecimalOrNull()?.abs()?.toPlainString() ?: amount
+            state = state.copy(display = absoluteAmount)
         }
     }
     
     fun handleAction(action: CalculatorAction) {
         state = calculatorReducer(state, action)
         
-        // Update parent component with current display value
+        // Update parent component with current display value (always positive internally)
         if (state.display != "Error") {
             onAmountChange(state.display)
-            
-            // Auto-toggling transaction type based on sign
-            onTransactionTypeChange?.invoke(
-                if (state.display.toBigDecimalOrNull()?.signum() ?: 0 >= 0) "income" else "expense"
-            )
         }
     }
     
@@ -71,6 +68,7 @@ fun CalculatorNumpad(
         CalculatorDisplay(
             expression = state.expression,
             result = state.display,
+            transactionType = transactionType,
             isError = state.isError,
             onSave = {
                 onAmountChange(state.display)
@@ -101,9 +99,17 @@ fun CalculatorNumpad(
 private fun CalculatorDisplay(
     expression: String,
     result: String,
+    transactionType: String,
     isError: Boolean,
     onSave: () -> Unit
 ) {
+    // Format result with sign based on transaction type
+    val displayResult = if (transactionType == "expense" && result.toBigDecimalOrNull()?.signum() ?: 0 >= 0) {
+        "-$result"
+    } else {
+        result
+    }
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -125,7 +131,7 @@ private fun CalculatorDisplay(
             }
             // Result line (larger)
             Text(
-                text = result,
+                text = displayResult,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,

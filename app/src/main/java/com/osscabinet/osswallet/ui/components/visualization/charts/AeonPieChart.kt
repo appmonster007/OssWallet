@@ -124,174 +124,189 @@ fun AeonPieChart(
             return null
         }
 
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .semantics {
-                    contentDescription = "Pie chart showing ${slices.joinToString { it.label }}. Drag or tap slices for details."
-                }
-                .pointerInput(slices) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            touchPoint = offset
-                            selectedSlice = findSliceAt(offset)
-                        },
-                        onDrag = { change, _ ->
-                            touchPoint = change.position
-                            selectedSlice = findSliceAt(change.position)
-                        },
-                        onDragEnd = { 
-                            selectedSlice = null
-                            touchPoint = null
-                        },
-                        onDragCancel = { 
-                            selectedSlice = null
-                            touchPoint = null
-                        }
-                    )
-                }
-                .pointerInput(slices) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            val slice = findSliceAt(offset)
-                            if (slice != null) {
-                                if (slice.hasSubcategories) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                } else {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                }
-                                onSliceClick(slice)
-                            }
-                            selectedSlice = slice
-                            touchPoint = offset
-                        },
-                        onLongPress = {
-                            // Consumes
-                        }
-                    )
-                }
-        ) {
-            var currentAngle = 0f
-            
-            // 1. Draw Ambient Shadow Ring (Background depth)
-            if (isDonut) {
-                drawCircle(
-                    color = Color.Black.copy(alpha = 0.05f),
-                    radius = radius + 4.dp.toPx(),
-                    center = center,
-                    style = Stroke(width = radius * 0.45f)
-                )
-            }
-
-            slices.forEach { slice ->
-                val sliceSweep = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
-                val isSelected = selectedSlice == slice
-                
-                // Modern Look: Precise radial gaps
-                val gapAngle = if (sliceSweep < 1f) 0.1f else 1.5f
-                val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
-                
-                val explodedRadius = if (isSelected) 14.dp.toPx() else 0f
-                val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
-                val offset = Offset(
-                    cos(midAngle.toDouble()).toFloat() * explodedRadius,
-                    sin(midAngle.toDouble()).toFloat() * explodedRadius
-                )
-
-                // 2. Draw Main Segment
-                drawArc(
-                    color = slice.color,
-                    startAngle = currentAngle + (gapAngle / 2),
-                    sweepAngle = sweepAngle,
-                    useCenter = !isDonut,
-                    topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
-                    size = Size(radius * 2, radius * 2),
-                    style = if (isDonut) {
-                        Stroke(width = radius * 0.38f, cap = StrokeCap.Butt)
-                    } else {
-                        androidx.compose.ui.graphics.drawscope.Fill
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics {
+                        contentDescription = "Pie chart showing ${slices.joinToString { it.label }}. Drag or tap slices for details."
                     }
-                )
-
-                // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
-                if (isDonut && sliceSweep > 5f) {
-                    val highlightWidth = 3.dp.toPx()
-                    drawArc(
-                        color = Color.White.copy(alpha = 0.25f),
-                        startAngle = currentAngle + (gapAngle / 2),
-                        sweepAngle = sweepAngle,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius + offset.x + highlightWidth, center.y - radius + offset.y + highlightWidth),
-                        size = Size((radius - highlightWidth) * 2, (radius - highlightWidth) * 2),
-                        style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Butt)
+                    .pointerInput(slices) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                touchPoint = offset
+                                selectedSlice = findSliceAt(offset)
+                            },
+                            onDrag = { change, _ ->
+                                touchPoint = change.position
+                                selectedSlice = findSliceAt(change.position)
+                            },
+                            onDragEnd = { 
+                                // Keep selection for tooltip
+                            },
+                            onDragCancel = { 
+                                selectedSlice = null
+                                touchPoint = null
+                            }
+                        )
+                    }
+                    .pointerInput(slices) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                val slice = findSliceAt(offset)
+                                if (slice != null) {
+                                    if (slice.hasSubcategories) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                    onSliceClick(slice)
+                                }
+                                selectedSlice = slice
+                                touchPoint = offset
+                            },
+                            onLongPress = {
+                                // Consumes
+                            }
+                        )
+                    }
+            ) {
+                var currentAngle = 0f
+                
+                // 1. Draw Ambient Shadow Ring (Background depth)
+                if (isDonut) {
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.05f),
+                        radius = radius + 4.dp.toPx(),
+                        center = center,
+                        style = Stroke(width = radius * 0.45f)
                     )
                 }
 
-                // 4. Selection Highlight
-                if (isSelected) {
+                slices.forEach { slice ->
+                    val sliceSweep = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                    val isSelected = selectedSlice == slice
+                    
+                    // Modern Look: Precise radial gaps
+                    val gapAngle = if (sliceSweep < 1f) 0.1f else 1.5f
+                    val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
+                    
+                    val explodedRadius = if (isSelected) 14.dp.toPx() else 0f
+                    val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
+                    val offset = Offset(
+                        cos(midAngle.toDouble()).toFloat() * explodedRadius,
+                        sin(midAngle.toDouble()).toFloat() * explodedRadius
+                    )
+
+                    // 2. Draw Main Segment
                     drawArc(
-                        color = Color.White.copy(alpha = 0.3f),
+                        color = slice.color,
                         startAngle = currentAngle + (gapAngle / 2),
                         sweepAngle = sweepAngle,
                         useCenter = !isDonut,
                         topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
                         size = Size(radius * 2, radius * 2),
                         style = if (isDonut) {
-                            Stroke(width = radius * 0.42f, cap = StrokeCap.Butt)
+                            Stroke(width = radius * 0.38f, cap = StrokeCap.Butt)
                         } else {
-                            Stroke(width = 4.dp.toPx())
+                            androidx.compose.ui.graphics.drawscope.Fill
+                        }
+                    )
+
+                    // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
+                    if (isDonut && sliceSweep > 5f) {
+                        val highlightWidth = 3.dp.toPx()
+                        drawArc(
+                            color = Color.White.copy(alpha = 0.25f),
+                            startAngle = currentAngle + (gapAngle / 2),
+                            sweepAngle = sweepAngle,
+                            useCenter = false,
+                            topLeft = Offset(center.x - radius + offset.x + highlightWidth, center.y - radius + offset.y + highlightWidth),
+                            size = Size((radius - highlightWidth) * 2, (radius - highlightWidth) * 2),
+                            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Butt)
+                        )
+                    }
+
+                    // 4. Selection Highlight
+                    if (isSelected) {
+                        drawArc(
+                            color = Color.White.copy(alpha = 0.3f),
+                            startAngle = currentAngle + (gapAngle / 2),
+                            sweepAngle = sweepAngle,
+                            useCenter = !isDonut,
+                            topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
+                            size = Size(radius * 2, radius * 2),
+                            style = if (isDonut) {
+                                Stroke(width = radius * 0.42f, cap = StrokeCap.Butt)
+                            } else {
+                                Stroke(width = 4.dp.toPx())
+                            }
+                        )
+                    }
+
+                    // Visual marker for subcategories (Modern Radial Tick)
+                    if (slice.hasSubcategories && sliceSweep > 10f) {
+                        val tickRadius = radius * 1.05f
+                        val tickLength = 6.dp.toPx()
+                        
+                        val startX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius) + offset.x
+                        val startY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius) + offset.y
+                        val endX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.x
+                        val endY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.y
+                        
+                        drawLine(
+                            color = slice.color.copy(alpha = 0.8f),
+                            start = Offset(startX, startY),
+                            end = Offset(endX, endY),
+                            strokeWidth = 2.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
+                    
+                    currentAngle += sliceSweep
+                }
+            }
+
+            // Dismissal layer for Tooltip
+            if (selectedSlice != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                selectedSlice = null
+                                touchPoint = null
+                            }
+                        }
+                )
+            }
+
+            // Tooltip Overlay
+            selectedSlice?.let { slice ->
+                touchPoint?.let { point ->
+                    AeonChartInteractionPopup(
+                        name = slice.label,
+                        value = slice.value,
+                        color = slice.color,
+                        percentageOfTotal = slice.percentageOfTotal,
+                        hasSubcategories = slice.hasSubcategories,
+                        subcategoryCount = slice.subcategoryCount,
+                        touchPoint = point,
+                        chartWidthPx = widthPx,
+                        chartHeightPx = heightPx,
+                        density = density.density,
+                        currency = currency,
+                        precision = precision,
+                        onDrillInClick = { 
+                            selectedSlice = null
+                            onDrillInClick(slice) 
+                        },
+                        onNavigateToRecords = { 
+                            selectedSlice = null
+                            onNavigateToRecords(slice) 
                         }
                     )
                 }
-
-                // Visual marker for subcategories (Modern Radial Tick)
-                if (slice.hasSubcategories && sliceSweep > 10f) {
-                    val tickRadius = radius * 1.05f
-                    val tickLength = 6.dp.toPx()
-                    
-                    val startX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius) + offset.x
-                    val startY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius) + offset.y
-                    val endX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.x
-                    val endY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.y
-                    
-                    drawLine(
-                        color = slice.color.copy(alpha = 0.8f),
-                        start = Offset(startX, startY),
-                        end = Offset(endX, endY),
-                        strokeWidth = 2.dp.toPx(),
-                        cap = StrokeCap.Round
-                    )
-                }
-                
-                currentAngle += sliceSweep
-            }
-        }
-
-        // Tooltip Overlay
-        selectedSlice?.let { slice ->
-            touchPoint?.let { point ->
-                AeonChartInteractionPopup(
-                    name = slice.label,
-                    value = slice.value,
-                    color = slice.color,
-                    percentageOfTotal = slice.percentageOfTotal,
-                    hasSubcategories = slice.hasSubcategories,
-                    subcategoryCount = slice.subcategoryCount,
-                    touchPoint = point,
-                    chartWidthPx = widthPx,
-                    chartHeightPx = heightPx,
-                    density = density.density,
-                    currency = currency,
-                    precision = precision,
-                    onDrillInClick = { 
-                        selectedSlice = null
-                        onDrillInClick(slice) 
-                    },
-                    onNavigateToRecords = { 
-                        selectedSlice = null
-                        onNavigateToRecords(slice) 
-                    }
-                )
             }
         }
     }

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.util.CachedCardData
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -12,7 +14,6 @@ import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
-import com.osscabinet.ossWallet.ui.viewmodel.CachedCardData
 import com.osscabinet.ossWallet.ui.components.cards.computeNetWorth
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
@@ -96,9 +97,7 @@ class AccountsViewViewModel(
                 accounts = accounts,
                 transactions = transactions,
                 engine = financialUseCasesCardComputationAdapter,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }
@@ -117,9 +116,7 @@ class AccountsViewViewModel(
                 accounts = accounts,
                 transactions = transactions,
                 engine = financialUseCasesCardComputationAdapter,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }
@@ -136,9 +133,7 @@ class AccountsViewViewModel(
             cardConfig.computeCashFlow(
                 transactions = transactions,
                 engine = financialUseCasesCardComputationAdapter,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }
@@ -157,9 +152,7 @@ class AccountsViewViewModel(
                 accounts = accounts,
                 transactions = transactions,
                 engine = cardComputationService,
-                baseCurrency = baseCurrency,
-                exchangeRates = exchangeRates,
-                precision = precision
+                context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
     }

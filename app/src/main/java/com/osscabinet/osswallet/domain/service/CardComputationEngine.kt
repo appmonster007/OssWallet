@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import java.math.BigDecimal
 
 /**
@@ -29,9 +30,7 @@ interface CardComputationEngine {
         config: NetWorthCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): Pair<BigDecimal, CashFlowResult>
     
     /**
@@ -42,9 +41,7 @@ interface CardComputationEngine {
         config: CurrencyBalancesCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): List<CurrencyAggregationItem>
     
     /**
@@ -54,9 +51,7 @@ interface CardComputationEngine {
     suspend fun computeCashFlow(
         config: CashFlowCardConfig,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): CashFlowResult
     
     /**
@@ -67,8 +62,6 @@ interface CardComputationEngine {
         config: AccountsCardConfig,
         accounts: List<Account>,
         allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
+        context: ComputationContext
     ): Pair<List<Account>, Map<String, AccountSummaryItem>>
 }

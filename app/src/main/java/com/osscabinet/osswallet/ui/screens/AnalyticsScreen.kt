@@ -143,10 +143,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryBreakdownForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -170,10 +167,7 @@ fun AnalyticsScreen(
                                     value = viewModel.computeTimelineTrajectoryForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
-                                        accounts = uiState.accounts,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        accounts = uiState.accounts
                                     )
                                 }
                                 CardWithCallbacks(
@@ -196,10 +190,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryExpenseTreemapForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -222,10 +213,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<IncomeExpensesSummaryData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeIncomeExpensesSummaryForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -254,10 +242,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<PeriodComparisonData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePeriodComparisonForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -285,10 +270,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<CashFlowTrendData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowTrendForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -314,10 +296,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<CashFlowProgressData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowProgressForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -346,10 +325,7 @@ fun AnalyticsScreen(
                                     value = viewModel.computeBalanceForecastForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
-                                        accounts = uiState.accounts,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        accounts = uiState.accounts
                                     )
                                 }
                                 CardWithCallbacks(
@@ -377,10 +353,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<PlannedPaymentsData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePlannedPaymentsForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -408,10 +381,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<IncomeExpensesBookData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeIncomeExpensesBookForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -441,10 +411,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<CashFlowTableData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCashFlowTableForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -479,10 +446,7 @@ fun AnalyticsScreen(
                                 val cardData by produceState<PlannedPaymentsTimelineData?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computePlannedPaymentsTimelineForCard(
                                         cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        allTransactions = uiState.allTransactions
                                     )
                                 }
                                 CardWithCallbacks(
@@ -511,10 +475,7 @@ fun AnalyticsScreen(
                                     value = viewModel.computeBalanceByAccountsForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
-                                        accounts = uiState.accounts,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        accounts = uiState.accounts
                                     )
                                 }
                                 CardWithCallbacks(
@@ -543,10 +504,7 @@ fun AnalyticsScreen(
                                     value = viewModel.computeBalanceTrendForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
-                                        accounts = uiState.accounts,
-                                        baseCurrency = uiState.selectedCurrency,
-                                        exchangeRates = uiState.exchangeRates,
-                                        precision = decimalPrecision
+                                        accounts = uiState.accounts
                                     )
                                 }
                                 CardWithCallbacks(

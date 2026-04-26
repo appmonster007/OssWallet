@@ -35,6 +35,28 @@ fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
     return format.format(amount)
 }
 
+/**
+ * Shortens large numbers for UI display (e.g., 1000 -> 1K, 1000000 -> 1M)
+ */
+fun formatShortNumber(value: BigDecimal): String {
+    val absValue = value.abs()
+    return when {
+        absValue >= BigDecimal("1000000000") -> {
+            val short = value.divide(BigDecimal("1000000000"), 1, RoundingMode.HALF_UP)
+            "${short.stripTrailingZeros().toPlainString()}B"
+        }
+        absValue >= BigDecimal("1000000") -> {
+            val short = value.divide(BigDecimal("1000000"), 1, RoundingMode.HALF_UP)
+            "${short.stripTrailingZeros().toPlainString()}M"
+        }
+        absValue >= BigDecimal("1000") -> {
+            val short = value.divide(BigDecimal("1000"), 1, RoundingMode.HALF_UP)
+            "${short.stripTrailingZeros().toPlainString()}K"
+        }
+        else -> value.setScale(0, RoundingMode.HALF_UP).toString()
+    }
+}
+
 fun getCurrencySymbol(currencyCode: String?): String {
     if (currencyCode.isNullOrBlank()) return ""
     return try {

@@ -4,8 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.automirrored.rounded.Backspace
-import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,13 +31,14 @@ import java.math.BigDecimal
 @Composable
 fun CalculatorNumpad(
     amount: String,
-    onAmountChange: (String, String) -> Unit, // Updated to pass both amount and type
+    onAmountChange: (String, String) -> Unit,
     transactionType: String = "income",
     decimalPrecision: Int = 2,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var state by remember { mutableStateOf(CalculatorState(transactionType = transactionType)) }
+    var showHistory by remember { mutableStateOf(false) }
     
     val evaluator = remember(decimalPrecision) { ExpressionEvaluator(decimalPrecision) }
     
@@ -65,29 +69,43 @@ fun CalculatorNumpad(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Display area
-        CalculatorDisplay(
-            expression = state.displayExpression,
-            result = state.display,
-            ghostResult = state.ghostResult,
-            transactionType = state.transactionType,
-            isError = state.isError,
-            onSave = {
-                val finalState = if (!state.isCalculated) {
-                    calculatorReducer(state, CalculatorAction.Equals, evaluator)
-                } else state
-                
-                state = finalState
-                if (!finalState.isError) {
-                    onAmountChange(finalState.display, finalState.transactionType)
-                    onDone()
+        // Display area with History Toggle
+        Box(modifier = Modifier.fillMaxWidth()) {
+            CalculatorDisplay(
+                expression = state.displayExpression,
+                result = state.display,
+                ghostResult = state.ghostResult,
+                transactionType = state.transactionType,
+                isError = state.isError,
+                onSave = {
+                    val finalState = if (!state.isCalculated) {
+                        calculatorReducer(state, CalculatorAction.Equals, evaluator)
+                    } else state
+                    
+                    state = finalState
+                    if (!finalState.isError) {
+                        onAmountChange(finalState.display, finalState.transactionType)
+                        onDone()
+                    }
                 }
+            )
+            
+            IconButton(
+                onClick = { showHistory = true },
+                modifier = Modifier.align(Alignment.TopStart).offset(y = (-8).dp)
+            ) {
+                Icon(
+                    Icons.Rounded.History,
+                    contentDescription = "Show History",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-        )
+        }
         
-        // Keys
+        // Keys - Google Calculator layout with reverted aesthetics
         CalculatorKeys(
             onNumberPress = { handleAction(CalculatorAction.AppendNumber(it)) },
             onOperatorPress = { handleAction(CalculatorAction.AppendOperator(it)) },
@@ -101,6 +119,18 @@ fun CalculatorNumpad(
                 }
             },
             onPercentPress = { handleAction(CalculatorAction.Percent) }
+        )
+    }
+
+    if (showHistory) {
+        CalculatorHistorySheet(
+            history = state.history,
+            onItemSelect = {
+                handleAction(CalculatorAction.LoadFromHistory(it))
+                showHistory = false
+            },
+            onClearHistory = { handleAction(CalculatorAction.ClearHistory) },
+            onDismiss = { showHistory = false }
         )
     }
 }
@@ -241,26 +271,25 @@ private fun CalculatorKey(
     isAccent: Boolean = false
 ) {
     val backgroundColor = when {
-        isAccent -> MaterialTheme.colorScheme.primary
-        isOperator -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
-        isSpecial -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
-        else -> MaterialTheme.colorScheme.surfaceContainerLow
+        isAccent -> MaterialTheme.colorScheme.primaryContainer
+        isOperator -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        isSpecial -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     }
     
     val textColor = when {
-        isAccent -> MaterialTheme.colorScheme.onPrimary
-        isOperator -> MaterialTheme.colorScheme.onSecondaryContainer
-        isSpecial -> MaterialTheme.colorScheme.onSurfaceVariant
+        isAccent -> MaterialTheme.colorScheme.onPrimaryContainer
+        isOperator -> MaterialTheme.colorScheme.onPrimaryContainer
+        isSpecial -> if (label == "C" || label == "⌫") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
     }
     
     Surface(
         onClick = onClick,
-        modifier = modifier.height(72.dp),
-        shape = RoundedCornerShape(36.dp), // More elliptical than circular for better touch targets
+        modifier = modifier.height(64.dp),
+        shape = RoundedCornerShape(16.dp), // Reverted to previous aesthetic
         color = backgroundColor,
-        tonalElevation = if (isAccent) 6.dp else 2.dp,
-        shadowElevation = if (isAccent) 4.dp else 0.dp
+        tonalElevation = 1.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (label == "⌫") {
@@ -273,11 +302,94 @@ private fun CalculatorKey(
             } else {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.headlineSmall, // Larger font for better legibility
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.Medium,
                     color = textColor,
-                    fontSize = if (label.length > 1) 18.sp else 26.sp
+                    fontSize = if (label.length > 1) 18.sp else 24.sp
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CalculatorHistorySheet(
+    history: List<CalculationHistoryItem>,
+    onItemSelect: (CalculationHistoryItem) -> Unit,
+    onClearHistory: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Calculation History",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                if (history.isNotEmpty()) {
+                    TextButton(onClick = onClearHistory) {
+                        Text("Clear All", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            if (history.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No calculations yet",
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.heightIn(max = 400.dp)
+                ) {
+                    items(history) { item ->
+                        Surface(
+                            onClick = { onItemSelect(item) },
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    item.expression,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    "= ${item.result}",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

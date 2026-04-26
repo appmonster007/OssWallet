@@ -740,7 +740,7 @@ private fun BalanceEditSheet(
             ) {
                 CalculatorNumpad(
                     amount = currentBalance,
-                    onAmountChange = onBalanceChange,
+                    onAmountChange = { newAmount, _ -> onBalanceChange(newAmount) },
                     transactionType = "income", // Initial balance is always positive
                     decimalPrecision = decimalPrecision,
                     onDone = onDismiss,

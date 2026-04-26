@@ -214,7 +214,7 @@ fun EditBudgetScreen(
             ) {
                 CalculatorNumpad(
                     amount = amount,
-                    onAmountChange = { amount = it },
+                    onAmountChange = { newAmount, _ -> amount = newAmount },
                     transactionType = "income", // Budgets are always positive
                     decimalPrecision = decimalPrecision,
                     onDone = { isNumpadVisible = false },

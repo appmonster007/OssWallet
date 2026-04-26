@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
@@ -27,7 +28,7 @@ import java.math.BigDecimal
 @Composable
 fun CalculatorNumpad(
     amount: String,
-    onAmountChange: (String) -> Unit,
+    onAmountChange: (String, String) -> Unit, // Updated to pass both amount and type
     transactionType: String = "income",
     decimalPrecision: Int = 2,
     onDone: () -> Unit,
@@ -45,7 +46,6 @@ fun CalculatorNumpad(
             
             val amountNum = amount.toBigDecimalOrNull()?.abs()
             if (amountNum != null && amountNum != BigDecimal.ZERO) {
-                // If the amount is from a calculated state, we might want to keep it as a single number token
                 initialTokens.add(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
             }
             
@@ -58,21 +58,14 @@ fun CalculatorNumpad(
     }
     
     fun handleAction(action: CalculatorAction) {
-        val newState = calculatorReducer(state, action, evaluator)
-        state = newState
-        
-        // In "Calculate then Submit" flow, we only update the parent amount when the user hits Equals or Done
-        // But for better UX, we can update onAmountChange for real-time preview if the parent supports it
-        // However, the requirement is "user calculates... and then submits"
-        // So we will NOT call onAmountChange(state.display) here anymore, 
-        // except when they hit Equals or Done.
+        state = calculatorReducer(state, action, evaluator)
     }
     
     Column(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Display area
         CalculatorDisplay(
@@ -82,31 +75,29 @@ fun CalculatorNumpad(
             transactionType = state.transactionType,
             isError = state.isError,
             onSave = {
-                // Finalize calculation and submit
                 val finalState = if (!state.isCalculated) {
                     calculatorReducer(state, CalculatorAction.Equals, evaluator)
                 } else state
                 
                 state = finalState
                 if (!finalState.isError) {
-                    onAmountChange(finalState.display)
+                    onAmountChange(finalState.display, finalState.transactionType)
                     onDone()
                 }
             }
         )
         
-        // Keys - Refined to match Google Calculator layout
+        // Keys
         CalculatorKeys(
             onNumberPress = { handleAction(CalculatorAction.AppendNumber(it)) },
             onOperatorPress = { handleAction(CalculatorAction.AppendOperator(it)) },
-            onParenthesisToggle = { handleAction(CalculatorAction.AppendParenthesis(' ')) }, // Logic inside reducer handles ' ' as toggle
+            onParenthesisToggle = { handleAction(CalculatorAction.AppendParenthesis(' ')) },
             onClearPress = { handleAction(CalculatorAction.Clear) },
             onBackspacePress = { handleAction(CalculatorAction.Backspace) },
             onEqualsPress = { 
                 handleAction(CalculatorAction.Equals)
-                // When equals is pressed, we update the parent value
                 if (!state.isError) {
-                    onAmountChange(state.display)
+                    onAmountChange(state.display, state.transactionType)
                 }
             },
             onPercentPress = { handleAction(CalculatorAction.Percent) }
@@ -251,24 +242,25 @@ private fun CalculatorKey(
 ) {
     val backgroundColor = when {
         isAccent -> MaterialTheme.colorScheme.primary
-        isOperator -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-        isSpecial -> MaterialTheme.colorScheme.surfaceVariant
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        isOperator -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+        isSpecial -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+        else -> MaterialTheme.colorScheme.surfaceContainerLow
     }
     
     val textColor = when {
         isAccent -> MaterialTheme.colorScheme.onPrimary
-        isOperator -> MaterialTheme.colorScheme.onPrimaryContainer
+        isOperator -> MaterialTheme.colorScheme.onSecondaryContainer
         isSpecial -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
     }
     
     Surface(
         onClick = onClick,
-        modifier = modifier.height(68.dp),
-        shape = CircleShape, // Material 3 Expressive uses nearly circular shapes
+        modifier = modifier.height(72.dp),
+        shape = RoundedCornerShape(36.dp), // More elliptical than circular for better touch targets
         color = backgroundColor,
-        tonalElevation = if (isAccent) 4.dp else 1.dp
+        tonalElevation = if (isAccent) 6.dp else 2.dp,
+        shadowElevation = if (isAccent) 4.dp else 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (label == "⌫") {
@@ -281,10 +273,10 @@ private fun CalculatorKey(
             } else {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall, // Larger font for better legibility
                     fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.Medium,
                     color = textColor,
-                    fontSize = if (label.length > 1) 18.sp else 24.sp
+                    fontSize = if (label.length > 1) 18.sp else 26.sp
                 )
             }
         }
@@ -297,7 +289,7 @@ fun CalculatorNumpadPreview() {
     MaterialTheme {
         CalculatorNumpad(
             amount = "100",
-            onAmountChange = {},
+            onAmountChange = { _, _ -> },
             transactionType = "expense",
             onDone = {}
         )

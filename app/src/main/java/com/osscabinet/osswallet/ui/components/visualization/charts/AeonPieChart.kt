@@ -80,8 +80,8 @@ fun AeonPieChart(
     val haptic = LocalHapticFeedback.current
     val disclosurePainter = rememberVectorPainter(Icons.Default.AddCircle)
 
-    val animationProgress = remember { Animatable(0f) }
-    LaunchedEffect(slices) {
+    val animationProgress = remember { Animatable(if (animate) 0f else 1f) }
+    LaunchedEffect(slices, animate) {
         if (animate) {
             animationProgress.snapTo(0f)
             animationProgress.animateTo(1f, tween(1000))
@@ -173,44 +173,69 @@ fun AeonPieChart(
                 }
         ) {
             var currentAngle = 0f
+            val gapAngle = 2f // Gap between slices in degrees
+            
             slices.forEach { slice ->
                 val sliceSweep = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
-                val sweepAngle = sliceSweep * animationProgress.value
+                val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
                 val isSelected = selectedSlice == slice
                 
-                val explodedRadius = if (isSelected) 10.dp.toPx() else 0f
+                val explodedRadius = if (isSelected) 12.dp.toPx() else 0f
                 val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
                 val offset = Offset(
                     cos(midAngle.toDouble()).toFloat() * explodedRadius,
                     sin(midAngle.toDouble()).toFloat() * explodedRadius
                 )
 
+                // Draw the main slice
                 drawArc(
                     color = slice.color,
-                    startAngle = currentAngle,
+                    startAngle = currentAngle + (gapAngle / 2),
                     sweepAngle = sweepAngle,
                     useCenter = !isDonut,
                     topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
                     size = Size(radius * 2, radius * 2),
-                    style = if (isDonut) Stroke(width = radius * 0.4f, cap = StrokeCap.Butt) else androidx.compose.ui.graphics.drawscope.Fill
+                    style = if (isDonut) {
+                        Stroke(
+                            width = radius * 0.35f, 
+                            cap = StrokeCap.Round
+                        )
+                    } else {
+                        androidx.compose.ui.graphics.drawscope.Fill
+                    }
                 )
 
+                // Optional: Add a subtle inner shadow/glow if selected
+                if (isSelected) {
+                    drawArc(
+                        color = Color.White.copy(alpha = 0.2f),
+                        startAngle = currentAngle + (gapAngle / 2),
+                        sweepAngle = sweepAngle,
+                        useCenter = !isDonut,
+                        topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
+                        size = Size(radius * 2, radius * 2),
+                        style = if (isDonut) {
+                            Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                        } else {
+                            Stroke(width = 1.dp.toPx())
+                        }
+                    )
+                }
+
                 // Visual marker for subcategories
-                if (slice.hasSubcategories && sliceSweep > 15f) {
-                    // Position marker in the middle of the arc's radial width
-                    // If donut, the thickness is radius * 0.4f. The middle of that thickness is at radius * 0.8f.
-                    // If full pie, the middle is radius * 0.5f.
-                    val markerRadius = if (isDonut) radius else radius * 0.5f
-                    val markerX = center.x + cos(midAngle.toDouble()).toFloat() * markerRadius + offset.x - 8.dp.toPx()
-                    val markerY = center.y + sin(midAngle.toDouble()).toFloat() * markerRadius + offset.y - 8.dp.toPx()
+                if (slice.hasSubcategories && sliceSweep > 20f) {
+                    val markerRadius = if (isDonut) radius else radius * 0.65f
+                    val iconSize = (radius * 0.12f).coerceIn(12.dp.toPx(), 24.dp.toPx())
+                    
+                    val markerX = center.x + cos(midAngle.toDouble()).toFloat() * markerRadius + offset.x - iconSize / 2
+                    val markerY = center.y + sin(midAngle.toDouble()).toFloat() * markerRadius + offset.y - iconSize / 2
                     
                     val iconTint = if (slice.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
                     
                     translate(left = markerX, top = markerY) {
                         with(disclosurePainter) {
                             draw(
-                                size = Size(24.dp.toPx(), 24.dp.toPx()),
-//                                alpha = 0.7f,
+                                size = Size(iconSize, iconSize),
                                 colorFilter = ColorFilter.tint(iconTint)
                             )
                         }
@@ -262,7 +287,8 @@ fun AeonPieChartPreview() {
                     AeonPieChartSlice(BigDecimal("300.00"), "Rent", Color(0xFF2196F3)),
                     AeonPieChartSlice(BigDecimal("150.00"), "Transport", Color(0xFF4CAF50)),
                     AeonPieChartSlice(BigDecimal("100.00"), "Misc", Color(0xFFFFC107))
-                )
+                ),
+                animate = false
             )
         }
     }

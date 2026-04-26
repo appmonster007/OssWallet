@@ -6,7 +6,8 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
-import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -211,54 +212,6 @@ class TransactionRepositoryImpl(
 
     override suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<com.osscabinet.ossWallet.data.local.dao.CurrencySummary> {
         return transactionDao.getCurrencySummariesInRange(profileId, start, end)
-    }
-
-    
-    private fun TransactionEntity.toDomain(): Transaction {
-        return Transaction(
-            id = id,
-            title = title,
-            amount = amount,
-            category = category,
-            timestamp = timestamp,
-            currency = currency,
-            transactionType = transactionType,
-            accountId = accountId,
-            categoryId = categoryId,
-            tags = if (tags.isEmpty()) emptyList() else tags.split(","),
-            paymentMethod = paymentMethod,
-            payee = payee,
-            note = note,
-            recurring = recurring,
-            latitude = latitude,
-            longitude = longitude,
-            warrantyExpiration = warrantyExpiration,
-            status = TransactionStatus.fromString(status)
-        )
-    }
-
-    private fun Transaction.toEntity(profileId: Int): TransactionEntity {
-        return TransactionEntity(
-            id = id,
-            title = title,
-            amount = amount,
-            category = category,
-            timestamp = timestamp,
-            currency = currency,
-            transactionType = transactionType,
-            accountId = accountId,
-            categoryId = categoryId,
-            tags = tags.joinToString(","),
-            profileId = profileId,
-            paymentMethod = paymentMethod,
-            payee = payee,
-            note = note,
-            recurring = recurring,
-            latitude = latitude,
-            longitude = longitude,
-            warrantyExpiration = warrantyExpiration,
-            status = status.name
-        )
     }
 
     // Link management implementations

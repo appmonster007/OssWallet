@@ -21,10 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.ui.components.AeonDashedButton
-import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
-import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
-import com.osscabinet.ossWallet.ui.components.ReorderableList
+import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -67,42 +65,31 @@ fun AccountManagementScreen(
         accounts.filter { it.id in selectedAccountIds }
     }
 
-    if (showMultiDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showMultiDeleteDialog = false },
-            title = { Text("Delete Selected Accounts") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Are you sure you want to delete these accounts? This cannot be undone.")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    selectedAccounts.forEach { account ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(account.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                            Text(formatCurrencyRight(account.balance, account.currencyCode), style = MaterialTheme.typography.bodySmall)
-                        }
+    AeonConfirmDeleteDialog(
+        show = showMultiDeleteDialog,
+        title = "Delete Selected Accounts",
+        message = "Are you sure you want to delete these accounts? This cannot be undone.",
+        onConfirm = {
+            selectedAccountIds.forEach { viewModel.deleteAccount(it) }
+            selectedAccountIds = emptySet()
+            isSelectionMode = false
+            showMultiDeleteDialog = false
+        },
+        onDismiss = { showMultiDeleteDialog = false },
+        extraContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                selectedAccounts.forEach { account ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(account.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text(formatCurrencyRight(account.balance, account.currencyCode), style = MaterialTheme.typography.bodySmall)
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedAccountIds.forEach { viewModel.deleteAccount(it) }
-                    selectedAccountIds = emptySet()
-                    isSelectionMode = false
-                    showMultiDeleteDialog = false
-                }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showMultiDeleteDialog = false }) {
-                    Text("Cancel")
-                }
             }
-        )
-    }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -294,24 +281,7 @@ fun AccountManagementListItem(
                     color = accountColor
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val icon = when(account.icon) {
-                            "Savings" -> Icons.Rounded.Savings
-                            "CreditCard" -> Icons.Rounded.CreditCard
-                            "AccountBalance" -> Icons.Rounded.AccountBalance
-                            "Wallet" -> Icons.Rounded.Wallet
-                            "RocketLaunch" -> Icons.Rounded.RocketLaunch
-                            "Payments" -> Icons.Rounded.Payments
-                            "Paid" -> Icons.Rounded.Paid
-                            "AccountBalanceWallet" -> Icons.Rounded.AccountBalanceWallet
-                            "MonetizationOn" -> Icons.Rounded.MonetizationOn
-                            "Analytics" -> Icons.Rounded.Analytics
-                            "Foundation" -> Icons.Rounded.Foundation
-                            "Stars" -> Icons.Rounded.Stars
-                            "Diamond" -> Icons.Rounded.Diamond
-                            "AccountTree" -> Icons.Rounded.AccountTree
-                            "AutoGraph" -> Icons.Rounded.AutoGraph
-                            else -> Icons.Rounded.AccountBalance
-                        }
+                        val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
                         Icon(
                             icon,
                             contentDescription = null,

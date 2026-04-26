@@ -1,7 +1,12 @@
-package com.osscabinet.ossWallet.domain.model
+package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 
+/**
+ * Mappers for Filter data.
+ */
 fun FilterEntity.toDomain(): TransactionFilter {
     return TransactionFilter(
         timelineRange = timelineRange,

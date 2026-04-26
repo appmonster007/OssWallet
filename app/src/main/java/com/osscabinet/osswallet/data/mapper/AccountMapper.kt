@@ -1,0 +1,35 @@
+package com.osscabinet.ossWallet.data.mapper
+
+import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.domain.model.Account
+
+/**
+ * Mappers for Account data.
+ * Centralizes transformation between Room entities and Domain models.
+ */
+fun AccountEntity.toDomain() = Account(
+    id = id,
+    name = name,
+    balance = balance,
+    currencyCode = currencyCode,
+    structureType = structureType,
+    colorHex = colorHex,
+    icon = icon,
+    allowedCurrencies = allowedCurrencies.split(",").filter { it.isNotBlank() },
+    isArchived = isArchived,
+    displayOrder = displayOrder
+)
+
+fun Account.toEntity(profileId: Int) = AccountEntity(
+    id = id,
+    name = name,
+    balance = balance,
+    currencyCode = currencyCode,
+    structureType = structureType,
+    colorHex = colorHex,
+    icon = icon,
+    allowedCurrencies = allowedCurrencies.joinToString(","),
+    profileId = profileId,
+    isArchived = isArchived,
+    displayOrder = displayOrder
+)

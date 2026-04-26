@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
-import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +29,18 @@ fun ManageLabelsScreen(
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var newTagName by remember { mutableStateOf("") }
+    var tagToDelete by remember { mutableStateOf<TagEntity?>(null) }
+
+    AeonConfirmDeleteDialog(
+        show = tagToDelete != null,
+        title = "Delete Label",
+        message = "Are you sure you want to delete the label \"${tagToDelete?.name}\"? Transactions using this label will not be deleted, but the label will be removed from them.",
+        onConfirm = {
+            tagToDelete?.let { viewModel.deleteTag(it) }
+            tagToDelete = null
+        },
+        onDismiss = { tagToDelete = null }
+    )
 
     Scaffold(
         topBar = {
@@ -61,7 +73,7 @@ fun ManageLabelsScreen(
             items(tags.sortedBy { it.name.lowercase() }) { tag ->
                 LabelItem(
                     tag = tag,
-                    onDelete = { viewModel.deleteTag(tag) }
+                    onDelete = { tagToDelete = tag }
                 )
             }
         }

@@ -1,7 +1,8 @@
 package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.dao.LoanDao
-import com.osscabinet.ossWallet.data.local.entity.LoanEntity
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import kotlinx.coroutines.flow.Flow
@@ -13,14 +14,14 @@ class LoanRepositoryImpl(private val loanDao: LoanDao) : LoanRepository {
     }
 
     override suspend fun insertLoan(loan: Loan) {
-        loanDao.insertLoan(LoanEntity.fromDomain(loan))
+        loanDao.insertLoan(loan.toEntity())
     }
 
     override suspend fun updateLoan(loan: Loan) {
-        loanDao.updateLoan(LoanEntity.fromDomain(loan))
+        loanDao.updateLoan(loan.toEntity())
     }
 
     override suspend fun deleteLoan(loan: Loan) {
-        loanDao.deleteLoan(LoanEntity.fromDomain(loan))
+        loanDao.deleteLoan(loan.toEntity())
     }
 }

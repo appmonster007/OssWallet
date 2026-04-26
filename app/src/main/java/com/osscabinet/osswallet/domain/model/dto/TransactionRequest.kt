@@ -23,5 +23,11 @@ data class TransactionRequest(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val warrantyExpiration: Long? = null,
-    val status: TransactionStatus = TransactionStatus.CLEARED
+    val status: TransactionStatus = TransactionStatus.CLEARED,
+    
+    // Transfer-specific fields
+    val isTransfer: Boolean = false,
+    val targetAccountId: String? = null,
+    val targetCurrency: String? = null,
+    val transferRate: BigDecimal = BigDecimal.ONE
 )

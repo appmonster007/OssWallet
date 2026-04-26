@@ -24,8 +24,8 @@ import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.toDomain
-import com.osscabinet.ossWallet.domain.model.toEntity
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.ui.components.transactions.CompactTextField
 import com.osscabinet.ossWallet.ui.components.transactions.FilterFields
 import java.math.BigDecimal

@@ -344,8 +344,6 @@ class AccountsViewViewModel(
                     return@combine AccountsViewUiState.Loading
                 }
 
-                val rates = analyticsState.exchangeRates
-                val baseCurrency = analyticsState.selectedCurrency
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
                 val accountsLayout = accountsViewSettings.accountsSection.layout
                 val showAddAccountCard = accountsViewSettings.accountsSection.showAddAccountCard
@@ -358,55 +356,48 @@ class AccountsViewViewModel(
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 val netWorthTimelineRange = accountsViewSettings.netWorthSection.timelineRange
 
+                val rates = analyticsState.exchangeRates
+                val baseCurrency = analyticsState.selectedCurrency
+                val computationContext = ComputationContext(baseCurrency, rates, precision)
+
                 val globalCurrencyTotals = financialUseCases.getCurrencyAggregation(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = currencyBalancesTimelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val accountStats = financialUseCases.getAccountSummaries(
                     accounts = accounts,
                     allTransactions = allTransactions,
                     timelineRange = accountsTimelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val updatedAccounts = financialUseCases.getTotalBalances(
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    exchangeRates = rates,
-                    precision = precision,
+                    context = computationContext,
                     timelineRange = accountsTimelineRange
                 )
 
                 val netWorth = financialUseCases.calculateNetWorth(
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision,
+                    context = computationContext,
                     timelineRange = netWorthTimelineRange
                 )
 
                 val netWorthFlow = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = netWorthTimelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = allTransactions,
                     timelineRange = cashFlowTimelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val nonArchivedAccounts = updatedAccounts.filter { !it.isArchived }

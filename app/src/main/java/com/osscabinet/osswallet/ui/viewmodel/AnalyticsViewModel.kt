@@ -16,6 +16,7 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.analytics.components.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val financialUseCases: FinancialUseCases,
@@ -128,14 +130,14 @@ class AnalyticsViewModel(
         }
 
         viewModelScope.launch {
-            settingsDataStore.currentProfileId.collect { profileId ->
-                accountRepository.getAllAccounts(profileId).collect { accounts ->
+            settingsDataStore.currentProfileId
+                .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
+                .collect { accounts ->
                     allAccounts = accounts
                     _uiState.update { it.copy(accounts = accounts) }
                     calculateAnalytics()
                     invalidateAllCache()
                 }
-            }
         }
     }
 

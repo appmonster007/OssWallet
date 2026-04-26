@@ -17,28 +17,4 @@ data class LoanEntity(
     val repayments: BigDecimal,
     val type: String,
     val currency: String
-) {
-    fun toDomain() = Loan(
-        id = id,
-        title = title,
-        principal = principal,
-        interestRate = interestRate,
-        dueDate = dueDate,
-        repayments = repayments,
-        type = LoanType.valueOf(type),
-        currency = currency
-    )
-
-    companion object {
-        fun fromDomain(loan: Loan) = LoanEntity(
-            id = loan.id,
-            title = loan.title,
-            principal = loan.principal,
-            interestRate = loan.interestRate,
-            dueDate = loan.dueDate,
-            repayments = loan.repayments,
-            type = loan.type.name,
-            currency = loan.currency
-        )
-    }
-}
+)

@@ -195,9 +195,7 @@ class CardComputationServiceImpl(
         return financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
     }
 
@@ -231,9 +229,7 @@ class CardComputationServiceImpl(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
     }
 
@@ -262,18 +258,14 @@ class CardComputationServiceImpl(
         val netWorth = financialUseCases.calculateNetWorth(
             accounts = filteredAccounts,
             allTransactions = filteredTransactions,
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision,
+            context = context,
             timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
 
         val cashFlow = financialUseCases.calculateCashFlow(
             allTransactions = filteredTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
 
         return Pair(netWorth, cashFlow)
@@ -291,16 +283,13 @@ class CardComputationServiceImpl(
             accounts = accounts,
             allTransactions = allTransactions,
             timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            baseCurrency = context.baseCurrency,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision
+            context = context
         )
         // Update accounts with timeline-filtered balances
         val updatedAccounts = financialUseCases.getTotalBalances(
             accounts = accounts,
             allTransactions = allTransactions,
-            exchangeRates = context.exchangeRates,
-            precision = context.precision,
+            context = context,
             timelineRange = TimelineRange.AllTime  // Already filtered at card level
         )
         return Pair(updatedAccounts, accountStats)
@@ -409,9 +398,7 @@ class CardComputationServiceImpl(
             val priorBalance = financialUseCases.calculateNetWorth(
                 accounts = if (scope == CardScope.ACCOUNT && accountId != null) accounts.filter { it.id == accountId } else accounts,
                 allTransactions = priorTransactions,
-                baseCurrency = context.baseCurrency,
-                exchangeRates = context.exchangeRates,
-                precision = context.precision,
+                context = context,
                 timelineRange = config.filter.timelineRange
             )
             

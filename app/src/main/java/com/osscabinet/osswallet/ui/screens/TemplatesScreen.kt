@@ -22,11 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.components.AccountPickerSheet
-import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
-import com.osscabinet.ossWallet.ui.components.ReorderableList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +38,18 @@ fun TemplatesScreen(
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
 
     var editList by remember { mutableStateOf(emptyList<TemplateEntity>()) }
+    var templateToDelete by remember { mutableStateOf<TemplateEntity?>(null) }
+
+    AeonConfirmDeleteDialog(
+        show = templateToDelete != null,
+        title = "Delete Template",
+        message = "Are you sure you want to delete the template \"${templateToDelete?.name}\"?",
+        onConfirm = {
+            templateToDelete?.let { viewModel.deleteTemplate(it) }
+            templateToDelete = null
+        },
+        onDismiss = { templateToDelete = null }
+    )
 
     LaunchedEffect(starredTemplates) {
         if (editList.isEmpty() || editList.size != starredTemplates.size || editList.map { it.id }.toSet() != starredTemplates.map { it.id }.toSet()) {
@@ -127,7 +137,7 @@ fun TemplatesScreen(
                     TemplateItem(
                         template = template,
                         onEdit = { navigate { onAddTemplateClick(template.id) } },
-                        onDelete = { viewModel.deleteTemplate(template) },
+                        onDelete = { templateToDelete = template },
                         onToggleStar = { viewModel.toggleStar(template) }
                     )
                 }

@@ -25,13 +25,13 @@ import java.math.BigDecimal
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
     private val transactionUseCases: TransactionUseCases,
-    private val settingsDataStore: SettingsDataStore,
+    settingsDataStore: SettingsDataStore,
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
     private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
     private val analyticsViewModel: AnalyticsViewModel,
     private val transactionManager: com.osscabinet.ossWallet.domain.service.TransactionManager
-) : ViewModel() {
+) : BaseViewModel(settingsDataStore) {
 
     // Replace multiple filter states with single FilterManager
     private val recordsFilterManager = FilterManager()
@@ -242,27 +242,10 @@ class TransactionViewModel(
         onComplete: ((Long) -> Unit)? = null
     ) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            val transaction = Transaction(
-                title = request.title,
-                amount = request.amount,
-                category = request.category,
-                timestamp = request.timestamp,
-                currency = request.currency,
-                transactionType = request.transactionType,
-                accountId = request.accountId,
-                categoryId = request.categoryId,
-                tags = request.tags,
-                paymentMethod = request.paymentMethod,
-                payee = request.payee,
-                note = request.note,
-                latitude = request.latitude,
-                longitude = request.longitude,
-                warrantyExpiration = request.warrantyExpiration,
-                status = request.status
-            )
-            val id = transactionUseCases.insertTransaction(transaction, profileId)
-            onComplete?.invoke(id)
+            withProfile { profileId ->
+                val id = transactionManager.handleSaveTransaction(null, request, profileId)
+                onComplete?.invoke(id)
+            }
         }
     }
 
@@ -271,26 +254,9 @@ class TransactionViewModel(
         request: TransactionRequest
     ) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            val newTransaction = oldTransaction.copy(
-                title = request.title,
-                amount = request.amount,
-                category = request.category,
-                timestamp = request.timestamp,
-                currency = request.currency,
-                transactionType = request.transactionType,
-                accountId = request.accountId,
-                categoryId = request.categoryId,
-                tags = request.tags,
-                paymentMethod = request.paymentMethod,
-                payee = request.payee,
-                note = request.note,
-                latitude = request.latitude,
-                longitude = request.longitude,
-                warrantyExpiration = request.warrantyExpiration,
-                status = request.status
-            )
-            transactionUseCases.updateTransaction(oldTransaction, newTransaction, profileId)
+            withProfile { profileId ->
+                transactionManager.handleSaveTransaction(oldTransaction, request, profileId)
+            }
         }
     }
 
@@ -300,9 +266,10 @@ class TransactionViewModel(
         onComplete: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
-            onComplete?.invoke()
+            withProfile { profileId ->
+                transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
+                onComplete?.invoke()
+            }
         }
     }
 
@@ -363,18 +330,20 @@ class TransactionViewModel(
 
     fun quickUpdateStatus(transactionId: Long, newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
-                onItemCollapsed(transactionId)
+            withProfile { profileId ->
+                if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
+                    onItemCollapsed(transactionId)
+                }
             }
         }
     }
 
     fun quickCloneTransaction(transactionId: Long) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            if (transactionManager.cloneTransaction(transactionId, profileId) != null) {
-                onItemCollapsed(transactionId)
+            withProfile { profileId ->
+                if (transactionManager.cloneTransaction(transactionId, profileId) != null) {
+                    onItemCollapsed(transactionId)
+                }
             }
         }
     }
@@ -423,9 +392,10 @@ class TransactionViewModel(
 
     fun toggleStatusClearedUncleared(transactionId: Long) {
         viewModelScope.launch {
-            val profileId = settingsDataStore.currentProfileId.first()
-            if (transactionManager.toggleStatus(transactionId, profileId) != null) {
-                onItemCollapsed(transactionId)
+            withProfile { profileId ->
+                if (transactionManager.toggleStatus(transactionId, profileId) != null) {
+                    onItemCollapsed(transactionId)
+                }
             }
         }
     }

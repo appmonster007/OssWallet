@@ -235,6 +235,7 @@ class AccountDetailViewModel(
 
                 val rates = analyticsState.exchangeRates
                 val baseCurrency = analyticsState.selectedCurrency
+                val computationContext = ComputationContext(baseCurrency, rates, precision)
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
                 
@@ -251,24 +252,19 @@ class AccountDetailViewModel(
                     accounts = listOf(account),
                     allTransactions = accountTransactions,
                     timelineRange = settings.currencyBalancesSection.timelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val cashFlowResult = financialUseCases.calculateCashFlow(
                     allTransactions = accountTransactions,
                     timelineRange = settings.cashFlowSection.timelineRange,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    precision = precision
+                    context = computationContext
                 )
 
                 val updatedAccount = financialUseCases.getTotalBalances(
                     accounts = listOf(account),
                     allTransactions = accountTransactions,
-                    exchangeRates = rates,
-                    precision = precision,
+                    context = computationContext,
                     timelineRange = settings.currencyBalancesSection.timelineRange
                 ).first()
 

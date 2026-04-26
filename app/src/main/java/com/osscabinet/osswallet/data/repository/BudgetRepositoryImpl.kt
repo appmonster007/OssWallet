@@ -1,7 +1,8 @@
 package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
-import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,4 @@ class BudgetRepositoryImpl(
     override suspend fun deleteBudget(category: String) {
         budgetDao.deleteBudget(category)
     }
-
-    private fun BudgetEntity.toDomain() = Budget(category, spent, limit, currency)
-    private fun Budget.toEntity() = BudgetEntity(category, spent, limit, currency)
 }

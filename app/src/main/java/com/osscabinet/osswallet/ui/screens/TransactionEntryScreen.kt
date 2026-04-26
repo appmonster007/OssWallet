@@ -138,252 +138,46 @@ fun TransactionEntryScreen(
         onSave = { title, amountValue, category, categoryId, isIncome, accId, currency, tags, paymentMethod, timestamp, payee, note, linkedIds, isTransfer, targetAcc, targetCurrency, rate, coords, warrantyExp, status ->
             val isEditMode = transactionId != null && transactionId != -1L
             val finalTimestamp = if (!isEditMode && timestamp == initialTimestamp) System.currentTimeMillis() else timestamp
+            
+            val request = TransactionRequest(
+                title = title.ifBlank { category },
+                amount = amountValue,
+                category = category,
+                transactionType = if (isIncome) "income" else "expense",
+                accountId = accId,
+                currency = currency,
+                categoryId = categoryId,
+                tags = tags,
+                paymentMethod = paymentMethod,
+                timestamp = finalTimestamp,
+                payee = payee,
+                note = note,
+                latitude = coords?.first,
+                longitude = coords?.second,
+                warrantyExpiration = warrantyExp,
+                status = status,
+                isTransfer = isTransfer,
+                targetAccountId = targetAcc?.id,
+                targetCurrency = targetCurrency,
+                transferRate = rate
+            )
+
             if (isEditMode) {
                 val existingTransaction = transactions.find { it.id == transactionId }
                 if (existingTransaction != null) {
-                    val wasTransfer = existingTransaction.category == "Transfer"
-                    
-                    if (wasTransfer && !isTransfer) {
-                        // Changed from Transfer to Income/Expense
-                        // Clear all links for this transaction
-                        viewModel.clearTransactionLinks(existingTransaction.id)
-
-                        // Update current transaction to normal income/expense
-                        viewModel.updateTransaction(
-                            oldTransaction = existingTransaction,
-                            request = TransactionRequest(
-                                title = title.ifBlank { category },
-                                amount = amountValue,
-                                category = category,
-                                transactionType = if (isIncome) "income" else "expense",
-                                accountId = accId,
-                                currency = currency,
-                                categoryId = categoryId,
-                                tags = tags,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            )
-                        )
-                    } else if (!wasTransfer && isTransfer) {
-                        // Changed from Income/Expense to Transfer
-                        targetAcc?.id?.let { targetId ->
-                            val sourceTx = existingTransaction.copy(
-                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                                amount = amountValue,
-                                category = "Transfer",
-                                transactionType = "expense",
-                                accountId = accId,
-                                currency = currency,
-                                categoryId = null,
-                                tags = tags,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            )
-
-                            val targetTx = Transaction(
-                                title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                amount = amountValue.multiply(rate),
-                                category = "Transfer",
-                                transactionType = "income",
-                                accountId = targetId,
-                                currency = targetCurrency,
-                                tags = tags,
-                                paymentMethod = paymentMethod,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            )
-
-                            viewModel.saveTransfer(sourceTx, targetTx)
-                        }
-                    } else if (wasTransfer && isTransfer) {
-                        // Update existing transfer
-                        targetAcc?.id?.let { targetId ->
-                            val sourceTx = existingTransaction.copy(
-                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                                amount = amountValue,
-                                category = "Transfer",
-                                transactionType = "expense",
-                                accountId = accId,
-                                currency = currency,
-                                categoryId = null,
-                                tags = tags,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            )
-
-                            // Update source transaction
-                            viewModel.updateTransaction(
-                                oldTransaction = existingTransaction,
-                                request = TransactionRequest(
-                                    title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                                    amount = amountValue,
-                                    category = "Transfer",
-                                    transactionType = "expense",
-                                    accountId = accId,
-                                    currency = currency,
-                                    categoryId = null,
-                                    tags = tags,
-                                    paymentMethod = paymentMethod,
-                                    timestamp = finalTimestamp,
-                                    payee = payee,
-                                    note = note,
-                                    latitude = coords?.first,
-                                    longitude = coords?.second,
-                                    warrantyExpiration = warrantyExp,
-                                    status = status
-                                )
-                            )
-
-                            // Get linked target transaction and update it
-                            // Note: This is a simplified approach - in production we'd need to observe the Flow
-                            // For now, we'll search the transactions list
-                            val linkedTxs = transactions.filter { tx ->
-                                tx.category == "Transfer" &&
-                                tx.accountId == targetId &&
-                                tx.transactionType == "income" &&
-                                Math.abs(tx.timestamp - existingTransaction.timestamp) < 1000 // Same transfer (within 1 second)
-                            }
-
-                            linkedTxs.firstOrNull()?.let { targetTx ->
-                                viewModel.updateTransaction(
-                                    oldTransaction = targetTx,
-                                    request = TransactionRequest(
-                                        title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                        amount = amountValue.multiply(rate),
-                                        category = "Transfer",
-                                        transactionType = "income",
-                                        accountId = targetId,
-                                        currency = targetCurrency,
-                                        tags = tags,
-                                        paymentMethod = paymentMethod,
-                                        timestamp = finalTimestamp,
-                                        payee = payee,
-                                        note = note,
-                                        latitude = coords?.first,
-                                        longitude = coords?.second,
-                                        warrantyExpiration = warrantyExp,
-                                        status = status
-                                    )
-                                )
-                            }
-                        }
-                    } else {
-                        // Standard update (not a transfer)
-                        viewModel.updateTransaction(
-                            oldTransaction = existingTransaction,
-                            request = TransactionRequest(
-                                title = title.ifBlank { category },
-                                amount = amountValue,
-                                category = category,
-                                transactionType = if (isIncome) "income" else "expense",
-                                accountId = accId,
-                                currency = currency,
-                                categoryId = categoryId,
-                                tags = tags,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
-                            )
-                        )
-                    }
+                    viewModel.updateTransaction(existingTransaction, request)
                 }
             } else {
-                if (isTransfer) {
-                    targetAcc?.id?.let { targetId ->
-                        val sourceTx = Transaction(
-                            title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                            amount = amountValue,
-                            category = "Transfer",
-                            transactionType = "expense",
-                            accountId = accId,
-                            currency = currency,
-                            tags = tags,
-                            paymentMethod = paymentMethod,
-                            timestamp = finalTimestamp,
-                            payee = payee,
-                            note = note,
-                            latitude = coords?.first,
-                            longitude = coords?.second,
-                            warrantyExpiration = warrantyExp,
-                            status = status
-                        )
-
-                        val targetTx = Transaction(
-                            title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                            amount = amountValue.multiply(rate),
-                            category = "Transfer",
-                            transactionType = "income",
-                            accountId = targetId,
-                            currency = targetCurrency,
-                            tags = tags,
-                            paymentMethod = paymentMethod,
-                            timestamp = finalTimestamp,
-                            payee = payee,
-                            note = note,
-                            latitude = coords?.first,
-                            longitude = coords?.second,
-                            warrantyExpiration = warrantyExp,
-                            status = status
-                        )
-                        
-                        viewModel.saveTransfer(sourceTx, targetTx)
+                viewModel.addTransaction(request) { newTxId ->
+                    // Add links for cloned transaction
+                    val clonedId = prefillDto?.clonedFromTransactionId
+                    if (clonedId != null) {
+                        viewModel.addTransactionLink(newTxId, clonedId)
                     }
-                } else {
-                    // Add transaction and then handle links
-                    viewModel.addTransaction(
-                        request = TransactionRequest(
-                            title = title.ifBlank { category },
-                            amount = amountValue,
-                            category = category,
-                            categoryId = categoryId,
-                            transactionType = if (isIncome) "income" else "expense",
-                            accountId = accId,
-                            currency = currency,
-                            tags = tags,
-                            paymentMethod = paymentMethod,
-                            timestamp = finalTimestamp,
-                            payee = payee,
-                            note = note,
-                            latitude = coords?.first,
-                            longitude = coords?.second,
-                            warrantyExpiration = warrantyExp,
-                            status = status
-                        )
-                    ) { newTxId ->
-                        // Add links for cloned transaction
-                        val clonedId = prefillDto?.clonedFromTransactionId
-                        if (clonedId != null) {
-                            viewModel.addTransactionLink(newTxId, clonedId)
-                        }
 
-                        // Add any additional links
-                        linkedIds.forEach { linkedId ->
-                            viewModel.addTransactionLink(newTxId, linkedId)
-                        }
+                    // Add any additional links
+                    linkedIds.forEach { linkedId ->
+                        viewModel.addTransactionLink(newTxId, linkedId)
                     }
                 }
             }

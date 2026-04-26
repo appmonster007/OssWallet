@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -45,10 +46,10 @@ fun TimelineTrajectoryLineChart(
         
         val width = size.width
         val height = size.height
-        val leftPadding = 50.dp.toPx()
+        val leftPadding = 55.dp.toPx() // Increased for longer shortened numbers
         val bottomPadding = 30.dp.toPx()
-        val topPadding = 10.dp.toPx()
-        val rightPadding = 10.dp.toPx()
+        val topPadding = 15.dp.toPx()
+        val rightPadding = 15.dp.toPx()
         
         val chartWidth = width - leftPadding - rightPadding
         val chartHeight = height - bottomPadding - topPadding
@@ -63,9 +64,9 @@ fun TimelineTrajectoryLineChart(
         val maxValueRaw = allValues.maxOrNull() ?: BigDecimal.ONE
         
         // Add some headroom
-        val buffer = (maxValueRaw - minValueRaw).multiply(BigDecimal("0.1"))
-        val minValue = (minValueRaw - buffer).coerceAtMost(BigDecimal.ZERO)
-        val maxValue = (maxValueRaw + buffer).coerceAtLeast(BigDecimal.ONE)
+        val buffer = (maxValueRaw - minValueRaw).multiply(BigDecimal("0.15"))
+        val minValue = (minValueRaw - buffer)
+        val maxValue = (maxValueRaw + buffer)
         val valueRange = (maxValue - minValue).takeIf { it > BigDecimal.ZERO } ?: BigDecimal.ONE
         
         // Helper function to map values to canvas coordinates
@@ -85,6 +86,7 @@ fun TimelineTrajectoryLineChart(
             textSize = 10.sp.toPx()
             textAlign = android.graphics.Paint.Align.RIGHT
             isAntiAlias = true
+            alpha = 140 // Slightly lighter for less visual weight
         }
 
         for (i in 0..gridLines) {
@@ -94,32 +96,72 @@ fun TimelineTrajectoryLineChart(
             
             // Grid line
             drawLine(
-                color = Color.LightGray.copy(alpha = 0.4f),
+                color = Color.LightGray.copy(alpha = 0.2f), // Even subtler
                 start = Offset(leftPadding, yPos),
                 end = Offset(width - rightPadding, yPos),
-                strokeWidth = 1.dp.toPx()
+                strokeWidth = 0.5.dp.toPx()
             )
             
             // Label
             drawContext.canvas.nativeCanvas.drawText(
                 formatShortNumber(yValue),
-                leftPadding - 8.dp.toPx(),
+                leftPadding - 12.dp.toPx(),
                 yPos + 4.dp.toPx(),
                 labelPaint
             )
         }
         
-        // Draw balance line
+        // Draw balance line with area gradient
         if (showBalance) {
             val balancePath = Path()
+            val fillPath = Path()
+            
             data.forEachIndexed { index, point ->
                 val x = indexToX(index)
                 val y = valueToY(point.balance)
-                if (index == 0) balancePath.moveTo(x, y) else balancePath.lineTo(x, y)
+                if (index == 0) {
+                    balancePath.moveTo(x, y)
+                    fillPath.moveTo(x, topPadding + chartHeight) // Start at baseline
+                    fillPath.lineTo(x, y)
+                } else {
+                    balancePath.lineTo(x, y)
+                    fillPath.lineTo(x, y)
+                }
             }
+            
+            // Close fill path
+            fillPath.lineTo(indexToX(data.size - 1), topPadding + chartHeight)
+            fillPath.close()
+
+            // Draw Area Fill
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF4CAF50).copy(alpha = 0.15f), Color.Transparent),
+                    startY = topPadding,
+                    endY = topPadding + chartHeight
+                )
+            )
+
+            // Draw Main Line
             drawPath(
                 path = balancePath,
                 color = Color(0xFF4CAF50), // Green
+                style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round)
+            )
+        }
+        
+        // Draw income line
+        if (showIncome) {
+            val incomePath = Path()
+            data.forEachIndexed { index, point ->
+                val x = indexToX(index)
+                val y = valueToY(point.income)
+                if (index == 0) incomePath.moveTo(x, y) else incomePath.lineTo(x, y)
+            }
+            drawPath(
+                path = incomePath,
+                color = Color(0xFF2196F3), // Blue
                 style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
             )
         }
@@ -137,33 +179,19 @@ fun TimelineTrajectoryLineChart(
                 color = Color(0xFFF44336), // Red
                 style = Stroke(
                     width = 2.dp.toPx(), 
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f)),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 15f)),
                     cap = StrokeCap.Round
                 )
-            )
-        }
-        
-        // Draw income line
-        if (showIncome) {
-            val incomePath = Path()
-            data.forEachIndexed { index, point ->
-                val x = indexToX(index)
-                val y = valueToY(point.income)
-                if (index == 0) incomePath.moveTo(x, y) else incomePath.lineTo(x, y)
-            }
-            drawPath(
-                path = incomePath,
-                color = Color(0xFF2196F3), // Blue
-                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             )
         }
         
         // Draw date labels (Start, Middle, End)
         val dateLabelPaint = android.graphics.Paint().apply {
             color = android.graphics.Color.GRAY
-            textSize = 10.sp.toPx()
+            textSize = 9.sp.toPx()
             textAlign = android.graphics.Paint.Align.CENTER
             isAntiAlias = true
+            alpha = 180
         }
         val dateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
         
@@ -175,7 +203,7 @@ fun TimelineTrajectoryLineChart(
                 drawContext.canvas.nativeCanvas.drawText(
                     dateStr,
                     x,
-                    height - 5.dp.toPx(),
+                    height - 2.dp.toPx(),
                     dateLabelPaint
                 )
             }

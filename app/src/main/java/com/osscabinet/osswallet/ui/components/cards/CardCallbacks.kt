@@ -80,7 +80,8 @@ sealed class CardCallbacks {
      */
     data class Analytics(
         val onUpdate: (Any) -> Unit = {},
-        val onDelete: () -> Unit = {}
+        val onDelete: () -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {}
     ) : CardCallbacks()
     
     /**

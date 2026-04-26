@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.BuildConfig
@@ -66,11 +67,15 @@ class DatabaseSeeder @Inject constructor(
         // Clear existing data for a fresh start in dev
         accountDao.clearAll()
         transactionDao.clearAll()
+        categoryDao.clearAll()
         android.util.Log.d("DatabaseSeeder", "Cleared existing data")
 
         // Load seed data from separate CSV files
         val accounts = loadAccountsFromCsv()
         android.util.Log.d("DatabaseSeeder", "Loaded ${accounts.size} accounts from CSV")
+
+        val categories = loadCategoriesFromCsv()
+        android.util.Log.d("DatabaseSeeder", "Loaded ${categories.size} categories from CSV")
 
         val transactions = loadTransactionsFromCsv()
         android.util.Log.d("DatabaseSeeder", "Loaded ${transactions.size} transactions from CSV")
@@ -81,39 +86,66 @@ class DatabaseSeeder @Inject constructor(
             return
         }
 
+        if (categories.isEmpty()) {
+            android.util.Log.e("DatabaseSeeder", "No categories found in CSV, aborting seeding")
+            return
+        }
+
+        // Insert categories (parents first, then children)
+        val categoryNameToId = mutableMapOf<String, Long>()
+        val categoryNameToColor = mutableMapOf<String, Int>()
+        
+        // First pass: insert parent categories (where parentName is null or empty)
+        val parentCategories = categories.filter { it.parentName.isNullOrEmpty() }
+        parentCategories.forEach { category ->
+            categoryDao.insertCategory(category.toCategoryEntity())
+            categoryNameToColor[category.name] = category.colorHex.removePrefix("#").toLongOrNull(16)?.toInt() ?: -16777216
+            android.util.Log.d("DatabaseSeeder", "Inserted parent category: ${category.name}")
+        }
+        
+        // Query all categories to get their IDs
+        val allCategories = categoryDao.getAllCategoriesSync()
+        allCategories.forEach { category ->
+            categoryNameToId[category.name] = category.id
+        }
+        
+        // Second pass: insert child categories with correct parentId and inherited color
+        val childCategories = categories.filter { !it.parentName.isNullOrEmpty() }
+        childCategories.forEach { category ->
+            val parentId = categoryNameToId[category.parentName]
+            if (parentId != null) {
+                // Inherit parent color if child color is empty
+                val colorHex = if (category.colorHex.isBlank()) {
+                    categoryNameToColor[category.parentName] ?: -16777216
+                } else {
+                    category.colorHex.removePrefix("#").toLongOrNull(16)?.toInt() ?: -16777216
+                }
+                
+                val categoryEntity = CategoryEntity(
+                    name = category.name,
+                    iconName = category.iconName,
+                    colorHex = colorHex,
+                    isDefault = category.isDefault,
+                    parentId = parentId
+                )
+                categoryDao.insertCategory(categoryEntity)
+                android.util.Log.d("DatabaseSeeder", "Inserted child category: ${category.name} with parent ${category.parentName}")
+            } else {
+                android.util.Log.w("DatabaseSeeder", "Parent category '${category.parentName}' not found for child category '${category.name}'")
+            }
+        }
+        
+        // Query all categories again to get the final IDs including children
+        val finalCategories = categoryDao.getAllCategoriesSync()
+        finalCategories.forEach { category ->
+            categoryNameToId[category.name] = category.id
+        }
+        
+        android.util.Log.d("DatabaseSeeder", "Inserted ${categoryNameToId.size} categories total")
+
         // Insert accounts
         accountDao.upsertAccounts(accounts)
         android.util.Log.d("DatabaseSeeder", "Inserted ${accounts.size} accounts")
-
-        // Ensure categories exist
-        val categories = categoryDao.getAllCategoriesSync()
-        if (categories.isEmpty()) {
-            android.util.Log.e("DatabaseSeeder", "No categories found, aborting seeding")
-            return
-        }
-        android.util.Log.d("DatabaseSeeder", "Found ${categories.size} categories")
-
-        // Create "Initial Balance" category if it doesn't exist
-        val categoryNameToId = mutableMapOf<String, Long>()
-        categories.forEach { categoryNameToId[it.name] = it.id }
-
-        if (!categoryNameToId.containsKey("Initial Balance")) {
-            val initialBalanceCategory = com.osscabinet.ossWallet.data.local.entity.CategoryEntity(
-                name = "Initial Balance",
-                iconName = "AccountBalance",
-                colorHex = -11751600, // Same color as Salary
-                isDefault = true,
-                parentId = null
-            )
-            categoryDao.insertCategory(initialBalanceCategory)
-            // Query the category to get its ID after insertion
-            val allCategories = categoryDao.getAllCategories().first()
-            val initialBalanceCategoryEntity = allCategories.find { it.name == "Initial Balance" }
-            initialBalanceCategoryEntity?.let {
-                categoryNameToId["Initial Balance"] = it.id
-                android.util.Log.d("DatabaseSeeder", "Created Initial Balance category with ID ${it.id}")
-            }
-        }
 
         // Insert transactions with correct category IDs
         var successfulTransactions = 0
@@ -279,6 +311,63 @@ class DatabaseSeeder @Inject constructor(
                     icon = parts.getOrNull(5) ?: "",
                     allowedCurrencies = parts.getOrNull(6) ?: "USD",
                     profileId = parts.getOrNull(7)?.toIntOrNull() ?: 1
+                )
+            }
+        }
+    }
+
+    private fun loadCategoriesFromCsv(): List<CategorySeedRow> {
+        val categories = mutableListOf<CategorySeedRow>()
+        try {
+            val inputStream = context.assets.open("categories.csv")
+            val reader = BufferedReader(InputStreamReader(inputStream))
+
+            // Skip header
+            reader.readLine()
+
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isNotBlank()) {
+                        try {
+                            categories.add(CategorySeedRow.fromCsv(line))
+                        } catch (e: Exception) {
+                            android.util.Log.e("DatabaseSeeder", "Failed to parse category line: $line, error: ${e.message}")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("DatabaseSeeder", "Failed to load categories.csv: ${e.message}")
+        }
+        return categories
+    }
+
+    private data class CategorySeedRow(
+        val name: String,
+        val iconName: String,
+        val colorHex: String,
+        val isDefault: Boolean,
+        val parentName: String?
+    ) {
+        fun toCategoryEntity(): CategoryEntity {
+            return CategoryEntity(
+                name = name,
+                iconName = iconName,
+                colorHex = colorHex.removePrefix("#").toLongOrNull(16)?.toInt() ?: -16777216,
+                isDefault = isDefault,
+                parentId = null // Will be set when inserting child categories
+            )
+        }
+
+        companion object {
+            fun fromCsv(line: String): CategorySeedRow {
+                val parts = parseCsvLine(line)
+                return CategorySeedRow(
+                    name = parts.getOrNull(0) ?: "",
+                    iconName = parts.getOrNull(1) ?: "Category",
+                    colorHex = parts.getOrNull(2) ?: "#000000",
+                    isDefault = parts.getOrNull(3)?.toBoolean() ?: false,
+                    parentName = parts.getOrNull(4)?.takeIf { it.isNotBlank() }
                 )
             }
         }

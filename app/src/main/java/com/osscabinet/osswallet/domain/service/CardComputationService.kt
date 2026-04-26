@@ -19,6 +19,8 @@ import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
 import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import java.math.BigDecimal
 
 /**
@@ -84,14 +86,15 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): CashFlowResult {
-        // Determine scope based on accountId
-        val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        // Determine scope based on accountIds in filter
+        val accountId = config.filter.accountIds.firstOrNull()
+        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
 
         // Filter transactions based on scope
         val filteredTransactions = filterTransactionsByScope(
             transactions = transactions,
             scope = scope,
-            accountId = config.accountId
+            accountId = accountId
         )
 
         // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
@@ -113,19 +116,20 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CurrencyAggregationItem> {
-        // Determine scope based on accountId
-        val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        // Determine scope based on accountIds in filter
+        val accountId = config.filter.accountIds.firstOrNull()
+        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
         
         // Filter transactions based on scope
         val filteredTransactions = filterTransactionsByScope(
             transactions = transactions,
             scope = scope,
-            accountId = config.accountId
+            accountId = accountId
         )
         
         // Filter accounts based on scope
-        val filteredAccounts = if (config.accountId != null) {
-            accounts.filter { it.id == config.accountId }
+        val filteredAccounts = if (accountId != null) {
+            accounts.filter { it.id == accountId }
         } else {
             accounts
         }
@@ -222,87 +226,73 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CategoryBreakdownData> {
-        val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
+        val accountId = config.filter.accountIds.firstOrNull()
+        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        val filteredByScope = filterTransactionsByScope(transactions, scope, accountId)
 
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use filteredByScope directly (scope filtering only, no timeline filtering)
-
-        // Get all categories for color and subcategory info
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
+        val categoryIdMap = allCategories.associateBy { it.id }
 
-        // Group by category
-        val transactionCategoryMap = filteredByScope.groupBy { it.category }
-        
-        // Calculate total net balance for percentage calculation
-        val totalNetBalance = transactionCategoryMap.values.sumOf { txs ->
-            txs.sumOf { tx ->
-                val amountInBase = CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-                amountInBase // Already signed (positive for income, negative for expense)
+        // Recursive helper to build tree
+        fun buildTree(categoryName: String?, txs: List<Transaction>, globalTotal: BigDecimal, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryBreakdownData? {
+            val entity = categoryMap[categoryName] ?: return null
+            
+            // Apply shading logic for children
+            val baseColor = if (parentColor == null) Color(entity.colorHex) else {
+                // If it's a child, derive shade from parent
+                // We use a simple HSL-like shift or just alpha/lightness variation
+                // For now, let's use a variation based on index to ensure siblings are distinct
+                val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
+                parentColor.copy(
+                    red = (parentColor.red * factor).coerceIn(0f, 1f),
+                    green = (parentColor.green * factor).coerceIn(0f, 1f),
+                    blue = (parentColor.blue * factor).coerceIn(0f, 1f)
+                )
             }
-        }
-        
-        return transactionCategoryMap.map { (category, txs) ->
-            val categoryEntity = categoryMap[category]
-            val income = txs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
+
+            val childrenEntities = allCategories.filter { it.parentId == entity.id }
+            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
+                buildTree(child.name, txs, globalTotal, baseColor, i, childrenEntities.size)
+            }.sortedByDescending { it.netBalance.abs() }
+
+            // ... rest of the aggregation logic
+
+            // Current category's OWN transactions (not its children's)
+            val ownTxs = txs.filter { it.category == categoryName }
+            val ownIncome = ownTxs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
-            val expense = txs.filter { it.amount.signum() < 0 }.sumOf { tx ->
+            val ownExpense = ownTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
-            val netBalance = income + expense
-            val percentage = if (totalNetBalance.abs() > BigDecimal.ZERO) {
-                (netBalance.abs() / totalNetBalance.abs()).toFloat()
-            } else 0f
-            
-            // Get category color from database, or use default
-            val colorHex = categoryEntity?.colorHex ?: 0xFF6200EE.toInt()
-            
-            // Check for subcategories
-            val hasSubcategories = categoryEntity != null && allCategories.any { it.parentId == categoryEntity.id }
-            
-            // Compute subcategory data if exists
-            val subcategoryData = if (hasSubcategories) {
-                val subCategories = allCategories.filter { it.parentId == categoryEntity.id }
-                subCategories.map { subCat ->
-                    val subTxs = txs.filter { it.category == subCat.name }
-                    val subIncome = subTxs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-                    }
-                    val subExpense = subTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-                    }
-                    val subNetBalance = subIncome + subExpense
-                    val subPercentage = if (netBalance.abs() > BigDecimal.ZERO) {
-                        (subNetBalance.abs() / netBalance.abs()).toFloat()
-                    } else 0f
-                    
-                    CategoryBreakdownData(
-                        category = subCat.name,
-                        categoryId = subCat.id,
-                        netBalance = subNetBalance,
-                        income = subIncome,
-                        expense = subExpense,
-                        colorHex = subCat.colorHex,
-                        percentage = subPercentage,
-                        hasSubcategories = false,
-                        subcategoryData = null
-                    )
-                }
-            } else null
-            
-            CategoryBreakdownData(
-                category = category,
-                categoryId = categoryEntity?.id,
-                netBalance = netBalance,
-                income = income,
-                expense = expense,
-                colorHex = colorHex,
-                percentage = percentage,
-                hasSubcategories = hasSubcategories,
-                subcategoryData = subcategoryData
+
+            // Aggregate: Own + Children
+            val totalIncome = ownIncome + childrenData.sumOf { it.income }
+            val totalExpense = ownExpense + childrenData.sumOf { it.expense }
+            val totalNet = totalIncome + totalExpense
+
+            return CategoryBreakdownData(
+                category = entity.name,
+                categoryId = entity.id,
+                netBalance = totalNet,
+                income = totalIncome,
+                expense = totalExpense,
+                colorHex = baseColor.toArgb(),
+                percentage = if (globalTotal.signum() != 0) (totalNet.abs() / globalTotal.abs()).toFloat() else 0f,
+                hasSubcategories = childrenData.isNotEmpty(),
+                subcategoryData = childrenData
             )
+        }
+
+        val totalNetGlobal = filteredByScope.sumOf { tx ->
+            CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+        }.abs()
+
+        // Root Level: Categories with no parent
+        val rootCategories = allCategories.filter { it.parentId == null }
+        return rootCategories.mapNotNull { root ->
+            buildTree(root.name, filteredByScope, totalNetGlobal)
         }.sortedByDescending { it.netBalance.abs() }
     }
 
@@ -314,14 +304,15 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<TimelineTrajectoryData> {
-        val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
+        val accountId = config.filter.accountIds.firstOrNull()
+        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        val filteredByScope = filterTransactionsByScope(transactions, scope, accountId)
 
         // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
         // Use filteredByScope directly (scope filtering only, no timeline filtering)
 
         // Determine time buckets based on timelineRange using TimelineService
-        val timeBuckets = getTimeBuckets(config.timelineRange)
+        val timeBuckets = getTimeBuckets(config.filter.timelineRange)
 
         return timeBuckets.map { bucket ->
             val bucketTransactions = filteredByScope.filter { tx ->
@@ -338,12 +329,12 @@ class CardComputationServiceImpl(
             // Calculate running balance
             val priorTransactions = filteredByScope.filter { it.timestamp < bucket.start }
             val priorBalance = financialUseCases.calculateNetWorth(
-                accounts = if (scope == CardScope.ACCOUNT) accounts.filter { it.id == config.accountId } else accounts,
+                accounts = if (scope == CardScope.ACCOUNT && accountId != null) accounts.filter { it.id == accountId } else accounts,
                 allTransactions = priorTransactions,
                 baseCurrency = baseCurrency,
                 exchangeRates = exchangeRates,
                 precision = precision,
-                timelineRange = config.timelineRange
+                timelineRange = config.filter.timelineRange
             )
             
             val balance = priorBalance + income - expense
@@ -364,77 +355,56 @@ class CardComputationServiceImpl(
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): List<CategoryExpenseTreemapData> {
-        val scope = if (config.accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(transactions, scope, config.accountId)
+        val accountId = config.filter.accountIds.firstOrNull()
+        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        val filteredByScope = filterTransactionsByScope(transactions, scope, accountId)
+        val expenseTransactions = filteredByScope.filter { it.amount.signum() < 0 }
 
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use filteredByScope directly (scope filtering only, no timeline filtering)
-
-        // Get all categories for color and subcategory info
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
 
-        // Filter only expenses (negative amounts)
-        val expenseTransactions = filteredByScope.filter { it.amount.signum() < 0 }
-        
-        // Group by category
-        val transactionCategoryMap = expenseTransactions.groupBy { it.category }
-        
-        val totalExpense = transactionCategoryMap.values.sumOf { txs ->
-            txs.sumOf { tx ->
+        fun buildTree(categoryName: String?, txs: List<Transaction>, globalTotal: BigDecimal, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryExpenseTreemapData? {
+            val entity = categoryMap[categoryName] ?: return null
+            
+            val baseColor = if (parentColor == null) Color(entity.colorHex) else {
+                val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
+                parentColor.copy(
+                    red = (parentColor.red * factor).coerceIn(0f, 1f),
+                    green = (parentColor.green * factor).coerceIn(0f, 1f),
+                    blue = (parentColor.blue * factor).coerceIn(0f, 1f)
+                )
+            }
+
+            val childrenEntities = allCategories.filter { it.parentId == entity.id }
+            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
+                buildTree(child.name, txs, globalTotal, baseColor, i, childrenEntities.size)
+            }.sortedByDescending { it.expense.abs() }
+
+            val ownExpense = txs.filter { it.category == categoryName }.sumOf { tx ->
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             }
-        }
-        
-        return transactionCategoryMap.map { (category, txs) ->
-            val categoryEntity = categoryMap[category]
-            val expense = txs.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-            }
-            val percentage = if (totalExpense.abs() > BigDecimal.ZERO) {
-                (expense.abs() / totalExpense.abs()).toFloat()
-            } else 0f
-            
-            // Get category color from database, or use default
-            val colorHex = categoryEntity?.colorHex ?: 0xFF6200EE.toInt()
-            
-            // Check for subcategories
-            val hasSubcategories = categoryEntity != null && allCategories.any { it.parentId == categoryEntity.id }
-            
-            // Compute subcategory data if exists
-            val subcategoryData = if (hasSubcategories) {
-                val subCategories = allCategories.filter { it.parentId == categoryEntity.id }
-                subCategories.map { subCat ->
-                    val subTxs = txs.filter { it.category == subCat.name }
-                    val subExpense = subTxs.sumOf { tx ->
-                        CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
-                    }
-                    val subPercentage = if (expense.abs() > BigDecimal.ZERO) {
-                        (subExpense.abs() / expense.abs()).toFloat()
-                    } else 0f
-                    
-                    CategoryExpenseTreemapData(
-                        category = subCat.name,
-                        categoryId = subCat.id,
-                        expense = subExpense,
-                        colorHex = subCat.colorHex,
-                        percentage = subPercentage,
-                        hasSubcategories = false,
-                        subcategoryData = null
-                    )
-                }
-            } else null
-            
-            CategoryExpenseTreemapData(
-                category = category,
-                categoryId = categoryEntity?.id,
-                expense = expense,
-                colorHex = colorHex,
-                percentage = percentage,
-                hasSubcategories = hasSubcategories,
-                subcategoryData = subcategoryData
+
+            val totalExpense = ownExpense + childrenData.sumOf { it.expense }
+
+            return CategoryExpenseTreemapData(
+                category = entity.name,
+                categoryId = entity.id,
+                expense = totalExpense,
+                colorHex = baseColor.toArgb(),
+                percentage = if (globalTotal.signum() != 0) (totalExpense.abs() / globalTotal.abs()).toFloat() else 0f,
+                hasSubcategories = childrenData.isNotEmpty(),
+                subcategoryData = childrenData
             )
-        }.sortedByDescending { it.expense }
+        }
+
+        val totalExpenseGlobal = expenseTransactions.sumOf { tx ->
+            CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+        }.abs()
+
+        val rootCategories = allCategories.filter { it.parentId == null }
+        return rootCategories.mapNotNull { root ->
+            buildTree(root.name, expenseTransactions, totalExpenseGlobal)
+        }.sortedByDescending { it.expense.abs() }
     }
 
     /**

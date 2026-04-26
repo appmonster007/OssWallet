@@ -21,7 +21,8 @@ data class AeonLineChartSeries(
     val dataPoints: List<AeonLineChartPoint>,
     val color: Color,
     val fillGradient: Boolean = true,
-    val isDashed: Boolean = false
+    val isDashed: Boolean = false,
+    val confidenceIntervals: List<Pair<BigDecimal, BigDecimal>>? = null // Min, Max for each data point
 )
 
 /**
@@ -31,7 +32,11 @@ data class AeonPieChartSlice(
     val value: BigDecimal,
     val label: String,
     val color: Color,
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
+    val hasSubcategories: Boolean = false,
+    val subcategoryCount: Int = 0,
+    val percentageOfTotal: Float = 0f,
+    val id: Any? = null
 )
 
 /**
@@ -42,5 +47,9 @@ data class AeonTreemapNode(
     val value: BigDecimal,
     val color: Color,
     val children: List<AeonTreemapNode> = emptyList(),
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
+    val hasSubcategories: Boolean = false,
+    val subcategoryCount: Int = 0,
+    val percentageOfTotal: Float = 0f,
+    val id: Any? = null
 )

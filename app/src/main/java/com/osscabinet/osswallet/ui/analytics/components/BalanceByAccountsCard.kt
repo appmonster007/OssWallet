@@ -1,41 +1,31 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.AccentOrange
-import com.osscabinet.ossWallet.ui.theme.AccentPurple
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
@@ -46,191 +36,126 @@ fun BalanceByAccountsCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (BalanceByAccountsCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Total balance
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "Total Balance",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.totalBalance, data.currency, data.precision),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Text(
-                        "${data.accountBalances.size} Accounts",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(8.dp, 4.dp)
-                    )
-                }
+            Column {
+                Text("TOTAL LIQUIDITY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    formatCurrencyRight(data.totalBalance, data.currency, data.precision),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
+                )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Account balances
-            Column(modifier = Modifier.fillMaxWidth()) {
-                data.accountBalances.forEachIndexed { index, accountBalance ->
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                data.accountBalances.forEach { item ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                // Find accountId by name if possible, or just use filter
+                                val accountId = accounts.find { it.name == item.accountName }?.id
+                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                    accountIds = if (accountId != null) listOf(accountId) else config.filter.accountIds,
+                                    startDate = config.filter.startDate,
+                                    endDate = config.filter.endDate,
+                                    categoryIds = config.filter.categoryIds.map { it.toString() },
+                                    currencies = listOf(item.currency)
+                                ))
+                            }
+                            .padding(8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                accountBalance.accountName,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-                            )
-                        }
-                        
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                formatCurrencyRight(accountBalance.balance, data.currency, data.precision),
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = if (accountBalance.balance.signum() >= 0) AccentBlue else AccentOrange
-                            )
-                        }
-                    }
-                    
-                    if (index < data.accountBalances.size - 1) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                        ) {}
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(item.accountName, style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            formatCurrencyRight(item.balance, item.currency, data.precision),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (item.isNegative) NegativeAmountColor else MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             }
         }
-        
-        if (showSettings) {
-            BalanceByAccountsSettingsDialog(
-                config = config,
-                onUpdate = onUpdate,
-                onDismiss = { showSettings = false },
-                onDelete = onDelete
-            )
-        }
+    }
+    
+    if (showSettings) {
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
+            onDismiss = { showSettings = false },
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
+        )
     }
 }
 
-@Composable
-private fun BalanceByAccountsSettingsDialog(
-    config: BalanceByAccountsCardConfig,
-    onUpdate: (BalanceByAccountsCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+data class BalanceByAccountsData(
+    val totalBalance: BigDecimal,
+    val currency: String,
+    val precision: Int,
+    val accountBalances: List<AccountBalanceItem>
+)
 
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    )
+data class AccountBalanceItem(
+    val accountName: String,
+    val balance: BigDecimal,
+    val currency: String,
+    val isNegative: Boolean
+)
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun BalanceByAccountsCardPreview() {
+    OssWalletTheme {
+        BalanceByAccountsCard(
+            config = BalanceByAccountsCardConfig(cardId = "preview", title = "BALANCE BY ACCOUNTS"),
+            data = BalanceByAccountsData(
+                totalBalance = BigDecimal("15000.00"),
+                currency = "USD",
+                precision = 2,
+                accountBalances = listOf(
+                    AccountBalanceItem("Checking", BigDecimal("5000.00"), "USD", false),
+                    AccountBalanceItem("Savings", BigDecimal("10000.00"), "USD", false)
+                )
+            )
+        )
+    }
 }

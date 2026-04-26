@@ -28,7 +28,8 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
             }
         }
         is CurrencyBalancesCardConfig -> {
-            if (accountId != null) {
+            val accountId = filter.accountIds.firstOrNull()
+            if (accountId != null && filter.accountIds.size == 1) {
                 accounts.filter { it.id == accountId }
             } else {
                 accounts
@@ -55,14 +56,16 @@ fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transac
             }
         }
         is CurrencyBalancesCardConfig -> {
-            if (accountId != null) {
+            val accountId = filter.accountIds.firstOrNull()
+            if (accountId != null && filter.accountIds.size == 1) {
                 transactions.filter { it.accountId == accountId }
             } else {
                 transactions
             }
         }
         is CashFlowCardConfig -> {
-            if (accountId != null) {
+            val accountId = filter.accountIds.firstOrNull()
+            if (accountId != null && filter.accountIds.size == 1) {
                 transactions.filter { it.accountId == accountId }
             } else {
                 transactions

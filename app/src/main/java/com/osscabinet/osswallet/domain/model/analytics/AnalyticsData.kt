@@ -19,7 +19,16 @@ data class CategoryBreakdownData(
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryBreakdownData>? = null
-)
+) {
+    fun allCategoryIds(): List<String> {
+        val ids = mutableListOf<String>()
+        categoryId?.let { ids.add(it.toString()) }
+        subcategoryData?.forEach { 
+            ids.addAll(it.allCategoryIds())
+        }
+        return ids
+    }
+}
 
 /**
  * Timeline trajectory data for multi-line chart card.
@@ -46,4 +55,13 @@ data class CategoryExpenseTreemapData(
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryExpenseTreemapData>? = null
-)
+) {
+    fun allCategoryIds(): List<String> {
+        val ids = mutableListOf<String>()
+        categoryId?.let { ids.add(it.toString()) }
+        subcategoryData?.forEach { 
+            ids.addAll(it.allCategoryIds())
+        }
+        return ids
+    }
+}

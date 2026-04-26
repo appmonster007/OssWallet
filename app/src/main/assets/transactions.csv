@@ -7,7 +7,7 @@ Initial Balance,10000.00,Initial Balance,0,1735669800000,USD,true,acc_invest,Ban
 Weekly grocery run at Whole Foods,-125.50,Groceries,1,1735669800000,USD,false,acc_cash,Debit Card,Whole Foods,Weekly groceries including organic produce,Personal,,1
 Morning coffee at Starbucks,-6.50,Coffee & Snacks,1,1737743400000,USD,false,acc_cash,Cash,Starbucks,Latte and croissant,Personal,,1
 Full tank gas at Shell,-52.00,Fuel,2,1738693800000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Work,,1
-Netflix monthly subscription,-15.99,Netflix,11,1740249000000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming plan,Subscription,monthly,1
+Netflix monthly subscription,-15.99,Streaming,11,1740249000000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming plan,Subscription,monthly,1
 Monthly salary deposit,5250.00,Salary,8,1740767400000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary after tax,Work,monthly,1
 Monthly rent payment,-1850.00,Rent,4,1742063400000,USD,false,acc_bank,Bank Transfer,Property Management,2-bedroom apartment,Housing,monthly,1
 New laptop from Amazon,-1299.99,Electronics,3,1742841000000,USD,false,acc_credit,Credit Card,Amazon,MacBook Pro for work,Work,,1
@@ -21,7 +21,7 @@ Trader Joe's weekly groceries,-78.25,Groceries,1,1748025000000,USD,false,acc_cas
 Uber to airport,-24.50,Rideshare,2,1748370600000,USD,false,acc_credit,Credit Card,Uber,Airport transfer for business trip,Travel,,1
 Monthly phone bill,-65.00,Phone,4,1749234600000,USD,false,acc_bank,Bank Transfer,Verizon,Unlimited plan,Housing,monthly,1
 Family dinner at Italian restaurant,-145.00,Dining Out,1,1749839400000,USD,false,acc_cash,Credit Card,Olive Garden,Family celebration,Family,,1
-Spotify Premium subscription,-10.99,Spotify,11,1750444200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music subscription,Subscription,monthly,1
+Spotify Premium subscription,-10.99,Music,11,1750444200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music subscription,Subscription,monthly,1
 Indian grocery shopping,-4200.00,Groceries,1,1751394600000,INR,false,acc_bank,Cash,Local Market,Monthly groceries in India,Personal,,1
 Monthly salary in INR,125000.00,Salary,8,1751913000000,INR,true,acc_bank,Bank Transfer,Indian Client,Monthly consulting fee,Work,monthly,1
 Monthly transfer to savings,50000.00,Salary,8,1752517800000,INR,true,acc_savings,Bank Transfer,Self,Monthly savings goal,Personal,monthly,1
@@ -67,8 +67,8 @@ Grocery shopping at Costco,-245.00,Groceries,1,1770921000000,USD,false,acc_cash,
 Lunch at work cafeteria,-15.00,Dining Out,1,1771871400000,USD,false,acc_cash,Debit Card,Cafeteria,Work lunch,Work,,1
 Gas station fill-up,-48.00,Fuel,2,1772217000000,USD,false,acc_bank,Credit Card,Shell,Regular unleaded,Personal,,1
 Online shopping at Amazon,-67.99,Online Shopping,3,1772735400000,USD,false,acc_credit,Credit Card,Amazon,Household items,Personal,,1
-Monthly Netflix subscription,-15.99,Netflix,11,1772735400000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming,Subscription,monthly,1
-Monthly Spotify subscription,-10.99,Spotify,11,1773340200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music,Subscription,monthly,1
+Monthly Netflix subscription,-15.99,Streaming,11,1772735400000,USD,false,acc_credit,Credit Card,Netflix,Monthly streaming,Subscription,monthly,1
+Monthly Spotify subscription,-10.99,Music,11,1773340200000,USD,false,acc_credit,Credit Card,Spotify,Monthly music,Subscription,monthly,1
 Monthly salary deposit,5250.00,Salary,8,1773685800000,USD,true,acc_bank,Bank Transfer,TechCorp Inc,Monthly salary,Work,monthly,1
 Monthly rent payment,-1850.00,Rent,4,1774204200000,USD,false,acc_bank,Bank Transfer,Property Management,Monthly rent,Housing,monthly,1
 Monthly phone bill,-65.00,Phone,4,1774549800000,USD,false,acc_bank,Bank Transfer,Verizon,Monthly phone,Housing,monthly,1
@@ -77,3 +77,48 @@ Monthly electricity bill,-142.00,Electricity,4,1775241000000,USD,false,acc_bank,
 Stock investment contribution,-500.00,Stocks,12,1776018600000,USD,false,acc_invest,Bank Transfer,Brokerage,Monthly investment,Investments,monthly,1
 Adobe subscription,-54.99,Software Subscriptions,11,1776364200000,USD,false,acc_credit,Credit Card,Adobe,Monthly subscription,Work,monthly,1
 Google Cloud storage,-9.99,Cloud Storage,11,1776364200000,USD,false,acc_credit,Credit Card,Google,Monthly storage,Work,monthly,1
+Fast food lunch at McDonald's,-12.50,Fast Food,1,1777000000000,USD,false,acc_cash,Cash,McDonald's,Quick lunch,Personal,,1
+Wine purchase for dinner party,-45.00,Alcohol,1,1777100000000,USD,false,acc_credit,Credit Card,Total Wine,Bottle of red wine,Personal,,1
+Subway monthly pass,-127.00,Public Transit,2,1777200000000,USD,false,acc_bank,Debit Card,MTA,Monthly commuter pass,Work,monthly,1
+ATM cash withdrawal,-200.00,Cash Withdrawals,1,1777300000000,USD,false,acc_bank,ATM,ATM,Personal cash,Personal,,1
+Bank overdraft fee,-35.00,Fees & Charges,1,1777400000000,USD,false,acc_bank,Bank Transfer,Bank,Overdraft fee,Personal,,1
+Sports equipment purchase,-299.00,Sports,5,1777500000000,USD,false,acc_credit,Credit Card,REI,Tennis racket and balls,Entertainment,,1
+Painting supplies,-85.00,Hobbies,5,1777600000000,USD,false,acc_credit,Credit Card,Michaels,Acrylic paints and brushes,Entertainment,,1
+Mortgage payment,-2200.00,Mortgage,4,1777700000000,USD,false,acc_bank,Bank Transfer,Mortgage Co,Monthly mortgage payment,Housing,monthly,1
+Plumbing repair,-350.00,Maintenance,4,1777800000000,USD,false,acc_bank,Credit Card,Plumber,Fix leaky pipe,Housing,,1
+Doctor visit copay,-40.00,Doctor,6,1777900000000,USD,false,acc_cash,Debit Card,Clinic,Annual checkup copay,Health,,1
+Dental cleaning,-150.00,Dental,6,1778000000000,USD,false,acc_credit,Credit Card,Dentist,Semi-annual cleaning,Health,,1
+Eye exam and glasses,-250.00,Vision,6,1778100000000,USD,false,acc_credit,Credit Card,EyeVision,New prescription glasses,Health,,1
+College tuition payment,-4500.00,Tuition,7,1778200000000,USD,false,acc_bank,Bank Transfer,University,Semester tuition,Education,,1
+Professional certification exam,-400.00,Certifications,7,1778300000000,USD,false,acc_credit,Credit Card,Certification Board,AWS certification exam,Education,,1
+Corporate training course,-1200.00,Training,7,1778400000000,USD,false,acc_bank,Credit Card,Training Center,Leadership workshop,Education,,1
+Grooming products,-45.00,Grooming,10,1778500000000,USD,false,acc_credit,Credit Card,Target,Shaving supplies,Personal,,1
+Laundry service,-35.00,Laundry,10,1778600000000,USD,false,acc_cash,Cash,Laundromat,Weekly laundry,Personal,,1
+Dry cleaning suits,-75.00,Dry Cleaning,10,1778700000000,USD,false,acc_cash,Cash,Dry Cleaners,Work suits dry cleaned,Work,,1
+Beach vacation package,-2500.00,Vacation,9,1778800000000,USD,false,acc_credit,Credit Card,Travel Agency,Week-long beach vacation,Travel,,1
+Travel insurance,-85.00,Travel Insurance,9,1778900000000,USD,false,acc_credit,Credit Card,Insurance Co,Trip insurance,Travel,,1
+Client dinner,-180.00,Meals & Entertainment,1,1779000000000,USD,false,acc_credit,Credit Card,Steakhouse,Business dinner with clients,Work,,1
+Office supplies,-125.00,Office Supplies,1,1779100000000,USD,false,acc_bank,Credit Card,Staples,Paper, pens, printer ink,Work,,1
+Marketing campaign,-2000.00,Marketing,1,1779200000000,USD,false,acc_bank,Bank Transfer,Ad Agency,Q1 digital marketing,Work,,1
+Legal consultation,-350.00,Professional Services,1,1779300000000,USD,false,acc_bank,Credit Card,Law Firm,Contract review,Work,,1
+Bond investment,-1000.00,Bonds,12,1779400000000,USD,false,acc_invest,Bank Transfer,Brokerage,Corporate bond purchase,Investments,,1
+Mutual fund contribution,-500.00,Mutual Funds,12,1779500000000,USD,false,acc_invest,Bank Transfer,Brokerage,Index mutual fund,Investments,monthly,1
+Real estate down payment,-50000.00,Real Estate,12,1779600000000,USD,false,acc_invest,Bank Transfer,Realty Co,Investment property down payment,Investments,,1
+Retirement contribution,-1000.00,Retirement,12,1779700000000,USD,false,acc_invest,Bank Transfer,401k,Monthly retirement contribution,Investments,monthly,1
+Business consulting income,3500.00,Business Income,8,1779800000000,USD,true,acc_bank,Bank Transfer,Consulting Client,Strategic consulting project,Work,,1
+Dividend payment,-150.00,Dividends,8,1779900000000,USD,true,acc_bank,Bank Transfer,Brokerage,Quarterly dividend payout,Investments,,1
+Rental income from property,1800.00,Rental Income,8,1780000000000,USD,true,acc_bank,Bank Transfer,Tenant,Monthly rent from rental property,Investments,monthly,1
+Savings account interest,25.00,Interest,8,1780100000000,USD,true,acc_bank,Bank Transfer,Bank,Monthly interest,Investments,,1
+Book royalty payment,450.00,Royalties,8,1780200000000,USD,true,acc_bank,Bank Transfer,Publisher,Quarterly book royalties,Investments,,1
+Software subscription,-29.99,Software,11,1780300000000,USD,false,acc_credit,Credit Card,Microsoft,Office 365 subscription,Subscription,monthly,1
+News magazine subscription,-15.00,News & Magazines,11,1780400000000,USD,false,acc_credit,Credit Card,The Atlantic,Digital subscription,Subscription,monthly,1
+Heating bill,-120.00,Heating,4,1780500000000,USD,false,acc_bank,Bank Transfer,Utility Co,Monthly heating,Utilities,monthly,1
+Trash collection,-25.00,Trash,4,1780600000000,USD,false,acc_bank,Bank Transfer,Waste Management,Monthly trash collection,Utilities,monthly,1
+Sewer bill,-35.00,Sewer,4,1780700000000,USD,false,acc_bank,Bank Transfer,Water Dept,Monthly sewer,Utilities,monthly,1
+Income tax payment,-3500.00,Income Tax,1,1780800000000,USD,false,acc_bank,Bank Transfer,IRS,Quarterly estimated tax,Taxes,,1
+Property tax payment,-1800.00,Property Tax,1,1780900000000,USD,false,acc_bank,Bank Transfer,Tax Assessor,Annual property tax,Taxes,,1
+Sales tax on large purchase,-450.00,Sales Tax,1,1781000000000,USD,false,acc_bank,Credit Card,Retailer,Sales tax on car purchase,Taxes,,1
+Vehicle registration,-150.00,Vehicle Tax,1,1781100000000,USD,false,acc_bank,Bank Transfer,DMV,Annual vehicle registration,Taxes,,1
+Charity donation to Red Cross,-100.00,Donations,1,1781200000000,USD,false,acc_credit,Credit Card,Red Cross,Disaster relief donation,Charity,,1
+Local food bank donation,-50.00,Charity,1,1781300000000,USD,false,acc_cash,Cash,Food Bank,Monthly food donation,Charity,,1
+School fundraiser,-200.00,Fundraising,1,1781400000000,USD,false,acc_bank,Credit Card,PTA,School fundraiser contribution,Charity,,1

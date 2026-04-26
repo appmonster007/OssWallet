@@ -133,3 +133,6 @@ val Typography = Typography(
         fontFeatureSettings = "tnum"
     )
 )
+
+val Typography.labelExtraSmall: TextStyle
+    get() = labelSmall.copy(fontSize = 10.sp)

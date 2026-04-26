@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Transaction Status Enum
  * 
@@ -7,6 +9,7 @@ package com.osscabinet.ossWallet.domain.model
  * 
  * @property displayName Human-readable name for UI display
  */
+@Serializable
 enum class TransactionStatus(val displayName: String) {
     /**
      * Transaction needs to be reconciled with bank statement

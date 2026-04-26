@@ -378,10 +378,6 @@ private fun AccountItemContent(
 
     val handleAccountClick = {
         onAccountClick(account.id)
-        if (onRecordsClick != null) {
-            val (start, end) = TimelineService.getDateRange(timelineRange)
-            onRecordsClick(RecordsFilterContext.Custom(accountIds = listOf(account.id), startDate = start, endDate = end))
-        }
     }
 
     val isDarkTheme = when (currentTheme) {

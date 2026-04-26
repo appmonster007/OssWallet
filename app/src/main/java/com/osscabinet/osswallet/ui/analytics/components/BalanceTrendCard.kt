@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -9,21 +11,23 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
-import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartPoint
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartSeries
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartPoint
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
@@ -34,27 +38,30 @@ fun BalanceTrendCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (BalanceTrendCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
@@ -67,207 +74,101 @@ fun BalanceTrendCard(
                 }
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Primary Metrics
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
                 Column {
-                    Text(
-                        "Current Balance",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("TOTAL BALANCE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         formatCurrencyRight(data.currentBalance, data.currency, data.precision),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
                     )
                 }
                 
                 Surface(
-                    color = if (data.percentageChange.startsWith("-")) {
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                    },
+                    color = (if (data.percentageChange.startsWith("-")) NegativeAmountColor else PositiveAmountColor).copy(alpha = 0.1f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
                         data.percentageChange,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (data.percentageChange.startsWith("-")) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        color = if (data.percentageChange.startsWith("-")) NegativeAmountColor else PositiveAmountColor
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Advanced Visualization
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
+                    .height(200.dp)
             ) {
                 if (data.weeklyBalances.isNotEmpty()) {
                     val series = listOf(
                         AeonLineChartSeries(
                             name = "Balance",
                             color = AccentBlue,
-                            dataPoints = data.weeklyBalances.mapIndexed { index, balance ->
-                                AeonLineChartPoint(index.toFloat(), balance.toBigDecimal(), "Week ${index + 1}")
+                            dataPoints = data.weeklyBalances.mapIndexed { i, v -> 
+                                AeonLineChartPoint(i.toFloat(), v.toBigDecimal()) 
                             }
                         )
                     )
                     
                     AeonLineChart(
                         series = series,
-                        currency = data.currency,
-                        precision = data.precision,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No historical data to visualize",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                        onNavigateToRecords = { _ ->
+                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                                startDate = config.filter.startDate,
+                                endDate = config.filter.endDate,
+                                accountIds = config.filter.accountIds,
+                                categoryIds = config.filter.categoryIds.map { it.toString() },
+                                currencies = config.filter.currencies
+                            ))
+                        }
+                    )
                 }
             }
         }
-        
-        if (showSettings) {
-            BalanceTrendSettingsDialog(
-                config = config,
-                onUpdate = onUpdate,
-                onDismiss = { showSettings = false },
-                onDelete = onDelete
-            )
-        }
+    }
+    
+    if (showSettings) {
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
+            onDismiss = { showSettings = false },
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
+        )
     }
 }
 
-@Composable
-private fun BalanceTrendSettingsDialog(
-    config: BalanceTrendCardConfig,
-    onUpdate: (BalanceTrendCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
+data class BalanceTrendData(
+    val currentBalance: BigDecimal,
+    val percentageChange: String,
+    val currency: String,
+    val precision: Int,
+    val weeklyBalances: List<Double>
+)
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun BalanceTrendCardPreview() {
     OssWalletTheme {
         BalanceTrendCard(
-            config = BalanceTrendCardConfig(
-                cardId = "preview",
-                title = "BALANCE TREND",
-                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-            ),
+            config = BalanceTrendCardConfig(cardId = "preview", title = "BALANCE TREND"),
             data = BalanceTrendData(
-                currentBalance = BigDecimal("15240.50"),
-                percentageChange = "+12.5%",
+                currentBalance = BigDecimal("15000.00"),
+                percentageChange = "+15%",
                 currency = "USD",
                 precision = 2,
-                weeklyBalances = listOf(12000.0, 13500.0, 14200.0, 15240.50)
-            ),
-            modifier = Modifier.padding(16.dp)
-        )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-@Composable
-fun BalanceTrendCardEmptyPreview() {
-    OssWalletTheme {
-        BalanceTrendCard(
-            config = BalanceTrendCardConfig(
-                cardId = "preview_empty",
-                title = "BALANCE TREND"
-            ),
-            data = BalanceTrendData(
-                currentBalance = BigDecimal.ZERO,
-                percentageChange = "0%",
-                currency = "USD",
-                precision = 2,
-                weeklyBalances = emptyList()
-            ),
-            modifier = Modifier.padding(16.dp)
+                weeklyBalances = listOf(10000.0, 12000.0, 11000.0, 14000.0, 15000.0)
+            )
         )
     }
 }

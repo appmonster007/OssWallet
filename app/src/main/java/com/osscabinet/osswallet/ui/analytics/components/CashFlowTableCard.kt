@@ -1,40 +1,31 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.AccentOrange
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 
@@ -45,196 +36,162 @@ fun CashFlowTableCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     onUpdate: (CashFlowTableCardConfig) -> Unit = {},
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    accounts: List<Account> = emptyList(),
+    allCategories: List<CategoryEntity> = emptyList(),
+    savedFilters: List<FilterEntity> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AeonFlowSectionHeader(
                 title = config.title,
                 modifier = headerModifier,
+                filter = config.filter,
                 trailing = {
                     Row {
                         IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Cash Flow Summary
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Income",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.incomeTotal, data.currency, data.precision),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = AccentBlue
-                    )
-                    Text(
-                        "${data.incomeCount} transactions",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TableHeader()
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                TableRow("Income", data.incomeCount, data.incomeAvgDay, data.incomeAvgRecord, data.incomeTotal, PositiveAmountColor, data.currency, data.precision) {
+                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        isIncome = true,
+                        startDate = config.filter.startDate,
+                        endDate = config.filter.endDate,
+                        accountIds = config.filter.accountIds,
+                        categoryIds = config.filter.categoryIds.map { it.toString() },
+                        currencies = config.filter.currencies
+                    ))
                 }
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Expenses",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.expenseTotal, data.currency, data.precision),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = AccentOrange
-                    )
-                    Text(
-                        "${data.expenseCount} transactions",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                TableRow("Expenses", data.expenseCount, data.expenseAvgDay, data.expenseAvgRecord, data.expenseTotal, NegativeAmountColor, data.currency, data.precision) {
+                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        isIncome = false,
+                        startDate = config.filter.startDate,
+                        endDate = config.filter.endDate,
+                        accountIds = config.filter.accountIds,
+                        categoryIds = config.filter.categoryIds.map { it.toString() },
+                        currencies = config.filter.currencies
+                    ))
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Average Statistics
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Avg Income/Day",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.incomeAvgDay, data.currency, data.precision),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-                    )
-                }
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Avg Expense/Day",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        formatCurrencyRight(data.expenseAvgDay, data.currency, data.precision),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-                    )
-                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                TableRow("Net Flow", -1, null, null, data.netCashFlow, if (data.netCashFlow >= BigDecimal.ZERO) PositiveAmountColor else NegativeAmountColor, data.currency, data.precision, isTotal = true) {}
             }
         }
-        
-        if (showSettings) {
-            CashFlowTableSettingsDialog(
-                config = config,
-                onUpdate = onUpdate,
-                onDismiss = { showSettings = false },
-                onDelete = onDelete
-            )
-        }
+    }
+    
+    if (showSettings) {
+        AeonCardSettingsSheet(
+            title = config.title,
+            filter = config.filter,
+            onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
+            onDismiss = { showSettings = false },
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
+        )
     }
 }
 
 @Composable
-private fun CashFlowTableSettingsDialog(
-    config: CashFlowTableCardConfig,
-    onUpdate: (CashFlowTableCardConfig) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton(
-                onClick = onDelete,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete card",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Delete")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        },
-        title = {
-            Text(
-                config.title,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+private fun TableHeader() {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text("METRIC", modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("QTY", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("AVG/DAY", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("TOTAL", modifier = Modifier.weight(1.2f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.End)
+    }
+}
 
-                        TimelineFilterBar(
-                            currentRange = config.timelineRange,
-                            onRangeSelected = { range -> onUpdate(config.copy(timelineRange = range)) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-    )
+@Composable
+private fun TableRow(
+    label: String,
+    count: Int,
+    avgDay: BigDecimal?,
+    avgRecord: BigDecimal?,
+    total: BigDecimal,
+    color: Color,
+    currency: String,
+    precision: Int,
+    isTotal: Boolean = false,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp, horizontal = 4.dp), 
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, modifier = Modifier.weight(1.5f), style = if (isTotal) MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.labelMedium)
+        Text(if (count >= 0) count.toString() else "-", modifier = Modifier.weight(0.5f), style = MaterialTheme.typography.labelMedium)
+        Text(avgDay?.let { formatCurrencyRight(it, currency, precision) } ?: "-", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+        Text(
+            formatCurrencyRight(total, currency, precision),
+            modifier = Modifier.weight(1.2f),
+            style = if (isTotal) MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.labelMedium,
+            color = color,
+            textAlign = androidx.compose.ui.text.style.TextAlign.End
+        )
+    }
+}
+
+data class CashFlowTableData(
+    val incomeCount: Int,
+    val expenseCount: Int,
+    val incomeAvgDay: BigDecimal,
+    val expenseAvgDay: BigDecimal,
+    val incomeAvgRecord: BigDecimal,
+    val expenseAvgRecord: BigDecimal,
+    val incomeTotal: BigDecimal,
+    val expenseTotal: BigDecimal,
+    val netCashFlow: BigDecimal,
+    val currency: String,
+    val precision: Int
+)
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CashFlowTableCardPreview() {
+    OssWalletTheme {
+        CashFlowTableCard(
+            config = CashFlowTableCardConfig(cardId = "preview", title = "CASH FLOW TABLE"),
+            data = CashFlowTableData(
+                incomeCount = 10,
+                expenseCount = 20,
+                incomeAvgDay = BigDecimal("100.00"),
+                expenseAvgDay = BigDecimal("50.00"),
+                incomeAvgRecord = BigDecimal("500.00"),
+                expenseAvgRecord = BigDecimal("200.00"),
+                incomeTotal = BigDecimal("5000.00"),
+                expenseTotal = BigDecimal("-3000.00"),
+                netCashFlow = BigDecimal("2000.00"),
+                currency = "USD",
+                precision = 2
+            )
+        )
+    }
 }

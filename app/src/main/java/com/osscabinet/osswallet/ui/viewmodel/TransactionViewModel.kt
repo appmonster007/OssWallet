@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
@@ -28,7 +29,8 @@ class TransactionViewModel(
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
     private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
-    private val analyticsViewModel: AnalyticsViewModel
+    private val analyticsViewModel: AnalyticsViewModel,
+    private val transactionManager: com.osscabinet.ossWallet.domain.service.TransactionManager
 ) : ViewModel() {
 
     // Replace multiple filter states with single FilterManager
@@ -236,43 +238,28 @@ class TransactionViewModel(
     }
 
     fun addTransaction(
-        title: String,
-        amount: BigDecimal,
-        category: String,
-        transactionType: String,
-        accountId: String,
-        currency: String,
-        categoryId: Long? = null,
-        tags: List<String> = emptyList(),
-        paymentMethod: String = "Cash",
-        timestamp: Long = System.currentTimeMillis(),
-        payee: String = "",
-        note: String = "",
-        latitude: Double? = null,
-        longitude: Double? = null,
-        warrantyExpiration: Long? = null,
-        status: com.osscabinet.ossWallet.domain.model.TransactionStatus = com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED,
+        request: TransactionRequest,
         onComplete: ((Long) -> Unit)? = null
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
             val transaction = Transaction(
-                title = title,
-                amount = amount,
-                category = category,
-                timestamp = timestamp,
-                currency = currency,
-                transactionType = transactionType,
-                accountId = accountId,
-                categoryId = categoryId,
-                tags = tags,
-                paymentMethod = paymentMethod,
-                payee = payee,
-                note = note,
-                latitude = latitude,
-                longitude = longitude,
-                warrantyExpiration = warrantyExpiration,
-                status = status
+                title = request.title,
+                amount = request.amount,
+                category = request.category,
+                timestamp = request.timestamp,
+                currency = request.currency,
+                transactionType = request.transactionType,
+                accountId = request.accountId,
+                categoryId = request.categoryId,
+                tags = request.tags,
+                paymentMethod = request.paymentMethod,
+                payee = request.payee,
+                note = request.note,
+                latitude = request.latitude,
+                longitude = request.longitude,
+                warrantyExpiration = request.warrantyExpiration,
+                status = request.status
             )
             val id = transactionUseCases.insertTransaction(transaction, profileId)
             onComplete?.invoke(id)
@@ -281,42 +268,27 @@ class TransactionViewModel(
 
     fun updateTransaction(
         oldTransaction: Transaction,
-        title: String,
-        amount: BigDecimal,
-        category: String,
-        transactionType: String,
-        accountId: String,
-        currency: String,
-        categoryId: Long? = null,
-        tags: List<String> = emptyList(),
-        paymentMethod: String = "Cash",
-        timestamp: Long = System.currentTimeMillis(),
-        payee: String = "",
-        note: String = "",
-        latitude: Double? = null,
-        longitude: Double? = null,
-        warrantyExpiration: Long? = null,
-        status: com.osscabinet.ossWallet.domain.model.TransactionStatus = oldTransaction.status
+        request: TransactionRequest
     ) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
             val newTransaction = oldTransaction.copy(
-                title = title,
-                amount = amount,
-                category = category,
-                timestamp = timestamp,
-                currency = currency,
-                transactionType = transactionType,
-                accountId = accountId,
-                categoryId = categoryId,
-                tags = tags,
-                paymentMethod = paymentMethod,
-                payee = payee,
-                note = note,
-                latitude = latitude,
-                longitude = longitude,
-                warrantyExpiration = warrantyExpiration,
-                status = status
+                title = request.title,
+                amount = request.amount,
+                category = request.category,
+                timestamp = request.timestamp,
+                currency = request.currency,
+                transactionType = request.transactionType,
+                accountId = request.accountId,
+                categoryId = request.categoryId,
+                tags = request.tags,
+                paymentMethod = request.paymentMethod,
+                payee = request.payee,
+                note = request.note,
+                latitude = request.latitude,
+                longitude = request.longitude,
+                warrantyExpiration = request.warrantyExpiration,
+                status = request.status
             )
             transactionUseCases.updateTransaction(oldTransaction, newTransaction, profileId)
         }
@@ -392,27 +364,7 @@ class TransactionViewModel(
     fun quickUpdateStatus(transactionId: Long, newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
-            val transaction = transactionUseCases.getTransactionById(transactionId)
-            if (transaction != null) {
-                updateTransaction(
-                    oldTransaction = transaction,
-                    title = transaction.title,
-                    amount = transaction.amount,
-                    category = transaction.category,
-                    transactionType = transaction.transactionType,
-                    accountId = transaction.accountId,
-                    currency = transaction.currency,
-                    categoryId = transaction.categoryId,
-                    tags = transaction.tags,
-                    paymentMethod = transaction.paymentMethod,
-                    timestamp = transaction.timestamp,
-                    payee = transaction.payee,
-                    note = transaction.note,
-                    latitude = transaction.latitude,
-                    longitude = transaction.longitude,
-                    warrantyExpiration = transaction.warrantyExpiration,
-                    status = newStatus
-                )
+            if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
                 onItemCollapsed(transactionId)
             }
         }
@@ -421,26 +373,7 @@ class TransactionViewModel(
     fun quickCloneTransaction(transactionId: Long) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
-            val transaction = transactionUseCases.getTransactionById(transactionId)
-            if (transaction != null) {
-                addTransaction(
-                    title = transaction.title,
-                    amount = transaction.amount,
-                    category = transaction.category,
-                    transactionType = transaction.transactionType,
-                    accountId = transaction.accountId,
-                    currency = transaction.currency,
-                    categoryId = transaction.categoryId,
-                    tags = transaction.tags,
-                    paymentMethod = transaction.paymentMethod,
-                    timestamp = System.currentTimeMillis(),
-                    payee = transaction.payee,
-                    note = transaction.note,
-                    latitude = transaction.latitude,
-                    longitude = transaction.longitude,
-                    warrantyExpiration = transaction.warrantyExpiration,
-                    status = transaction.status
-                )
+            if (transactionManager.cloneTransaction(transactionId, profileId) != null) {
                 onItemCollapsed(transactionId)
             }
         }
@@ -491,32 +424,7 @@ class TransactionViewModel(
     fun toggleStatusClearedUncleared(transactionId: Long) {
         viewModelScope.launch {
             val profileId = settingsDataStore.currentProfileId.first()
-            val transaction = transactionUseCases.getTransactionById(transactionId)
-            if (transaction != null) {
-                val newStatus = when (transaction.status) {
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
-                }
-                updateTransaction(
-                    oldTransaction = transaction,
-                    title = transaction.title,
-                    amount = transaction.amount,
-                    category = transaction.category,
-                    transactionType = transaction.transactionType,
-                    accountId = transaction.accountId,
-                    currency = transaction.currency,
-                    categoryId = transaction.categoryId,
-                    tags = transaction.tags,
-                    paymentMethod = transaction.paymentMethod,
-                    timestamp = transaction.timestamp,
-                    payee = transaction.payee,
-                    note = transaction.note,
-                    latitude = transaction.latitude,
-                    longitude = transaction.longitude,
-                    warrantyExpiration = transaction.warrantyExpiration,
-                    status = newStatus
-                )
+            if (transactionManager.toggleStatus(transactionId, profileId) != null) {
                 onItemCollapsed(transactionId)
             }
         }
@@ -561,7 +469,8 @@ class TransactionViewModelFactory(
     private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
     private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
     private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
-    private val analyticsViewModel: AnalyticsViewModel
+    private val analyticsViewModel: AnalyticsViewModel,
+    private val transactionManager: com.osscabinet.ossWallet.domain.service.TransactionManager
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -571,7 +480,8 @@ class TransactionViewModelFactory(
             categoryDao,
             accountRepository,
             filterDao,
-            analyticsViewModel
+            analyticsViewModel,
+            transactionManager
         ) as T
     }
 }

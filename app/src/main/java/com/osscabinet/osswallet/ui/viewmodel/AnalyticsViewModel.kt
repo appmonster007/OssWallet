@@ -47,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
+import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
@@ -232,7 +233,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryBreakdown(
         config = cardConfig,
-        transactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
+        allTransactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -247,7 +248,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeTimelineTrajectory(
         config = cardConfig,
-        transactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
+        allTransactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
         accounts = accounts,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
@@ -262,7 +263,7 @@ class AnalyticsViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryExpenseTreemap(
         config = cardConfig,
-        transactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
+        allTransactions = filterTransactionsByFilter(allTransactions, cardConfig.filter),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -1364,33 +1365,7 @@ class AnalyticsViewModel(
         transactions: List<Transaction>,
         filter: TransactionFilter
     ): List<Transaction> {
-        val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
-
-        // Apply all filters in a single pass
-        return transactions.filter { tx ->
-            // 1. Timeline check (TimelineRange OR explicit dates)
-            val effectiveStart = filter.startDate ?: startTime
-            val effectiveEnd = filter.endDate ?: endTime
-            
-            val inTimeRange = (effectiveStart == null || tx.timestamp >= effectiveStart) &&
-                             (effectiveEnd == null || tx.timestamp <= effectiveEnd)
-            
-            if (!inTimeRange) return@filter false
-
-            // 2. Attribute checks
-            val matchesAccounts = filter.accountIds.isEmpty() || tx.accountId in filter.accountIds
-            val matchesCategories = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
-            val matchesType = filter.transactionType == null || tx.transactionType == filter.transactionType
-            val matchesAmount = (filter.minAmount == null || tx.amount.abs() >= filter.minAmount) &&
-                               (filter.maxAmount == null || tx.amount.abs() <= filter.maxAmount)
-            val matchesStatuses = filter.statuses.isEmpty() || tx.status in filter.statuses
-            val matchesPayee = filter.queryPayee.isNullOrBlank() || tx.payee.contains(filter.queryPayee, ignoreCase = true)
-            val matchesNote = filter.queryNote.isNullOrBlank() || tx.note.contains(filter.queryNote, ignoreCase = true)
-            val matchesCurrencies = filter.currencies.isEmpty() || tx.currency in filter.currencies
-            
-            matchesAccounts && matchesCategories && matchesType && matchesAmount && 
-            matchesStatuses && matchesPayee && matchesNote && matchesCurrencies
-        }
+        return FilterService.filterTransactions(transactions, filter)
     }
 
 }

@@ -34,7 +34,7 @@ suspend fun NetWorthCardConfig.computeNetWorth(
     return engine.computeNetWorth(
         config = this,
         accounts = this.filterAccounts(accounts),
-        transactions = this.filterTransactions(transactions),
+        allTransactions = this.filterTransactions(transactions),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -57,7 +57,7 @@ suspend fun CurrencyBalancesCardConfig.computeCurrencyTotals(
     return engine.computeCurrencyTotals(
         config = this,
         accounts = this.filterAccounts(accounts),
-        transactions = this.filterTransactions(transactions),
+        allTransactions = this.filterTransactions(transactions),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -78,7 +78,7 @@ suspend fun CashFlowCardConfig.computeCashFlow(
 ): CashFlowResult {
     return engine.computeCashFlow(
         config = this,
-        transactions = this.filterTransactions(transactions),
+        allTransactions = this.filterTransactions(transactions),
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -99,7 +99,7 @@ suspend fun AccountsCardConfig.computeAccountStats(
     return engine.computeAccountStats(
         config = this,
         accounts = accounts,
-        transactions = transactions,
+        allTransactions = transactions,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision

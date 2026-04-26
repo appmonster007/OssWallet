@@ -23,12 +23,12 @@ interface CardComputationEngine {
     
     /**
      * Computes net worth and cash flow for a net worth card.
-     * Filters accounts and transactions based on card configuration.
+     * Filters accounts and allTransactions based on card configuration.
      */
     suspend fun computeNetWorth(
         config: NetWorthCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
+        allTransactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
@@ -36,12 +36,12 @@ interface CardComputationEngine {
     
     /**
      * Computes currency totals for a currency balances card.
-     * Filters accounts and transactions based on card configuration.
+     * Filters accounts and allTransactions based on card configuration.
      */
     suspend fun computeCurrencyTotals(
         config: CurrencyBalancesCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
+        allTransactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
@@ -49,11 +49,11 @@ interface CardComputationEngine {
     
     /**
      * Computes cash flow data for a cash flow card.
-     * Filters transactions based on card configuration.
+     * Filters allTransactions based on card configuration.
      */
     suspend fun computeCashFlow(
         config: CashFlowCardConfig,
-        transactions: List<Transaction>,
+        allTransactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
@@ -61,12 +61,12 @@ interface CardComputationEngine {
     
     /**
      * Computes account statistics for an accounts card.
-     * Filters transactions based on card configuration.
+     * Filters allTransactions based on card configuration.
      */
     suspend fun computeAccountStats(
         config: AccountsCardConfig,
         accounts: List<Account>,
-        transactions: List<Transaction>,
+        allTransactions: List<Transaction>,
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int

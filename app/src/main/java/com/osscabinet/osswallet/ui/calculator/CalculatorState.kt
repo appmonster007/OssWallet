@@ -44,11 +44,18 @@ data class CalculatorState(
     val ghostResult: String = "",
     val isError: Boolean = false,
     val isCalculated: Boolean = false,
-    val transactionType: String = "income"
+    val transactionType: String = "income",
+    val history: List<CalculationHistoryItem> = emptyList()
 ) {
     val expression: String get() = tokens.joinToString("") { it.toInternalString() }
     val displayExpression: String get() = tokens.joinToString("") { it.toDisplayString() }
 }
+
+data class CalculationHistoryItem(
+    val expression: String,
+    val result: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 sealed class CalculatorAction {
     data class AppendNumber(val number: String) : CalculatorAction()
@@ -59,6 +66,8 @@ sealed class CalculatorAction {
     object Equals : CalculatorAction()
     object Percent : CalculatorAction()
     data class SetInitialType(val type: String) : CalculatorAction()
+    data class LoadFromHistory(val item: CalculationHistoryItem) : CalculatorAction()
+    object ClearHistory : CalculatorAction()
 }
 
 /**
@@ -210,6 +219,11 @@ fun calculatorReducer(
                 val absoluteResult = result.abs().stripTrailingZeros().toPlainString()
                 val newType = if (result.signum() < 0) "expense" else "income"
                 
+                val newHistoryItem = CalculationHistoryItem(
+                    expression = state.displayExpression,
+                    result = if (result.signum() < 0) "−$absoluteResult" else absoluteResult
+                )
+
                 // If the result is negative, we represent it as UnaryMinus + Number in tokens 
                 // to maintain consistent state for further operations
                 val newTokens = if (result.signum() < 0) {
@@ -223,9 +237,35 @@ fun calculatorReducer(
                     tokens = newTokens,
                     isCalculated = true,
                     transactionType = newType,
-                    ghostResult = ""
+                    ghostResult = "",
+                    history = (listOf(newHistoryItem) + state.history).take(50) // Keep last 50 items
                 )
             }
+        }
+
+        is CalculatorAction.LoadFromHistory -> {
+            // Logic to parse result back into tokens for further calculation
+            val resultVal = action.item.result.replace("−", "-")
+            val isNegative = resultVal.startsWith("-")
+            val absVal = resultVal.removePrefix("-")
+            
+            val newTokens = if (isNegative) {
+                listOf(Token.UnaryMinus, Token.Number(absVal))
+            } else {
+                listOf(Token.Number(absVal))
+            }
+
+            state.copy(
+                display = absVal,
+                tokens = newTokens,
+                isCalculated = true,
+                transactionType = if (isNegative) "expense" else "income",
+                ghostResult = ""
+            )
+        }
+
+        CalculatorAction.ClearHistory -> {
+            state.copy(history = emptyList())
         }
     }
 }

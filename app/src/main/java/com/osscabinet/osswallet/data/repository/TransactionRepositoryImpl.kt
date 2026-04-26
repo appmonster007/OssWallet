@@ -23,29 +23,28 @@ class TransactionRepositoryImpl(
 ) : TransactionRepository {
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
-        return transactionDao.getAllTransactions(profileId).map { entities ->
-            entities.map { it.toDomain() }
-        }
+        return transactionDao.getAllTransactions(profileId).mapToDomain { it.toDomain() }
     }
 
     override suspend fun getAllTransactionsSync(profileId: Int): List<Transaction> {
-        return transactionDao.getAllTransactionsSync(profileId).map { it.toDomain() }
+        return transactionDao.getAllTransactionsSync(profileId).mapToDomain { it.toDomain() }
     }
 
     override fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
         val (query, args) = buildFilteredQuery(profileId, filter)
         val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
         
-        return transactionDao.getFilteredTransactions(sqliteQuery).map { entities ->
-            applyRegexFilter(entities.map { it.toDomain() }, filter)
-        }
+        return transactionDao.getFilteredTransactions(sqliteQuery).mapToDomain { entity ->
+            // Note: applyRegexFilter still needs to be applied after mapping or inside mapToDomain
+            entity.toDomain()
+        }.map { applyRegexFilter(it, filter) }
     }
 
     override suspend fun getFilteredTransactionsSync(profileId: Int, filter: TransactionFilter): List<Transaction> {
         val (query, args) = buildFilteredQuery(profileId, filter)
         val sqliteQuery = SimpleSQLiteQuery(query, args.toTypedArray())
 
-        return applyRegexFilter(transactionDao.getFilteredTransactionsSync(sqliteQuery).map { it.toDomain() }, filter)
+        return applyRegexFilter(transactionDao.getFilteredTransactionsSync(sqliteQuery).mapToDomain { it.toDomain() }, filter)
     }
 
     private fun buildFilteredQuery(profileId: Int, filter: TransactionFilter): Pair<String, List<Any>> {
@@ -197,9 +196,7 @@ class TransactionRepositoryImpl(
     }
 
     override suspend fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByAccount(accountId).map { entities ->
-            entities.map { it.toDomain() }
-        }
+        return transactionDao.getTransactionsByAccount(accountId).mapToDomain { it.toDomain() }
     }
 
     override suspend fun getTransactionById(id: Long): Transaction? {
@@ -238,9 +235,9 @@ class TransactionRepositoryImpl(
 
     override fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
         println("Repository: getLinkedTransactions called for txId=$transactionId")
-        return transactionLinkDao.getLinkedTransactions(transactionId).map { entities ->
-            println("Repository: Found ${entities.size} linked transactions for txId=$transactionId")
-            entities.map { it.toDomain() }
+        return transactionLinkDao.getLinkedTransactions(transactionId).mapToDomain { entity ->
+            println("Repository: Found linked transaction for txId=$transactionId")
+            entity.toDomain()
         }
     }
 }

@@ -2,12 +2,41 @@ package com.osscabinet.ossWallet.domain.model
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.TimelineService
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import java.math.BigDecimal
 
 /**
  * Convenience extension functions for creating common TransactionFilter patterns.
  * These functions make it easier to create filters for common use cases.
  */
+
+fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
+    return when (this) {
+        is RecordsFilterContext.None -> TransactionFilter()
+        is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(this.accountId))
+        is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
+            accountIds = listOf(this.accountId),
+            transactionType = if (this.isIncome) "income" else "expense"
+        )
+        is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
+            accountIds = listOf(this.accountId),
+            currencies = listOf(this.currency)
+        )
+        is RecordsFilterContext.Custom -> TransactionFilter(
+            accountIds = this.accountIds,
+            transactionType = this.isIncome?.let { if (it) "income" else "expense" },
+            startDate = this.startDate,
+            endDate = this.endDate,
+            categoryIds = this.categoryIds.map { it.toLong() },
+            currencies = this.currencies,
+            paymentMethods = this.paymentMethods,
+            queryNote = this.queryNote,
+            minAmount = this.minAmount?.let { BigDecimal.valueOf(it) },
+            maxAmount = this.maxAmount?.let { BigDecimal.valueOf(it) },
+            queryPayee = this.queryPayee
+        )
+    }
+}
 
 /**
  * Creates a filter for a specific account.

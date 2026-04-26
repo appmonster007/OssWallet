@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
 
 /**
  * Mappers for Transaction data.
@@ -19,7 +21,7 @@ fun TransactionEntity.toDomain(): Transaction {
         transactionType = transactionType,
         accountId = accountId,
         categoryId = categoryId,
-        tags = if (tags.isEmpty()) emptyList() else tags.split(","),
+        tags = tags.splitByComma(),
         paymentMethod = paymentMethod,
         payee = payee,
         note = note,
@@ -42,7 +44,7 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         transactionType = transactionType,
         accountId = accountId,
         categoryId = categoryId,
-        tags = tags.joinToString(","),
+        tags = tags.joinByComma(),
         profileId = profileId,
         paymentMethod = paymentMethod,
         payee = payee,

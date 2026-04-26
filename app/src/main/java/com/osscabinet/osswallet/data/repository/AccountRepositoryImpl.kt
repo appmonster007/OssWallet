@@ -6,18 +6,16 @@ import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 class AccountRepositoryImpl(
     private val accountDao: AccountDao
 ) : AccountRepository {
 
-    override fun getAllAccounts(profileId: Int): Flow<List<Account>> = accountDao.getAllAccounts(profileId).map { entities ->
-        entities.map { it.toDomain() }
-    }
+    override fun getAllAccounts(profileId: Int): Flow<List<Account>> = 
+        accountDao.getAllAccounts(profileId).mapToDomain { it.toDomain() }
 
     override suspend fun getAllAccountsSync(profileId: Int): List<Account> {
-        return accountDao.getAllAccountsSync(profileId).map { it.toDomain() }
+        return accountDao.getAllAccountsSync(profileId).mapToDomain { it.toDomain() }
     }
 
     override suspend fun insertAccount(account: Account, profileId: Int) {

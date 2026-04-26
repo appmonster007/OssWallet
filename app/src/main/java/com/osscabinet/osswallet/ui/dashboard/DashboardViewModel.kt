@@ -663,7 +663,7 @@ class DashboardViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryBreakdown(
         config = cardConfig,
-        transactions = allTransactions,
+        allTransactions = allTransactions,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision
@@ -678,7 +678,7 @@ class DashboardViewModel(
         precision: Int
     ) = cardComputationService.computeTimelineTrajectory(
         config = cardConfig,
-        transactions = allTransactions,
+        allTransactions = allTransactions,
         accounts = accounts,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
@@ -693,7 +693,7 @@ class DashboardViewModel(
         precision: Int
     ) = cardComputationService.computeCategoryExpenseTreemap(
         config = cardConfig,
-        transactions = allTransactions,
+        allTransactions = allTransactions,
         baseCurrency = baseCurrency,
         exchangeRates = exchangeRates,
         precision = precision

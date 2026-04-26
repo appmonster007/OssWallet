@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.data.repository.*
 import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
+import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.domain.service.FinancialUseCasesCardComputationAdapter
 import com.osscabinet.ossWallet.domain.usecase.*
 
@@ -93,5 +94,9 @@ class AppContainer(private val context: Context) {
     // Adapter for FinancialUseCases to implement CardComputationEngine
     val financialUseCasesCardComputationAdapter: FinancialUseCasesCardComputationAdapter by lazy {
         FinancialUseCasesCardComputationAdapter(financialUseCases)
+    }
+
+    val transactionManager: TransactionManager by lazy {
+        TransactionManager(transactionUseCases)
     }
 }

@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
@@ -150,21 +151,23 @@ fun TransactionEntryScreen(
                         // Update current transaction to normal income/expense
                         viewModel.updateTransaction(
                             oldTransaction = existingTransaction,
-                            title = title.ifBlank { category },
-                            amount = amountValue,
-                            category = category,
-                            transactionType = if (isIncome) "income" else "expense",
-                            accountId = accId,
-                            currency = currency,
-                            categoryId = categoryId,
-                            tags = tags,
-                            timestamp = finalTimestamp,
-                            payee = payee,
-                            note = note,
-                            latitude = coords?.first,
-                            longitude = coords?.second,
-                            warrantyExpiration = warrantyExp,
-                            status = status
+                            request = TransactionRequest(
+                                title = title.ifBlank { category },
+                                amount = amountValue,
+                                category = category,
+                                transactionType = if (isIncome) "income" else "expense",
+                                accountId = accId,
+                                currency = currency,
+                                categoryId = categoryId,
+                                tags = tags,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp,
+                                status = status
+                            )
                         )
                     } else if (!wasTransfer && isTransfer) {
                         // Changed from Income/Expense to Transfer
@@ -231,22 +234,24 @@ fun TransactionEntryScreen(
                             // Update source transaction
                             viewModel.updateTransaction(
                                 oldTransaction = existingTransaction,
-                                title = title.ifBlank { "Transfer to ${targetAcc.name}" },
-                                amount = amountValue,
-                                category = "Transfer",
-                                transactionType = "expense",
-                                accountId = accId,
-                                currency = currency,
-                                categoryId = null,
-                                tags = tags,
-                                paymentMethod = paymentMethod,
-                                timestamp = finalTimestamp,
-                                payee = payee,
-                                note = note,
-                                latitude = coords?.first,
-                                longitude = coords?.second,
-                                warrantyExpiration = warrantyExp,
-                                status = status
+                                request = TransactionRequest(
+                                    title = title.ifBlank { "Transfer to ${targetAcc.name}" },
+                                    amount = amountValue,
+                                    category = "Transfer",
+                                    transactionType = "expense",
+                                    accountId = accId,
+                                    currency = currency,
+                                    categoryId = null,
+                                    tags = tags,
+                                    paymentMethod = paymentMethod,
+                                    timestamp = finalTimestamp,
+                                    payee = payee,
+                                    note = note,
+                                    latitude = coords?.first,
+                                    longitude = coords?.second,
+                                    warrantyExpiration = warrantyExp,
+                                    status = status
+                                )
                             )
 
                             // Get linked target transaction and update it
@@ -262,21 +267,23 @@ fun TransactionEntryScreen(
                             linkedTxs.firstOrNull()?.let { targetTx ->
                                 viewModel.updateTransaction(
                                     oldTransaction = targetTx,
-                                    title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
-                                    amount = amountValue.multiply(rate),
-                                    category = "Transfer",
-                                    transactionType = "income",
-                                    accountId = targetId,
-                                    currency = targetCurrency,
-                                    tags = tags,
-                                    paymentMethod = paymentMethod,
-                                    timestamp = finalTimestamp,
-                                    payee = payee,
-                                    note = note,
-                                    latitude = coords?.first,
-                                    longitude = coords?.second,
-                                    warrantyExpiration = warrantyExp,
-                                    status = status
+                                    request = TransactionRequest(
+                                        title = title.ifBlank { "Transfer from ${accounts.find { it.id == accId }?.name}" },
+                                        amount = amountValue.multiply(rate),
+                                        category = "Transfer",
+                                        transactionType = "income",
+                                        accountId = targetId,
+                                        currency = targetCurrency,
+                                        tags = tags,
+                                        paymentMethod = paymentMethod,
+                                        timestamp = finalTimestamp,
+                                        payee = payee,
+                                        note = note,
+                                        latitude = coords?.first,
+                                        longitude = coords?.second,
+                                        warrantyExpiration = warrantyExp,
+                                        status = status
+                                    )
                                 )
                             }
                         }
@@ -284,21 +291,23 @@ fun TransactionEntryScreen(
                         // Standard update (not a transfer)
                         viewModel.updateTransaction(
                             oldTransaction = existingTransaction,
-                            title = title.ifBlank { category },
-                            amount = amountValue,
-                            category = category,
-                            transactionType = if (isIncome) "income" else "expense",
-                            accountId = accId,
-                            currency = currency,
-                            categoryId = categoryId,
-                            tags = tags,
-                            timestamp = finalTimestamp,
-                            payee = payee,
-                            note = note,
-                            latitude = coords?.first,
-                            longitude = coords?.second,
-                            warrantyExpiration = warrantyExp,
-                            status = status
+                            request = TransactionRequest(
+                                title = title.ifBlank { category },
+                                amount = amountValue,
+                                category = category,
+                                transactionType = if (isIncome) "income" else "expense",
+                                accountId = accId,
+                                currency = currency,
+                                categoryId = categoryId,
+                                tags = tags,
+                                timestamp = finalTimestamp,
+                                payee = payee,
+                                note = note,
+                                latitude = coords?.first,
+                                longitude = coords?.second,
+                                warrantyExpiration = warrantyExp,
+                                status = status
+                            )
                         )
                     }
                 }
@@ -346,22 +355,24 @@ fun TransactionEntryScreen(
                 } else {
                     // Add transaction and then handle links
                     viewModel.addTransaction(
-                        title = title.ifBlank { category },
-                        amount = amountValue,
-                        category = category,
-                        categoryId = categoryId,
-                        transactionType = if (isIncome) "income" else "expense",
-                        accountId = accId,
-                        currency = currency,
-                        tags = tags,
-                        paymentMethod = paymentMethod,
-                        timestamp = finalTimestamp,
-                        payee = payee,
-                        note = note,
-                        latitude = coords?.first,
-                        longitude = coords?.second,
-                        warrantyExpiration = warrantyExp,
-                        status = status
+                        request = TransactionRequest(
+                            title = title.ifBlank { category },
+                            amount = amountValue,
+                            category = category,
+                            categoryId = categoryId,
+                            transactionType = if (isIncome) "income" else "expense",
+                            accountId = accId,
+                            currency = currency,
+                            tags = tags,
+                            paymentMethod = paymentMethod,
+                            timestamp = finalTimestamp,
+                            payee = payee,
+                            note = note,
+                            latitude = coords?.first,
+                            longitude = coords?.second,
+                            warrantyExpiration = warrantyExp,
+                            status = status
+                        )
                     ) { newTxId ->
                         // Add links for cloned transaction
                         val clonedId = prefillDto?.clonedFromTransactionId

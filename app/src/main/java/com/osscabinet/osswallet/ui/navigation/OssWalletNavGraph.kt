@@ -98,7 +98,8 @@ fun OssWalletNavGraph(
             appContainer.db.categoryDao(),
             appContainer.accountRepository,
             appContainer.db.filterDao(),
-            analyticsViewModel
+            analyticsViewModel,
+            appContainer.transactionManager
         )
     )
     

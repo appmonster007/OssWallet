@@ -78,7 +78,6 @@ fun AeonPieChart(
     var touchPoint by remember { mutableStateOf<Offset?>(null) }
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
-    val disclosurePainter = rememberVectorPainter(Icons.Default.AddCircle)
 
     val animationProgress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(slices, animate) {
@@ -173,21 +172,33 @@ fun AeonPieChart(
                 }
         ) {
             var currentAngle = 0f
-            val gapAngle = 2f // Gap between slices in degrees
             
+            // 1. Draw Ambient Shadow Ring (Background depth)
+            if (isDonut) {
+                drawCircle(
+                    color = Color.Black.copy(alpha = 0.05f),
+                    radius = radius + 4.dp.toPx(),
+                    center = center,
+                    style = Stroke(width = radius * 0.45f)
+                )
+            }
+
             slices.forEach { slice ->
                 val sliceSweep = (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
-                val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
                 val isSelected = selectedSlice == slice
                 
-                val explodedRadius = if (isSelected) 12.dp.toPx() else 0f
+                // Modern Look: Precise radial gaps
+                val gapAngle = if (sliceSweep < 1f) 0.1f else 1.5f
+                val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
+                
+                val explodedRadius = if (isSelected) 14.dp.toPx() else 0f
                 val midAngle = (currentAngle + sliceSweep / 2) * (PI / 180).toFloat()
                 val offset = Offset(
                     cos(midAngle.toDouble()).toFloat() * explodedRadius,
                     sin(midAngle.toDouble()).toFloat() * explodedRadius
                 )
 
-                // Draw the main slice
+                // 2. Draw Main Segment
                 drawArc(
                     color = slice.color,
                     startAngle = currentAngle + (gapAngle / 2),
@@ -196,50 +207,60 @@ fun AeonPieChart(
                     topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
                     size = Size(radius * 2, radius * 2),
                     style = if (isDonut) {
-                        Stroke(
-                            width = radius * 0.35f, 
-                            cap = StrokeCap.Round
-                        )
+                        Stroke(width = radius * 0.38f, cap = StrokeCap.Butt)
                     } else {
                         androidx.compose.ui.graphics.drawscope.Fill
                     }
                 )
 
-                // Optional: Add a subtle inner shadow/glow if selected
+                // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
+                if (isDonut && sliceSweep > 5f) {
+                    val highlightWidth = 3.dp.toPx()
+                    drawArc(
+                        color = Color.White.copy(alpha = 0.25f),
+                        startAngle = currentAngle + (gapAngle / 2),
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        topLeft = Offset(center.x - radius + offset.x + highlightWidth, center.y - radius + offset.y + highlightWidth),
+                        size = Size((radius - highlightWidth) * 2, (radius - highlightWidth) * 2),
+                        style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Butt)
+                    )
+                }
+
+                // 4. Selection Highlight
                 if (isSelected) {
                     drawArc(
-                        color = Color.White.copy(alpha = 0.2f),
+                        color = Color.White.copy(alpha = 0.3f),
                         startAngle = currentAngle + (gapAngle / 2),
                         sweepAngle = sweepAngle,
                         useCenter = !isDonut,
                         topLeft = Offset(center.x - radius + offset.x, center.y - radius + offset.y),
                         size = Size(radius * 2, radius * 2),
                         style = if (isDonut) {
-                            Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                            Stroke(width = radius * 0.42f, cap = StrokeCap.Butt)
                         } else {
-                            Stroke(width = 1.dp.toPx())
+                            Stroke(width = 4.dp.toPx())
                         }
                     )
                 }
 
-                // Visual marker for subcategories
-                if (slice.hasSubcategories && sliceSweep > 20f) {
-                    val markerRadius = if (isDonut) radius else radius * 0.65f
-                    val iconSize = (radius * 0.12f).coerceIn(12.dp.toPx(), 24.dp.toPx())
+                // Visual marker for subcategories (Modern Radial Tick)
+                if (slice.hasSubcategories && sliceSweep > 10f) {
+                    val tickRadius = radius * 1.05f
+                    val tickLength = 6.dp.toPx()
                     
-                    val markerX = center.x + cos(midAngle.toDouble()).toFloat() * markerRadius + offset.x - iconSize / 2
-                    val markerY = center.y + sin(midAngle.toDouble()).toFloat() * markerRadius + offset.y - iconSize / 2
+                    val startX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius) + offset.x
+                    val startY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius) + offset.y
+                    val endX = center.x + cos(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.x
+                    val endY = center.y + sin(midAngle.toDouble()).toFloat() * (tickRadius + tickLength) + offset.y
                     
-                    val iconTint = if (slice.color.luminance() > 0.5f) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
-                    
-                    translate(left = markerX, top = markerY) {
-                        with(disclosurePainter) {
-                            draw(
-                                size = Size(iconSize, iconSize),
-                                colorFilter = ColorFilter.tint(iconTint)
-                            )
-                        }
-                    }
+                    drawLine(
+                        color = slice.color.copy(alpha = 0.8f),
+                        start = Offset(startX, startY),
+                        end = Offset(endX, endY),
+                        strokeWidth = 2.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
                 }
                 
                 currentAngle += sliceSweep
@@ -283,10 +304,14 @@ fun AeonPieChartPreview() {
         Box(modifier = Modifier.size(300.dp).padding(16.dp)) {
             AeonPieChart(
                 slices = listOf(
-                    AeonPieChartSlice(BigDecimal("450.00"), "Food", Color(0xFFFF5722)),
+                    AeonPieChartSlice(BigDecimal("450.00"), "Food", Color(0xFFFF5722), hasSubcategories = true, subcategoryCount = 3),
                     AeonPieChartSlice(BigDecimal("300.00"), "Rent", Color(0xFF2196F3)),
-                    AeonPieChartSlice(BigDecimal("150.00"), "Transport", Color(0xFF4CAF50)),
-                    AeonPieChartSlice(BigDecimal("100.00"), "Misc", Color(0xFFFFC107))
+                    AeonPieChartSlice(BigDecimal("150.00"), "Transport", Color(0xFF4CAF50), hasSubcategories = true, subcategoryCount = 2),
+                    AeonPieChartSlice(BigDecimal("100.00"), "Utilities", Color(0xFFFFC107)),
+                    AeonPieChartSlice(BigDecimal("80.00"), "Health", Color(0xFFE91E63)),
+                    AeonPieChartSlice(BigDecimal("60.00"), "Entertainment", Color(0xFF9C27B0)),
+                    AeonPieChartSlice(BigDecimal("40.00"), "Insurance", Color(0xFF3F51B5)),
+                    AeonPieChartSlice(BigDecimal("20.00"), "Misc", Color(0xFF00BCD4))
                 ),
                 animate = false
             )

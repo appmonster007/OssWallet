@@ -92,14 +92,39 @@ fun CategoryBreakdownCard(
             
             val totalGlobal = remember(data) { data.sumOf { it.netBalance }.abs() }
 
+            val groupedData = remember(currentData) {
+                val sorted = currentData.sortedByDescending { it.netBalance.abs() }
+                // Group everything after top 10 into "Other"
+                if (sorted.size > 12) {
+                    val top = sorted.take(10)
+                    val others = sorted.drop(10)
+                    val otherSum = others.sumOf { it.netBalance }
+                    val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                    
+                    top + CategoryBreakdownData(
+                        category = "Other",
+                        categoryId = -1L, // Special ID for "Other"
+                        netBalance = otherSum,
+                        income = others.sumOf { it.income },
+                        expense = others.sumOf { it.expense },
+                        colorHex = 0xFF9E9E9E.toInt(), // Grey
+                        percentage = otherPercentage,
+                        hasSubcategories = true,
+                        subcategoryData = others
+                    )
+                } else {
+                    sorted
+                }
+            }
+
             // Refined Visualization
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
             ) {
-                if (currentData.isNotEmpty()) {
-                    val slices = currentData.map { item ->
+                if (groupedData.isNotEmpty()) {
+                    val slices = groupedData.map { item ->
                         AeonPieChartSlice(
                             value = item.netBalance.abs(),
                             label = item.category,
@@ -120,13 +145,13 @@ fun CategoryBreakdownCard(
                             // Interaction feedback
                         },
                         onDrillInClick = { slice ->
-                            val clickedItem = currentData.find { it.category == slice.label }
+                            val clickedItem = groupedData.find { it.category == slice.label }
                             if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
                                 navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
                             }
                         },
                         onNavigateToRecords = { slice ->
-                            val clickedItem = currentData.find { it.categoryId == slice.id }
+                            val clickedItem = groupedData.find { it.category == slice.label }
                             val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
                             
                             onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
@@ -144,8 +169,8 @@ fun CategoryBreakdownCard(
             }
             
             // Optimized Legend
-            if (config.showLegend && currentData.isNotEmpty()) {
-                CategoryLegend(data = currentData)
+            if (config.showLegend && groupedData.isNotEmpty()) {
+                CategoryLegend(data = groupedData)
             }
         }
     }
@@ -230,7 +255,17 @@ fun CategoryBreakdownCardPreview() {
             subcategoryData = subData
         ),
         CategoryBreakdownData("Transport", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.075f),
-        CategoryBreakdownData("Entertainment", null, BigDecimal("200.00"), BigDecimal.ZERO, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f)
+        CategoryBreakdownData("Entertainment", null, BigDecimal("200.00"), BigDecimal.ZERO, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
+        CategoryBreakdownData("Misc 1", null, BigDecimal("10.00"), BigDecimal.ZERO, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 2", null, BigDecimal("9.00"), BigDecimal.ZERO, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 3", null, BigDecimal("8.00"), BigDecimal.ZERO, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 4", null, BigDecimal("7.00"), BigDecimal.ZERO, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 5", null, BigDecimal("6.00"), BigDecimal.ZERO, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 6", null, BigDecimal("5.00"), BigDecimal.ZERO, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 7", null, BigDecimal("4.00"), BigDecimal.ZERO, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 8", null, BigDecimal("3.00"), BigDecimal.ZERO, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 9", null, BigDecimal("2.00"), BigDecimal.ZERO, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryBreakdownData("Misc 10", null, BigDecimal("1.00"), BigDecimal.ZERO, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
     )
 
     OssWalletTheme {
@@ -242,12 +277,6 @@ fun CategoryBreakdownCardPreview() {
             CategoryBreakdownCard(
                 config = CategoryBreakdownCardConfig(cardId = "rich", title = "CATEGORY BREAKDOWN"),
                 data = richData
-            )
-            
-            Text("Empty State", style = MaterialTheme.typography.titleSmall)
-            CategoryBreakdownCard(
-                config = CategoryBreakdownCardConfig(cardId = "empty", title = "CATEGORY BREAKDOWN"),
-                data = emptyList()
             )
         }
     }

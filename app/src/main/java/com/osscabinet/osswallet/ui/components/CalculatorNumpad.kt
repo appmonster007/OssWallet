@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.rounded.Check
@@ -9,88 +9,107 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import com.osscabinet.ossWallet.ui.calculator.*
 import java.math.BigDecimal
 
 /**
- * Robust calculator numpad adapted from Calc-OS patterns
- * Features:
- * - Expression parsing with Shunting-yard algorithm
- * - State management with MVI pattern
- * - Keyboard support (0-9, operators, Enter, Escape, Backspace)
- * - Accessibility features (ARIA labels, screen reader support)
- * - Performance optimizations (debouncing, smart caching)
- * - Memory functions
- * - Calculation history
+ * Enhanced Financial Expression Engine UI
  */
 @Composable
 fun CalculatorNumpad(
     amount: String,
     onAmountChange: (String) -> Unit,
-    transactionType: String = "income", // "income", "expense", or "transfer"
+    transactionType: String = "income",
     decimalPrecision: Int = 2,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var state by remember { mutableStateOf(CalculatorState(display = amount)) }
+    var state by remember { mutableStateOf(CalculatorState(transactionType = transactionType)) }
     
-    // Update display when amount changes from outside
-    LaunchedEffect(amount, transactionType) {
-        if (!state.isCalculated) {
-            // Parse the incoming amount to get the absolute value
-            val absoluteAmount = amount.toBigDecimalOrNull()?.abs()?.toPlainString() ?: amount
-            state = state.copy(display = absoluteAmount)
+    val evaluator = remember(decimalPrecision) { ExpressionEvaluator(decimalPrecision) }
+    
+    // Initialize state with the correct transaction type and initial amount
+    LaunchedEffect(transactionType, amount) {
+        if (state.tokens.isEmpty() || (state.tokens.size == 1 && state.tokens.first() is Token.UnaryMinus)) {
+            val initialTokens = mutableListOf<Token>()
+            if (transactionType == "expense") initialTokens.add(Token.UnaryMinus)
+            
+            val amountNum = amount.toBigDecimalOrNull()?.abs()
+            if (amountNum != null && amountNum != BigDecimal.ZERO) {
+                // If the amount is from a calculated state, we might want to keep it as a single number token
+                initialTokens.add(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
+            }
+            
+            state = state.copy(
+                transactionType = transactionType,
+                tokens = initialTokens,
+                display = if (amountNum != null && amountNum != BigDecimal.ZERO) amountNum.stripTrailingZeros().toPlainString() else state.display
+            )
         }
     }
     
     fun handleAction(action: CalculatorAction) {
-        state = calculatorReducer(state, action)
+        val newState = calculatorReducer(state, action, evaluator)
+        state = newState
         
-        // Update parent component with current display value (always positive internally)
-        if (state.display != "Error") {
-            onAmountChange(state.display)
-        }
+        // In "Calculate then Submit" flow, we only update the parent amount when the user hits Equals or Done
+        // But for better UX, we can update onAmountChange for real-time preview if the parent supports it
+        // However, the requirement is "user calculates... and then submits"
+        // So we will NOT call onAmountChange(state.display) here anymore, 
+        // except when they hit Equals or Done.
     }
     
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .semantics { contentDescription = "Calculator numpad" },
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .semantics { contentDescription = "Financial Calculator" },
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Display area with expression and result
+        // Display area
         CalculatorDisplay(
-            expression = state.expression,
+            expression = state.displayExpression,
             result = state.display,
-            transactionType = transactionType,
+            ghostResult = state.ghostResult,
+            transactionType = state.transactionType,
             isError = state.isError,
             onSave = {
-                onAmountChange(state.display)
-                onDone()
+                // Finalize calculation and submit
+                val finalState = if (!state.isCalculated) {
+                    calculatorReducer(state, CalculatorAction.Equals, evaluator)
+                } else state
+                
+                state = finalState
+                if (!finalState.isError) {
+                    onAmountChange(finalState.display)
+                    onDone()
+                }
             }
         )
         
-        // Calculator keys
+        // Keys - Refined to match Google Calculator layout
         CalculatorKeys(
             onNumberPress = { handleAction(CalculatorAction.AppendNumber(it)) },
             onOperatorPress = { handleAction(CalculatorAction.AppendOperator(it)) },
-            onParenthesisPress = { handleAction(CalculatorAction.AppendParenthesis(it)) },
+            onParenthesisToggle = { handleAction(CalculatorAction.AppendParenthesis(' ')) }, // Logic inside reducer handles ' ' as toggle
             onClearPress = { handleAction(CalculatorAction.Clear) },
             onBackspacePress = { handleAction(CalculatorAction.Backspace) },
-            onEqualsPress = { handleAction(CalculatorAction.Equals) },
-            onPercentPress = { 
-                // Percentage: divide by 100
-                val currentValue = state.display.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val percentValue = currentValue.divide(BigDecimal(100))
-                state = state.copy(display = percentValue.toPlainString())
-                onAmountChange(percentValue.toPlainString())
-            }
+            onEqualsPress = { 
+                handleAction(CalculatorAction.Equals)
+                // When equals is pressed, we update the parent value
+                if (!state.isError) {
+                    onAmountChange(state.display)
+                }
+            },
+            onPercentPress = { handleAction(CalculatorAction.Percent) }
         )
     }
 }
@@ -99,19 +118,19 @@ fun CalculatorNumpad(
 private fun CalculatorDisplay(
     expression: String,
     result: String,
+    ghostResult: String,
     transactionType: String,
     isError: Boolean,
     onSave: () -> Unit
 ) {
-    // Format result with sign based on transaction type
-    val displayResult = if (transactionType == "expense" && result.toBigDecimalOrNull()?.signum() ?: 0 >= 0) {
-        "-$result"
+    val displayResult = if (transactionType == "expense" && result != "0" && !result.startsWith("-")) {
+        "−$result"
     } else {
-        result
+        result.replace("-", "−")
     }
     
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -119,17 +138,18 @@ private fun CalculatorDisplay(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.End
         ) {
-            // Expression line (smaller, gray)
+            // Expression line
             if (expression.isNotEmpty()) {
                 Text(
-                    text = formatExpression(expression),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = expression,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            // Result line (larger)
+            
+            // Result line
             Text(
                 text = displayResult,
                 style = MaterialTheme.typography.headlineMedium,
@@ -137,20 +157,30 @@ private fun CalculatorDisplay(
                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth(),
-                fontSize = 32.sp
+                fontSize = 36.sp
             )
+            
+            // Ghost Result
+            if (ghostResult.isNotEmpty() && ghostResult != result) {
+                Text(
+                    text = if (transactionType == "expense") "−$ghostResult" else ghostResult,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
         
-        // Save button on the right
         IconButton(
             onClick = onSave,
-            modifier = Modifier.padding(start = 8.dp)
+            modifier = Modifier.padding(start = 12.dp)
         ) {
             Icon(
                 Icons.Rounded.Check,
-                contentDescription = "Save amount",
+                contentDescription = "Confirm amount",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -160,51 +190,52 @@ private fun CalculatorDisplay(
 private fun CalculatorKeys(
     onNumberPress: (String) -> Unit,
     onOperatorPress: (Char) -> Unit,
-    onParenthesisPress: (Char) -> Unit,
+    onParenthesisToggle: () -> Unit,
     onClearPress: () -> Unit,
     onBackspacePress: () -> Unit,
     onEqualsPress: () -> Unit,
     onPercentPress: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Row 1: C, (, ), %
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CalculatorKey("C", onClearPress, Modifier.weight(1f))
-            CalculatorKey("(", { onParenthesisPress('(') }, Modifier.weight(1f))
-            CalculatorKey(")", { onParenthesisPress(')') }, Modifier.weight(1f))
-            CalculatorKey("%", onPercentPress, Modifier.weight(1f))
+    // Google Calculator Layout Refined:
+    // Row 1: AC/C, ( ), %, ÷
+    // Row 2: 7, 8, 9, ×
+    // Row 3: 4, 5, 6, −
+    // Row 4: 1, 2, 3, +
+    // Row 5: 0, ., ⌫, =
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true)
+            CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true)
+            CalculatorKey("%", onPercentPress, Modifier.weight(1f), isSpecial = true)
+            CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f), isOperator = true)
         }
         
-        // Row 2: 7, 8, 9, ÷
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f))
             CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f))
             CalculatorKey("9", { onNumberPress("9") }, Modifier.weight(1f))
-            CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f))
+            CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f), isOperator = true)
         }
         
-        // Row 3: 4, 5, 6, ×
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f))
             CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f))
             CalculatorKey("6", { onNumberPress("6") }, Modifier.weight(1f))
-            CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f))
+            CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f), isOperator = true)
         }
         
-        // Row 4: 1, 2, 3, −
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f))
             CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f))
             CalculatorKey("3", { onNumberPress("3") }, Modifier.weight(1f))
-            CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f))
+            CalculatorKey("+", { onOperatorPress('+') }, Modifier.weight(1f), isOperator = true)
         }
         
-        // Row 5: ., 0, ⌫, =
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f))
-            CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f))
-            CalculatorKey("=", onEqualsPress, Modifier.weight(1f))
+            CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f))
+            CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true)
+            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = true)
         }
     }
 }
@@ -213,42 +244,37 @@ private fun CalculatorKeys(
 private fun CalculatorKey(
     label: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isOperator: Boolean = false,
+    isSpecial: Boolean = false,
+    isAccent: Boolean = false
 ) {
-    val backgroundColor = when (label) {
-        "C", "⌫" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-        "=", "+", "-", "*", "/", "÷", "×", "−", "%" -> MaterialTheme.colorScheme.primary
+    val backgroundColor = when {
+        isAccent -> MaterialTheme.colorScheme.primary
+        isOperator -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+        isSpecial -> MaterialTheme.colorScheme.surfaceVariant
         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
     
-    val textColor = when (label) {
-        "=", "+", "-", "*", "/", "÷", "×", "−", "%" -> MaterialTheme.colorScheme.onPrimary
+    val textColor = when {
+        isAccent -> MaterialTheme.colorScheme.onPrimary
+        isOperator -> MaterialTheme.colorScheme.onPrimaryContainer
+        isSpecial -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
-    }
-    
-    val contentDescription = when (label) {
-        "C" -> "Clear"
-        "⌫" -> "Backspace"
-        "=" -> "Equals"
-        else -> label
     }
     
     Surface(
         onClick = onClick,
-        modifier = modifier
-            .height(60.dp)
-            .semantics { this.contentDescription = contentDescription },
-        shape = RoundedCornerShape(12.dp),
-        color = backgroundColor
+        modifier = modifier.height(68.dp),
+        shape = CircleShape, // Material 3 Expressive uses nearly circular shapes
+        color = backgroundColor,
+        tonalElevation = if (isAccent) 4.dp else 1.dp
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(contentAlignment = Alignment.Center) {
             if (label == "⌫") {
                 Icon(
                     Icons.AutoMirrored.Rounded.Backspace,
-                    contentDescription = contentDescription,
+                    contentDescription = "Backspace",
                     modifier = Modifier.size(24.dp),
                     tint = textColor
                 )
@@ -256,19 +282,24 @@ private fun CalculatorKey(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
+                    fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.Medium,
+                    color = textColor,
+                    fontSize = if (label.length > 1) 18.sp else 24.sp
                 )
             }
         }
     }
 }
 
-private fun formatExpression(expr: String): String {
-    return expr
-        .replace("/", " ÷ ")
-        .replace("*", " × ")
-        .replace("+", " + ")
-        .replace("-", " - ")
-        .trim()
+@Preview(showBackground = true)
+@Composable
+fun CalculatorNumpadPreview() {
+    MaterialTheme {
+        CalculatorNumpad(
+            amount = "100",
+            onAmountChange = {},
+            transactionType = "expense",
+            onDone = {}
+        )
+    }
 }

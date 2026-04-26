@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import org.junit.Test
@@ -139,7 +140,7 @@ class CardFilterTest {
             layout = "grid",
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = "acc1"
+            filter = TransactionFilter(accountIds = listOf("acc1"))
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -156,7 +157,7 @@ class CardFilterTest {
             layout = "grid",
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = null
+            filter = TransactionFilter(accountIds = emptyList())
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -171,7 +172,7 @@ class CardFilterTest {
             order = 1,
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = "acc1"
+            filter = TransactionFilter(accountIds = listOf("acc1"))
         )
 
         val filtered = config.filterAccounts(allAccounts)
@@ -233,7 +234,7 @@ class CardFilterTest {
             layout = "grid",
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = "acc1"
+            filter = TransactionFilter(accountIds = listOf("acc1"))
         )
 
         val filtered = config.filterTransactions(allTransactions)
@@ -250,7 +251,7 @@ class CardFilterTest {
             layout = "grid",
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = null
+            filter = TransactionFilter(accountIds = emptyList())
         )
 
         val filtered = config.filterTransactions(allTransactions)
@@ -265,7 +266,7 @@ class CardFilterTest {
             order = 1,
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = "acc2"
+            filter = TransactionFilter(accountIds = listOf("acc2"))
         )
 
         val filtered = config.filterTransactions(allTransactions)
@@ -281,7 +282,7 @@ class CardFilterTest {
             order = 1,
             showBaseConversion = true,
             timelineRange = TimelineRange.AllTime,
-            accountId = null
+            filter = TransactionFilter(accountIds = emptyList())
         )
 
         val filtered = config.filterTransactions(allTransactions)

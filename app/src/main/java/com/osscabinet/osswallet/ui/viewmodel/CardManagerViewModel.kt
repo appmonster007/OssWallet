@@ -21,6 +21,7 @@ enum class DashboardCardType(val displayName: String, val serialName: String) {
     CASH_FLOW("Cash Flow", "cash_flow"),
     ACCOUNTS("Accounts", "accounts"),
     BUDGETS("Budgets", "budgets"),
+    LOANS("Loans & Debts", "loans"),
     CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown"),
     TIMELINE_TRAJECTORY("Timeline Trajectory", "timeline_trajectory"),
     CATEGORY_EXPENSE_TREEMAP("Category Expenses", "category_expense_treemap");
@@ -92,6 +93,7 @@ class CardManagerViewModel(
                 is CashFlowCardConfig -> DashboardCardType.CASH_FLOW
                 is AccountsCardConfig -> DashboardCardType.ACCOUNTS
                 is BudgetsCardConfig -> DashboardCardType.BUDGETS
+                is LoansCardConfig -> DashboardCardType.LOANS
                 is CategoryBreakdownCardConfig -> DashboardCardType.CATEGORY_BREAKDOWN
                 is TimelineTrajectoryCardConfig -> DashboardCardType.TIMELINE_TRAJECTORY
                 is CategoryExpenseTreemapCardConfig -> DashboardCardType.CATEGORY_EXPENSE_TREEMAP
@@ -260,6 +262,7 @@ class CardManagerViewModel(
                 is CashFlowCardConfig -> orig.screenContext != (migr as CashFlowCardConfig).screenContext
                 is AccountsCardConfig -> orig.screenContext != (migr as AccountsCardConfig).screenContext
                 is BudgetsCardConfig -> orig.screenContext != (migr as BudgetsCardConfig).screenContext
+                is LoansCardConfig -> orig.screenContext != (migr as LoansCardConfig).screenContext
                 is CategoryBreakdownCardConfig -> orig.screenContext != (migr as CategoryBreakdownCardConfig).screenContext
                 is TimelineTrajectoryCardConfig -> orig.screenContext != (migr as TimelineTrajectoryCardConfig).screenContext
                 is CategoryExpenseTreemapCardConfig -> orig.screenContext != (migr as CategoryExpenseTreemapCardConfig).screenContext
@@ -292,6 +295,7 @@ class CardManagerViewModel(
             is CashFlowCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is AccountsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is BudgetsCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
+            is LoansCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is CategoryBreakdownCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is TimelineTrajectoryCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
             is CategoryExpenseTreemapCardConfig -> card.copy(screenContext = card.screenContext ?: defaultContext)
@@ -444,6 +448,11 @@ class CardManagerViewModel(
                 order = _cardsConfig.value.cards.size,
                 screenContext = ScreenContext.DASHBOARD
             )
+            DashboardCardType.LOANS -> LoansCardConfig(
+                cardId = UUID.randomUUID().toString(),
+                order = _cardsConfig.value.cards.size,
+                screenContext = ScreenContext.DASHBOARD
+            )
             DashboardCardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(
                 cardId = UUID.randomUUID().toString(),
                 order = _cardsConfig.value.cards.size,
@@ -492,6 +501,7 @@ class CardManagerViewModel(
                     is CashFlowCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is AccountsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is BudgetsCardConfig -> card.copy(order = index, screenContext = card.screenContext)
+                    is LoansCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is CategoryBreakdownCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is TimelineTrajectoryCardConfig -> card.copy(order = index, screenContext = card.screenContext)
                     is CategoryExpenseTreemapCardConfig -> card.copy(order = index, screenContext = card.screenContext)

@@ -2,20 +2,14 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.LoanType
-
 import java.math.BigDecimal
 
-@Entity(tableName = "loans")
+@Entity(tableName = "loan_metadata")
 data class LoanEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val title: String,
+    @PrimaryKey val accountId: String, // Links to AccountEntity.id
     val principal: BigDecimal,
     val interestRate: BigDecimal,
-    val dueDate: Long,
-    val repayments: BigDecimal,
-    val type: String,
-    val currency: String,
+    val maturityDate: Long,
+    val loanType: String, // "CREDIT" or "DEBIT"
     val profileId: Int = 1
 )

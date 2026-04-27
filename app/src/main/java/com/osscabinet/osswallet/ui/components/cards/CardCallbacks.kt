@@ -118,6 +118,16 @@ sealed class CardCallbacks {
         val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
+
+    /**
+     * Callbacks for loans card
+     */
+    data class Loans(
+        val onManageClick: () -> Unit = {},
+        val onLoanClick: (String) -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+        val onDelete: () -> Unit = {}
+    ) : CardCallbacks()
     
     /**
      * Callbacks for IncomeExpensesBook card

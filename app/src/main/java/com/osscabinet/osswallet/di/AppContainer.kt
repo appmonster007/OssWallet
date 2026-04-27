@@ -37,7 +37,7 @@ class AppContainer(private val context: Context) {
     }
 
     val budgetRepository: BudgetRepositoryImpl by lazy {
-        BudgetRepositoryImpl(db.budgetDao())
+        BudgetRepositoryImpl(db.budgetDao(), db.transactionDao())
     }
 
     val currencyRepository: CurrencyRepositoryImpl by lazy {
@@ -49,7 +49,7 @@ class AppContainer(private val context: Context) {
     }
 
     val loanRepository: LoanRepositoryImpl by lazy {
-        LoanRepositoryImpl(db.loanDao())
+        LoanRepositoryImpl(db.loanDao(), db.accountDao())
     }
     
     val sharedWalletRepository: SharedWalletRepositoryImpl by lazy {
@@ -79,6 +79,10 @@ class AppContainer(private val context: Context) {
     
     val accountUseCases by lazy {
         AccountUseCases(accountRepository)
+    }
+
+    val loanUseCases by lazy {
+        LoanUseCases(loanRepository, transactionRepository)
     }
 
     // Services

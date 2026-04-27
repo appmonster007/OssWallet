@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsSectionSettings
-import com.osscabinet.ossWallet.ui.dashboard.components.BudgetSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowSettings
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesSettings
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
@@ -20,6 +19,11 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @Serializable
 data class LayoutSettings(
     val sectionOrder: String? = null
+)
+
+@Serializable
+data class BudgetSettings(
+    val showProgressLabels: Boolean = true
 )
 
 @Serializable

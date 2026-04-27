@@ -1,37 +1,33 @@
 package com.osscabinet.ossWallet.ui.dashboard
 
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.dashboard.components.*
-import com.osscabinet.ossWallet.ui.dashboard.model.*
-import com.osscabinet.ossWallet.domain.formatter.TimelineFormatter
-import com.osscabinet.ossWallet.domain.util.splitByComma
-import com.osscabinet.ossWallet.domain.util.joinByComma
-import com.osscabinet.ossWallet.domain.util.toEnum
-import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.usecase.*
+import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.service.CardComputationService
+import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
+import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.*
 
-@Serializable
 enum class DashboardSection {
     NET_WORTH,
     CURRENCY_BALANCES,
@@ -40,22 +36,21 @@ enum class DashboardSection {
     BUDGETS
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
-    val settingsDataStore: SettingsDataStore,
+    private val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
     private val financialUseCases: FinancialUseCases,
-    private val cardManagerViewModel: com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel,
-    private val settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
-    private val cardComputationService: CardComputationService
+    private val cardManagerViewModel: CardManagerViewModel,
+    private val settingsViewModel: SettingsViewModel,
+    private val cardComputationService: CardComputationService,
+    private val budgetUseCases: BudgetUseCases
 ) : ViewModel() {
 
-    private val _sectionOrder = MutableStateFlow(listOf(DashboardSection.NET_WORTH, DashboardSection.CURRENCY_BALANCES, DashboardSection.CASHFLOW, DashboardSection.ACCOUNTS, DashboardSection.BUDGETS))
+    private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
 
-    // View context for dashboard navigation
     private val _initialViewContext = MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
     val initialViewContext: StateFlow<DashboardViewContext> = _initialViewContext.asStateFlow()
 
@@ -64,29 +59,22 @@ class DashboardViewModel(
         val focusedSection: DashboardSection? = null
     )
 
-    private val _viewFocus = MutableStateFlow(ViewFocus())
+    private val _viewFocus = MutableStateFlow<ViewFocus>(ViewFocus())
     val viewFocus: StateFlow<ViewFocus> = _viewFocus.asStateFlow()
 
     init {
         viewModelScope.launch {
             settingsDataStore.dashboardSettings.collect { settings ->
-                val savedOrder = settings.layout.sectionOrder
-                if (savedOrder != null) {
-                    try {
-                        val sections = savedOrder.splitByComma().map { it.toEnum<DashboardSection>() }
-                        _sectionOrder.value = sections
-                    } catch (e: Exception) {
-                        // Keep default order on error
-                    }
-                }
+                _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull { 
+                    try { DashboardSection.valueOf(it) } catch (e: Exception) { null }
+                } ?: DashboardSection.entries
             }
         }
     }
 
-    fun updateSectionOrder(newOrder: List<DashboardSection>) {
-        _sectionOrder.value = newOrder
+    fun updateSectionOrder(sections: List<DashboardSection>) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinByComma { it.name })) }
+            settingsDataStore.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = sections.joinToString(","))) }
         }
     }
 
@@ -114,51 +102,40 @@ class DashboardViewModel(
         }
     }
 
-    /**
-     * Initialize the dashboard view from a navigation context
-     */
-    fun initializeDashboardView(context: DashboardViewContext) {
-        _initialViewContext.value = context
-        val focus = when (context) {
-            is DashboardViewContext.None -> ViewFocus()
-            is DashboardViewContext.FocusCard -> ViewFocus(focusedCardId = context.cardId)
-            is DashboardViewContext.FocusSection -> ViewFocus(focusedSection = context.section)
+    fun initializeDashboardView(viewContext: DashboardViewContext) {
+        _initialViewContext.value = viewContext
+        when (viewContext) {
+            is DashboardViewContext.FocusCard -> {
+                _viewFocus.value = ViewFocus(focusedCardId = viewContext.cardId)
+            }
+            is DashboardViewContext.FocusSection -> {
+                _viewFocus.value = ViewFocus(focusedSection = viewContext.section)
+            }
+            else -> {
+                _viewFocus.value = ViewFocus()
+            }
         }
-        _viewFocus.value = focus
     }
 
-    /**
-     * Update the view focus
-     */
     fun updateViewFocus(focus: ViewFocus) {
         _viewFocus.value = focus
     }
 
-    /**
-     * Reset the view focus to the initial context
-     */
     fun resetToInitialView() {
         initializeDashboardView(_initialViewContext.value)
     }
 
-    /**
-     * Check if the current view focus has been modified from the initial context
-     */
     fun hasModifiedView(): Boolean {
-        val initialFocus = when (_initialViewContext.value) {
-            is DashboardViewContext.None -> ViewFocus()
-            is DashboardViewContext.FocusCard -> ViewFocus(focusedCardId = (_initialViewContext.value as DashboardViewContext.FocusCard).cardId)
-            is DashboardViewContext.FocusSection -> ViewFocus(focusedSection = (_initialViewContext.value as DashboardViewContext.FocusSection).section)
+        val currentFocus = _viewFocus.value
+        return when (val initial = _initialViewContext.value) {
+            is DashboardViewContext.FocusCard -> currentFocus.focusedCardId != initial.cardId
+            is DashboardViewContext.FocusSection -> currentFocus.focusedSection != initial.section
+            else -> currentFocus.focusedCardId != null || currentFocus.focusedSection != null
         }
-        return _viewFocus.value != initialFocus
     }
 
-    /**
-     * Clear the view focus (reset to default)
-     */
     fun clearViewFocus() {
         _viewFocus.value = ViewFocus()
-        _initialViewContext.value = DashboardViewContext.None
     }
 
     fun updateNetWorthFontSize(fontSize: String) {
@@ -167,7 +144,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateNetWorthTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
+    fun updateNetWorthTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
             settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
         }
@@ -185,10 +162,16 @@ class DashboardViewModel(
         }
     }
 
-    fun updateBudgetShowProgressLabels(show: Boolean) {
+    fun updateBudgetShowProgressLabels(cardId: String, show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(budgetSection = it.budgetSection.copy(showProgressLabels = show)) }
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is BudgetsCardConfig) config.copy(showProgressLabels = show) else config
+            }
         }
+    }
+
+    fun updateCardBudgetsShowProgressLabels(cardId: String, show: Boolean) {
+        updateBudgetShowProgressLabels(cardId, show)
     }
 
     fun updateAccountsLayout(layout: String) {
@@ -209,232 +192,147 @@ class DashboardViewModel(
         }
     }
 
-    // Card-specific update functions - delegate to CardManagerViewModel only
-    // These do NOT update global settings to allow per-card independent data computation
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is NetWorthCardConfig) {
-                cardConfig.copy(fontSize = fontSize)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(fontSize = fontSize) else config
+            }
         }
     }
 
     fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is NetWorthCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(timelineRange = range) else config
+            }
         }
     }
 
     fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is CurrencyBalancesCardConfig) {
-                cardConfig.copy(layout = layout)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) config.copy(layout = layout) else config
+            }
         }
     }
 
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is CurrencyBalancesCardConfig) {
-                cardConfig.copy(showBaseConversion = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) config.copy(showBaseConversion = show) else config
+            }
         }
     }
 
     fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is CurrencyBalancesCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) config.copy(timelineRange = range) else config
+            }
         }
     }
 
     fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is CashFlowCardConfig) {
-                cardConfig.copy(showBaseConversion = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(showBaseConversion = show) else config
+            }
         }
     }
 
     fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is CashFlowCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(timelineRange = range) else config
+            }
         }
     }
 
     fun updateCardAccountsLayout(cardId: String, layout: String) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is AccountsCardConfig) {
-                cardConfig.copy(layout = layout)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(layout = layout) else config
+            }
         }
     }
 
     fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is AccountsCardConfig) {
-                cardConfig.copy(gridColumns = columns)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(gridColumns = columns) else config
+            }
         }
     }
 
     fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is AccountsCardConfig) {
-                cardConfig.copy(showAddAccountCard = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(showAddAccountCard = show) else config
+            }
         }
     }
 
     fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is AccountsCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardManagerViewModel.updateCard(cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(timelineRange = range) else config
+            }
         }
     }
 
-    fun updateCardBudgetsShowProgressLabels(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateCard(cardId) { cardConfig ->
-            if (cardConfig is BudgetsCardConfig) {
-                cardConfig.copy(showProgressLabels = show)
-            } else cardConfig
-        }
+    fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
+        return financialUseCases.calculateNetWorth(accounts, transactions, context, timelineRange)
     }
 
-    // ============================================================
-    // Helper Functions for Card-Level Filtering and Computation
-    // ============================================================
-
-    fun computeNetWorth(
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        timelineRange: TimelineRange,
-        context: ComputationContext
-    ): BigDecimal {
-        return financialUseCases.calculateNetWorth(
-            accounts = accounts,
-            allTransactions = transactions,
-            context = context,
-            timelineRange = timelineRange
-        )
+    fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
+        return financialUseCases.calculateCashFlow(transactions, timelineRange, context)
     }
 
-    fun computeCashFlow(
-        transactions: List<Transaction>,
-        timelineRange: TimelineRange,
-        context: ComputationContext
-    ): CashFlowResult {
-        return financialUseCases.calculateCashFlow(
-            allTransactions = transactions,
-            timelineRange = timelineRange,
-            context = context
-        )
+    fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
+        return financialUseCases.getCurrencyAggregation(accounts, transactions, timelineRange, context)
     }
 
-    fun computeCurrencyAggregation(
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        timelineRange: TimelineRange,
-        context: ComputationContext
-    ): List<CurrencyAggregationItem> {
-        return financialUseCases.getCurrencyAggregation(
-            accounts = accounts,
-            allTransactions = transactions,
-            timelineRange = timelineRange,
-            context = context
-        )
+    fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        val updatedAccounts = financialUseCases.getTotalBalances(accounts, transactions, context, timelineRange)
+        val stats = financialUseCases.getAccountSummaries(accounts, transactions, timelineRange, context)
+        return updatedAccounts to stats
     }
 
-    fun computeAccountStats(
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        timelineRange: TimelineRange,
-        context: ComputationContext
-    ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val accountStats = financialUseCases.getAccountSummaries(
-            accounts = accounts,
-            allTransactions = transactions,
-            timelineRange = timelineRange,
-            context = context
-        )
-        // Update accounts with timeline-filtered balances
-        val updatedAccounts = financialUseCases.getTotalBalances(
-            accounts = accounts,
-            allTransactions = transactions,
-            context = context,
-            timelineRange = timelineRange
-        )
-        return Pair(updatedAccounts, accountStats)
+    fun getTotalBalances(accounts: List<Account>, transactions: List<Transaction>, context: ComputationContext, timelineRange: TimelineRange): List<Account> {
+        return financialUseCases.getTotalBalances(accounts, transactions, context, timelineRange)
     }
 
-    fun getTotalBalances(
-        accounts: List<Account>,
-        transactions: List<Transaction>,
-        context: ComputationContext,
-        timelineRange: TimelineRange
-    ): List<Account> {
-        return financialUseCases.getTotalBalances(
-            accounts = accounts,
-            allTransactions = transactions,
-            context = context,
-            timelineRange = timelineRange
-        )
+    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
+        return cardComputationService.computeCategoryBreakdown(cardConfig, allTransactions, ComputationContext(baseCurrency, exchangeRates, precision))
     }
 
-    // Analytics card compute methods delegating to CardComputationService
-    suspend fun computeCategoryBreakdownForCard(
-        cardConfig: CategoryBreakdownCardConfig,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ) = cardComputationService.computeCategoryBreakdown(
-        config = cardConfig,
-        allTransactions = allTransactions,
-        context = ComputationContext(baseCurrency, exchangeRates, precision)
-    )
+    suspend fun computeTimelineTrajectoryForCard(cardConfig: TimelineTrajectoryCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<TimelineTrajectoryData> {
+        return cardComputationService.computeTimelineTrajectory(cardConfig, allTransactions, accounts, ComputationContext(baseCurrency, exchangeRates, precision))
+    }
 
-    suspend fun computeTimelineTrajectoryForCard(
-        cardConfig: TimelineTrajectoryCardConfig,
-        allTransactions: List<Transaction>,
-        accounts: List<Account>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ) = cardComputationService.computeTimelineTrajectory(
-        config = cardConfig,
-        allTransactions = allTransactions,
-        accounts = accounts,
-        context = ComputationContext(baseCurrency, exchangeRates, precision)
-    )
-
-    suspend fun computeCategoryExpenseTreemapForCard(
-        cardConfig: CategoryExpenseTreemapCardConfig,
-        allTransactions: List<Transaction>,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int
-    ) = cardComputationService.computeCategoryExpenseTreemap(
-        config = cardConfig,
-        allTransactions = allTransactions,
-        context = ComputationContext(baseCurrency, exchangeRates, precision)
-    )
+    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
+        return cardComputationService.computeCategoryExpenseTreemap(cardConfig, allTransactions, ComputationContext(baseCurrency, exchangeRates, precision))
+    }
 
     val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
         .flatMapLatest { profileId ->
+            val budgetStateFlow = budgetUseCases.getBudgetsWithAnalysis(profileId)
+            
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
                 analyticsViewModel.uiState,
                 settingsDataStore.decimalPrecision,
-                settingsDataStore.dashboardSettings
-            ) { accounts, allTransactions, analyticsState, precision, dashboardSettings ->
+                settingsDataStore.dashboardSettings,
+                budgetStateFlow
+            ) { args: Array<Any> ->
+                val accounts = args[0] as List<Account>
+                val allTransactions = args[1] as List<Transaction>
+                val analyticsState = args[2] as com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
+                val precision = args[3] as Int
+                val dashboardSettings = args[4] as com.osscabinet.ossWallet.data.local.DashboardSettings
+                val budgets = args[5] as List<BudgetAnalysis>
+
                 if (!analyticsState.hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
                 }
@@ -522,6 +420,9 @@ class DashboardViewModel(
                     .filter { it.transaction.accountId in updatedAccounts.filter { !it.isArchived }.map { it.id }.toSet() }
                     .sortedByDescending { it.transaction.timestamp }
 
+                val budgetAnalysis = budgets.find { it.budget.id == "primary" } // Mock or logic to find relevant budget
+                val showProgressLabels = budgetAnalysis?.budget?.isPredictiveAlertEnabled ?: true
+
                 DashboardUiState.Success(
                     accounts = updatedAccounts.filter { !it.isArchived },
                     allTransactions = allTransactions,
@@ -540,7 +441,7 @@ class DashboardViewModel(
                     currencyBalancesTimelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
                     cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion,
                     cashFlowTimelineRange = cashFlowTimelineRange,
-                    budgetShowProgressLabels = dashboardSettings.budgetSection.showProgressLabels,
+                    budgetShowProgressLabels = showProgressLabels,
                     netWorth = netWorth,
                     netIncome = netWorthCashFlow.totalIncomeInBase,
                     netExpense = netWorthCashFlow.totalExpensesInBase,
@@ -561,29 +462,29 @@ sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
         val accounts: List<Account>,
-        val allTransactions: List<Transaction> = emptyList(),
+        val allTransactions: List<Transaction>,
         val allTransactionsWithBalance: List<TransactionWithBalance>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
-        val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
-        val decimalPrecision: Int = 2,
-        val accountStats: Map<String, AccountSummaryItem> = emptyMap(),
-        val gridColumns: Int = 2,
-        val accountsLayout: String = "grid",
-        val showAddAccountCard: Boolean = true,
-        val accountsTimelineRange: TimelineRange = TimelineRange.AllTime,
-        val currencyBalancesLayout: String = "scroll",
-        val showBaseConversion: Boolean = true,
-        val currencyBalancesTimelineRange: TimelineRange = TimelineRange.AllTime,
-        val cashFlowShowBaseConversion: Boolean = true,
-        val cashFlowTimelineRange: TimelineRange = TimelineRange.AllTime,
-        val budgetShowProgressLabels: Boolean = true,
-        val netWorth: BigDecimal = BigDecimal.ZERO,
-        val netIncome: BigDecimal = BigDecimal.ZERO,
-        val netExpense: BigDecimal = BigDecimal.ZERO,
-        val netWorthFontSize: String = "Medium",
-        val netWorthTimelineRange: TimelineRange = TimelineRange.AllTime,
-        val cashFlowResult: CashFlowResult? = null
+        val currencyTotals: List<CurrencyAggregationItem>,
+        val decimalPrecision: Int,
+        val accountStats: Map<String, AccountSummaryItem>,
+        val gridColumns: Int,
+        val accountsLayout: String,
+        val showAddAccountCard: Boolean,
+        val accountsTimelineRange: TimelineRange,
+        val currencyBalancesLayout: String,
+        val showBaseConversion: Boolean,
+        val currencyBalancesTimelineRange: TimelineRange,
+        val cashFlowShowBaseConversion: Boolean,
+        val cashFlowTimelineRange: TimelineRange,
+        val budgetShowProgressLabels: Boolean,
+        val netWorth: BigDecimal,
+        val netIncome: BigDecimal,
+        val netExpense: BigDecimal,
+        val netWorthFontSize: String,
+        val netWorthTimelineRange: TimelineRange,
+        val cashFlowResult: CashFlowResult?
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }

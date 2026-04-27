@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
@@ -408,6 +409,24 @@ fun UnifiedCardRenderer(
                 timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
                 cardId = renderData.config.cardId,
                 onShowProgressLabelsChange = { _, _ -> cb.onShowProgressLabelsChange(renderData.config.cardId, renderData.config.showProgressLabels) },
+                onDelete = { cb.onDelete() }
+            )
+        }
+
+        is CardRenderData.Loans -> {
+            val cb = callbacks as? CardCallbacks.Loans
+                ?: CardCallbacks.Loans(onDelete = {})
+
+            LoansCard(
+                onManageClick = cb.onManageClick,
+                onLoanClick = cb.onLoanClick,
+                onRecordsClick = { cb.onRecordsClick(it) },
+                loans = renderData.loans,
+                baseCurrency = renderData.baseCurrency,
+                cardId = renderData.config.cardId,
+                modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier.fillMaxWidth(),
+                precision = renderData.precision,
                 onDelete = { cb.onDelete() }
             )
         }

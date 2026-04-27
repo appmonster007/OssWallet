@@ -185,11 +185,21 @@ sealed class CardRenderData {
      */
     data class Budgets(
         val config: BudgetsCardConfig,
-        val budgets: List<com.osscabinet.ossWallet.domain.model.Budget>,
+        val budgets: List<com.osscabinet.ossWallet.domain.usecase.BudgetAnalysis>,
         val baseCurrency: String,
         val precision: Int
     ) : CardRenderData()
     
+    /**
+     * Data for Loans card
+     */
+    data class Loans(
+        val config: com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig,
+        val loans: List<com.osscabinet.ossWallet.domain.usecase.LoanAnalysis>,
+        val baseCurrency: String,
+        val precision: Int
+    ) : CardRenderData()
+
     /**
      * Data for IncomeExpensesBook card
      */

@@ -140,6 +140,19 @@ data class BudgetsCardConfig(
 ) : CardConfig()
 
 /**
+ * Configuration for Loans card instances
+ */
+@Serializable
+@SerialName("loans")
+data class LoansCardConfig(
+    override val cardId: String,
+    override val title: String = "LOANS & DEBTS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 19,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD
+) : CardConfig()
+
+/**
  * Configuration for Category Breakdown card (Pie Wheel Chart)
  */
 @Serializable

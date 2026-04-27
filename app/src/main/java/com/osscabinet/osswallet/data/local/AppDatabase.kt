@@ -26,7 +26,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TemplateEntity::class,
         FilterEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

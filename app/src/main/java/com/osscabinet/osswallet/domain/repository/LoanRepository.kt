@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface LoanRepository {
     fun getAllLoans(): Flow<List<Loan>>
-    suspend fun insertLoan(loan: Loan)
-    suspend fun updateLoan(loan: Loan)
-    suspend fun deleteLoan(loan: Loan)
+    suspend fun getLoanByAccountId(accountId: String): Loan?
+    suspend fun upsertLoan(loan: Loan)
+    suspend fun deleteLoan(accountId: String)
 }

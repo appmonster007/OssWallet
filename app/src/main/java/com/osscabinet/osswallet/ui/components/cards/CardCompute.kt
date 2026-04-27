@@ -4,9 +4,9 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import java.math.BigDecimal
 
@@ -26,8 +26,8 @@ suspend fun NetWorthCardConfig.computeNetWorth(
 ): Pair<BigDecimal, CashFlowResult> {
     return engine.computeNetWorth(
         config = this,
-        accounts = this.filterAccounts(accounts),
-        allTransactions = this.filterTransactions(transactions),
+        accounts = accounts,
+        allTransactions = transactions,
         context = context
     )
 }
@@ -43,8 +43,8 @@ suspend fun CurrencyBalancesCardConfig.computeCurrencyTotals(
 ): List<CurrencyAggregationItem> {
     return engine.computeCurrencyTotals(
         config = this,
-        accounts = this.filterAccounts(accounts),
-        allTransactions = this.filterTransactions(transactions),
+        accounts = accounts,
+        allTransactions = transactions,
         context = context
     )
 }
@@ -59,7 +59,7 @@ suspend fun CashFlowCardConfig.computeCashFlow(
 ): CashFlowResult {
     return engine.computeCashFlow(
         config = this,
-        allTransactions = this.filterTransactions(transactions),
+        allTransactions = transactions,
         context = context
     )
 }

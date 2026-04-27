@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
  * Many functions in this service support optional currency conversion parameters to handle
  * multi-currency transactions correctly:
  *
- * - **exchangeRates**: Map<String, Double> where the key is the currency code and the value
+ * - **exchangeRates**: Map<String, BigDecimal> where the key is the currency code and the value
  *   is the exchange rate to convert from that currency to the base currency.
  *   Example: For USD as base, {"EUR": 0.85, "GBP": 0.75} means 1 USD = 0.85 EUR, 1 USD = 0.75 GBP
  *
@@ -71,17 +71,20 @@ object TransactionsUtilityService {
      * @param exchangeRates Map of currency codes to exchange rates (rate is from currency to base currency)
      * @return Converted amount in base currency, or original amount if conversion not possible
      */
-    private fun convertToBaseCurrency(
+    fun convertToBaseCurrency(
         amount: BigDecimal,
         fromCurrency: String,
         toCurrency: String,
-        exchangeRates: Map<String, Double>
+        exchangeRates: Map<String, BigDecimal>
     ): BigDecimal {
         if (fromCurrency == toCurrency) {
             return amount
         }
-        val rate = exchangeRates[fromCurrency] ?: return amount
-        return amount.multiply(BigDecimal.valueOf(rate))
+        val rate = exchangeRates[fromCurrency]
+        if (rate == null || rate.signum() == 0) return amount
+        
+        // Match CurrencyService logic: amount / rate (where rate is BASE -> CURRENCY)
+        return amount.divide(rate, 10, java.math.RoundingMode.HALF_UP)
     }
 
     /**
@@ -93,11 +96,11 @@ object TransactionsUtilityService {
      * @param exchangeRates Map of currency codes to exchange rates
      * @return Converted FinancialSummary in base currency
      */
-    private fun convertFinancialSummary(
+    fun convertFinancialSummary(
         summary: FinancialSummary,
         currency: String,
         baseCurrency: String,
-        exchangeRates: Map<String, Double>
+        exchangeRates: Map<String, BigDecimal>
     ): FinancialSummary {
         return FinancialSummary(
             totalAmount = convertToBaseCurrency(summary.totalAmount, currency, baseCurrency, exchangeRates),
@@ -105,6 +108,161 @@ object TransactionsUtilityService {
             expense = convertToBaseCurrency(summary.expense, currency, baseCurrency, exchangeRates),
             transactionCount = summary.transactionCount
         )
+    }
+
+    /**
+     * Aggregates multiple FinancialSummary objects (from different currencies) into a single
+     * summary in a base currency.
+     *
+     * @param summaries Map of currency code to FinancialSummary
+     * @param baseCurrency Target base currency
+     * @param exchangeRates Map of currency codes to exchange rates
+     * @return Aggregated FinancialSummary in base currency
+     */
+    fun calculateTotalInBaseCurrency(
+        summaries: Map<String, FinancialSummary>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary {
+        if (summaries.isEmpty()) return EMPTY_SUMMARY
+
+        return summaries.map { (currency, summary) ->
+            convertFinancialSummary(summary, currency, baseCurrency, exchangeRates)
+        }.reduce { acc, summary ->
+            FinancialSummary(
+                totalAmount = acc.totalAmount + summary.totalAmount,
+                income = acc.income + summary.income,
+                expense = acc.expense + summary.expense,
+                transactionCount = acc.transactionCount + summary.transactionCount
+            )
+        }
+    }
+
+    /**
+     * Calculates a cumulative sum (running total) across a list of breakdown items.
+     * Useful for trajectory charts where each point represents the balance at that time.
+     *
+     * @param items List of breakdown items (e.g., DateBreakdown)
+     * @param initialBalance Starting balance before the first item
+     * @return List of TrajectoryPoint items with cumulative balance
+     */
+    fun <K> calculateCumulativeSum(
+        items: List<Breakdown<K>>,
+        initialBalance: BigDecimal = BigDecimal.ZERO
+    ): List<TrajectoryPoint<K>> {
+        var currentBalance = initialBalance
+        return items.map { item ->
+            currentBalance += item.totalAmount
+            TrajectoryPoint(
+                key = item.key,
+                income = item.income,
+                expense = item.expense,
+                totalAmount = item.totalAmount,
+                cumulativeBalance = currentBalance,
+                transactionCount = item.transactionCount
+            )
+        }
+    }
+
+    /**
+     * Calculates the delta (absolute and percentage change) between two financial summaries.
+     *
+     * @param current Current period summary
+     * @param previous Previous period summary
+     * @return FinancialDelta containing changes
+     */
+    fun calculateSummaryDelta(
+        current: FinancialSummary,
+        previous: FinancialSummary
+    ): FinancialDelta {
+        val amountDelta = current.totalAmount - previous.totalAmount
+        val percentageDelta = if (previous.totalAmount.signum() != 0) {
+            amountDelta.divide(previous.totalAmount.abs(), 4, java.math.RoundingMode.HALF_UP)
+                .multiply(BigDecimal("100"))
+                .toDouble()
+        } else if (current.totalAmount.signum() != 0) {
+            100.0 // 100% change from zero
+        } else 0.0
+
+        return FinancialDelta(
+            absoluteChange = amountDelta,
+            percentageChange = percentageDelta,
+            incomeChange = current.income - previous.income,
+            expenseChange = current.expense - previous.expense
+        )
+    }
+
+    /**
+     * Calculates the savings rate based on income and expense.
+     * Savings Rate = (Income + Expense) / Income
+     *
+     * @param income Total income (positive)
+     * @param expense Total expense (negative)
+     * @return Savings rate as a fraction (0.0 to 1.0)
+     */
+    fun calculateSavingsRate(income: BigDecimal, expense: BigDecimal): Double {
+        if (income.signum() <= 0) return 0.0
+        val net = income + expense
+        return if (net.signum() <= 0) 0.0 else net.divide(income, 4, java.math.RoundingMode.HALF_UP).toDouble()
+    }
+
+    /**
+     * Calculates the burn rate (monthly average expense).
+     *
+     * @param totalExpense Total absolute expense
+     * @param daysActive Number of days the account has been active
+     * @return Monthly burn rate
+     */
+    fun calculateBurnRate(totalExpense: BigDecimal, daysActive: Long): BigDecimal {
+        if (daysActive <= 0) return BigDecimal.ZERO
+        val dailyAvg = totalExpense.abs().divide(BigDecimal.valueOf(daysActive), 10, java.math.RoundingMode.HALF_UP)
+        return dailyAvg.multiply(BigDecimal.valueOf(30)).setScale(2, java.math.RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Calculates daily net flow for a given number of days.
+     *
+     * @param transactions List of transactions
+     * @param days Number of days to look back
+     * @param exchangeRates Optional map of currency codes to exchange rates
+     * @param baseCurrency Optional base currency code
+     * @return Map where key is start of day timestamp and value is net flow in base currency
+     */
+    fun calculateDailyNetFlow(
+        transactions: List<Transaction>,
+        days: Int,
+        exchangeRates: Map<String, BigDecimal>? = null,
+        baseCurrency: String? = null
+    ): Map<Long, BigDecimal> {
+        val cutoff = System.currentTimeMillis() - days * 24 * 60 * 60 * 1000L
+        val filtered = transactions.filter { it.timestamp >= cutoff }
+        
+        return createBreakdown(
+            transactions = filtered,
+            selector = { tx ->
+                val cal = java.util.Calendar.getInstance().apply { timeInMillis = tx.timestamp }
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                cal.set(java.util.Calendar.MINUTE, 0)
+                cal.set(java.util.Calendar.SECOND, 0)
+                cal.set(java.util.Calendar.MILLISECOND, 0)
+                cal.timeInMillis
+            },
+            mapper = { timestamp, summaries ->
+                val baseSummary = if (exchangeRates != null && baseCurrency != null) {
+                    calculateTotalInBaseCurrency(summaries, baseCurrency, exchangeRates)
+                } else {
+                    FinancialSummary(
+                        totalAmount = summaries.values.sumOf { it.totalAmount },
+                        income = summaries.values.sumOf { it.income },
+                        expense = summaries.values.sumOf { it.expense },
+                        transactionCount = summaries.values.sumOf { it.transactionCount }
+                    )
+                }
+                timestamp to baseSummary.totalAmount
+            },
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency
+        ).toMap()
     }
 
     // ==================== Filtering ====================
@@ -491,7 +649,7 @@ object TransactionsUtilityService {
      */
     fun calculateIncomeExpenseBreakdown(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): IncomeExpenseBreakdown {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -513,7 +671,7 @@ object TransactionsUtilityService {
                 convertFinancialSummary(summary, currency, baseCurrency, exchangeRates)
             }
 
-            val totalInc = convertedIncome.sumOf { it.totalAmount }
+            val totalInc = convertedIncome.sumOf { it.income }
             val totalExp = convertedExpense.sumOf { it.expense }
             val net = totalInc + totalExp
 
@@ -552,11 +710,11 @@ object TransactionsUtilityService {
      * @param baseCurrency Optional base currency code for conversion
      * @return List of breakdown results
      */
-    private fun <K, R> createBreakdown(
+    fun <K, R> createBreakdown(
         transactions: List<Transaction>,
         selector: (Transaction) -> K,
         mapper: (K, Map<String, FinancialSummary>) -> R,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<R> where K : Any {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -621,7 +779,7 @@ object TransactionsUtilityService {
     fun breakdownByAccount(
         transactions: List<Transaction>,
         accounts: List<Account>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<AccountBreakdown> {
         val accountMap = accounts.associateBy { it.id }
@@ -1289,7 +1447,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByCategory(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<CategoryBreakdown> =
         createBreakdown(transactions, { it.category }, { category, summaries ->
@@ -1316,7 +1474,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByDate(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<DateBreakdown> {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -1358,7 +1516,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByMonth(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<MonthBreakdown> {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -1400,7 +1558,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByTransactionType(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<TransactionTypeBreakdown> =
         createBreakdown(transactions, { it.transactionType }, { type, summaries ->
@@ -1427,7 +1585,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByPaymentMethod(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<PaymentMethodBreakdown> =
         createBreakdown(transactions, { it.paymentMethod }, { method, summaries ->
@@ -1454,7 +1612,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByStatus(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<StatusBreakdown> =
         createBreakdown(transactions, { it.status.name }, { status, summaries ->
@@ -1482,7 +1640,7 @@ object TransactionsUtilityService {
      */
     fun breakdownByTags(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<TagBreakdown> {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -1527,7 +1685,7 @@ object TransactionsUtilityService {
     fun <L> breakdownByLabel(
         transactions: List<Transaction>,
         labelSelector: (Transaction) -> L,
-        exchangeRates: Map<String, Double>? = null,
+        exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<LabelGroup<L>> where L : Any {
         if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
@@ -1572,6 +1730,10 @@ data class FinancialSummary(
     val expense: BigDecimal,
     val transactionCount: Int
 ) {
+    /**
+     * Net flow (income + expense)
+     */
+    val netFlow: BigDecimal get() = income + expense
     companion object {
         /**
          * Empty financial summary for use when no transactions are available.
@@ -1589,6 +1751,28 @@ data class FinancialSummary(
  * Type alias for backward compatibility. TransactionSummary is now FinancialSummary.
  */
 typealias TransactionSummary = FinancialSummary
+
+/**
+ * Represents a point in a trajectory chart.
+ */
+data class TrajectoryPoint<K>(
+    val key: K,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val totalAmount: BigDecimal,
+    val cumulativeBalance: BigDecimal,
+    val transactionCount: Int
+)
+
+/**
+ * Represents the delta (change) between two financial summaries.
+ */
+data class FinancialDelta(
+    val absoluteChange: BigDecimal,
+    val percentageChange: Double,
+    val incomeChange: BigDecimal,
+    val expenseChange: BigDecimal
+)
 
 /**
  * Generic breakdown class with a key field and currency sub-grouping.

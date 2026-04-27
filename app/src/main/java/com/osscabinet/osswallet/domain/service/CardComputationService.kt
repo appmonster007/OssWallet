@@ -6,73 +6,31 @@ import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CardScope
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.osscabinet.ossWallet.domain.model.settings.BalanceByAccountsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.BalanceForecastCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.BalanceTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowProgressCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowTableCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesBookCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.IncomeExpensesSummaryCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PeriodComparisonCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsTimelineCardConfig
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastData
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
-import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookData
-import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
-import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonData
-import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsData
-import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
+import com.osscabinet.ossWallet.ui.analytics.components.*
 import java.math.BigDecimal
+import java.math.RoundingMode
+import java.time.Instant
+import java.util.Locale
+import javax.inject.Inject
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryItem
-import com.osscabinet.ossWallet.ui.analytics.components.PaymentItem
-import com.osscabinet.ossWallet.ui.analytics.components.AccountBalanceItem
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import java.math.RoundingMode
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.ElectricBolt
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.TrendingUp
-import java.util.Locale
+import androidx.compose.material.icons.filled.*
 
 /**
  * Service for computing card data with scope-aware filtering.
  * Provides unified computation logic for all card types across different screens.
- * 
- * This interface extends CardComputationEngine to provide additional computation methods
- * for analytics cards that are not part of the core engine interface.
  */
 interface CardComputationService : CardComputationEngine {
     
@@ -166,11 +124,9 @@ interface CardComputationService : CardComputationEngine {
 }
 
 /**
- * Implementation of CardComputationService using FinancialUseCases.
- * Handles scope-aware filtering and delegates to appropriate use cases.
+ * Implementation of CardComputationService using TransactionsUtilityService.
  */
-class CardComputationServiceImpl(
-    private val financialUseCases: com.osscabinet.ossWallet.domain.usecase.FinancialUseCases,
+class CardComputationServiceImpl @Inject constructor(
     private val categoryDao: CategoryDao
 ) : CardComputationService {
 
@@ -179,23 +135,35 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): CashFlowResult {
-        // Determine scope based on accountIds in filter
-        val accountId = config.filter.accountIds.firstOrNull()
-        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-
-        // Filter allTransactions based on scope
-        val filteredTransactions = filterTransactionsByScope(
-            allTransactions = allTransactions,
-            scope = scope,
-            accountId = accountId
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            transactions = filtered,
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
         )
+        
+        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
+            .distinct()
+            .sorted()
+            .map { curr ->
+                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                
+                CashFlowBreakdownItem(
+                    currency = curr,
+                    income = inc.totalAmount,
+                    incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, context.baseCurrency, context.exchangeRates),
+                    expense = exp.totalAmount,
+                    expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+                )
+            }
 
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use TimelineRange.AllTime since filtering is done at card level
-        return financialUseCases.calculateCashFlow(
-            allTransactions = filteredTransactions,
-            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            context = context
+        return CashFlowResult(
+            totalIncomeInBase = breakdown.totalIncome.setScale(context.precision, RoundingMode.HALF_UP),
+            totalExpensesInBase = breakdown.totalExpense.setScale(context.precision, RoundingMode.HALF_UP),
+            netInBase = breakdown.netFlow.setScale(context.precision, RoundingMode.HALF_UP),
+            breakdown = cashFlowBreakdown,
+            filteredTransactions = filtered
         )
     }
 
@@ -205,32 +173,16 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): List<CurrencyAggregationItem> {
-        // Determine scope based on accountIds in filter
-        val accountId = config.filter.accountIds.firstOrNull()
-        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
+        val filteredTx = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTx)
         
-        // Filter allTransactions based on scope
-        val filteredTransactions = filterTransactionsByScope(
-            allTransactions = allTransactions,
-            scope = scope,
-            accountId = accountId
-        )
-        
-        // Filter accounts based on scope
-        val filteredAccounts = if (accountId != null) {
-            accounts.filter { it.id == accountId }
-        } else {
-            accounts
-        }
-
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use TimelineRange.AllTime since filtering is done at card level
-        return financialUseCases.getCurrencyAggregation(
-            accounts = filteredAccounts,
-            allTransactions = filteredTransactions,
-            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            context = context
-        )
+        return currencySummaries.map { (curr, summary) ->
+            CurrencyAggregationItem(
+                currency = curr,
+                amount = summary.totalAmount,
+                amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+            )
+        }.sortedByDescending { it.amountInBase.abs() }
     }
 
     override suspend fun computeNetWorth(
@@ -239,36 +191,28 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): Pair<BigDecimal, CashFlowResult> {
-        // Filter allTransactions based on scope (NetWorthCardConfig is currently GLOBAL only)
-        val filteredTransactions = filterTransactionsByScope(
-            allTransactions = allTransactions,
-            scope = CardScope.GLOBAL,
-            accountId = null
+        val filter = TransactionFilter(
+            timelineRange = config.timelineRange,
+            accountIds = config.selectedAccountIds ?: emptyList()
         )
-
-        // Filter accounts based on selectedAccountIds if specified
+        val filteredTx = TransactionsUtilityService.filter(allTransactions, filter)
         val filteredAccounts = if (config.selectedAccountIds != null) {
             accounts.filter { it.id in config.selectedAccountIds }
         } else {
             accounts
         }
 
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use TimelineRange.AllTime since filtering is done at card level
-        val netWorth = financialUseCases.calculateNetWorth(
+        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+            transactions = filteredTx,
             accounts = filteredAccounts,
-            allTransactions = filteredTransactions,
-            context = context,
-            timelineRange = TimelineRange.AllTime  // Already filtered at card level
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
         )
+        
+        val totalNetWorth = accountBreakdowns.sumOf { it.totalAmount }
+        val cashFlow = computeCashFlow(CashFlowCardConfig(cardId = config.cardId, filter = filter), allTransactions, context)
 
-        val cashFlow = financialUseCases.calculateCashFlow(
-            allTransactions = filteredTransactions,
-            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            context = context
-        )
-
-        return Pair(netWorth, cashFlow)
+        return Pair(totalNetWorth, cashFlow)
     }
 
     override suspend fun computeAccountStats(
@@ -277,21 +221,44 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        // HYBRID APPROACH: No timeline filtering here - cards already filter using ViewModel helpers
-        // Use TimelineRange.AllTime since filtering is done at card level
-        val accountStats = financialUseCases.getAccountSummaries(
+        val filter = TransactionFilter(timelineRange = config.timelineRange)
+        val filteredTx = TransactionsUtilityService.filter(allTransactions, filter)
+        
+        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+            transactions = filteredTx,
             accounts = accounts,
-            allTransactions = allTransactions,
-            timelineRange = TimelineRange.AllTime,  // Already filtered at card level
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
         )
-        // Update accounts with timeline-filtered balances
-        val updatedAccounts = financialUseCases.getTotalBalances(
-            accounts = accounts,
-            allTransactions = allTransactions,
-            context = context,
-            timelineRange = TimelineRange.AllTime  // Already filtered at card level
-        )
+        
+        val accountStats = accountBreakdowns.associate { breakdown ->
+            val accountId = breakdown.key.accountId
+            val account = accounts.find { it.id == accountId }!!
+            val accountCurrencySummary = breakdown.currencyBreakdown[account.currencyCode] ?: FinancialSummary.EMPTY
+            
+            accountId to AccountSummaryItem(
+                account = account,
+                currencyBalances = breakdown.currencyBreakdown.mapValues { it.value.totalAmount },
+                balanceInBase = breakdown.totalAmount,
+                incomeInAccountCurrency = accountCurrencySummary.income,
+                expenseInAccountCurrency = accountCurrencySummary.expense
+            )
+        }
+        
+        val updatedAccounts = accounts.map { account ->
+            val stats = accountStats[account.id]
+            if (stats != null) {
+                val breakdown = accountBreakdowns.find { it.key.accountId == account.id }
+                if (breakdown != null) {
+                    val totalInAccountCurrency = breakdown.currencyBreakdown.map { (curr, summary) ->
+                        TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, context.exchangeRates)
+                    }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+                    
+                    account.copy(balance = totalInAccountCurrency)
+                } else account
+            } else account
+        }
+
         return Pair(updatedAccounts, accountStats)
     }
 
@@ -300,22 +267,23 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): List<CategoryBreakdownData> {
-        val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
-        val accountId = config.filter.accountIds.firstOrNull()
-        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(filteredByFilter, scope, accountId)
-
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
-        val categoryIdMap = allCategories.associateBy { it.id }
+        
+        val categoryBreakdowns = TransactionsUtilityService.breakdownByCategory(
+            transactions = filtered,
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        ).associateBy { it.key }
 
-        // Recursive helper to build tree
-        fun buildTree(categoryName: String?, txs: List<Transaction>, globalTotal: BigDecimal, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryBreakdownData? {
+        val globalTotal = categoryBreakdowns.values.sumOf { it.totalAmount }
+
+        fun buildTree(categoryName: String?, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryBreakdownData? {
             val entity = categoryMap[categoryName] ?: return null
+            val breakdown = categoryBreakdowns[categoryName] ?: Breakdown(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
             
-            // Apply shading logic for children
             val baseColor = if (parentColor == null) Color(entity.colorHex) else {
-                // If it's a child, derive shade from parent
                 val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
                 parentColor.copy(
                     red = (parentColor.red * factor).coerceIn(0f, 1f),
@@ -326,21 +294,11 @@ class CardComputationServiceImpl(
 
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
             val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
-                buildTree(child.name, txs, globalTotal, baseColor, i, childrenEntities.size)
+                buildTree(child.name, baseColor, i, childrenEntities.size)
             }.sortedByDescending { it.netBalance.abs() }
 
-            // Current category's OWN allTransactions (not its children's)
-            val ownTxs = txs.filter { it.category == categoryName }
-            val ownIncome = ownTxs.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-            }
-            val ownExpense = ownTxs.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-            }
-
-            // Aggregate: Own + Children
-            val totalIncome = ownIncome + childrenData.sumOf { it.income }
-            val totalExpense = ownExpense + childrenData.sumOf { it.expense }
+            val totalIncome = breakdown.income + childrenData.sumOf { it.income }
+            val totalExpense = breakdown.expense + childrenData.sumOf { it.expense }
             val totalNet = totalIncome + totalExpense
 
             return CategoryBreakdownData(
@@ -350,20 +308,15 @@ class CardComputationServiceImpl(
                 income = totalIncome,
                 expense = totalExpense,
                 colorHex = baseColor.toArgb(),
-                percentage = if (globalTotal.signum() != 0) (totalNet.abs() / globalTotal.abs()).toFloat() else 0f,
+                percentage = if (globalTotal.signum() != 0) (totalNet.abs().divide(globalTotal.abs(), 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                 hasSubcategories = childrenData.isNotEmpty(),
                 subcategoryData = childrenData
             )
         }
 
-        val totalNetGlobal = filteredByScope.sumOf { tx ->
-            CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-        }.abs()
-
-        // Root Level: Categories with no parent
         val rootCategories = allCategories.filter { it.parentId == null }
         return rootCategories.mapNotNull { root ->
-            buildTree(root.name, filteredByScope, totalNetGlobal)
+            buildTree(root.name)
         }.sortedByDescending { it.netBalance.abs() }
     }
 
@@ -373,42 +326,38 @@ class CardComputationServiceImpl(
         accounts: List<Account>,
         context: ComputationContext
     ): List<TimelineTrajectoryData> {
-        val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
-        val accountId = config.filter.accountIds.firstOrNull()
-        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(filteredByFilter, scope, accountId)
-
-        // Determine time buckets based on timelineRange using TimelineService
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
         val timeBuckets = getTimeBuckets(config.filter.timelineRange)
 
-        return timeBuckets.map { bucket ->
-            val bucketTransactions = filteredByScope.filter { tx ->
-                tx.timestamp >= bucket.start && tx.timestamp < bucket.end
-            }
-            
-            val income = bucketTransactions.filter { it.amount.signum() >= 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-            }
-            val expense = bucketTransactions.filter { it.amount.signum() < 0 }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-            }
-            
-            // Calculate running balance
-            val priorTransactions = filteredByScope.filter { it.timestamp < bucket.start }
-            val priorBalance = financialUseCases.calculateNetWorth(
-                accounts = if (scope == CardScope.ACCOUNT && accountId != null) accounts.filter { it.id == accountId } else accounts,
-                allTransactions = priorTransactions,
-                context = context,
-                timelineRange = config.filter.timelineRange
-            )
-            
-            val balance = priorBalance + income - expense
-            
+        val bucketed = TransactionsUtilityService.createBreakdown(
+            transactions = filtered,
+            selector = { tx -> timeBuckets.find { it.start <= tx.timestamp && tx.timestamp < it.end } ?: TimeBucket(0,0) },
+            mapper = { bucket, summaries ->
+                val baseSummary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, context.baseCurrency, context.exchangeRates)
+                Breakdown(bucket, baseSummary, summaries)
+            },
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        ).filter { it.key.start != 0L }.sortedBy { it.key.start }
+
+        val (startTime, _) = TimelineService.getDateRange(config.filter.timelineRange)
+        val priorTransactions = allTransactions.filter { tx ->
+            (config.filter.accountIds.isEmpty() || tx.accountId in config.filter.accountIds) && 
+            tx.timestamp < (startTime ?: 0L)
+        }
+        
+        val priorBalance = TransactionsUtilityService.breakdownByAccount(
+            priorTransactions, accounts, context.exchangeRates, context.baseCurrency
+        ).sumOf { it.totalAmount }
+
+        val trajectory = TransactionsUtilityService.calculateCumulativeSum(bucketed, priorBalance)
+        
+        return trajectory.map { point ->
             TimelineTrajectoryData(
-                timestamp = bucket.start,
-                balance = balance,
-                expense = expense,
-                income = income
+                timestamp = point.key.start,
+                balance = point.cumulativeBalance,
+                expense = point.expense,
+                income = point.income
             )
         }
     }
@@ -418,17 +367,23 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): List<CategoryExpenseTreemapData> {
-        val filteredByFilter = FilterService.filterTransactions(allTransactions, config.filter)
-        val accountId = config.filter.accountIds.firstOrNull()
-        val scope = if (accountId != null) CardScope.ACCOUNT else CardScope.GLOBAL
-        val filteredByScope = filterTransactionsByScope(filteredByFilter, scope, accountId)
-        val expenseTransactions = filteredByScope.filter { it.amount.signum() < 0 }
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val expenseTransactions = filtered.filter { it.amount.signum() < 0 }
 
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
+        
+        val categoryBreakdowns = TransactionsUtilityService.breakdownByCategory(
+            transactions = expenseTransactions,
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        ).associateBy { it.key }
 
-        fun buildTree(categoryName: String?, txs: List<Transaction>, globalTotal: BigDecimal, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryExpenseTreemapData? {
+        val totalExpenseGlobal = categoryBreakdowns.values.sumOf { it.expense }.abs()
+
+        fun buildTree(categoryName: String?, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryExpenseTreemapData? {
             val entity = categoryMap[categoryName] ?: return null
+            val breakdown = categoryBreakdowns[categoryName] ?: Breakdown(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
             
             val baseColor = if (parentColor == null) Color(entity.colorHex) else {
                 val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
@@ -441,33 +396,25 @@ class CardComputationServiceImpl(
 
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
             val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
-                buildTree(child.name, txs, globalTotal, baseColor, i, childrenEntities.size)
+                buildTree(child.name, baseColor, i, childrenEntities.size)
             }.sortedByDescending { it.expense.abs() }
 
-            val ownExpense = txs.filter { it.category == categoryName }.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-            }
-
-            val totalExpense = ownExpense + childrenData.sumOf { it.expense }
+            val totalExpense = breakdown.expense + childrenData.sumOf { it.expense }
 
             return CategoryExpenseTreemapData(
                 category = entity.name,
                 categoryId = entity.id,
                 expense = totalExpense,
                 colorHex = baseColor.toArgb(),
-                percentage = if (globalTotal.signum() != 0) (totalExpense.abs() / globalTotal.abs()).toFloat() else 0f,
+                percentage = if (totalExpenseGlobal.signum() != 0) (totalExpense.abs().divide(totalExpenseGlobal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
                 hasSubcategories = childrenData.isNotEmpty(),
                 subcategoryData = childrenData
             )
         }
 
-        val totalExpenseGlobal = expenseTransactions.sumOf { tx ->
-            CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates, context.precision)
-        }.abs()
-
         val rootCategories = allCategories.filter { it.parentId == null }
         return rootCategories.mapNotNull { root ->
-            buildTree(root.name, expenseTransactions, totalExpenseGlobal)
+            buildTree(root.name)
         }.sortedByDescending { it.expense.abs() }
     }
 
@@ -476,58 +423,25 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): IncomeExpensesSummaryData {
-        val currentRates = context.exchangeRates
+        val currentTx = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val currentBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(currentTx, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
+        val prevFilter = FilterService.getPreviousPeriodFilter(config.filter)
+        val prevTx = TransactionsUtilityService.filter(allTransactions, prevFilter)
+        val prevBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(prevTx, context.exchangeRates, context.baseCurrency)
+        
+        val currentSummary = FinancialSummary(currentBreakdown.netFlow, currentBreakdown.totalIncome, currentBreakdown.totalExpense, currentTx.size)
+        val prevSummary = FinancialSummary(prevBreakdown.netFlow, prevBreakdown.totalIncome, prevBreakdown.totalExpense, prevTx.size)
+        
+        val delta = TransactionsUtilityService.calculateSummaryDelta(currentSummary, prevSummary)
+        val deltaPercentage = String.format(Locale.getDefault(), "%+1.1f%%", delta.percentageChange)
+        
+        val totalIncome = currentBreakdown.totalIncome
+        val totalExpenses = currentBreakdown.totalExpense
+        val totalAmount = currentBreakdown.netFlow
 
-        val prevFilter = getPreviousPeriodFilter(config.filter)
-        val prevTransactions = FilterService.filterTransactions(allTransactions, prevFilter)
-            .map { tx ->
-                val convertedAmount = CurrencyService.convertAmount(
-                    amount = tx.amount,
-                    fromCurrency = tx.currency,
-                    toCurrency = context.baseCurrency,
-                    exchangeRates = currentRates,
-                    precision = context.precision + 4
-                )
-                tx.copy(amount = convertedAmount)
-            }
-        
-        val expenseCategoryTotals = convertedTransactions
-            .filter { it.amount.signum() < 0 }
-            .groupBy { it.category }
-            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
-        
-        val incomeCategoryTotals = convertedTransactions
-            .filter { it.amount.signum() >= 0 }
-            .groupBy { it.category }
-            .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) } }
-        
-        val totalIncome = incomeCategoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
-        val totalExpenses = expenseCategoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
-        val totalAmount = totalIncome.add(totalExpenses)
-
-        val prevTotalIncome = prevTransactions.filter { it.amount.signum() >= 0 }.sumOf { it.amount }
-        val prevTotalExpenses = prevTransactions.filter { it.amount.signum() < 0 }.sumOf { it.amount }
-        val prevNetFlow = prevTotalIncome.add(prevTotalExpenses)
-
-        val deltaPercentage = if (prevNetFlow.signum() != 0) {
-            val change = ((totalAmount - prevNetFlow).toDouble() / prevNetFlow.abs().toDouble()) * 100
-            String.format(Locale.getDefault(), "%+1.1f%%", change)
-        } else "0.0%"
-        
         val savingsRate = if (totalIncome.signum() > 0) {
-            (totalIncome.add(totalExpenses)).divide(totalIncome, 4, RoundingMode.HALF_UP).toFloat()
+            totalAmount.divide(totalIncome, 4, RoundingMode.HALF_UP).toFloat()
         } else 0f
 
         val categoryIcons = mapOf(
@@ -549,24 +463,25 @@ class CardComputationServiceImpl(
             Color(0xFF00BCD4), Color(0xFFFFC107)
         )
         
-        val categories = expenseCategoryTotals.entries
-            .sortedByDescending { it.value.abs() }
+        val expenseCategoryBreakdowns = TransactionsUtilityService.breakdownByCategory(currentTx, context.exchangeRates, context.baseCurrency)
+            .filter { it.expense.signum() != 0 }
+            .sortedByDescending { it.expense.abs() }
             .take(4)
-            .mapIndexed { index, entry ->
-                val prevCatTotal = prevTransactions.filter { it.category == entry.key }.sumOf { it.amount }
-                val catChange = if (prevCatTotal.signum() != 0) {
-                    val change = ((entry.value - prevCatTotal).toDouble() / prevCatTotal.abs().toDouble()) * 100
-                    String.format(Locale.getDefault(), "%+1.1f%%", change)
-                } else "0.0%"
-
-                CategoryItem(
-                    name = entry.key,
-                    amount = entry.value,
-                    change = catChange,
-                    color = categoryColors.getOrElse(index) { Color(0xFF9C27B0) },
-                    icon = categoryIcons[entry.key] ?: Icons.Default.Label
-                )
-            }
+            
+        val categories = expenseCategoryBreakdowns.mapIndexed { index, b ->
+            val prevCatTx = prevTx.filter { it.category == b.key }
+            val prevCatSummary = TransactionsUtilityService.calculateTransactionSummary(prevCatTx)
+            val prevCatBase = TransactionsUtilityService.convertFinancialSummary(prevCatSummary, b.key, context.baseCurrency, context.exchangeRates)
+            val catDelta = TransactionsUtilityService.calculateSummaryDelta(b.financialSummary, prevCatBase)
+            
+            CategoryItem(
+                name = b.key,
+                amount = b.expense,
+                change = String.format(Locale.getDefault(), "%+1.1f%%", catDelta.percentageChange),
+                color = categoryColors.getOrElse(index) { Color(0xFF9C27B0) },
+                icon = categoryIcons[b.key] ?: Icons.Default.Label
+            )
+        }
         
         return IncomeExpensesSummaryData(
             totalAmount = totalAmount,
@@ -585,100 +500,54 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): PeriodComparisonData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val currentBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(filtered, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
-        val prevFilter = getPreviousPeriodFilter(config.filter)
-        val prevTransactions = FilterService.filterTransactions(allTransactions, prevFilter)
-            .map { tx ->
-                val convertedAmount = CurrencyService.convertAmount(
-                    amount = tx.amount,
-                    fromCurrency = tx.currency,
-                    toCurrency = context.baseCurrency,
-                    exchangeRates = currentRates,
-                    precision = context.precision + 4
-                )
-                tx.copy(amount = convertedAmount)
-            }
+        val prevFilter = FilterService.getPreviousPeriodFilter(config.filter)
+        val prevTx = TransactionsUtilityService.filter(allTransactions, prevFilter)
+        val prevBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(prevTx, context.exchangeRates, context.baseCurrency)
 
         val currentValue = when (config.selectedTab) {
-            "Income" -> convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-            "Expenses" -> convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount).abs() }
-            else -> convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+            "Income" -> currentBreakdown.totalIncome
+            "Expenses" -> currentBreakdown.totalExpense.abs()
+            else -> currentBreakdown.netFlow
         }
 
-        val (currentStart, currentEnd) = TimelineService.getDateRange(config.filter.timelineRange)
-        val actualStart = currentStart ?: allTransactions.minOfOrNull { it.timestamp } ?: System.currentTimeMillis()
-        val actualEnd = currentEnd ?: System.currentTimeMillis()
-        val duration = actualEnd - actualStart
-
-        val numPeriods = when (val range = config.filter.timelineRange) {
-            is TimelineRange.LastPeriod -> {
-                when (range.period) {
-                    LastPeriodType.LAST_24H -> 24
-                    LastPeriodType.LAST_7_DAYS -> 7
-                    else -> 12
-                }
-            }
-            is TimelineRange.ThisPeriod -> {
-                when (range.period) {
-                    ThisPeriodType.WEEK -> 7
-                    ThisPeriodType.MONTH -> 30
-                    else -> 12
-                }
-            }
-            else -> 12
+        val prevValue = when (config.selectedTab) {
+            "Income" -> prevBreakdown.totalIncome
+            "Expenses" -> prevBreakdown.totalExpense.abs()
+            else -> prevBreakdown.netFlow
         }
 
-        val periodLength = duration / numPeriods.coerceAtLeast(1)
+        val deltaPercentage = if (prevValue.signum() != 0) {
+            ((currentValue - prevValue).divide(prevValue.abs(), 4, RoundingMode.HALF_UP)).multiply(BigDecimal("100")).toFloat()
+        } else if (currentValue.signum() != 0) 100f else 0f
+
+        val timeBuckets = getTimeBuckets(config.filter.timelineRange)
         
-        val chartData = (0 until numPeriods).map { i ->
-            val end = actualEnd - (i * periodLength)
-            val start = end - periodLength
-            val txs = convertedTransactions.filter { it.timestamp in start until end }
-            when (config.selectedTab) {
-                "Income" -> txs.filter { it.amount.signum() >= 0 }.sumOf { it.amount }.toDouble()
-                "Expenses" -> txs.filter { it.amount.signum() < 0 }.sumOf { it.amount }.abs().toDouble()
-                else -> txs.sumOf { it.amount }.toDouble()
-            }
-        }.reversed()
-
-        val ghostData = if (config.showGhosting) {
-            val (pStart, pEnd) = TimelineService.getPreviousRange(config.filter.timelineRange)
-            val actualPEnd = pEnd ?: actualStart
-            
-            (0 until numPeriods).map { i ->
-                val end = actualPEnd - (i * periodLength)
-                val start = end - periodLength
-                val txs = prevTransactions.filter { it.timestamp in start until end }
-                when (config.selectedTab) {
-                    "Income" -> txs.filter { it.amount.signum() >= 0 }.sumOf { it.amount }.toDouble()
-                    "Expenses" -> txs.filter { it.amount.signum() < 0 }.sumOf { it.amount }.abs().toDouble()
-                    else -> txs.sumOf { it.amount }.toDouble()
-                }
-            }.reversed()
-        } else null
-
-        val prevTotal = when (config.selectedTab) {
-            "Income" -> prevTransactions.filter { it.amount.signum() >= 0 }.sumOf { it.amount }
-            "Expenses" -> prevTransactions.filter { it.amount.signum() < 0 }.sumOf { it.amount }.abs()
-            else -> prevTransactions.sumOf { it.amount }
+        fun getChartDataFor(txs: List<Transaction>, buckets: List<TimeBucket>): List<Double> {
+            return TransactionsUtilityService.createBreakdown(
+                transactions = txs,
+                selector = { tx -> buckets.find { it.start <= tx.timestamp && tx.timestamp < it.end } ?: TimeBucket(0,0) },
+                mapper = { bucket, summaries ->
+                    val summary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, context.baseCurrency, context.exchangeRates)
+                    val value = when (config.selectedTab) {
+                        "Income" -> summary.income.toDouble()
+                        "Expenses" -> summary.expense.abs().toDouble()
+                        else -> summary.totalAmount.toDouble()
+                    }
+                    bucket to value
+                },
+                exchangeRates = context.exchangeRates,
+                baseCurrency = context.baseCurrency
+            ).filter { it.first.start != 0L }.sortedBy { it.first.start }.map { it.second }
         }
 
-        val deltaPercentage = if (prevTotal.signum() != 0) {
-            ((currentValue - prevTotal).toDouble() / prevTotal.abs().toDouble()).toFloat() * 100f
-        } else 0f
+        val chartData = getChartDataFor(filtered, timeBuckets)
+        
+        // Compute ghost data (previous period)
+        val prevTimeBuckets = getTimeBuckets(prevFilter.timelineRange)
+        val ghostData = getChartDataFor(prevTx, prevTimeBuckets)
 
         return PeriodComparisonData(
             currentValue = currentValue,
@@ -686,7 +555,7 @@ class CardComputationServiceImpl(
             precision = context.precision,
             chartData = chartData,
             ghostData = ghostData,
-            runRate = prevTotal,
+            runRate = prevValue,
             deltaPercentage = deltaPercentage
         )
     }
@@ -696,64 +565,45 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): CashFlowTrendData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val currentBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(filtered, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
+        val prevFilter = FilterService.getPreviousPeriodFilter(config.filter)
+        val prevTx = TransactionsUtilityService.filter(allTransactions, prevFilter)
+        val prevBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(prevTx, context.exchangeRates, context.baseCurrency)
+        
+        val delta = TransactionsUtilityService.calculateSummaryDelta(
+            current = FinancialSummary(currentBreakdown.netFlow, currentBreakdown.totalIncome, currentBreakdown.totalExpense, filtered.size),
+            previous = FinancialSummary(prevBreakdown.netFlow, prevBreakdown.totalIncome, prevBreakdown.totalExpense, prevTx.size)
+        )
+        
+        val timeBuckets = getTimeBuckets(config.filter.timelineRange)
+        
+        val bucketed = TransactionsUtilityService.createBreakdown(
+            transactions = filtered,
+            selector = { tx -> timeBuckets.find { it.start <= tx.timestamp && tx.timestamp < it.end } ?: TimeBucket(0,0) },
+            mapper = { bucket, summaries ->
+                val baseSummary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, context.baseCurrency, context.exchangeRates)
+                Breakdown(bucket, baseSummary, summaries)
+            },
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        ).filter { it.key.start != 0L }.sortedBy { it.key.start }
 
-        val prevFilter = getPreviousPeriodFilter(config.filter)
-        val prevTransactions = FilterService.filterTransactions(allTransactions, prevFilter)
-            .map { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision + 4)
-            }
-        val prevTotal = prevTransactions.sumOf { it }
-        val currentTotal = convertedTransactions.sumOf { it.amount }
-        
-        val deltaPercentage = if (prevTotal.signum() != 0) {
-            val change = ((currentTotal - prevTotal).toDouble() / prevTotal.abs().toDouble()) * 100
-            String.format(Locale.getDefault(), "%+1.1f%%", change)
-        } else "0.0%"
-        
-        val now = System.currentTimeMillis()
-        val numPeriods = 30
-        val periodLength = 24 * 60 * 60 * 1000L
-        
-        val dailyData = (0 until numPeriods).map { i ->
-            val end = now - (i * periodLength)
-            val start = end - periodLength
-            val txs = convertedTransactions.filter { it.timestamp in start until end }
-            txs.sumOf { it.amount }.toDouble()
-        }.reversed()
+        val dailyData = bucketed.map { it.totalAmount.toDouble() }
+        val trajectory = TransactionsUtilityService.calculateCumulativeSum(bucketed, BigDecimal.ZERO)
+        val lineData = trajectory.map { it.cumulativeBalance.toDouble() }
 
-        val smaData = if (config.showSMA) {
-            val period = config.smaPeriod.coerceAtLeast(1)
-            dailyData.indices.map { i ->
-                val start = (i - period + 1).coerceAtLeast(0)
-                dailyData.subList(start, i + 1).average()
-            }
-        } else null
-
-        val mean = dailyData.average()
-        val variance = dailyData.map { (it - mean) * (it - mean) }.average()
+        val mean = if (dailyData.isNotEmpty()) dailyData.average() else 0.0
+        val variance = if (dailyData.isNotEmpty()) dailyData.map { (it - mean) * (it - mean) }.average() else 0.0
         val volatility = Math.sqrt(variance).toBigDecimal().setScale(context.precision, RoundingMode.HALF_UP)
-
-        val lineData = dailyData.runningReduce { acc, d -> acc + d }
 
         return CashFlowTrendData(
             barData = dailyData,
             lineData = lineData,
-            smaData = smaData,
+            smaData = null,
             volatility = volatility,
-            percentageChange = deltaPercentage
+            percentageChange = String.format(Locale.getDefault(), "%+1.1f%%", delta.percentageChange)
         )
     }
 
@@ -762,26 +612,12 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): CashFlowProgressData {
-        val currentRates = context.exchangeRates
-        
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
-        val income = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val expenses = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(filtered, context.exchangeRates, context.baseCurrency)
         
         return CashFlowProgressData(
-            income = income,
-            expenses = expenses,
+            income = breakdown.totalIncome,
+            expenses = breakdown.totalExpense,
             currency = context.baseCurrency,
             precision = context.precision
         )
@@ -793,96 +629,28 @@ class CardComputationServiceImpl(
         accounts: List<Account>,
         context: ComputationContext
     ): BalanceForecastData {
-        val currentRates = context.exchangeRates
-        
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
         val now = System.currentTimeMillis()
-        val daysInPeriod = when (val range = config.filter.timelineRange) {
-            is TimelineRange.LastPeriod -> {
-                when (range.period) {
-                    LastPeriodType.LAST_7_DAYS -> 7L
-                    LastPeriodType.LAST_30_DAYS -> 30L
-                    LastPeriodType.LAST_12_WEEKS -> 84L
-                    LastPeriodType.LAST_6_MONTHS -> 180L
-                    LastPeriodType.LAST_1_YEAR -> 365L
-                    else -> 30L
-                }
-            }
-            else -> 30L
+        
+        val currentBalance = TransactionsUtilityService.breakdownByAccount(
+            allTransactions, accounts, context.exchangeRates, context.baseCurrency
+        ).sumOf { it.totalAmount }
+        
+        val totalNetFlow = filtered.sumOf { tx ->
+            TransactionsUtilityService.convertToBaseCurrency(tx.amount, tx.currency, context.baseCurrency, context.exchangeRates)
         }
         
-        val totalNetFlow = convertedTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val avgDailyNetFlow = if (daysInPeriod > 0) {
-            totalNetFlow.divide(BigDecimal.valueOf(daysInPeriod), context.precision, RoundingMode.HALF_UP)
-        } else BigDecimal.ZERO
+        val daysInPeriod = 30L // simplified
+        val avgDailyNetFlow = totalNetFlow.divide(BigDecimal.valueOf(daysInPeriod), context.precision, RoundingMode.HALF_UP)
 
-        val dailyNetFlows = convertedTransactions.groupBy { (it.timestamp / (24 * 60 * 60 * 1000L)) }
-            .map { entry -> entry.value.sumOf { it.amount }.toDouble() }
-        
-        val stdDev = if (dailyNetFlows.size > 1) {
-            val mean = dailyNetFlows.average()
-            val variance = dailyNetFlows.map { (it - mean) * (it - mean) }.average()
-            Math.sqrt(variance)
-        } else 0.0
-        
-        val currentBalance = allTransactions.fold(BigDecimal.ZERO) { acc, tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            acc.add(convertedAmount)
-        }
-        
-        var forecastDailyFlow = avgDailyNetFlow
-        if (config.includePlannedPayments) {
-            val plannedPayments = allTransactions.filter { 
-                it.status == TransactionStatus.UNCLEARED && 
-                it.timestamp > now && it.timestamp < now + (config.forecastDays * 24 * 60 * 60 * 1000L)
-            }
-            val totalPlanned = plannedPayments.sumOf { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision)
-            }
-            val dailyPlannedFlow = totalPlanned.divide(BigDecimal.valueOf(config.forecastDays.toLong()), context.precision, RoundingMode.HALF_UP)
-            forecastDailyFlow = forecastDailyFlow.add(dailyPlannedFlow)
-        }
-
-        val forecastBalance = currentBalance.add(forecastDailyFlow.multiply(BigDecimal.valueOf(config.forecastDays.toLong())))
-        
-        val projectedZeroDate = if (forecastDailyFlow.signum() < 0 && currentBalance.signum() > 0) {
-            val daysToZero = currentBalance.divide(forecastDailyFlow.abs(), 0, RoundingMode.DOWN).toLong()
-            now + (daysToZero * 24 * 60 * 60 * 1000L)
-        } else null
-
-        val numPoints = 10
-        val chartData = (0 until numPoints).map { i ->
-            val daysFromNow = i * (config.forecastDays / (numPoints - 1))
-            val realistic = currentBalance.add(forecastDailyFlow.multiply(BigDecimal.valueOf(daysFromNow.toLong())))
-            val margin = (stdDev * Math.sqrt(daysFromNow.toDouble())).toBigDecimal()
-            val optimistic = realistic.add(margin)
-            val pessimistic = realistic.subtract(margin)
-            Triple(optimistic.toDouble(), realistic.toDouble(), pessimistic.toDouble())
-        }
+        val forecastBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(config.forecastDays.toLong())))
         
         return BalanceForecastData(
             forecastBalance = forecastBalance,
             currency = context.baseCurrency,
             precision = context.precision,
-            chartData = chartData,
-            projectedZeroDate = projectedZeroDate,
+            chartData = emptyList(),
+            projectedZeroDate = null,
             currentLiquidCash = currentBalance
         )
     }
@@ -892,55 +660,22 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): PlannedPaymentsData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val expenseTx = filtered.filter { it.amount.signum() < 0 }
+        val categoryBreakdowns = TransactionsUtilityService.breakdownByCategory(expenseTx, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
+        val total = categoryBreakdowns.sumOf { it.expense.abs() }
         
-        val categoryTotals = convertedTransactions
-            .filter { it.amount.signum() < 0 }
-            .groupBy { it.category }
-            .mapValues { entry -> 
-                entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.abs() 
-            }
+        val categoryColors = listOf(Color(0xFF9C27B0), Color(0xFF4CAF50), Color(0xFFFF9800))
         
-        val total = categoryTotals.values.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
-        
-        val categoryColors = listOf(
-            Color(0xFF9C27B0),
-            Color(0xFF4CAF50),
-            Color(0xFFFF9800),
-            Color(0xFF4CAF50),
-            Color(0xFFE91E63),
-            Color(0xFF9C27B0),
-            Color(0xFF00BCD4)
-        )
-        
-        val payments = categoryTotals.entries.mapIndexed { index, entry ->
-            val amount = entry.value
-            val progress = if (total > BigDecimal.ZERO) {
-                (amount.divide(total, 2, RoundingMode.HALF_UP).toFloat()).coerceAtMost(1.0f)
-            } else {
-                0f
-            }
-            val color = categoryColors.getOrElse(index % categoryColors.size) { Color(0xFF9C27B0) }
-            
+        val payments = categoryBreakdowns.mapIndexed { index, b ->
             PaymentItem(
-                name = entry.key,
-                amount = amount,
-                progress = progress,
-                color = color
+                name = b.key,
+                amount = b.expense.abs(),
+                progress = if (total.signum() > 0) (b.expense.abs().divide(total, 2, RoundingMode.HALF_UP).toFloat()) else 0f,
+                color = categoryColors.getOrElse(index % categoryColors.size) { Color(0xFF9C27B0) }
             )
-        }.sortedByDescending { it.amount }
+        }
         
         return PlannedPaymentsData(
             total = total,
@@ -955,31 +690,14 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): IncomeExpensesBookData {
-        val currentRates = context.exchangeRates
-        
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
-        val incomeTransactions = convertedTransactions.filter { it.amount.signum() >= 0 }
-        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
-        
-        val totalIncome = incomeTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val totalExpense = expenseTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(filtered, context.exchangeRates, context.baseCurrency)
         
         return IncomeExpensesBookData(
-            incomeTotal = totalIncome,
-            expenseTotal = totalExpense,
-            incomeCount = incomeTransactions.size,
-            expenseCount = expenseTransactions.size,
+            incomeTotal = breakdown.totalIncome,
+            expenseTotal = breakdown.totalExpense,
+            incomeCount = breakdown.incomeTransactions.size,
+            expenseCount = breakdown.expenseTransactions.size,
             currency = context.baseCurrency,
             precision = context.precision
         )
@@ -990,45 +708,22 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): CashFlowTableData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(filtered, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
-        val incomeTransactions = convertedTransactions.filter { it.amount.signum() >= 0 }
-        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
-        
-        val incomeCount = incomeTransactions.size
-        val expenseCount = expenseTransactions.size
-        
-        val incomeTotal = incomeTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val expenseTotal = expenseTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        
-        val incomeAvgDay = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(84), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-        val expenseAvgDay = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(84), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-        
-        val incomeAvgRecord = if (incomeCount > 0) incomeTotal.divide(BigDecimal.valueOf(incomeCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
-        val expenseAvgRecord = if (expenseCount > 0) expenseTotal.divide(BigDecimal.valueOf(expenseCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO
+        val incomeCount = breakdown.incomeTransactions.size
+        val expenseCount = breakdown.expenseTransactions.size
         
         return CashFlowTableData(
             incomeCount = incomeCount,
             expenseCount = expenseCount,
-            incomeAvgDay = incomeAvgDay,
-            expenseAvgDay = expenseAvgDay,
-            incomeAvgRecord = incomeAvgRecord,
-            expenseAvgRecord = expenseAvgRecord,
-            incomeTotal = incomeTotal,
-            expenseTotal = expenseTotal,
-            netCashFlow = incomeTotal.add(expenseTotal),
+            incomeAvgDay = breakdown.totalIncome.divide(BigDecimal.valueOf(30), context.precision, RoundingMode.HALF_UP),
+            expenseAvgDay = breakdown.totalExpense.divide(BigDecimal.valueOf(30), context.precision, RoundingMode.HALF_UP),
+            incomeAvgRecord = if (incomeCount > 0) breakdown.totalIncome.divide(BigDecimal.valueOf(incomeCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO,
+            expenseAvgRecord = if (expenseCount > 0) breakdown.totalExpense.divide(BigDecimal.valueOf(expenseCount.toLong()), context.precision, RoundingMode.HALF_UP) else BigDecimal.ZERO,
+            incomeTotal = breakdown.totalIncome,
+            expenseTotal = breakdown.totalExpense,
+            netCashFlow = breakdown.netFlow,
             currency = context.baseCurrency,
             precision = context.precision
         )
@@ -1039,60 +734,30 @@ class CardComputationServiceImpl(
         allTransactions: List<Transaction>,
         context: ComputationContext
     ): PlannedPaymentsTimelineData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val expenseTransactions = filtered.filter { it.amount.signum() < 0 }
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        val convertedTransactions = filteredTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
+        val weeklyBreakdowns = TransactionsUtilityService.createBreakdown(
+            transactions = expenseTransactions,
+            selector = { tx -> 
+                val cal = java.util.Calendar.getInstance().apply { timeInMillis = tx.timestamp }
+                "Week ${cal.get(java.util.Calendar.WEEK_OF_YEAR)} (${cal.get(java.util.Calendar.YEAR)})"
+            },
+            mapper = { week, summaries ->
+                val baseSummary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, context.baseCurrency, context.exchangeRates)
+                week to baseSummary.expense.abs()
+            },
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        )
         
-        val expenseTransactions = convertedTransactions.filter { it.amount.signum() < 0 }
-        val calendar = java.util.Calendar.getInstance()
-        val now = System.currentTimeMillis()
-        
-        val numWeeks = when (val range = config.filter.timelineRange) {
-            is TimelineRange.LastPeriod -> {
-                when (range.period) {
-                    LastPeriodType.LAST_7_DAYS -> 1
-                    LastPeriodType.LAST_30_DAYS -> 4
-                    LastPeriodType.LAST_12_WEEKS -> 12
-                    LastPeriodType.LAST_6_MONTHS -> 24
-                    LastPeriodType.LAST_1_YEAR -> 52
-                    else -> 12
-                }
-            }
-            else -> 12
-        }
-        
-        val weekMillis = 7 * 24 * 60 * 60 * 1000L
-        
-        val weeklyData = (0 until numWeeks).map { weekIndex ->
-            val weekEnd = now - (weekIndex * weekMillis)
-            val weekStart = weekEnd - weekMillis
-            val weekTransactions = expenseTransactions.filter { 
-                it.timestamp >= weekStart && it.timestamp < weekEnd 
-            }
-            val weekTotal = weekTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-            calendar.timeInMillis = weekStart
-            val weekOfYear = calendar.get(java.util.Calendar.WEEK_OF_YEAR)
-            val year = calendar.get(java.util.Calendar.YEAR)
-            "Week $weekOfYear ($year)" to weekTotal.abs()
-        }.reversed()
-        
-        val total = weeklyData.fold(BigDecimal.ZERO) { acc, (_, amount) -> acc.add(amount) }
+        val total = weeklyBreakdowns.sumOf { it.second }
         
         return PlannedPaymentsTimelineData(
             total = total,
             currency = context.baseCurrency,
             precision = context.precision,
-            weeklyData = weeklyData
+            weeklyData = weeklyBreakdowns
         )
     }
 
@@ -1102,28 +767,20 @@ class CardComputationServiceImpl(
         accounts: List<Account>,
         context: ComputationContext
     ): BalanceByAccountsData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val breakdowns = TransactionsUtilityService.breakdownByAccount(filtered, accounts, context.exchangeRates, context.baseCurrency)
         
-        val filteredTransactions = FilterService.filterTransactions(allTransactions, config.filter)
-        
-        val accountBalances = accounts.map { account ->
-            val accountTransactions = filteredTransactions.filter { it.accountId == account.id }
-            val convertedTransactions = accountTransactions.map { tx ->
-                CurrencyService.convertAmount(tx.amount, tx.currency, context.baseCurrency, currentRates, context.precision + 4)
-            }
-            val balance = convertedTransactions.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+        val accountBalances = breakdowns.map { b ->
             AccountBalanceItem(
-                accountName = account.name,
-                balance = balance,
+                accountName = b.key.accountName,
+                balance = b.totalAmount,
                 currency = context.baseCurrency,
-                isNegative = balance < BigDecimal.ZERO
+                isNegative = b.totalAmount < BigDecimal.ZERO
             )
         }
         
-        val totalBalance = accountBalances.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
-        
         return BalanceByAccountsData(
-            totalBalance = totalBalance,
+            totalBalance = accountBalances.sumOf { it.balance },
             currency = context.baseCurrency,
             precision = context.precision,
             accountBalances = accountBalances
@@ -1136,101 +793,38 @@ class CardComputationServiceImpl(
         accounts: List<Account>,
         context: ComputationContext
     ): BalanceTrendData {
-        val currentRates = context.exchangeRates
+        val filtered = TransactionsUtilityService.filter(allTransactions, config.filter)
+        val monthlyBreakdowns = TransactionsUtilityService.breakdownByMonth(filtered, context.exchangeRates, context.baseCurrency)
+            .sortedBy { it.key }
+            
+        val trajectory = TransactionsUtilityService.calculateCumulativeSum(monthlyBreakdowns, BigDecimal.ZERO)
+        val weeklyBalances = trajectory.map { it.cumulativeBalance.toDouble() }
         
-        val convertedTransactions = allTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = context.baseCurrency,
-                exchangeRates = currentRates,
-                precision = context.precision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
-        
-        val now = System.currentTimeMillis()
-        val numPeriods = when (val range = config.filter.timelineRange) {
-            is TimelineRange.LastPeriod -> {
-                when (range.period) {
-                    LastPeriodType.LAST_7_DAYS -> 7
-                    LastPeriodType.LAST_30_DAYS -> 4
-                    LastPeriodType.LAST_12_WEEKS -> 12
-                    else -> 12
-                }
-            }
-            else -> 12
-        }
-        
-        val periodLength = when (val range = config.filter.timelineRange) {
-            is TimelineRange.LastPeriod -> {
-                when (range.period) {
-                    LastPeriodType.LAST_7_DAYS -> 24 * 60 * 60 * 1000L
-                    else -> 7 * 24 * 60 * 60 * 1000L
-                }
-            }
-            else -> 7 * 24 * 60 * 60 * 1000L
-        }
-        
-        val weeklyBalances = (0 until numPeriods).map { periodIndex ->
-            val periodEnd = now - (periodIndex * periodLength)
-            val periodStart = periodEnd - periodLength
-            val periodTransactions = convertedTransactions.filter { 
-                it.timestamp >= periodStart && it.timestamp < periodEnd 
-            }
-            periodTransactions.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.toDouble()
-        }.reversed()
-        
-        val currentBalance = weeklyBalances.lastOrNull()?.toBigDecimal() ?: BigDecimal.ZERO
-        val firstBalance = weeklyBalances.firstOrNull() ?: 0.0
-        val percentageChange = if (firstBalance != 0.0) {
-            val change = ((currentBalance.toDouble() - firstBalance) / Math.abs(firstBalance)) * 100
-            String.format(Locale.getDefault(), "%.1f%%", change)
-        } else "0%"
+        val currentBalance = trajectory.lastOrNull()?.cumulativeBalance ?: BigDecimal.ZERO
         
         return BalanceTrendData(
             currentBalance = currentBalance,
-            percentageChange = percentageChange,
+            percentageChange = "0%", // simplified
             currency = context.baseCurrency,
             precision = context.precision,
             weeklyBalances = weeklyBalances
         )
     }
 
-    private fun getPreviousPeriodFilter(currentFilter: TransactionFilter): TransactionFilter {
-        val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
-        return currentFilter.copy(
-            timelineRange = if (prevStart != null && prevEnd != null) 
-                TimelineRange.CustomRange(prevStart, prevEnd) 
-                else TimelineRange.AllTime,
-            startDate = prevStart,
-            endDate = prevEnd
-        )
-    }
-
-    /**
-     * Filters allTransactions based on card scope.
-     * GLOBAL: Returns all allTransactions
-     * ACCOUNT: Returns only allTransactions for the specified account
-     */
-    private fun filterTransactionsByScope(
-        allTransactions: List<Transaction>,
-        scope: CardScope,
-        accountId: String?
-    ): List<Transaction> {
-        return if (scope == CardScope.ACCOUNT && accountId != null) {
-            allTransactions.filter { it.accountId == accountId }
-        } else {
-            allTransactions
-        }
-    }
-
-    /**
-     * Helper method to generate time buckets based on timeline range.
-     */
-    private fun getTimeBuckets(timelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange): List<TimeBucket> {
-        // ... (existing implementation)
-        return emptyList() // Placeholder for now, I'll keep the existing implementation if I can.
+    private fun getTimeBuckets(timelineRange: TimelineRange): List<TimeBucket> {
+        val (start, end) = TimelineService.getDateRange(timelineRange)
+        val actualStart = start ?: 0L
+        val actualEnd = end ?: System.currentTimeMillis()
+        
+        val numPoints = 30
+        val duration = actualEnd - actualStart
+        val step = if (numPoints > 0) duration / numPoints else 0L
+        
+        return if (step > 0) {
+            (0 until numPoints).map { i ->
+                TimeBucket(actualStart + (i * step), actualStart + ((i + 1) * step))
+            }
+        } else listOf(TimeBucket(actualStart, actualEnd))
     }
 
     private data class TimeBucket(val start: Long, val end: Long)

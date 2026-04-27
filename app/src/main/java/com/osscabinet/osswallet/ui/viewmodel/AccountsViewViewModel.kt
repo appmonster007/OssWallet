@@ -12,15 +12,17 @@ import com.osscabinet.ossWallet.domain.util.toEnum
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
+import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
-import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
 import com.osscabinet.ossWallet.ui.components.cards.computeNetWorth
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeAccountStats
+import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -41,10 +43,8 @@ class AccountsViewViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: AnalyticsViewModel,
-    private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: CardManagerViewModel,
-    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService,
-    private val financialUseCasesCardComputationAdapter: com.osscabinet.ossWallet.domain.service.FinancialUseCasesCardComputationAdapter
+    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
 
     // Cache for computed card data to avoid recomputation
@@ -99,7 +99,7 @@ class AccountsViewViewModel(
             cardConfig.computeNetWorth(
                 accounts = accounts,
                 transactions = transactions,
-                engine = financialUseCasesCardComputationAdapter,
+                engine = cardComputationService,
                 context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
@@ -118,7 +118,7 @@ class AccountsViewViewModel(
             cardConfig.computeCurrencyTotals(
                 accounts = accounts,
                 transactions = transactions,
-                engine = financialUseCasesCardComputationAdapter,
+                engine = cardComputationService,
                 context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
@@ -135,7 +135,7 @@ class AccountsViewViewModel(
         return getCachedOrCompute(cacheKey) {
             cardConfig.computeCashFlow(
                 transactions = transactions,
-                engine = financialUseCasesCardComputationAdapter,
+                engine = cardComputationService,
                 context = ComputationContext(baseCurrency, exchangeRates, precision)
             )
         }
@@ -363,43 +363,42 @@ class AccountsViewViewModel(
                 val baseCurrency = analyticsState.selectedCurrency
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
-                val globalCurrencyTotals = financialUseCases.getCurrencyAggregation(
+                val globalCurrencyTotals = cardComputationService.computeCurrencyTotals(
+                    config = com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
+                        cardId = "accounts_view_currency_balances",
+                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = currencyBalancesTimelineRange)
+                    ),
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    timelineRange = currencyBalancesTimelineRange,
                     context = computationContext
                 )
 
-                val accountStats = financialUseCases.getAccountSummaries(
+                val (updatedAccounts, accountStats) = cardComputationService.computeAccountStats(
+                    config = com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig(
+                        cardId = "accounts_view_stats",
+                        timelineRange = accountsTimelineRange
+                    ),
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    timelineRange = accountsTimelineRange,
                     context = computationContext
                 )
 
-                val updatedAccounts = financialUseCases.getTotalBalances(
+                val (nwValue, nwFlow) = cardComputationService.computeNetWorth(
+                    config = com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig(
+                        cardId = "accounts_view_net_worth",
+                        timelineRange = netWorthTimelineRange
+                    ),
                     accounts = accounts,
                     allTransactions = allTransactions,
-                    context = computationContext,
-                    timelineRange = accountsTimelineRange
-                )
-
-                val netWorth = financialUseCases.calculateNetWorth(
-                    accounts = accounts,
-                    allTransactions = allTransactions,
-                    context = computationContext,
-                    timelineRange = netWorthTimelineRange
-                )
-
-                val netWorthFlow = financialUseCases.calculateCashFlow(
-                    allTransactions = allTransactions,
-                    timelineRange = netWorthTimelineRange,
                     context = computationContext
                 )
 
-                val cashFlowResult = financialUseCases.calculateCashFlow(
+                val cashFlowResult = cardComputationService.computeCashFlow(
+                    config = com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
+                        cardId = "accounts_view_cash_flow",
+                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = cashFlowTimelineRange)
+                    ),
                     allTransactions = allTransactions,
-                    timelineRange = cashFlowTimelineRange,
                     context = computationContext
                 )
 
@@ -422,9 +421,9 @@ class AccountsViewViewModel(
                     currencyBalancesTimelineRange = currencyBalancesTimelineRange,
                     cashFlowShowBaseConversion = cashFlowShowBaseConversion,
                     cashFlowTimelineRange = cashFlowTimelineRange,
-                    netWorth = netWorth,
-                    netIncome = netWorthFlow.totalIncomeInBase,
-                    netExpense = netWorthFlow.totalExpensesInBase,
+                    netWorth = nwValue,
+                    netIncome = nwFlow.totalIncomeInBase,
+                    netExpense = nwFlow.totalExpensesInBase,
                     netWorthFontSize = netWorthFontSize,
                     netWorthTimelineRange = netWorthTimelineRange,
                     cashFlowResult = cashFlowResult

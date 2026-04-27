@@ -9,8 +9,8 @@ import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
 import com.osscabinet.ossWallet.domain.service.TransactionManager
-import com.osscabinet.ossWallet.domain.service.FinancialUseCasesCardComputationAdapter
 import com.osscabinet.ossWallet.domain.usecase.*
+import com.osscabinet.ossWallet.domain.model.analytics.*
 
 /**
  * Dependency container for the application.
@@ -69,10 +69,6 @@ class AppContainer(private val context: Context) {
         TransactionUseCases(transactionRepository, sharedWalletRepository) 
     }
     
-    val financialUseCases by lazy { 
-        FinancialUseCases(transactionRepository, currencyRepository) 
-    }
-    
     val budgetUseCases by lazy { 
         BudgetUseCases(budgetRepository, transactionRepository) 
     }
@@ -87,17 +83,12 @@ class AppContainer(private val context: Context) {
 
     // Services
     val cardComputationService: CardComputationService by lazy {
-        CardComputationServiceImpl(financialUseCases, db.categoryDao())
+        CardComputationServiceImpl(db.categoryDao())
     }
 
     val cardComputationEngine: CardComputationEngine by lazy {
         // Use CardComputationService as the default implementation
         cardComputationService
-    }
-
-    // Adapter for FinancialUseCases to implement CardComputationEngine
-    val financialUseCasesCardComputationAdapter: FinancialUseCasesCardComputationAdapter by lazy {
-        FinancialUseCasesCardComputationAdapter(financialUseCases)
     }
 
     val transactionManager: TransactionManager by lazy {

@@ -7,12 +7,14 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.usecase.*
+import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.dashboard.model.*
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.util.CachedCardData
+import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,7 +28,6 @@ class AccountDetailViewModel(
     private val transactionUseCases: TransactionUseCases,
     val settingsDataStore: SettingsDataStore,
     private val analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
-    private val financialUseCases: FinancialUseCases,
     private val cardManagerViewModel: CardManagerViewModel,
     private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
 ) : ViewModel() {
@@ -73,7 +74,7 @@ class AccountDetailViewModel(
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
-    ): com.osscabinet.ossWallet.domain.usecase.CashFlowResult {
+    ): com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult {
         val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return getCachedOrCompute(cacheKey) {
             cardConfig.computeCashFlow(
@@ -91,7 +92,7 @@ class AccountDetailViewModel(
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
-    ): List<com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem> {
+    ): List<com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem> {
         val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return getCachedOrCompute(cacheKey) {
             cardConfig.computeCurrencyTotals(
@@ -248,25 +249,35 @@ class AccountDetailViewModel(
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
-                val currencyTotals = financialUseCases.getCurrencyAggregation(
+                val currencyTotals = cardComputationService.computeCurrencyTotals(
+                    config = com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
+                        cardId = "account_detail_currency_balances",
+                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
+                    ),
                     accounts = listOf(account),
                     allTransactions = accountTransactions,
-                    timelineRange = settings.currencyBalancesSection.timelineRange,
                     context = computationContext
                 )
 
-                val cashFlowResult = financialUseCases.calculateCashFlow(
+                val cashFlowResult = cardComputationService.computeCashFlow(
+                    config = com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
+                        cardId = "account_detail_cash_flow",
+                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange)
+                    ),
                     allTransactions = accountTransactions,
-                    timelineRange = settings.cashFlowSection.timelineRange,
                     context = computationContext
                 )
 
-                val updatedAccount = financialUseCases.getTotalBalances(
+                val (updatedAccounts, _) = cardComputationService.computeAccountStats(
+                    config = com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig(
+                        cardId = "account_detail_stats",
+                        timelineRange = settings.currencyBalancesSection.timelineRange
+                    ),
                     accounts = listOf(account),
                     allTransactions = accountTransactions,
-                    context = computationContext,
-                    timelineRange = settings.currencyBalancesSection.timelineRange
-                ).first()
+                    context = computationContext
+                )
+                val updatedAccount = updatedAccounts.first()
 
                 AccountDetailUiState.Success(
                     account = updatedAccount,

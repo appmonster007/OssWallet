@@ -1,8 +1,8 @@
 package com.osscabinet.osswallet.ui.dashboard
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import org.junit.Test
 import java.math.BigDecimal
 import org.junit.Assert.assertEquals

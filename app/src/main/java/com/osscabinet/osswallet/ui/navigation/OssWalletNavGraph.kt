@@ -84,7 +84,7 @@ fun OssWalletNavGraph(
         factory = GenericViewModelFactory {
             AnalyticsViewModel(
                 appContainer.transactionUseCases,
-                appContainer.financialUseCases,
+                appContainer.currencyRepository,
                 appContainer.settingsDataStore,
                 appContainer.cardComputationService,
                 appContainer.accountRepository
@@ -157,7 +157,6 @@ fun OssWalletNavGraph(
                 appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
                 analyticsViewModel,
-                appContainer.financialUseCases,
                 cardManagerViewModel,
                 settingsViewModel,
                 appContainer.cardComputationService,
@@ -173,10 +172,8 @@ fun OssWalletNavGraph(
                 appContainer.transactionUseCases,
                 appContainer.settingsDataStore,
                 analyticsViewModel,
-                appContainer.financialUseCases,
                 cardManagerViewModel,
-                appContainer.cardComputationService,
-                appContainer.financialUseCasesCardComputationAdapter
+                appContainer.cardComputationService
             )
         }
     )
@@ -585,7 +582,6 @@ fun OssWalletNavGraph(
                         transactionUseCases = appContainer.transactionUseCases,
                         settingsDataStore = appContainer.settingsDataStore,
                         analyticsViewModel = analyticsViewModel,
-                        financialUseCases = appContainer.financialUseCases,
                         cardManagerViewModel = cardManagerViewModel,
                         cardComputationService = appContainer.cardComputationService
                     )

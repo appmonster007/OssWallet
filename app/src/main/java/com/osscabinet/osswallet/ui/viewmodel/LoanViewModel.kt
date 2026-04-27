@@ -1,65 +1,68 @@
 package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.repository.LoanRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.osscabinet.ossWallet.domain.usecase.LoanAnalysis
+import com.osscabinet.ossWallet.domain.usecase.LoanUseCases
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 
-class LoanViewModel(private val repository: LoanRepository) : ViewModel() {
+data class LoanState(
+    val loans: List<LoanAnalysis> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
 
-    private val _loans = MutableStateFlow<List<Loan>>(emptyList())
-    val loans: StateFlow<List<Loan>> = _loans.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            repository.getAllLoans().collect {
-                _loans.value = it
-            }
-        }
-    }
-
-    fun addLoan(
-        title: String,
-        principal: BigDecimal,
-        interestRate: BigDecimal,
-        dueDate: Long,
-        type: LoanType
-    ) {
-        viewModelScope.launch {
-            val loan = Loan(
-                title = title,
-                principal = principal,
-                interestRate = interestRate,
-                dueDate = dueDate,
-                type = type
-            )
-            repository.insertLoan(loan)
-        }
-    }
-
-    fun updateRepayment(loan: Loan, amount: BigDecimal) {
-        viewModelScope.launch {
-            val updated = loan.copy(repayments = loan.repayments.add(amount))
-            repository.updateLoan(updated)
-        }
-    }
-    
-    fun deleteLoan(loan: Loan) {
-        viewModelScope.launch {
-            repository.deleteLoan(loan)
-        }
-    }
+sealed class LoanIntent {
+    object LoadLoans : LoanIntent()
+    data class UpsertLoan(val loan: Loan) : LoanIntent()
+    data class DeleteLoan(val accountId: String) : LoanIntent()
 }
 
-class LoanViewModelFactory(private val repository: LoanRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return LoanViewModel(repository) as T
+class LoanViewModel(
+    private val loanUseCases: LoanUseCases
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(LoanState())
+    val state: StateFlow<LoanState> = _state.asStateFlow()
+
+    // Backwards compatibility
+    val loans: StateFlow<List<Loan>> = _state.map { it.loans.map { it.loan } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    init {
+        handleIntent(LoanIntent.LoadLoans)
+    }
+
+    fun handleIntent(intent: LoanIntent) {
+        when (intent) {
+            LoanIntent.LoadLoans -> loadLoans()
+            is LoanIntent.UpsertLoan -> upsertLoan(intent.loan)
+            is LoanIntent.DeleteLoan -> deleteLoan(intent.accountId)
+        }
+    }
+
+    private fun loadLoans() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            loanUseCases.getLoansWithAnalysis()
+                .catch { e -> _state.update { it.copy(isLoading = false, error = e.message) } }
+                .collect { analysis ->
+                    _state.update { it.copy(loans = analysis, isLoading = false) }
+                }
+        }
+    }
+
+    private fun upsertLoan(loan: Loan) {
+        viewModelScope.launch {
+            loanUseCases.upsertLoan(loan)
+        }
+    }
+
+    private fun deleteLoan(accountId: String) {
+        viewModelScope.launch {
+            loanUseCases.deleteLoan(accountId)
+        }
     }
 }

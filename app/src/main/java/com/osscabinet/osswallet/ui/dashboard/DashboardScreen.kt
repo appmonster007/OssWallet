@@ -59,6 +59,9 @@ import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
+import com.osscabinet.ossWallet.domain.usecase.BudgetAnalysis
+import com.osscabinet.ossWallet.domain.usecase.LoanAnalysis
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -90,6 +93,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -121,12 +125,14 @@ fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
+    onBudgetClick: (String) -> Unit,
     onEditBudgetClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAccountsViewClick: () -> Unit,
     onLoansClick: () -> Unit,
+    onLoanClick: (String) -> Unit,
     onExchangeRatesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -139,6 +145,7 @@ fun DashboardScreen(
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
     budgetViewModel: BudgetViewModel,
+    loanViewModel: LoanViewModel,
     cardManagerViewModel: CardManagerViewModel,
     viewContext: String? = null
 ) {
@@ -191,7 +198,8 @@ fun DashboardScreen(
     val cardsConfig by cardManagerViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val budgets by budgetViewModel.budgets.collectAsStateWithLifecycle()
+    val budgetState by budgetViewModel.state.collectAsStateWithLifecycle()
+    val loanState by loanViewModel.state.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     
@@ -308,11 +316,15 @@ fun DashboardScreen(
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
                                 onRecordsClick = { context -> navigate { onRecordsClick(context) } },
                                 onBudgetsClick = { navigate(onBudgetsClick) },
+                                onBudgetClick = { id -> navigate { onBudgetClick(id) } },
                                 onEditBudgetClick = { category -> navigate { onEditBudgetClick(category) } },
+                                onLoansClick = { navigate(onLoansClick) },
+                                onLoanClick = { id -> navigate { onLoanClick(id) } },
                                 onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                                 onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
-                                budgets = budgets,
+                                budgets = budgetState.budgets,
+                                loans = loanState.loans,
                                 dashboardViewModel = dashboardViewModel,
                                 cardManagerViewModel = cardManagerViewModel,
                                 cardsConfig = cardsConfig,
@@ -354,11 +366,15 @@ fun DashboardContent(
     onAccountClick: (String) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onBudgetsClick: () -> Unit,
+    onBudgetClick: (String) -> Unit,
     onEditBudgetClick: (String) -> Unit,
+    onLoansClick: () -> Unit,
+    onLoanClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     transactionViewModel: TransactionViewModel,
-    budgets: List<Budget>,
+    budgets: List<com.osscabinet.ossWallet.domain.usecase.BudgetAnalysis>,
+    loans: List<com.osscabinet.ossWallet.domain.usecase.LoanAnalysis>,
     dashboardViewModel: DashboardViewModel,
     cardManagerViewModel: CardManagerViewModel,
     cardsConfig: DashboardCardsConfig,
@@ -578,7 +594,25 @@ fun DashboardContent(
                             callbacks = CardCallbacks.Budgets(
                                 onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
                                 onManageClick = onBudgetsClick,
-                                onBudgetClick = onEditBudgetClick,
+                                onBudgetClick = onBudgetClick,
+                                onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
+                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                            )
+                        )
+                    } else null
+                }
+                is LoansCardConfig -> {
+                    if (loans.isNotEmpty()) {
+                        CardWithCallbacks(
+                            renderData = CardRenderData.Loans(
+                                config = cardConfig,
+                                loans = loans,
+                                baseCurrency = state.baseCurrency,
+                                precision = decimalPrecision
+                            ),
+                            callbacks = CardCallbacks.Loans(
+                                onManageClick = onLoansClick,
+                                onLoanClick = onLoanClick,
                                 onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
                                 onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
                             )

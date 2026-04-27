@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LoanDao {
-    @Query("SELECT * FROM loans ORDER BY title COLLATE NOCASE ASC")
+    @Query("SELECT * FROM loan_metadata")
     fun getAllLoans(): Flow<List<LoanEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLoan(loan: LoanEntity)
+    @Query("SELECT * FROM loan_metadata WHERE accountId = :accountId")
+    suspend fun getLoanByAccountId(accountId: String): LoanEntity?
 
-    @Update
-    suspend fun updateLoan(loan: LoanEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertLoan(loan: LoanEntity)
 
     @Delete
     suspend fun deleteLoan(loan: LoanEntity)

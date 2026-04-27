@@ -33,6 +33,8 @@ fun TransactionEntity.toDomain(): Transaction {
     )
 }
 
+fun List<TransactionEntity>.toDomainList() = map { it.toDomain() }
+
 fun Transaction.toEntity(profileId: Int): TransactionEntity {
     return TransactionEntity(
         id = id,

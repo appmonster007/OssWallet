@@ -36,7 +36,10 @@ import com.osscabinet.ossWallet.ui.screens.TemplatesScreen
 import com.osscabinet.ossWallet.ui.screens.AddTemplateScreen
 import com.osscabinet.ossWallet.ui.screens.LoansScreen
 import com.osscabinet.ossWallet.ui.screens.BudgetsScreen
-import com.osscabinet.ossWallet.ui.screens.EditBudgetScreen
+import com.osscabinet.ossWallet.ui.screens.AddEditBudgetScreen
+import com.osscabinet.ossWallet.ui.screens.AddEditLoanScreen
+import com.osscabinet.ossWallet.ui.screens.BudgetDetailScreen
+import com.osscabinet.ossWallet.ui.screens.LoanDetailScreen
 import com.osscabinet.ossWallet.ui.screens.TransactionListScreen
 import com.osscabinet.ossWallet.ui.screens.TransactionEntryScreen
 import com.osscabinet.ossWallet.ui.screens.EditAccountScreen
@@ -52,7 +55,6 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SharedWalletViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
@@ -60,7 +62,6 @@ import com.osscabinet.ossWallet.ui.viewmodel.CurrencyViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModelFactory
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
 @Composable
@@ -112,13 +113,15 @@ fun OssWalletNavGraph(
     )
 
     val budgetViewModel: BudgetViewModel = viewModel(
-        factory = BudgetViewModelFactory(
-            appContainer.budgetUseCases
-        )
+        factory = GenericViewModelFactory {
+            BudgetViewModel(appContainer.budgetUseCases)
+        }
     )
 
     val loanViewModel: LoanViewModel = viewModel(
-        factory = LoanViewModelFactory(appContainer.loanRepository)
+        factory = GenericViewModelFactory {
+            LoanViewModel(appContainer.loanUseCases)
+        }
     )
     
     val sharedWalletViewModel: SharedWalletViewModel = viewModel(
@@ -157,7 +160,8 @@ fun OssWalletNavGraph(
                 appContainer.financialUseCases,
                 cardManagerViewModel,
                 settingsViewModel,
-                appContainer.cardComputationService
+                appContainer.cardComputationService,
+                appContainer.budgetUseCases
             )
         }
     )
@@ -240,13 +244,15 @@ fun OssWalletNavGraph(
                 onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                 onRecordsClick = { context -> navController.navigateToRecords(context) },
                 onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) },
+                onBudgetClick = { budgetId -> navController.navigate(Screen.BudgetDetail.createRoute(budgetId)) },
+                onEditBudgetClick = { budgetId -> navController.navigate(Screen.AddEditBudget.createRoute(budgetId)) },
                 onAddClick = { type, template ->
                     navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                 },
                 onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                 onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
                 onLoansClick = { navController.navigate(Screen.Loans.route) },
+                onLoanClick = { accountId -> navController.navigate(Screen.LoanDetail.createRoute(accountId)) },
                 onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                 onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
@@ -263,6 +269,7 @@ fun OssWalletNavGraph(
                 templateViewModel = templateViewModel,
                 dashboardViewModel = dashboardViewModel,
                 budgetViewModel = budgetViewModel,
+                loanViewModel = loanViewModel,
                 cardManagerViewModel = cardManagerViewModel,
                 viewContext = viewContext
             )
@@ -415,6 +422,34 @@ fun OssWalletNavGraph(
             LoansScreen(
                 viewModel = loanViewModel,
                 settingsViewModel = settingsViewModel,
+                onBackClick = safePopBackStack,
+                onAddLoanClick = { navController.navigate(Screen.AddEditLoan.route) },
+                onLoanClick = { accountId -> navController.navigate(Screen.LoanDetail.createRoute(accountId)) }
+            )
+        }
+
+        composable(
+            Screen.LoanDetail.route,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+            LoanDetailScreen(
+                accountId = accountId,
+                loanViewModel = loanViewModel,
+                transactionViewModel = transactionViewModel,
+                onEditClick = { id -> navController.navigate(Screen.AddEditLoan.createRoute(id)) },
+                onBackClick = safePopBackStack
+            )
+        }
+
+        composable(
+            Screen.AddEditLoan.route,
+            arguments = listOf(navArgument("accountId") { type = NavType.StringType; nullable = true; defaultValue = null })
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId")
+            AddEditLoanScreen(
+                accountId = accountId,
+                loanViewModel = loanViewModel,
                 onBackClick = safePopBackStack
             )
         }
@@ -424,16 +459,36 @@ fun OssWalletNavGraph(
                 viewModel = budgetViewModel,
                 settingsViewModel = settingsViewModel,
                 onBackClick = safePopBackStack,
-                onEditBudgetClick = { category -> navController.navigate(Screen.EditBudget.createRoute(category)) }
+                onAddBudgetClick = { navController.navigate(Screen.AddEditBudget.route) },
+                onBudgetClick = { budgetId -> navController.navigate(Screen.BudgetDetail.createRoute(budgetId)) }
             )
         }
 
-        composable(Screen.EditBudget.route) { backStackEntry ->
-            val category = backStackEntry.arguments?.getString("category") ?: ""
-            EditBudgetScreen(
-                category = category,
-                viewModel = budgetViewModel,
-                settingsViewModel = settingsViewModel,
+        composable(
+            Screen.BudgetDetail.route,
+            arguments = listOf(navArgument("budgetId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val budgetId = backStackEntry.arguments?.getString("budgetId") ?: ""
+            BudgetDetailScreen(
+                budgetId = budgetId,
+                budgetViewModel = budgetViewModel,
+                transactionViewModel = transactionViewModel,
+                onEditClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
+                onBackClick = safePopBackStack
+            )
+        }
+
+        composable(
+            Screen.AddEditBudget.route,
+            arguments = listOf(navArgument("budgetId") { type = NavType.StringType; nullable = true; defaultValue = null })
+        ) { backStackEntry ->
+            val budgetId = backStackEntry.arguments?.getString("budgetId")
+            AddEditBudgetScreen(
+                budgetId = budgetId,
+                budgetViewModel = budgetViewModel,
+                accountViewModel = accountViewModel,
+                transactionViewModel = transactionViewModel,
+                tagViewModel = tagViewModel,
                 onBackClick = safePopBackStack
             )
         }

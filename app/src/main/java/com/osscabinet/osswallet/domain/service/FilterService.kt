@@ -46,6 +46,7 @@ object FilterService {
             
             val matchesStatuses = filter.statuses.isEmpty() || tx.status in filter.statuses
             val matchesCurrencies = filter.currencies.isEmpty() || tx.currency in filter.currencies
+            val matchesTags = filter.tags.isEmpty() || tx.tags.any { it in filter.tags }
             
             // Payee match (Regex or string contains)
             val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
@@ -83,7 +84,7 @@ object FilterService {
 
             matchesAccounts && matchesCategories && matchesType && matchesAmount && 
             matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
-            matchesWarranty && inWarrantyRange && matchesPaymentMethod
+            matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags
         }
     }
 

@@ -40,7 +40,7 @@ fun EditBudgetScreen(
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val currency by settingsViewModel.currency.collectAsStateWithLifecycle()
-    val budget = budgets.find { it.category == category }
+    val budget = budgets.find { it.name == category }
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
     var amount by remember { mutableStateOf(budget?.limit?.toString() ?: "") }
     var isNumpadVisible by remember { mutableStateOf(false) }

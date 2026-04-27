@@ -83,3 +83,8 @@ fun formatDateTime(millis: Long): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
     return sdf.format(Date(millis))
 }
+
+fun formatDate(millis: Long): String {
+    val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    return sdf.format(Date(millis))
+}

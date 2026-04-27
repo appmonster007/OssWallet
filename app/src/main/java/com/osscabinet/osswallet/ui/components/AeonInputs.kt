@@ -100,11 +100,12 @@ fun EditorialInput(
     onValueChange: (String) -> Unit,
     label: String,
     icon: ImageVector,
+    modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = readOnly, onClick = onClick),
         shape = RoundedCornerShape(28.dp),

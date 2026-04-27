@@ -102,7 +102,7 @@ class TransactionManager(
             timestamp = request.timestamp
         )).copy(
             title = request.title.ifBlank { "Transfer" },
-            amount = request.amount,
+            amount = request.amount.negate(),
             category = "Transfer",
             transactionType = "expense",
             accountId = request.accountId,

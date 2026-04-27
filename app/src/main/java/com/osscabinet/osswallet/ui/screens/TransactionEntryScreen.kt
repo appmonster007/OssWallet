@@ -274,11 +274,7 @@ fun TransactionEntryContent(
     LaunchedEffect(existingTransaction, accounts, prefillDto) {
         if (isEditMode && existingTransaction != null) {
             title = existingTransaction.title
-            amount = if (existingTransaction.transactionType == "expense") {
-                "-${existingTransaction.amount.abs().toPlainString()}"
-            } else {
-                existingTransaction.amount.abs().toPlainString()
-            }
+            amount = existingTransaction.amount.abs().toPlainString()
             category = existingTransaction.category
             selectedCategoryId = existingTransaction.categoryId
             selectedTags = existingTransaction.tags
@@ -317,7 +313,7 @@ fun TransactionEntryContent(
             // Prefill from DTO if provided (for clone functionality)
             if (prefillDto != null) {
                 title = prefillDto.title
-                amount = prefillDto.amount
+                amount = prefillDto.amount.toBigDecimalOrNull()?.abs()?.toPlainString() ?: prefillDto.amount
                 category = prefillDto.category
                 selectedCategoryId = prefillDto.categoryId
                 selectedTags = prefillDto.tags
@@ -360,7 +356,7 @@ fun TransactionEntryContent(
                     title = template.name
                     category = template.category
                     transactionType = template.transactionType
-                    if (template.amount > BigDecimal.ZERO) amount = template.amount.toPlainString()
+                    if (template.amount != BigDecimal.ZERO) amount = template.amount.abs().toPlainString()
                     selectedTemplateName = template.name
                     template.note?.let { note = it }
                     if (template.tags.isNotEmpty()) {

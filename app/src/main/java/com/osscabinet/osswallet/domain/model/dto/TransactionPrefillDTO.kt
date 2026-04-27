@@ -41,7 +41,7 @@ data class TransactionPrefillDTO(
         fun fromTransaction(transaction: com.osscabinet.ossWallet.domain.model.Transaction, clonedFromTransactionId: Long? = null): TransactionPrefillDTO {
             return TransactionPrefillDTO(
                 title = transaction.title,
-                amount = transaction.amount.toPlainString(),
+                amount = transaction.amount.abs().toPlainString(),
                 category = transaction.category,
                 categoryId = transaction.categoryId,
                 transactionType = if (transaction.category == "Transfer") "transfer" else transaction.transactionType,

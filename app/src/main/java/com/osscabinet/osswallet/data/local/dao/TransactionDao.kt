@@ -50,15 +50,18 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
         _deleteTransaction(transaction)
-        accountDao.updateBalance(transaction.accountId, transaction.amount)
+        accountDao.updateBalance(transaction.accountId, transaction.amount.negate())
     }
 
     @Transaction
     open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
         // Reverse old transaction impact
-        accountDao.updateBalance(oldTransaction.accountId, oldTransaction.amount)
+        accountDao.updateBalance(oldTransaction.accountId, oldTransaction.amount.negate())
 
         // Apply new transaction impact
+        accountDao.updateBalance(newTransaction.accountId, newTransaction.amount)
+
+        // Perform the database update
         insertTransaction(newTransaction)
     }
 

@@ -341,7 +341,7 @@ class TransactionsUtilityServiceTest {
 
     @Test
     fun `given multi-currency transactions with exchange rates when calculating income expense breakdown then converts correctly`() {
-        val exchangeRates = mapOf("EUR" to 1.1, "GBP" to 1.3)
+        val exchangeRates = mapOf("EUR" to BigDecimal("1.1"), "GBP" to BigDecimal("1.3"))
         val result = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
             testTransactions,
             exchangeRates,
@@ -354,7 +354,7 @@ class TransactionsUtilityServiceTest {
 
     @Test
     fun `given exchange rates without base currency when calculating income expense breakdown then throws exception`() {
-        val exchangeRates = mapOf("EUR" to 1.1, "GBP" to 1.3)
+        val exchangeRates = mapOf("EUR" to BigDecimal("1.1"), "GBP" to BigDecimal("1.3"))
         try {
             TransactionsUtilityService.calculateIncomeExpenseBreakdown(
                 testTransactions,
@@ -875,6 +875,222 @@ class TransactionsUtilityServiceTest {
         val result = TransactionsUtilityService.breakdownByTagsAndAccount(testTransactions, testAccounts)
         
         assertEquals(8, result.size)
+    }
+
+    // ==================== Calculation Method Tests ====================
+
+    @Test
+    fun `given transactions when calculating transaction summary with single currency then returns correct summary`() {
+        val singleCurrencyTransactions = testTransactions.filter { it.currency == "USD" }
+        val result = TransactionsUtilityService.calculateTransactionSummary(singleCurrencyTransactions)
+        
+        assertNotNull(result)
+        assertEquals(6, result.transactionCount)
+        assertEquals("USD", singleCurrencyTransactions.first().currency)
+    }
+
+    @Test
+    fun `given transactions when calculating transaction summary with multi-currency then throws exception`() {
+        var exceptionThrown = false
+        var exceptionMessage = ""
+        
+        try {
+            TransactionsUtilityService.calculateTransactionSummary(testTransactions)
+        } catch (e: IllegalArgumentException) {
+            exceptionThrown = true
+            exceptionMessage = e.message ?: ""
+        }
+        
+        assertTrue(exceptionThrown)
+        assertTrue(exceptionMessage.contains("same currency"))
+    }
+
+    @Test
+    fun `given transactions when calculating summary by currency then returns correct summaries`() {
+        val result = TransactionsUtilityService.calculateSummaryByCurrency(testTransactions)
+        
+        assertEquals(3, result.size)
+        assertTrue(result.containsKey("USD"))
+        assertTrue(result.containsKey("EUR"))
+        assertTrue(result.containsKey("GBP"))
+    }
+
+    @Test
+    fun `given transactions when calculating income expense breakdown without conversion then returns correct breakdown`() {
+        val result = TransactionsUtilityService.calculateIncomeExpenseBreakdown(testTransactions)
+        
+        assertEquals(4, result.incomeTransactions.size)
+        assertEquals(6, result.expenseTransactions.size)
+        assertEquals(3, result.incomeCurrencyBreakdown.size)
+        assertEquals(3, result.expenseCurrencyBreakdown.size)
+    }
+
+    @Test
+    fun `given transactions when calculating income expense breakdown with exchange rates then returns converted breakdown`() {
+        val exchangeRates = mapOf("EUR" to BigDecimal("1.1"), "GBP" to BigDecimal("1.25"))
+        val result = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            testTransactions,
+            exchangeRates,
+            "USD"
+        )
+        
+        assertEquals(4, result.incomeTransactions.size)
+        assertEquals(6, result.expenseTransactions.size)
+        assertNotNull(result.totalIncome)
+        assertNotNull(result.totalExpense)
+    }
+
+    @Test
+    fun `given transactions when calculating income expense breakdown with exchange rates but no base currency then throws exception`() {
+        val exchangeRates = mapOf("EUR" to BigDecimal("1.1"), "GBP" to BigDecimal("1.25"))
+        
+        var exceptionThrown = false
+        var exceptionMessage = ""
+        
+        try {
+            TransactionsUtilityService.calculateIncomeExpenseBreakdown(testTransactions, exchangeRates, null)
+        } catch (e: IllegalArgumentException) {
+            exceptionThrown = true
+            exceptionMessage = e.message ?: ""
+        }
+        
+        assertTrue(exceptionThrown)
+        assertTrue(exceptionMessage.contains("baseCurrency must be provided"))
+    }
+
+    @Test
+    fun `given summaries when calculating total in base currency then returns aggregated summary`() {
+        val summaries = mapOf(
+            "USD" to FinancialSummary(BigDecimal("100"), BigDecimal("200"), BigDecimal("-100"), 2),
+            "EUR" to FinancialSummary(BigDecimal("55"), BigDecimal("110"), BigDecimal("-55"), 1)
+        )
+        // Rate: 1 USD = 1.1 EUR. So 55 EUR = 55 / 1.1 = 50 USD
+        val exchangeRates = mapOf("EUR" to BigDecimal("1.1"))
+        
+        val result = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, "USD", exchangeRates)
+        
+        // 100 USD + (55 EUR / 1.1) = 150 USD
+        assertEquals(0, BigDecimal("150.0").compareTo(result.totalAmount.setScale(1, java.math.RoundingMode.HALF_UP)))
+        assertEquals(0, BigDecimal("300.0").compareTo(result.income.setScale(1, java.math.RoundingMode.HALF_UP)))
+        assertEquals(0, BigDecimal("-150.0").compareTo(result.expense.setScale(1, java.math.RoundingMode.HALF_UP)))
+        assertEquals(3, result.transactionCount)
+    }
+
+    @Test
+    fun `given breakdowns when calculating cumulative sum then returns running balance`() {
+        val breakdowns = listOf(
+            DateBreakdown("2024-01-01", FinancialSummary(BigDecimal("100"), BigDecimal("100"), BigDecimal.ZERO, 1), emptyMap()),
+            DateBreakdown("2024-01-02", FinancialSummary(BigDecimal("-50"), BigDecimal.ZERO, BigDecimal("-50"), 1), emptyMap()),
+            DateBreakdown("2024-01-03", FinancialSummary(BigDecimal("200"), BigDecimal("200"), BigDecimal.ZERO, 1), emptyMap())
+        )
+        
+        val result = TransactionsUtilityService.calculateCumulativeSum(breakdowns, BigDecimal("500"))
+        
+        assertEquals(3, result.size)
+        assertEquals(BigDecimal("600"), result[0].cumulativeBalance)
+        assertEquals(BigDecimal("550"), result[1].cumulativeBalance)
+        assertEquals(BigDecimal("750"), result[2].cumulativeBalance)
+    }
+
+    @Test
+    fun `given summaries when calculating delta then returns correct changes`() {
+        val current = FinancialSummary(BigDecimal("150"), BigDecimal("200"), BigDecimal("-50"), 2)
+        val previous = FinancialSummary(BigDecimal("100"), BigDecimal("150"), BigDecimal("-50"), 2)
+        
+        val result = TransactionsUtilityService.calculateSummaryDelta(current, previous)
+        
+        assertEquals(BigDecimal("50"), result.absoluteChange)
+        assertEquals(50.0, result.percentageChange, 0.001)
+        assertEquals(BigDecimal("50"), result.incomeChange)
+        assertEquals(BigDecimal.ZERO, result.expenseChange)
+    }
+
+    @Test
+    fun `given transactions when filtering with empty filter criteria then returns all transactions`() {
+        val filter = TransactionFilter()
+        val result = TransactionsUtilityService.filter(testTransactions, filter)
+        
+        assertEquals(10, result.size)
+    }
+
+    @Test
+    fun `given transactions when filtering by non-existent category then returns empty list`() {
+        val result = TransactionsUtilityService.filterByCategory(testTransactions, "NonExistent")
+        
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `given transactions when filtering by non-existent account then returns empty list`() {
+        val result = TransactionsUtilityService.filterByAccount(testTransactions, "nonexistent")
+        
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `given transactions when filtering by non-existent currency then returns empty list`() {
+        val result = TransactionsUtilityService.filterByCurrency(testTransactions, "JPY")
+        
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `given transactions when broken down by label with empty tags then returns correct breakdown`() {
+        val transactionsWithoutTags = testTransactions.filter { it.tags.isEmpty() }
+        val result = TransactionsUtilityService.breakdownByLabel(transactionsWithoutTags, { tx -> tx.category })
+        
+        assertTrue(result.isNotEmpty())
+    }
+
+    @Test
+    fun `given transactions when calculating total by currency with empty list then returns empty map`() {
+        val result = TransactionsUtilityService.calculateTotalByCurrency(emptyList())
+        
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `given transactions when separating income expense with empty list then returns empty pair`() {
+        val (income, expenses) = TransactionsUtilityService.separateIncomeExpense(emptyList())
+        
+        assertTrue(income.isEmpty())
+        assertTrue(expenses.isEmpty())
+    }
+
+    @Test
+    fun `given transactions when calculating summary by currency with empty list then returns empty map`() {
+        val result = TransactionsUtilityService.calculateSummaryByCurrency(emptyList())
+        
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `given income and expense when calculating savings rate then returns correct fraction`() {
+        // (1000 - 600) / 1000 = 0.4
+        val result = TransactionsUtilityService.calculateSavingsRate(BigDecimal("1000"), BigDecimal("-600"))
+        assertEquals(0.4, result, 0.001)
+        
+        // Zero income
+        assertEquals(0.0, TransactionsUtilityService.calculateSavingsRate(BigDecimal.ZERO, BigDecimal("-600")), 0.0)
+        
+        // Negative net flow
+        assertEquals(0.0, TransactionsUtilityService.calculateSavingsRate(BigDecimal("500"), BigDecimal("-600")), 0.0)
+    }
+
+    @Test
+    fun `given total expense and days active when calculating burn rate then returns monthly average`() {
+        // (1000 / 10) * 30 = 3000
+        val result = TransactionsUtilityService.calculateBurnRate(BigDecimal("-1000"), 10)
+        assertEquals(0, BigDecimal("3000.00").compareTo(result))
+    }
+
+    @Test
+    fun `given transactions when calculating daily net flow then returns correctly bucketed amounts`() {
+        val result = TransactionsUtilityService.calculateDailyNetFlow(testTransactions, 1000) // 1000 days to catch 2024
+        
+        assertTrue(result.isNotEmpty())
+        // All test transactions are on different days in Jan 2024
+        assertEquals(10, result.size)
     }
 
     // ==================== Edge Cases ====================

@@ -54,9 +54,9 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
-import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
@@ -434,59 +434,63 @@ fun DashboardContent(
             val cardWithCallbacks = when (cardConfig) {
                 is NetWorthCardConfig -> {
                     val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
-                    val netWorth = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.computeNetWorth(
+                    var netWorth by remember { mutableStateOf(BigDecimal.ZERO) }
+                    var cashFlow by remember { mutableStateOf<CashFlowResult?>(null) }
+                    
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
+                        netWorth = dashboardViewModel.computeNetWorth(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
                             context = computationContext
                         )
-                    }
-
-                    val cashFlow = remember(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.computeCashFlow(
+                        cashFlow = dashboardViewModel.computeCashFlow(
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
                             context = computationContext
                         )
                     }
 
-                    val cardUiState = remember(
-                        netWorth,
-                        cashFlow.totalIncomeInBase,
-                        cashFlow.totalExpensesInBase,
-                        state.baseCurrency,
-                        state.decimalPrecision,
-                        cardConfig.fontSize,
-                        cardConfig.timelineRange
-                    ) {
-                        NetWorthUiState.Success(
-                            netWorth = netWorth,
-                            netIncome = cashFlow.totalIncomeInBase,
-                            netExpense = cashFlow.totalExpensesInBase,
-                            baseCurrency = state.baseCurrency,
-                            precision = state.decimalPrecision,
-                            fontSize = cardConfig.fontSize,
-                            timelineRange = cardConfig.timelineRange
-                        )
-                    }
+                    cashFlow?.let { cf ->
+                        val cardUiState = remember(
+                            netWorth,
+                            cf.totalIncomeInBase,
+                            cf.totalExpensesInBase,
+                            state.baseCurrency,
+                            state.decimalPrecision,
+                            cardConfig.fontSize,
+                            cardConfig.timelineRange
+                        ) {
+                            NetWorthUiState.Success(
+                                netWorth = netWorth,
+                                netIncome = cf.totalIncomeInBase,
+                                netExpense = cf.totalExpensesInBase,
+                                baseCurrency = state.baseCurrency,
+                                precision = state.decimalPrecision,
+                                fontSize = cardConfig.fontSize,
+                                timelineRange = cardConfig.timelineRange
+                            )
+                        }
 
-                    CardWithCallbacks(
-                        renderData = CardRenderData.NetWorth(
-                            config = cardConfig,
-                            uiState = cardUiState
-                        ),
-                        callbacks = CardCallbacks.WithFontSizeAndTimeline(
-                            onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
-                            onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardNetWorthTimelineRange(cardId, range) },
-                            onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                        CardWithCallbacks(
+                            renderData = CardRenderData.NetWorth(
+                                config = cardConfig,
+                                uiState = cardUiState
+                            ),
+                            callbacks = CardCallbacks.WithFontSizeAndTimeline(
+                                onFontSizeChange = { cardId, fontSize -> dashboardViewModel.updateCardNetWorthFontSize(cardId, fontSize) },
+                                onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardNetWorthTimelineRange(cardId, range) },
+                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                            )
                         )
-                    )
+                    } ?: null
                 }
                 is CurrencyBalancesCardConfig -> {
                     val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
-                    val currencyTotals = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.computeCurrencyAggregation(
+                    var currencyTotals by remember { mutableStateOf<List<CurrencyAggregationItem>>(emptyList()) }
+                    
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
+                        currencyTotals = dashboardViewModel.computeCurrencyAggregation(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
@@ -499,7 +503,7 @@ fun DashboardContent(
                             config = cardConfig,
                             currencyTotals = currencyTotals,
                             baseCurrency = state.baseCurrency,
-                            precision = decimalPrecision
+                            precision = state.decimalPrecision
                         ),
                         callbacks = CardCallbacks.CurrencyBalances(
                             onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardCurrencyBalancesLayout(cardId, layout) },
@@ -519,40 +523,46 @@ fun DashboardContent(
                 }
                 is CashFlowCardConfig -> {
                     val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
-                    val cashFlowResult = remember(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.computeCashFlow(
+                    var cashFlowResult by remember { mutableStateOf<CashFlowResult?>(null) }
+                    
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
+                        cashFlowResult = dashboardViewModel.computeCashFlow(
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
                             context = computationContext
                         )
                     }
 
-                    CardWithCallbacks(
-                        renderData = CardRenderData.CashFlow(
-                            config = cardConfig,
-                            cashFlowResult = cashFlowResult,
-                            baseCurrency = state.baseCurrency,
-                            precision = decimalPrecision
-                        ),
-                        callbacks = CardCallbacks.CashFlow(
-                            onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
-                            onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
-                            onClickIncome = { timelineRange ->
-                                val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
-                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
-                            },
-                            onClickExpense = { timelineRange ->
-                                val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
-                                onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
-                            },
-                            onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                    cashFlowResult?.let { cf ->
+                        CardWithCallbacks(
+                            renderData = CardRenderData.CashFlow(
+                                config = cardConfig,
+                                cashFlowResult = cf,
+                                baseCurrency = state.baseCurrency,
+                                precision = state.decimalPrecision
+                            ),
+                            callbacks = CardCallbacks.CashFlow(
+                                onShowBaseConversionChange = { cardId, show -> dashboardViewModel.updateCardCashFlowShowBaseConversion(cardId, show) },
+                                onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardCashFlowTimelineRange(cardId, range) },
+                                onClickIncome = { timelineRange ->
+                                    val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
+                                },
+                                onClickExpense = { timelineRange ->
+                                    val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(timelineRange)
+                                    onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
+                                },
+                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                            )
                         )
-                    )
+                    } ?: null
                 }
                 is AccountsCardConfig -> {
                     val computationContext = ComputationContext(state.baseCurrency, state.exchangeRates, state.decimalPrecision)
-                    val (updatedAccounts, accountStats) = remember(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
-                        dashboardViewModel.computeAccountStats(
+                    var accountStatsData by remember { mutableStateOf<Pair<List<Account>, Map<String, AccountSummaryItem>>?>(null) }
+                    
+                    LaunchedEffect(cardConfig.cardId, cardConfig.timelineRange, state.accounts, state.allTransactions, state.baseCurrency, state.exchangeRates, state.decimalPrecision) {
+                        accountStatsData = dashboardViewModel.computeAccountStats(
                             accounts = state.accounts,
                             transactions = state.allTransactions,
                             timelineRange = cardConfig.timelineRange,
@@ -560,27 +570,29 @@ fun DashboardContent(
                         )
                     }
 
-                    CardWithCallbacks(
-                        renderData = CardRenderData.Accounts(
-                            config = cardConfig,
-                            accounts = updatedAccounts,
-                            accountStats = accountStats,
-                            baseCurrency = state.baseCurrency,
-                            currentTheme = currentTheme,
-                            precision = decimalPrecision
-                        ),
-                        callbacks = CardCallbacks.Accounts(
-                            onGridColumnsChange = { cardId, columns -> dashboardViewModel.updateCardAccountsGridColumns(cardId, columns) },
-                            onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardAccountsLayout(cardId, layout) },
-                            onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardAccountsTimelineRange(cardId, range) },
-                            onShowAddAccountCardChange = { cardId, show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardId, show) },
-                            onManageClick = onManageAccountsClick,
-                            onHeaderClick = onAccountsViewClick,
-                            onAccountClick = onAccountClick,
-                            onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
-                            onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                    accountStatsData?.let { (updatedAccounts, accountStats) ->
+                        CardWithCallbacks(
+                            renderData = CardRenderData.Accounts(
+                                config = cardConfig,
+                                accounts = updatedAccounts,
+                                accountStats = accountStats,
+                                baseCurrency = state.baseCurrency,
+                                currentTheme = currentTheme,
+                                precision = state.decimalPrecision
+                            ),
+                            callbacks = CardCallbacks.Accounts(
+                                onGridColumnsChange = { cardId, columns -> dashboardViewModel.updateCardAccountsGridColumns(cardId, columns) },
+                                onLayoutChange = { cardId, layout -> dashboardViewModel.updateCardAccountsLayout(cardId, layout) },
+                                onTimelineRangeChange = { cardId, range -> dashboardViewModel.updateCardAccountsTimelineRange(cardId, range) },
+                                onShowAddAccountCardChange = { cardId, show -> dashboardViewModel.updateCardAccountsShowAddAccountCard(cardId, show) },
+                                onManageClick = onManageAccountsClick,
+                                onHeaderClick = onAccountsViewClick,
+                                onAccountClick = onAccountClick,
+                                onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
+                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
+                            )
                         )
-                    )
+                    } ?: null
                 }
                 is BudgetsCardConfig -> {
                     if (budgets.isNotEmpty()) {

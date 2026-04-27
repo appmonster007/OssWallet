@@ -23,7 +23,7 @@ import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.usecase.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressData
 import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendData
 import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryData
@@ -36,8 +36,8 @@ import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineD
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import com.osscabinet.ossWallet.domain.usecase.CurrencyAggregationItem
-import com.osscabinet.ossWallet.domain.usecase.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.Account
 import java.math.BigDecimal

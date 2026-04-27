@@ -9,10 +9,11 @@ import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.domain.service.CardComputationService
+import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.domain.usecase.FinancialUseCases
 import com.osscabinet.ossWallet.domain.util.CachedCardData
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.analytics.components.*
@@ -29,7 +30,7 @@ import java.util.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
-    private val financialUseCases: FinancialUseCases,
+    private val currencyRepository: CurrencyRepository,
     private val settingsDataStore: SettingsDataStore,
     private val cardComputationService: CardComputationService,
     private val accountRepository: AccountRepository
@@ -148,7 +149,7 @@ class AnalyticsViewModel(
         ratesJob?.cancel()
         ratesJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, hasLoadedExchangeRates = false) }
-            val rates = financialUseCases.getExchangeRates(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
+            val rates = currencyRepository.getExchangeRates(currencyCode).mapValues { BigDecimal.valueOf(it.value) }
             _uiState.update { it.copy(
                 selectedCurrency = currencyCode,
                 exchangeRates = rates,
@@ -404,21 +405,18 @@ class AnalyticsViewModel(
         val selectedCurrency = _uiState.value.selectedCurrency
         val currentRates = _uiState.value.exchangeRates
         
-        val convertedTransactions = allTransactions.map { tx ->
-            val convertedAmount = CurrencyService.convertAmount(
-                amount = tx.amount,
-                fromCurrency = tx.currency,
-                toCurrency = selectedCurrency,
-                exchangeRates = currentRates,
-                precision = _currentPrecision + 4
-            )
-            tx.copy(amount = convertedAmount)
-        }
+        // 1. Global Totals using TransactionsUtilityService
+        val globalBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            transactions = allTransactions,
+            exchangeRates = currentRates,
+            baseCurrency = selectedCurrency
+        )
 
-        val totalIncome = convertedTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
-        val totalExpense = convertedTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }.setScale(_currentPrecision, RoundingMode.HALF_UP)
-        val currentBalance = totalIncome.add(totalExpense).setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val totalIncome = globalBreakdown.totalIncome.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val totalExpense = globalBreakdown.totalExpense.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        val currentBalance = globalBreakdown.netFlow.setScale(_currentPrecision, RoundingMode.HALF_UP)
         
+        // 2. Monthly Data
         val calendar = Calendar.getInstance()
         val currentMonth = calendar.get(Calendar.MONTH)
         val currentYear = calendar.get(Calendar.YEAR)
@@ -427,61 +425,61 @@ class AnalyticsViewModel(
         val lastMonth = calendar.get(Calendar.MONTH)
         val lastYear = calendar.get(Calendar.YEAR)
         
-        val thisMonthTransactions = convertedTransactions.filter { 
+        val thisMonthTransactions = allTransactions.filter { 
             val cal = Calendar.getInstance().apply { timeInMillis = it.timestamp }
             cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
         }
         
-        val lastMonthTransactions = convertedTransactions.filter { 
+        val lastMonthTransactions = allTransactions.filter { 
             val cal = Calendar.getInstance().apply { timeInMillis = it.timestamp }
             cal.get(Calendar.MONTH) == lastMonth && cal.get(Calendar.YEAR) == lastYear
         }
 
-        val thisMonthIncome = thisMonthTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val thisMonthExpense = thisMonthTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val thisMonthSavingsRate = if (thisMonthIncome.signum() > 0) {
-            thisMonthIncome.add(thisMonthExpense).divide(thisMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
-        } else 0.0
+        val thisMonthBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            thisMonthTransactions, currentRates, selectedCurrency
+        )
+        val lastMonthBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            lastMonthTransactions, currentRates, selectedCurrency
+        )
 
-        val lastMonthIncome = lastMonthTransactions.filter { it.amount.signum() >= 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val lastMonthExpense = lastMonthTransactions.filter { it.amount.signum() < 0 }.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.amount) }
-        val lastMonthSavingsRate = if (lastMonthIncome.signum() > 0) {
-            lastMonthIncome.add(lastMonthExpense).divide(lastMonthIncome, 4, RoundingMode.HALF_UP).toDouble()
-        } else 0.0
+        val thisMonthSavingsRate = TransactionsUtilityService.calculateSavingsRate(
+            thisMonthBreakdown.totalIncome, thisMonthBreakdown.totalExpense
+        )
+        val lastMonthSavingsRate = TransactionsUtilityService.calculateSavingsRate(
+            lastMonthBreakdown.totalIncome, lastMonthBreakdown.totalExpense
+        )
         
-        val firstTx = convertedTransactions.minByOrNull { it.timestamp }
+        // 3. Burn Rate
+        val firstTx = allTransactions.minByOrNull { it.timestamp }
         val daysActive = if (firstTx != null) {
             val diff = System.currentTimeMillis() - firstTx.timestamp
             (diff / (24 * 60 * 60 * 1000L)).coerceAtLeast(1)
         } else 1
-        val dailyExpenseAvg = totalExpense.divide(BigDecimal.valueOf(daysActive), _currentPrecision, RoundingMode.HALF_UP)
-        val monthlyBurnRate = dailyExpenseAvg.multiply(BigDecimal.valueOf(30))
+        
+        val monthlyBurnRate = TransactionsUtilityService.calculateBurnRate(
+            totalExpense = globalBreakdown.totalExpense,
+            daysActive = daysActive
+        )
 
-        val dailyNetFlow = convertedTransactions
-            .filter { it.timestamp > System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L }
-            .groupBy { 
-                val cal = Calendar.getInstance().apply { timeInMillis = it.timestamp }
-                cal.set(Calendar.HOUR_OF_DAY, 0)
-                cal.set(Calendar.MINUTE, 0)
-                cal.set(Calendar.SECOND, 0)
-                cal.set(Calendar.MILLISECOND, 0)
-                cal.timeInMillis
-            }.mapValues { entry ->
-                entry.value.fold(BigDecimal.ZERO) { acc, tx ->
-                    acc.add(tx.amount)
-                }
-            }
+        // 4. Daily Net Flow (Last 7 days)
+        val dailyNetFlow = TransactionsUtilityService.calculateDailyNetFlow(
+            transactions = allTransactions,
+            days = 7,
+            exchangeRates = currentRates,
+            baseCurrency = selectedCurrency
+        )
 
+        // 5. Forecast (Simple Projection)
         val avgDailyNetFlow = if (dailyNetFlow.isNotEmpty()) {
-            dailyNetFlow.values.fold(BigDecimal.ZERO) { acc, bd -> acc.add(bd) }
-                .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), _currentPrecision, RoundingMode.HALF_UP)
+            dailyNetFlow.values.reduce { acc, bd -> acc.add(bd) }
+                .divide(BigDecimal.valueOf(dailyNetFlow.size.toLong()), 10, RoundingMode.HALF_UP)
         } else BigDecimal.ZERO
 
         val forecast = (1..30).map { day ->
             val timestamp = System.currentTimeMillis() + day * 24 * 60 * 60 * 1000L
             val projectedBalance = currentBalance.add(avgDailyNetFlow.multiply(BigDecimal.valueOf(day.toLong())))
-            timestamp to projectedBalance
-        }
+            timestamp to projectedBalance.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        }.toMap()
 
         _uiState.update { 
             it.copy(
@@ -489,8 +487,8 @@ class AnalyticsViewModel(
                 savingsRate = thisMonthSavingsRate,
                 lastMonthSavingsRate = lastMonthSavingsRate,
                 burnRate = monthlyBurnRate,
-                thisMonthSpending = thisMonthExpense,
-                lastMonthSpending = lastMonthExpense,
+                thisMonthSpending = thisMonthBreakdown.totalExpense,
+                lastMonthSpending = lastMonthBreakdown.totalExpense,
                 dailyNetFlow = dailyNetFlow,
                 forecast = forecast.toMap(),
                 decimalPrecision = _currentPrecision,

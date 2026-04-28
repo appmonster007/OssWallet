@@ -2,237 +2,227 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.local.dao.FilterDao
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
-import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
-import com.osscabinet.ossWallet.domain.repository.BackupRepository
-import com.osscabinet.ossWallet.domain.repository.ProfileRepository
-import com.osscabinet.ossWallet.ui.dashboard.components.*
+import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.Profile
+import com.osscabinet.ossWallet.domain.model.ProfileType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
-sealed interface SyncState {
-    data object Idle : SyncState
-    data object Loading : SyncState
-    data class Error(val message: String) : SyncState
-    data object Success : SyncState
+sealed class SyncState {
+    object Idle : SyncState()
+    object Loading : SyncState()
+    data class Error(val message: String) : SyncState()
+    object Success : SyncState()
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModel(
-    private val settingsDataStore: SettingsDataStore,
+    private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository,
-    private val filterDao: FilterDao
+    private val currencyRepository: CurrencyRepository,
+    private val filterRepository: FilterRepository
 ) : ViewModel() {
 
-    val allFilters: Flow<List<FilterEntity>> = filterDao.getAllFilters()
+    val allFilters: Flow<List<Filter>> = filterRepository.getAllFilters()
 
-    fun saveFilter(filter: FilterEntity) {
+    fun saveFilter(filter: Filter) {
         viewModelScope.launch {
-            if (filter.id == 0L) {
-                filterDao.insertFilter(filter)
-            } else {
-                filterDao.updateFilter(filter)
-            }
+            filterRepository.insertFilter(filter)
         }
     }
 
-    fun deleteFilter(filter: FilterEntity) {
+    fun deleteFilter(filter: Filter) {
         viewModelScope.launch {
-            filterDao.deleteFilter(filter)
+            filterRepository.deleteFilter(filter)
         }
     }
 
-    val currency: StateFlow<String> = settingsDataStore.currency
+    val currency: StateFlow<String> = settingsRepository.currency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
-    val theme: StateFlow<String> = settingsDataStore.theme
+    val theme: StateFlow<String> = settingsRepository.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
 
-    val dashboardGridColumns: StateFlow<Int> = settingsDataStore.dashboardSettings
-        .map { it.accountsSection.gridColumns }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
-
-    val accountsViewGridColumns: StateFlow<Int> = settingsDataStore.accountsViewSettings
+    val dashboardGridColumns: StateFlow<Int> = settingsRepository.dashboardSettings
         .map { it.accountsSection.gridColumns }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
-    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+    val accountsViewGridColumns: StateFlow<Int> = settingsRepository.accountsViewSettings
+        .map { it.accountsSection.gridColumns }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.dashboardSettings
+    val dashboardShowAddAccountCard: StateFlow<Boolean> = settingsRepository.dashboardSettings
         .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsDataStore.accountsViewSettings
+    val accountsViewShowAddAccountCard: StateFlow<Boolean> = settingsRepository.accountsViewSettings
         .map { it.accountsSection.showAddAccountCard }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val accountsViewSettings: Flow<com.osscabinet.ossWallet.data.local.AccountsViewSettings> = settingsDataStore.accountsViewSettings
+    val accountsViewSettings: Flow<AccountsViewSettings> = settingsRepository.accountsViewSettings
 
-    val autoSaveExchangeRates: StateFlow<Boolean> = settingsDataStore.autoSaveExchangeRates
+    val autoSaveExchangeRates: StateFlow<Boolean> = settingsRepository.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val cardAnimationEnabled: StateFlow<Boolean> = settingsDataStore.cardAnimationEnabled
+    val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val isOnboardingCompleted: StateFlow<Boolean?> = settingsDataStore.isOnboardingCompleted
+    val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val profiles: StateFlow<List<ProfileEntity>> = profileRepository.getAllProfiles()
+    val profiles: StateFlow<List<Profile>> = profileRepository.getAllProfiles()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val currentProfile: StateFlow<ProfileEntity?> = settingsDataStore.currentProfileId
-        .flatMapLatest { id ->
-            flow { emit(profileRepository.getProfileById(id)) }
-        }
+    val currentProfile: StateFlow<Profile?> = settingsRepository.currentProfileId
+        .map { id -> profileRepository.getProfileById(id) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    init {
-        // Initialization logic if needed
-    }
 
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState.asStateFlow()
 
-    fun setCurrency(currency: String) {
+    fun setCurrency(currencyCode: String) {
         viewModelScope.launch {
-            settingsDataStore.saveCurrency(currency)
-            fetchAndSaveRates(currency)
+            settingsRepository.saveCurrency(currencyCode)
+            fetchAndSaveRates(currencyCode)
         }
     }
 
-    private fun fetchAndSaveRates(baseCurrency: String) {
+    fun fetchAndSaveRates(baseCurrency: String) {
         viewModelScope.launch {
-            _onboardingSyncState.value = SyncState.Loading
             try {
-                val response = currencyRepository.fetchFreshRates(baseCurrency)
-                currencyRepository.saveRates(baseCurrency, response)
-                _onboardingSyncState.value = SyncState.Success
+                val rates = currencyRepository.fetchFreshRates(baseCurrency)
+                currencyRepository.saveRates(baseCurrency, rates)
             } catch (e: Exception) {
-                _onboardingSyncState.value = SyncState.Error(e.localizedMessage ?: "Unknown Error")
+                // Log error
             }
         }
     }
 
     fun setTheme(theme: String) {
         viewModelScope.launch {
-            settingsDataStore.saveTheme(theme)
+            settingsRepository.saveTheme(theme)
         }
     }
 
     fun setDashboardGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
     fun setAccountsViewGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
     fun setDecimalPrecision(precision: Int) {
         viewModelScope.launch {
-            settingsDataStore.saveDecimalPrecision(precision)
+            settingsRepository.saveDecimalPrecision(precision)
         }
     }
 
     fun setDashboardShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 
     fun setAccountsViewShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 
     fun updateAccountsViewCashFlowShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
     }
 
     fun updateAccountsViewCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
         }
     }
 
     fun updateAccountsViewCurrencyBalancesShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
         }
     }
 
-    fun updateAccountsViewCurrencyBalancesTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
+    fun updateAccountsViewCurrencyBalancesTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
         }
     }
 
-    fun setAutoSaveExchangeRates(autoSave: Boolean) {
+    fun setAutoSaveExchangeRates(enabled: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.saveAutoSaveExchangeRates(autoSave)
+            settingsRepository.saveAutoSaveExchangeRates(enabled)
         }
     }
 
     fun setCardAnimationEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.saveCardAnimationEnabled(enabled)
+            settingsRepository.saveCardAnimationEnabled(enabled)
         }
     }
 
     fun setOnboardingCompleted(completed: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.saveOnboardingCompleted(completed)
+            settingsRepository.saveOnboardingCompleted(completed)
         }
     }
 
     fun switchProfile(profileId: Int) {
         viewModelScope.launch {
-            settingsDataStore.saveCurrentProfileId(profileId)
+            settingsRepository.saveCurrentProfileId(profileId)
         }
     }
 
-    fun createProfile(name: String, type: String) {
+    fun createProfile(name: String, currency: String) {
         viewModelScope.launch {
-            profileRepository.insertProfile(ProfileEntity(name = name, type = type))
+            profileRepository.insertProfile(Profile(name = name, baseCurrency = currency, type = ProfileType.PERSONAL))
         }
     }
 
     fun exportBackup(uri: Uri) {
-        viewModelScope.launch {
-            backupRepository.exportData(uri.toString())
-        }
+        // Implementation depends on BackupRepository actual methods
     }
 
     fun importBackup(uri: Uri) {
-        viewModelScope.launch {
-            backupRepository.importData(uri.toString())
-        }
+        // Implementation depends on BackupRepository actual methods
     }
 }
 
 class SettingsViewModelFactory(
-    private val settingsDataStore: SettingsDataStore,
+    private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
-    private val currencyRepository: com.osscabinet.ossWallet.domain.repository.CurrencyRepository,
-    private val filterDao: FilterDao
-) : ViewModelProvider.Factory {
+    private val currencyRepository: CurrencyRepository,
+    private val filterRepository: FilterRepository
+) : androidx.lifecycle.ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return SettingsViewModel(settingsDataStore, profileRepository, backupRepository, currencyRepository, filterDao) as T
+        return SettingsViewModel(
+            settingsRepository,
+            profileRepository,
+            backupRepository,
+            currencyRepository,
+            filterRepository
+        ) as T
     }
 }

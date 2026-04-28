@@ -2,8 +2,7 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -17,6 +16,7 @@ import com.osscabinet.ossWallet.domain.model.forExpense
 import com.osscabinet.ossWallet.domain.model.withDateRange
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.domain.service.TransactionManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -25,13 +25,13 @@ import java.math.BigDecimal
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
     private val transactionUseCases: TransactionUseCases,
-    settingsDataStore: SettingsDataStore,
-    private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
-    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
-    private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
-    private val analyticsViewModel: AnalyticsViewModel,
-    private val transactionManager: com.osscabinet.ossWallet.domain.service.TransactionManager
-) : BaseViewModel(settingsDataStore) {
+    settingsRepository: SettingsRepository,
+    private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
+    private val filterRepository: FilterRepository,
+    private val computationRepository: ComputationRepository,
+    private val transactionManager: TransactionManager
+) : BaseViewModel(settingsRepository) {
 
     // Replace multiple filter states with single FilterManager
     private val recordsFilterManager = FilterManager()
@@ -59,28 +59,30 @@ class TransactionViewModel(
     private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
     val prefillDto: StateFlow<TransactionPrefillDTO?> = _prefillDto.asStateFlow()
 
-    val savedFilters = filterDao.getAllFilters()
+    val savedFilters = filterRepository.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories = categoryDao.getAllCategories()
+    val categories = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+    val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
-    val recordsSettings: StateFlow<TransactionSectionSettings> = settingsDataStore.recordsSettings
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
+    val recordsSettings: StateFlow<com.osscabinet.ossWallet.data.local.TransactionSectionSettings> = settingsRepository.recordsSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.osscabinet.ossWallet.data.local.TransactionSectionSettings())
 
-    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsDataStore.currentProfileId
+    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
                 accountRepository.getAllAccounts(profileId),
-                analyticsViewModel.uiState,
+                computationRepository.exchangeRates,
+                computationRepository.hasLoadedExchangeRates,
                 recordsFilter
-            ) { filteredTransactions, accounts, analyticsState, currentFilter ->
-                val rates = analyticsState.exchangeRates
-                val precision = analyticsState.decimalPrecision
+            ) { filteredTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
+                if (!hasLoadedExchangeRates) return@combine emptyList<TransactionWithBalance>()
+
+                val precision = decimalPrecision.value
 
                 transactionUseCases.getRecentTransactions(
                     allTransactions = filteredTransactions,
@@ -288,8 +290,8 @@ class TransactionViewModel(
         isDefault: Boolean = false
     ) {
         viewModelScope.launch {
-            categoryDao.insertCategory(
-                com.osscabinet.ossWallet.data.local.entity.CategoryEntity(
+            categoryRepository.upsertCategory(
+                com.osscabinet.ossWallet.domain.model.Category(
                     id = id,
                     name = name,
                     iconName = iconName,
@@ -301,15 +303,15 @@ class TransactionViewModel(
         }
     }
 
-    fun deleteCategory(category: com.osscabinet.ossWallet.data.local.entity.CategoryEntity) {
+    fun deleteCategory(category: com.osscabinet.ossWallet.domain.model.Category) {
         viewModelScope.launch {
-            categoryDao.deleteCategory(category)
+            categoryRepository.deleteCategory(category)
         }
     }
 
-    fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) {
+    fun updateRecordsSettings(update: (com.osscabinet.ossWallet.data.local.TransactionSectionSettings) -> com.osscabinet.ossWallet.data.local.TransactionSectionSettings) {
         viewModelScope.launch {
-            settingsDataStore.updateRecordsSettings(update)
+            settingsRepository.updateRecordsSettings(update)
         }
     }
 
@@ -430,22 +432,22 @@ class TransactionViewModel(
 
 class TransactionViewModelFactory(
     private val transactionUseCases: TransactionUseCases,
-    private val settingsDataStore: SettingsDataStore,
-    private val categoryDao: com.osscabinet.ossWallet.data.local.dao.CategoryDao,
-    private val accountRepository: com.osscabinet.ossWallet.domain.repository.AccountRepository,
-    private val filterDao: com.osscabinet.ossWallet.data.local.dao.FilterDao,
-    private val analyticsViewModel: AnalyticsViewModel,
-    private val transactionManager: com.osscabinet.ossWallet.domain.service.TransactionManager
+    private val settingsRepository: SettingsRepository,
+    private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
+    private val filterRepository: FilterRepository,
+    private val computationRepository: ComputationRepository,
+    private val transactionManager: TransactionManager
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return TransactionViewModel(
             transactionUseCases,
-            settingsDataStore,
-            categoryDao,
+            settingsRepository,
+            categoryRepository,
             accountRepository,
-            filterDao,
-            analyticsViewModel,
+            filterRepository,
+            computationRepository,
             transactionManager
         ) as T
     }

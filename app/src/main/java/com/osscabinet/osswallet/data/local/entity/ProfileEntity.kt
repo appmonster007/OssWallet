@@ -8,5 +8,6 @@ data class ProfileEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String,
-    val type: String // PERSONAL, BUSINESS
+    val baseCurrency: String = "USD",
+    val type: String = "PERSONAL" // PERSONAL, BUSINESS
 )

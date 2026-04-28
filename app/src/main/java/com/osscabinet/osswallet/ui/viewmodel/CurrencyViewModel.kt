@@ -2,17 +2,16 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
+import com.osscabinet.ossWallet.data.remote.CurrencyResponse
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CurrencyViewModel(
-    private val repository: CurrencyRepository,
-    private val dao: CurrencyDao,
-    private val settingsDataStore: SettingsDataStore
+    private val currencyRepository: CurrencyRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CurrencyUiState())
@@ -22,81 +21,64 @@ class CurrencyViewModel(
 
     init {
         viewModelScope.launch {
-            settingsDataStore.autoSaveExchangeRates.collect {
-                autoSave = it
+            settingsRepository.currency.collect { base ->
+                loadRates(base)
             }
         }
         viewModelScope.launch {
-            settingsDataStore.currency.collect { base ->
-                _uiState.update { it.copy(baseCurrency = base) }
-                loadRates(base)
+            settingsRepository.autoSaveExchangeRates.collect { auto ->
+                autoSave = auto
             }
         }
     }
 
-    fun loadRates(baseCurrency: String) {
+    private fun loadRates(base: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, syncError = null) }
+            _uiState.update { it.copy(isLoading = true, baseCurrency = base) }
             try {
-                repository.getExchangeRates(baseCurrency)
-                val rates = dao.getAllRates()
-                _uiState.update {
-                    it.copy(
-                        rates = rates,
-                        lastUpdated = rates.firstOrNull()?.timestamp ?: 0L,
-                        isLoading = false
+                // CurrencyRepository doesn't return Flow of rates yet, using getExchangeRates
+                val ratesMap = currencyRepository.getExchangeRates(base, false)
+                val entities = ratesMap.map { (code, rate) ->
+                    CurrencyRateEntity(
+                        baseCurrency = base,
+                        currencyCode = code,
+                        rate = rate,
+                        timestamp = System.currentTimeMillis(),
+                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000 // Placeholder
                     )
                 }
+                _uiState.update { it.copy(rates = entities, lastUpdated = System.currentTimeMillis(), isLoading = false) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, syncError = "Sync Failed: ${e.localizedMessage}") }
+                _uiState.update { it.copy(syncError = e.message, isLoading = false) }
             }
         }
     }
 
     fun refreshRates() {
-        val baseCurrency = _uiState.value.baseCurrency
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, syncError = null) }
+            val base = _uiState.value.baseCurrency
+            _uiState.update { it.copy(isLoading = true) }
             try {
-                val response = repository.fetchFreshRates(baseCurrency)
+                val response = currencyRepository.fetchFreshRates(base)
                 if (autoSave) {
-                    repository.saveRates(baseCurrency, response)
-                    val rates = dao.getAllRates()
-                    _uiState.update {
-                        it.copy(
-                            rates = rates,
-                            lastUpdated = rates.firstOrNull()?.timestamp ?: 0L,
-                            isLoading = false
-                        )
-                    }
+                    currencyRepository.saveRates(base, response)
+                    loadRates(base)
                 } else {
                     _uiState.update { it.copy(pendingResponse = response, isLoading = false) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, syncError = "Refresh Failed: ${e.localizedMessage}") }
+                _uiState.update { it.copy(syncError = e.message, isLoading = false) }
             }
         }
     }
 
     fun confirmSaveRates() {
-        val response = _uiState.value.pendingResponse ?: return
-        val baseCurrency = _uiState.value.baseCurrency
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                repository.saveRates(baseCurrency, response)
-                val rates = dao.getAllRates()
-                _uiState.update {
-                    it.copy(
-                        rates = rates,
-                        lastUpdated = rates.firstOrNull()?.timestamp ?: 0L,
-                        pendingResponse = null,
-                        isLoading = false
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, syncError = "Save Failed") }
-            }
+            val base = _uiState.value.baseCurrency
+            val response = _uiState.value.pendingResponse ?: return@launch
+            currencyRepository.saveRates(base, response)
+            _uiState.update { it.copy(pendingResponse = null) }
+            loadRates(base)
         }
     }
 
@@ -108,20 +90,18 @@ class CurrencyViewModel(
         _uiState.update { it.copy(syncError = null) }
     }
 
-    fun convert(amount: Double, from: String, to: String): Double {
-        val rates = _uiState.value.rates
-        val fromRate = rates.find { it.currencyCode == from }?.rate ?: 1.0
-        val toRate = rates.find { it.currencyCode == to }?.rate ?: 1.0
-        
-        return if (fromRate != 0.0) (amount / fromRate) * toRate else 0.0
+    fun convert(amount: Double, from: String, to: String, callback: (Double) -> Unit) {
+        viewModelScope.launch {
+            callback(currencyRepository.convert(amount, from, to))
+        }
     }
 }
 
 data class CurrencyUiState(
     val rates: List<CurrencyRateEntity> = emptyList(),
-    val baseCurrency: String = "USD",
-    val lastUpdated: Long = 0L,
+    val baseCurrency: String = "",
+    val lastUpdated: Long = 0,
     val isLoading: Boolean = false,
     val syncError: String? = null,
-    val pendingResponse: com.osscabinet.ossWallet.data.remote.CurrencyResponse? = null
+    val pendingResponse: CurrencyResponse? = null
 )

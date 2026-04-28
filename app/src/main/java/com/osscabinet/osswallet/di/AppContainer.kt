@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
+import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
@@ -25,6 +26,30 @@ class AppContainer(private val context: Context) {
 
     val settingsDataStore: SettingsDataStore by lazy {
         SettingsDataStore(context)
+    }
+
+    val settingsRepository: SettingsRepository by lazy {
+        SettingsRepositoryImpl(settingsDataStore)
+    }
+
+    val templateRepository: TemplateRepository by lazy {
+        TemplateRepositoryImpl(db.templateDao())
+    }
+
+    val categoryRepository: CategoryRepository by lazy {
+        CategoryRepositoryImpl(db.categoryDao())
+    }
+
+    val filterRepository: FilterRepository by lazy {
+        FilterRepositoryImpl(db.filterDao())
+    }
+
+    val computationRepository: ComputationRepository by lazy {
+        ComputationRepositoryImpl(settingsRepository, currencyRepository)
+    }
+
+    val cardRepository: CardRepository by lazy {
+        CardRepositoryImpl(settingsDataStore)
     }
 
     // Repositories

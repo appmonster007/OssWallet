@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -33,8 +33,8 @@ import java.math.BigDecimal
 fun TransactionFilterSheet(
     filter: TransactionFilter,
     accounts: List<Account>,
-    categories: List<CategoryEntity>,
-    savedFilters: List<FilterEntity> = emptyList(),
+    categories: List<Category>,
+    savedFilters: List<Filter> = emptyList(),
     onSetDateRange: (Long?, Long?) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
@@ -96,17 +96,21 @@ fun TransactionFilterSheetPreview() {
                         )
                     ),
                     categories = listOf(
-                        CategoryEntity(
+                        Category(
                             id = 1,
                             name = "Food",
                             iconName = "restaurant",
-                            colorHex = 0xFFFF0000.toInt()
+                            colorHex = 0xFFFF0000.toInt(),
+                            isDefault = true,
+                            parentId = null
                         ),
-                        CategoryEntity(
+                        Category(
                             id = 2,
                             name = "Transport",
                             iconName = "directions_bus",
-                            colorHex = 0xFF00FF00.toInt()
+                            colorHex = 0xFF00FF00.toInt(),
+                            isDefault = true,
+                            parentId = null
                         )
                     ),
                     onSetDateRange = { _, _ -> },

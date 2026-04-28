@@ -20,12 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.data.mapper.toDomain
-import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.ui.components.transactions.CompactTextField
 import com.osscabinet.ossWallet.ui.components.transactions.FilterFields
 import java.math.BigDecimal
@@ -33,14 +31,14 @@ import java.math.BigDecimal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditFilterScreen(
-    filterEntity: FilterEntity?,
+    filter: Filter?,
     accounts: List<Account>,
-    allCategories: List<CategoryEntity>,
-    onSaveFilter: (FilterEntity) -> Unit,
+    allCategories: List<Category>,
+    onSaveFilter: (Filter) -> Unit,
     onBackClick: () -> Unit
 ) {
-    var filterName by remember { mutableStateOf(filterEntity?.name ?: "") }
-    var localFilter by remember { mutableStateOf(filterEntity?.toDomain() ?: TransactionFilter()) }
+    var filterName by remember { mutableStateOf(filter?.name ?: "") }
+    var localFilter by remember { mutableStateOf(filter?.filter ?: TransactionFilter()) }
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -54,7 +52,7 @@ fun EditFilterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (filterEntity == null) "New Filter" else "Edit Filter") },
+                title = { Text(if (filter == null) "New Filter" else "Edit Filter") },
                 navigationIcon = {
                     IconButton(onClick = { navigate(onBackClick) }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -64,7 +62,11 @@ fun EditFilterScreen(
                     TextButton(onClick = {
                         if (filterName.isNotBlank()) {
                             navigate {
-                                onSaveFilter(localFilter.toEntity(filterName, filterEntity?.id ?: 0))
+                                onSaveFilter(Filter(
+                                    id = filter?.id ?: 0,
+                                    name = filterName,
+                                    filter = localFilter
+                                ))
                             }
                         }
                     }) {

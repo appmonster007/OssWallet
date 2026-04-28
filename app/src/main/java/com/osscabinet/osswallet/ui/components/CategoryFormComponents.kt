@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
 import com.osscabinet.ossWallet.ui.components.AeonFormHeader
@@ -31,8 +31,8 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryEditSheet(
-    category: CategoryEntity?,
-    parentCategories: List<CategoryEntity>,
+    category: Category?,
+    parentCategories: List<Category>,
     onDismiss: () -> Unit,
     onSave: (String, String, Int, Long?) -> Unit
 ) {

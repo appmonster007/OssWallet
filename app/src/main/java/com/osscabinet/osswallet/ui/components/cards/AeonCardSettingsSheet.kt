@@ -11,8 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.AdvancedFilterSection
@@ -30,8 +30,8 @@ fun AeonCardSettingsSheet(
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
     accounts: List<Account> = emptyList(),
-    allCategories: List<CategoryEntity> = emptyList(),
-    savedFilters: List<FilterEntity> = emptyList(),
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList(),
     settingsContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     ModalBottomSheet(

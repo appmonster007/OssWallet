@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +30,7 @@ fun FiltersSettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit,
     onAddFilterClick: () -> Unit,
-    onEditFilterClick: (FilterEntity) -> Unit
+    onEditFilterClick: (Filter) -> Unit
 ) {
     val filters by viewModel.allFilters.collectAsState(initial = emptyList())
 
@@ -101,7 +101,7 @@ fun FiltersSettingsScreen(
 
 @Composable
 fun FilterItem(
-    filter: FilterEntity,
+    filter: Filter,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -137,7 +137,6 @@ fun FilterItem(
                     filter.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
-                // Optional: add summary of filter criteria here
             }
             IconButton(onClick = onDelete) {
                 Icon(

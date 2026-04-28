@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.TagEntity
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
@@ -29,7 +29,7 @@ fun ManageLabelsScreen(
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var newTagName by remember { mutableStateOf("") }
-    var tagToDelete by remember { mutableStateOf<TagEntity?>(null) }
+    var tagToDelete by remember { mutableStateOf<Tag?>(null) }
 
     AeonConfirmDeleteDialog(
         show = tagToDelete != null,
@@ -116,7 +116,7 @@ fun ManageLabelsScreen(
 }
 
 @Composable
-fun LabelItem(tag: TagEntity, onDelete: () -> Unit) {
+fun LabelItem(tag: Tag, onDelete: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),

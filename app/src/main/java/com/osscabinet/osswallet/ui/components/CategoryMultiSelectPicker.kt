@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
 
 /**
@@ -26,7 +26,7 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
  */
 @Composable
 fun CategoryMultiSelectPicker(
-    categories: List<CategoryEntity>,
+    categories: List<Category>,
     selectedCategoryIds: Set<Long>,
     onCategoryToggle: (Long) -> Unit,
     modifier: Modifier = Modifier
@@ -87,7 +87,7 @@ fun CategoryMultiSelectPicker(
 
 @Composable
 private fun CategoryMultiSelectItem(
-    category: CategoryEntity,
+    category: Category,
     isParent: Boolean,
     isSelected: Boolean,
     hasChildren: Boolean,

@@ -78,7 +78,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.DashboardCardType
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog

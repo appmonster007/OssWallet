@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.CategoryMultiSelectPicker
@@ -35,7 +35,7 @@ fun FilterFields(
     filter: TransactionFilter,
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
-    allCategories: List<CategoryEntity>,
+    allCategories: List<Category>,
     showAccountFilter: Boolean = true,
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
@@ -660,7 +660,7 @@ fun MultiSelectionDialogPreview() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategorySelectionDialog(
-    categories: List<CategoryEntity>,
+    categories: List<Category>,
     selectedCategoryIds: Set<Long>,
     onDismissRequest: () -> Unit,
     onConfirm: (Set<Long>) -> Unit

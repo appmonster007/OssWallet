@@ -1,51 +1,62 @@
 package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.util.*
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class AccountViewModel(
-    private val repository: AccountRepository,
+    private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
-    settingsDataStore: SettingsDataStore
-) : BaseViewModel(settingsDataStore) {
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
-    val defaultCurrency: StateFlow<String> = settingsDataStore.currency
+    val defaultCurrency: StateFlow<String> = settingsRepository.currency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
-    val accounts: StateFlow<List<Account>> = settingsDataStore.currentProfileId
-        .flatMapLatest { profileId ->
-            repository.getAllAccounts(profileId)
-        }
-        .map { it.sortedBy { account -> account.displayOrder } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    init {
-        // We've moved default account creation to onboarding
-    }
-
-    private fun seedDefaultAccount() {
-        // Logic removed as it's now handled in OnboardingScreen explicitly with user input
-    }
+    val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addAccount(
         name: String,
-        balance: BigDecimal,
+        initialBalance: BigDecimal,
+        currencyCode: String,
+        structureType: String,
+        colorHex: String = "#004D5F",
+        icon: String = "AccountBalance",
+        allowedCurrencies: List<String> = emptyList()
+    ) {
+        viewModelScope.launch {
+            val profileId = settingsRepository.currentProfileId.first()
+            accountRepository.insertAccount(
+                Account(
+                    id = UUID.randomUUID().toString(),
+                    name = name,
+                    balance = initialBalance,
+                    currencyCode = currencyCode,
+                    structureType = structureType,
+                    colorHex = colorHex,
+                    icon = icon,
+                    allowedCurrencies = allowedCurrencies,
+                    isArchived = false,
+                    displayOrder = accounts.value.size
+                ),
+                profileId = profileId
+            )
+        }
+    }
+
+    fun addAccountWithInitialBalances(
+        name: String,
+        initialBalances: Map<String, String>,
         currency: String,
         structureType: String,
         colorHex: String,
@@ -53,32 +64,42 @@ class AccountViewModel(
         allowedCurrencies: List<String>
     ) {
         viewModelScope.launch {
-            withProfile { profileId ->
-                val accountId = UUID.randomUUID().toString()
-                val account = Account(
-                    id = accountId,
-                    name = name,
-                    balance = BigDecimal.ZERO, // Will be updated by transactions
-                    currencyCode = currency,
-                    structureType = structureType,
-                    colorHex = colorHex,
-                    icon = icon,
-                    allowedCurrencies = allowedCurrencies,
-                    isArchived = false,
-                    displayOrder = accounts.value.size
-                )
-                repository.insertAccount(account, profileId)
-
-                if (balance > BigDecimal.ZERO) {
+            val profileId = settingsRepository.currentProfileId.first()
+            val accountId = UUID.randomUUID().toString()
+            
+            // 1. Create Account with balance = 0
+            val account = Account(
+                id = accountId,
+                name = name,
+                balance = BigDecimal.ZERO,
+                currencyCode = currency,
+                structureType = structureType,
+                colorHex = colorHex,
+                icon = icon,
+                allowedCurrencies = allowedCurrencies,
+                isArchived = false,
+                displayOrder = accounts.value.size
+            )
+            accountRepository.insertAccount(account, profileId)
+            
+            // 2. Create initial balance transactions for each currency
+            allowedCurrencies.forEach { currencyCode ->
+                val balanceStr = initialBalances[currencyCode]
+                val balance = if (!balanceStr.isNullOrBlank()) {
+                    try { BigDecimal(balanceStr) } catch (e: Exception) { BigDecimal.ZERO }
+                } else BigDecimal.ZERO
+                
+                if (balance.signum() != 0) {
+                    val transactionType = if (balance.signum() > 0) "income" else "expense"
                     val initialTransaction = Transaction(
                         title = "Initial Balance",
-                        amount = balance,
+                        amount = balance.abs(),
                         category = "Adjustment",
                         timestamp = System.currentTimeMillis(),
-                        currency = currency,
-                        transactionType = "income",
+                        currency = currencyCode,
+                        transactionType = transactionType,
                         accountId = accountId,
-                        note = "Initial balance for $name",
+                        note = "Initial balance for $name in $currencyCode",
                         paymentMethod = structureType,
                         payee = "System"
                     )
@@ -88,109 +109,48 @@ class AccountViewModel(
         }
     }
 
-    fun addAccountWithInitialBalances(
-        name: String,
-        initialBalances: Map<String, String>, // currency -> balance string
-        currency: String,
-        structureType: String,
-        colorHex: String,
-        icon: String,
-        allowedCurrencies: List<String>
-    ) {
-        viewModelScope.launch {
-            withProfile { profileId ->
-                val accountId = UUID.randomUUID().toString()
-                val account = Account(
-                    id = accountId,
-                    name = name,
-                    balance = BigDecimal.ZERO, // Will be updated by transactions
-                    currencyCode = currency,
-                    structureType = structureType,
-                    colorHex = colorHex,
-                    icon = icon,
-                    allowedCurrencies = allowedCurrencies,
-                    isArchived = false,
-                    displayOrder = accounts.value.size
-                )
-                repository.insertAccount(account, profileId)
-
-                // Create initial balance transactions for all selected currencies
-                allowedCurrencies.forEach { currencyCode ->
-                    val balanceStr = initialBalances[currencyCode] ?: "0"
-                    val balance = balanceStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    
-                    // Skip creating transaction if balance is zero
-                    if (balance.signum() != 0) {
-                        val transactionType = if (balance.signum() > 0) "income" else "expense"
-                        val initialTransaction = Transaction(
-                            title = "Initial Balance",
-                            amount = balance, // Store signed amount (negative for expense)
-                            category = "Adjustment",
-                            timestamp = System.currentTimeMillis(),
-                            currency = currencyCode,
-                            transactionType = transactionType,
-                            accountId = accountId,
-                            note = "Initial balance for $name in $currencyCode",
-                            paymentMethod = structureType,
-                            payee = "System"
-                        )
-                        transactionRepository.insertTransaction(initialTransaction, profileId)
-                    }
-                }
-            }
-        }
-    }
-
     fun updateAccount(account: Account) {
         viewModelScope.launch {
-            withProfile { profileId ->
-                repository.insertAccount(account, profileId)
-            }
-        }
-    }
-
-    fun updateBalance(accountId: String, amount: BigDecimal) {
-        viewModelScope.launch {
-            repository.updateBalance(accountId, amount)
+            val profileId = settingsRepository.currentProfileId.first()
+            accountRepository.insertAccount(account, profileId)
         }
     }
 
     fun deleteAccount(accountId: String) {
         viewModelScope.launch {
-            repository.deleteAccount(accountId)
+            accountRepository.deleteAccount(accountId)
         }
     }
 
-    fun updateAccountsOrder(orderedAccounts: List<Account>) {
+    fun updateAccountsOrder(updatedAccounts: List<Account>) {
         viewModelScope.launch {
-            withProfile { profileId ->
-                val entities = orderedAccounts.mapIndexed { index, account ->
-                    account.copy(displayOrder = index)
-                }
-                repository.updateAccounts(entities, profileId)
+            val profileId = settingsRepository.currentProfileId.first()
+            val accountsWithOrder = updatedAccounts.mapIndexed { index, account ->
+                account.copy(displayOrder = index)
             }
+            accountRepository.updateAccounts(accountsWithOrder, profileId)
         }
     }
 
     fun toggleArchiveAccount(account: Account) {
         viewModelScope.launch {
-            withProfile { profileId ->
-                repository.insertAccount(account.copy(isArchived = !account.isArchived), profileId)
-            }
+            val profileId = settingsRepository.currentProfileId.first()
+            accountRepository.insertAccount(account.copy(isArchived = !account.isArchived), profileId)
         }
     }
 }
 
 class AccountViewModelFactory(
-    private val repository: AccountRepository,
+    private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
-    private val settingsDataStore: SettingsDataStore
-) : ViewModelProvider.Factory {
+    private val settingsRepository: SettingsRepository
+) : androidx.lifecycle.ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AccountViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AccountViewModel(repository, transactionRepository, settingsDataStore) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        return AccountViewModel(
+            accountRepository,
+            transactionRepository,
+            settingsRepository
+        ) as T
     }
 }

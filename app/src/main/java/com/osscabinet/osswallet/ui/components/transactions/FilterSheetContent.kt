@@ -25,8 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.data.mapper.toDomain
@@ -38,8 +38,8 @@ import java.math.BigDecimal
 fun FilterSheetContent(
     filter: TransactionFilter,
     accounts: List<Account>,
-    allCategories: List<CategoryEntity>,
-    savedFilters: List<FilterEntity> = emptyList(),
+    allCategories: List<Category>,
+    savedFilters: List<Filter> = emptyList(),
     onSetDateRange: (Long?, Long?) -> Unit,
     onApplyFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
@@ -99,10 +99,10 @@ fun FilterSheetContent(
             return
         }
 
-        // Convert each selected preset to TransactionFilter
+        // Use the nested filter from the Domain model
         val filters = savedFilters
             .filter { it.id in selectedFilterIds }
-            .map { it.toDomain() }
+            .map { it.filter }
 
         // Combine all filters using OR logic (union of filters)
         localFilter = combineFiltersWithOrLogic(filters)
@@ -334,7 +334,7 @@ fun FilterSheetContent(
 fun ActiveFiltersSummary(
     filter: TransactionFilter,
     accountNames: Map<String, String>,
-    categoryMap: Map<Long, CategoryEntity>,
+    categoryMap: Map<Long, Category>,
     onRemoveFilter: (String, Any?) -> Unit,
     onResetAll: () -> Unit
 ) {
@@ -616,7 +616,8 @@ fun FilterSheetContentPreview() {
             currencyCode = "USD",
             structureType = "Personal",
             colorHex = "#FF0000",
-            icon = "account_balance"
+            icon = "account_balance",
+            allowedCurrencies = listOf("USD")
         ),
         Account(
             id = "2",
@@ -625,13 +626,14 @@ fun FilterSheetContentPreview() {
             currencyCode = "USD",
             structureType = "Personal",
             colorHex = "#00FF00",
-            icon = "savings"
+            icon = "savings",
+            allowedCurrencies = listOf("USD")
         )
     )
     val sampleCategories = listOf(
-        CategoryEntity(id = 1, name = "Food", iconName = "restaurant", colorHex = 0xFFFF0000.toInt()),
-        CategoryEntity(id = 2, name = "Transport", iconName = "directions_bus", colorHex = 0xFF00FF00.toInt()),
-        CategoryEntity(id = 3, name = "Shopping", iconName = "shopping_cart", colorHex = 0xFF0000FF.toInt())
+        Category(id = 1, name = "Food", iconName = "restaurant", colorHex = 0xFFFF0000.toInt(), isDefault = true, parentId = null),
+        Category(id = 2, name = "Transport", iconName = "directions_bus", colorHex = 0xFF00FF00.toInt(), isDefault = true, parentId = null),
+        Category(id = 3, name = "Shopping", iconName = "shopping_cart", colorHex = 0xFF0000FF.toInt(), isDefault = true, parentId = null)
     )
 
     OssWalletTheme {

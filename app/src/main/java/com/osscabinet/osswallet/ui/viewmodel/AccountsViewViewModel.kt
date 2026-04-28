@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.util.CachedCardData
@@ -11,6 +10,9 @@ import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toEnum
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.CardRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -22,13 +24,12 @@ import com.osscabinet.ossWallet.ui.components.cards.computeNetWorth
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeAccountStats
-import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.CardComputationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.util.concurrent.TimeUnit
 
 enum class AccountsViewSection {
     NET_WORTH,
@@ -41,10 +42,10 @@ enum class AccountsViewSection {
 class AccountsViewViewModel(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
-    val settingsDataStore: SettingsDataStore,
-    private val analyticsViewModel: AnalyticsViewModel,
-    private val cardManagerViewModel: CardManagerViewModel,
-    private val cardComputationService: com.osscabinet.ossWallet.domain.service.CardComputationService
+    private val settingsRepository: SettingsRepository,
+    private val cardRepository: CardRepository,
+    private val computationRepository: ComputationRepository,
+    private val cardComputationService: CardComputationService
 ) : ViewModel() {
 
     // Cache for computed card data to avoid recomputation
@@ -82,9 +83,6 @@ class AccountsViewViewModel(
     fun invalidateAllCache() {
         cardDataCache.clear()
     }
-
-    // Generic card data computation functions (pure functions, no StateFlows)
-    // These follow the DashboardScreen pattern - screens use LaunchedEffect to call them and remember to cache per-card
 
     suspend fun computeNetWorthCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,
@@ -180,7 +178,7 @@ class AccountsViewViewModel(
 
     init {
         viewModelScope.launch {
-            settingsDataStore.accountsViewSettings.collect { settings ->
+            settingsRepository.accountsViewSettings.collect { settings ->
                 val savedOrder = settings.layout.sectionOrder
                 if (savedOrder != null) {
                     try {
@@ -197,55 +195,52 @@ class AccountsViewViewModel(
     fun updateSectionOrder(newOrder: List<AccountsViewSection>) {
         _sectionOrder.value = newOrder
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinByComma { it.name })) }
+            settingsRepository.updateAccountsViewSettings { it.copy(layout = it.layout.copy(sectionOrder = newOrder.joinByComma { it.name })) }
         }
     }
 
     fun updateGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
     fun updateCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
         }
     }
 
     fun updateShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
         }
     }
 
     fun updateCurrencyBalancesTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
         }
     }
 
-    fun updateNetWorthTimelineRange(range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
+    fun updateNetWorthTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateCashFlowShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
     }
 
-    /**
-     * Initialize the account filter from a navigation context
-     */
     fun initializeAccountsFilter(context: AccountsFilterContext) {
         _initialFilterContext.value = context
         val filter = when (context) {
@@ -255,53 +250,40 @@ class AccountsViewViewModel(
             is AccountsFilterContext.Custom -> AccountFilter(
                 accountTypes = context.accountTypes,
                 currencies = context.currencies,
-                minBalance = context.minBalance?.let { java.math.BigDecimal(it) },
-                maxBalance = context.maxBalance?.let { java.math.BigDecimal(it) },
+                minBalance = context.minBalance?.let { BigDecimal(it) },
+                maxBalance = context.maxBalance?.let { BigDecimal(it) },
                 includeHidden = context.includeHidden
             )
         }
         _accountFilter.value = filter
     }
 
-    /**
-     * Update the account filter
-     */
     fun updateAccountsFilter(filter: AccountFilter) {
         _accountFilter.value = filter
     }
 
-    /**
-     * Reset the filter to the initial context
-     */
     fun resetToInitialFilter() {
         initializeAccountsFilter(_initialFilterContext.value)
     }
 
-    /**
-     * Check if the current filter has been modified from the initial context
-     */
     fun hasModifiedFilter(): Boolean {
-        val initialFilter = when (_initialFilterContext.value) {
+        val initialFilter = when (val context = _initialFilterContext.value) {
             is AccountsFilterContext.None -> AccountFilter()
-            is AccountsFilterContext.ByType -> AccountFilter(accountTypes = listOf((_initialFilterContext.value as AccountsFilterContext.ByType).accountType))
-            is AccountsFilterContext.ByCurrency -> AccountFilter(currencies = listOf((_initialFilterContext.value as AccountsFilterContext.ByCurrency).currency))
+            is AccountsFilterContext.ByType -> AccountFilter(accountTypes = listOf(context.accountType))
+            is AccountsFilterContext.ByCurrency -> AccountFilter(currencies = listOf(context.currency))
             is AccountsFilterContext.Custom -> {
-                val ctx = _initialFilterContext.value as AccountsFilterContext.Custom
                 AccountFilter(
-                    accountTypes = ctx.accountTypes,
-                    currencies = ctx.currencies,
-                    minBalance = ctx.minBalance?.let { java.math.BigDecimal(it) },
-                    maxBalance = ctx.maxBalance?.let { java.math.BigDecimal(it) },
-                    includeHidden = ctx.includeHidden
+                    accountTypes = context.accountTypes,
+                    currencies = context.currencies,
+                    minBalance = context.minBalance?.let { BigDecimal(it) },
+                    maxBalance = context.maxBalance?.let { BigDecimal(it) },
+                    includeHidden = context.includeHidden
                 )
             }
         }
         return _accountFilter.value != initialFilter
     }
 
-    /**
-     * Clear the account filter (reset to default)
-     */
     fun clearAccountsFilter() {
         _accountFilter.value = AccountFilter()
         _initialFilterContext.value = AccountsFilterContext.None
@@ -309,41 +291,54 @@ class AccountsViewViewModel(
 
     fun updateCashFlowTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateAccountsLayout(layout: String) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
         }
     }
 
     fun updateShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 
     fun updateAccountsTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
+            settingsRepository.updateAccountsViewSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
         }
     }
 
-    val uiState: StateFlow<AccountsViewUiState> = settingsDataStore.currentProfileId
+    val uiState: StateFlow<AccountsViewUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
-                analyticsViewModel.uiState,
-                settingsDataStore.decimalPrecision,
-                settingsDataStore.accountsViewSettings
-            ) { accounts, allTransactions, analyticsState, precision, accountsViewSettings ->
+                computationRepository.exchangeRates,
+                computationRepository.selectedCurrency,
+                computationRepository.hasLoadedExchangeRates,
+                settingsRepository.decimalPrecision,
+                settingsRepository.accountsViewSettings
+            ) { args: Array<*> ->
+                @Suppress("UNCHECKED_CAST")
+                val accounts = args[0] as List<Account>
+                @Suppress("UNCHECKED_CAST")
+                val allTransactions = args[1] as List<Transaction>
+                @Suppress("UNCHECKED_CAST")
+                val rates = args[2] as Map<String, BigDecimal>
+                val baseCurrency = args[3] as String
+                val hasLoadedRates = args[4] as Boolean
+                val precision = args[5] as Int
+                val accountsViewSettings = args[6] as com.osscabinet.ossWallet.data.local.AccountsViewSettings
+
                 // Invalidate cache when transactions change
                 invalidateAllCache()
                 
-                if (!analyticsState.hasLoadedExchangeRates) {
+                if (!hasLoadedRates) {
                     return@combine AccountsViewUiState.Loading
                 }
 
@@ -359,8 +354,6 @@ class AccountsViewViewModel(
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 val netWorthTimelineRange = accountsViewSettings.netWorthSection.timelineRange
 
-                val rates = analyticsState.exchangeRates
-                val baseCurrency = analyticsState.selectedCurrency
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
                 val globalCurrencyTotals = cardComputationService.computeCurrencyTotals(
@@ -436,109 +429,126 @@ class AccountsViewViewModel(
             initialValue = AccountsViewUiState.Loading
         )
 
-    // Card-specific update functions - delegate to CardManagerViewModel only
-    // These do NOT update global settings to allow per-card independent data computation
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
-                cardConfig.copy(fontSize = fontSize)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
+                    cardConfig.copy(fontSize = fontSize)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
+                    cardConfig.copy(timelineRange = range)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
-                cardConfig.copy(layout = layout)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                    cardConfig.copy(layout = layout)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
-                cardConfig.copy(showBaseConversion = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                    cardConfig.copy(showBaseConversion = show)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                    cardConfig.copy(timelineRange = range)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
-                cardConfig.copy(showBaseConversion = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
+                    cardConfig.copy(showBaseConversion = show)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
+                    cardConfig.copy(timelineRange = range)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsLayout(cardId: String, layout: String) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
-                cardConfig.copy(layout = layout)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                    cardConfig.copy(layout = layout)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
-                cardConfig.copy(gridColumns = columns)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                    cardConfig.copy(gridColumns = columns)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
-                cardConfig.copy(showAddAccountCard = show)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                    cardConfig.copy(showAddAccountCard = show)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
 
     fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
-        cardManagerViewModel.updateAccountsViewCard(cardId) { cardConfig ->
-            if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
-                cardConfig.copy(timelineRange = range)
-            } else cardConfig
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
+                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                    cardConfig.copy(timelineRange = range)
+                } else cardConfig
+            }
+            invalidateCardCache(cardId)
         }
-        invalidateCardCache(cardId)
     }
-
-    // Helper functions to compute data for a specific card based on its config
-    // These have been moved to CardCompute.kt as extension functions for unified logic
 }
 
 sealed class AccountsViewUiState {

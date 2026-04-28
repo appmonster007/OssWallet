@@ -2,53 +2,25 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.dao.TemplateDao
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
-import java.math.BigDecimal
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.first
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
-class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
+class TemplateViewModel(
+    private val templateRepository: TemplateRepository
+) : ViewModel() {
 
-    val templates: StateFlow<List<TemplateEntity>> = templateDao.getAllTemplates()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val starredTemplates: StateFlow<List<TemplateEntity>> = templateDao.getStarredTemplates()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val starredTemplates: StateFlow<List<Template>> = templateRepository.getStarredTemplates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    init {
-        seedTemplates()
-    }
-
-    private fun seedTemplates() {
+    fun toggleStar(template: Template) {
         viewModelScope.launch {
-            val list = templateDao.getAllTemplates().first()
-            if (list.isEmpty()) {
-                val initialTemplates = listOf(
-                    TemplateEntity(name = "Grocery Run", category = "Food", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 0),
-                    TemplateEntity(name = "Salary Deposit", category = "Salary", amount = BigDecimal.ZERO, transactionType = 1, isStarred = true, accountId = "default-cash-id", displayOrder = 1),
-                    TemplateEntity(name = "Rent Payment", category = "Rent", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 2),
-                    TemplateEntity(name = "Coffee", category = "Food", amount = BigDecimal.ZERO, transactionType = 0, isStarred = true, accountId = "default-cash-id", displayOrder = 3)
-                )
-                initialTemplates.forEach { templateDao.insertTemplate(it) }
-            }
-        }
-    }
-
-    fun toggleStar(template: TemplateEntity) {
-        viewModelScope.launch {
-            templateDao.updateStarStatus(template.id, !template.isStarred)
+            templateRepository.updateStarStatus(template.id, !template.isStarred)
         }
     }
 
@@ -56,52 +28,57 @@ class TemplateViewModel(private val templateDao: TemplateDao) : ViewModel() {
         name: String,
         category: String,
         amount: BigDecimal,
-        type: Int,
-        note: String? = null,
+        transactionType: Int,
+        icon: String? = null,
+        colorHex: String? = null,
         accountId: String? = null,
+        note: String? = null,
         payee: String? = null,
         location: String? = null,
-        paymentMethod: String? = null,
-        currency: String? = null,
         tags: List<String> = emptyList()
     ) {
         viewModelScope.launch {
-            templateDao.insertTemplate(
-                TemplateEntity(
+            templateRepository.insertTemplate(
+                Template(
+                    id = 0,
                     name = name,
                     category = category,
                     amount = amount,
-                    transactionType = type,
-                    note = note,
+                    transactionType = transactionType,
+                    icon = icon,
+                    colorHex = colorHex,
                     accountId = accountId,
+                    note = note,
                     payee = payee,
                     location = location,
-                    paymentMethod = paymentMethod,
-                    currency = currency,
-                    tags = tags.joinToString(",")
+                    paymentMethod = null,
+                    currency = null,
+                    tags = tags,
+                    isStarred = false,
+                    displayOrder = templates.value.size
                 )
             )
         }
     }
 
-    fun updateTemplate(template: TemplateEntity) {
+    fun updateTemplate(template: Template) {
         viewModelScope.launch {
-            templateDao.updateTemplate(template)
+            templateRepository.updateTemplate(template)
         }
     }
 
-    fun deleteTemplate(template: TemplateEntity) {
+    fun deleteTemplate(template: Template) {
         viewModelScope.launch {
-            templateDao.deleteTemplate(template)
+            templateRepository.deleteTemplate(template)
         }
     }
 
-    fun updateTemplatesOrder(orderedTemplates: List<TemplateEntity>) {
+    fun updateTemplatesOrder(updatedTemplates: List<Template>) {
         viewModelScope.launch {
-            val entities = orderedTemplates.mapIndexed { index, template ->
+            val templatesWithOrder = updatedTemplates.mapIndexed { index, template ->
                 template.copy(displayOrder = index)
             }
-            templateDao.updateTemplates(entities)
+            templateRepository.updateTemplates(templatesWithOrder)
         }
     }
 }

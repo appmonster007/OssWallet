@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import java.math.BigDecimal
@@ -21,8 +21,8 @@ fun TransactionListFilteredPreview() {
     )
     
     val mockCategories = listOf(
-        CategoryEntity(1, "Food", "Restaurant", -12627531, true),
-        CategoryEntity(2, "Transport", "DirectionsCar", -14575885, true)
+        Category(1, "Food", "Restaurant", -12627531, true, null),
+        Category(2, "Transport", "DirectionsCar", -14575885, true, null)
     )
     
     val mockTransactions = listOf(

@@ -17,8 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.toTransactionFilter
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.data.mapper.toDomain
@@ -33,8 +34,8 @@ fun AdvancedFilterSection(
     filter: TransactionFilter,
     onFilterChange: (TransactionFilter) -> Unit,
     accounts: List<Account>,
-    allCategories: List<CategoryEntity>,
-    savedFilters: List<FilterEntity> = emptyList(),
+    allCategories: List<Category>,
+    savedFilters: List<Filter> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     var expandedFilters by remember { mutableStateOf(false) }
@@ -179,7 +180,7 @@ fun AdvancedFilterSection(
                             DropdownMenuItem(
                                 text = { Text(preset.name) },
                                 onClick = {
-                                    onFilterChange(preset.toDomain())
+                                    onFilterChange(preset.filter)
                                     presetsExpanded = false
                                 },
                                 leadingIcon = { Icon(Icons.Default.FilterList, null, Modifier.size(18.dp)) }

@@ -23,8 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.math.BigDecimal
-import com.osscabinet.ossWallet.data.local.entity.TagEntity
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
@@ -63,7 +63,7 @@ fun AddTemplateScreen(
     var payee by remember { mutableStateOf(template?.payee ?: "") }
     var location by remember { mutableStateOf(template?.location ?: "") }
     var paymentMethod by remember { mutableStateOf(template?.paymentMethod ?: "Cash") }
-    var tags by remember { mutableStateOf(template?.tags?.splitByComma() ?: emptyList<String>()) }
+    var tags by remember { mutableStateOf(template?.tags ?: emptyList<String>()) }
 
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
     
@@ -116,37 +116,38 @@ fun AddTemplateScreen(
                             onClick = {
                                 if (name.isNotBlank()) {
                                     navigate {
-                                        val entity = TemplateEntity(
+                                        val domainTemplate = Template(
                                             id = templateId ?: 0,
                                             name = name,
                                             category = category,
                                             amount = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                                             transactionType = transactionType,
+                                            icon = template?.icon,
+                                            colorHex = template?.colorHex,
                                             accountId = accountId,
                                             note = note.ifBlank { null },
                                             payee = payee.ifBlank { null },
                                             location = location.ifBlank { null },
                                             paymentMethod = paymentMethod.ifBlank { null },
                                             currency = currency.ifBlank { null },
-                                            tags = tags.joinToString(","),
-                                            isStarred = template?.isStarred ?: false
+                                            tags = tags,
+                                            isStarred = template?.isStarred ?: false,
+                                            displayOrder = template?.displayOrder ?: 0
                                         )
                                         if (templateId == null) {
                                             templateViewModel.addTemplate(
-                                                name = entity.name,
-                                                category = entity.category,
-                                                amount = entity.amount,
-                                                type = entity.transactionType,
-                                                note = entity.note,
-                                                accountId = entity.accountId,
-                                                payee = entity.payee,
-                                                location = entity.location,
-                                                paymentMethod = entity.paymentMethod,
-                                                currency = entity.currency,
+                                                name = domainTemplate.name,
+                                                category = domainTemplate.category,
+                                                amount = domainTemplate.amount,
+                                                transactionType = domainTemplate.transactionType,
+                                                note = domainTemplate.note,
+                                                accountId = domainTemplate.accountId,
+                                                payee = domainTemplate.payee,
+                                                location = domainTemplate.location,
                                                 tags = tags
                                             )
                                         } else {
-                                            templateViewModel.updateTemplate(entity)
+                                            templateViewModel.updateTemplate(domainTemplate)
                                         }
                                         onBackClick()
                                     }

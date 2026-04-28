@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
 import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard
@@ -57,8 +57,8 @@ fun UnifiedCardRenderer(
     showTitle: Boolean = false,
     currentTheme: String = "light",
     accounts: List<Account> = emptyList(),
-    allCategories: List<CategoryEntity> = emptyList(),
-    savedFilters: List<FilterEntity> = emptyList()
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList()
 ) {
     when (renderData) {
         is CardRenderData.NetWorth -> {
@@ -572,8 +572,8 @@ fun UnifiedCardListRenderer(
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = false,
     accounts: List<Account> = emptyList(),
-    allCategories: List<CategoryEntity> = emptyList(),
-    savedFilters: List<FilterEntity> = emptyList()
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList()
 ) {
     cards.forEach { card ->
         UnifiedCardRenderer(

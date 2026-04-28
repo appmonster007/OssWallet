@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -41,7 +41,7 @@ import java.util.*
 fun AeonTransactionList(
     transactions: List<TransactionWithBalance>,
     accountMap: Map<String, String>,
-    categoryMap: Map<Long, CategoryEntity>,
+    categoryMap: Map<Long, Category>,
     onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),

@@ -24,12 +24,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Template
 
 @Composable
 fun AeonExpandableFab(
     onAddClick: (Int?, String?) -> Unit,
-    templates: List<TemplateEntity>,
+    templates: List<Template>,
     modifier: Modifier = Modifier,
     fabPaddingBottom: androidx.compose.ui.unit.Dp = 16.dp
 ) {

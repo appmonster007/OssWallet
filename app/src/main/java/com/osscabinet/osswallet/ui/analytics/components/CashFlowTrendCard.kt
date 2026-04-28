@@ -15,8 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowTrendCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
@@ -42,8 +42,8 @@ fun CashFlowTrendCard(
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
-    allCategories: List<CategoryEntity> = emptyList(),
-    savedFilters: List<FilterEntity> = emptyList()
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList()
 ) {
     var showSettings by remember { mutableStateOf(false) }
     

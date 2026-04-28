@@ -2,19 +2,16 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.util.CachedCardData
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.analytics.components.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +28,8 @@ import java.util.*
 class AnalyticsViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val currencyRepository: CurrencyRepository,
-    private val settingsDataStore: SettingsDataStore,
+    private val settingsRepository: SettingsRepository,
+    private val computationRepository: ComputationRepository,
     private val cardComputationService: CardComputationService,
     private val accountRepository: AccountRepository
 ) : ViewModel() {
@@ -46,7 +44,7 @@ class AnalyticsViewModel(
     private var allTransactions: List<Transaction> = emptyList()
     private var allAccounts: List<Account> = emptyList()
     private var ratesJob: Job? = null
-    val decimalPrecision: StateFlow<Int> = settingsDataStore.decimalPrecision
+    val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
     private var _currentPrecision: Int = 2
 
@@ -93,7 +91,7 @@ class AnalyticsViewModel(
     init {
         // Load analytics cards config from DataStore on initialization
         viewModelScope.launch {
-            settingsDataStore.analyticsCardsConfig.collect { configStr ->
+            settingsRepository.analyticsCardsConfig.collect { configStr ->
                 if (configStr.isEmpty()) {
                     _analyticsCardsConfig.value = defaultAnalyticsCardsConfig()
                 } else {
@@ -109,14 +107,29 @@ class AnalyticsViewModel(
 
     init {
         viewModelScope.launch {
-            settingsDataStore.currency.collect { currencyCode ->
+            computationRepository.selectedCurrency.collect { currencyCode ->
                 onCurrencySelected(currencyCode)
             }
         }
 
         viewModelScope.launch {
-            decimalPrecision.collect { precision ->
+            computationRepository.exchangeRates.collect { rates ->
+                _uiState.update { it.copy(exchangeRates = rates) }
+                calculateAnalytics()
+            }
+        }
+
+        viewModelScope.launch {
+            computationRepository.hasLoadedExchangeRates.collect { hasLoaded ->
+                _uiState.update { it.copy(hasLoadedExchangeRates = hasLoaded) }
+                calculateAnalytics()
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.decimalPrecision.collect { precision ->
                 _currentPrecision = precision
+                _uiState.update { it.copy(decimalPrecision = precision) }
                 calculateAnalytics()
             }
         }
@@ -131,7 +144,7 @@ class AnalyticsViewModel(
         }
 
         viewModelScope.launch {
-            settingsDataStore.currentProfileId
+            settingsRepository.currentProfileId
                 .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
                 .collect { accounts ->
                     allAccounts = accounts
@@ -502,14 +515,14 @@ class AnalyticsViewModel(
         _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
             cards = _analyticsCardsConfig.value.cards + cardConfig
         )
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+        settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun removeCard(cardId: String) {
         _analyticsCardsConfig.value = _analyticsCardsConfig.value.copy(
             cards = _analyticsCardsConfig.value.cards.filter { it.cardId != cardId }
         )
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+        settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
     
     suspend fun updateCardTimelineRange(cardId: String, newTimelineRange: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) {
@@ -538,7 +551,7 @@ class AnalyticsViewModel(
                 }
             }
         )
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+        settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun updateCardConfigById(cardId: String, update: (CardConfig) -> CardConfig) {
@@ -547,12 +560,12 @@ class AnalyticsViewModel(
                 if (card.cardId == cardId) update(card) else card
             }
         )
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+        settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 
     suspend fun reorderCards(newOrder: List<CardConfig>) {
         _analyticsCardsConfig.value = AnalyticsCardsConfig(newOrder)
-        settingsDataStore.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+        settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 }
 

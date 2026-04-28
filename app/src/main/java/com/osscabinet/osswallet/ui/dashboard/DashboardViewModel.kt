@@ -2,29 +2,16 @@ package com.osscabinet.ossWallet.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
+import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.domain.service.CardComputationService
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
-import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -41,10 +28,9 @@ enum class DashboardSection {
 class DashboardViewModel(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
-    private val settingsDataStore: SettingsDataStore,
-    private val analyticsViewModel: AnalyticsViewModel,
-    private val cardManagerViewModel: CardManagerViewModel,
-    private val settingsViewModel: SettingsViewModel,
+    private val settingsRepository: SettingsRepository,
+    private val computationRepository: ComputationRepository,
+    private val cardRepository: CardRepository,
     private val cardComputationService: CardComputationService,
     private val budgetUseCases: BudgetUseCases
 ) : ViewModel() {
@@ -65,7 +51,7 @@ class DashboardViewModel(
 
     init {
         viewModelScope.launch {
-            settingsDataStore.dashboardSettings.collect { settings ->
+            settingsRepository.dashboardSettings.collect { settings ->
                 _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull { 
                     try { DashboardSection.valueOf(it) } catch (e: Exception) { null }
                 } ?: DashboardSection.entries
@@ -75,31 +61,31 @@ class DashboardViewModel(
 
     fun updateSectionOrder(sections: List<DashboardSection>) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = sections.joinToString(","))) }
+            settingsRepository.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = sections.joinToString(","))) }
         }
     }
 
     fun updateGridColumns(columns: Int) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(gridColumns = columns)) }
         }
     }
 
     fun updateCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
+            settingsRepository.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
         }
     }
 
     fun updateShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
         }
     }
 
     fun updateCurrencyBalancesTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
+            settingsRepository.updateDashboardSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
         }
     }
 
@@ -141,31 +127,31 @@ class DashboardViewModel(
 
     fun updateNetWorthFontSize(fontSize: String) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
+            settingsRepository.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(fontSize = fontSize)) }
         }
     }
 
     fun updateNetWorthTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
+            settingsRepository.updateDashboardSettings { it.copy(netWorthSection = it.netWorthSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateCashFlowShowBaseConversion(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
+            settingsRepository.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
         }
     }
 
     fun updateCashFlowTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
+            settingsRepository.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateBudgetShowProgressLabels(cardId: String, show: Boolean) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is BudgetsCardConfig) config.copy(showProgressLabels = show) else config
             }
         }
@@ -177,25 +163,25 @@ class DashboardViewModel(
 
     fun updateAccountsLayout(layout: String) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(layout = layout)) }
         }
     }
 
     fun updateShowAddAccountCard(show: Boolean) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(showAddAccountCard = show)) }
         }
     }
 
     fun updateAccountsTimelineRange(range: TimelineRange) {
         viewModelScope.launch {
-            settingsDataStore.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
+            settingsRepository.updateDashboardSettings { it.copy(accountsSection = it.accountsSection.copy(timelineRange = range)) }
         }
     }
 
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(fontSize = fontSize) else config
             }
         }
@@ -203,7 +189,7 @@ class DashboardViewModel(
 
     fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(timelineRange = range) else config
             }
         }
@@ -211,7 +197,7 @@ class DashboardViewModel(
 
     fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(layout = layout) else config
             }
         }
@@ -219,7 +205,7 @@ class DashboardViewModel(
 
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(showBaseConversion = show) else config
             }
         }
@@ -227,7 +213,7 @@ class DashboardViewModel(
 
     fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(timelineRange = range) else config
             }
         }
@@ -235,7 +221,7 @@ class DashboardViewModel(
 
     fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CashFlowCardConfig) config.copy(showBaseConversion = show) else config
             }
         }
@@ -243,7 +229,7 @@ class DashboardViewModel(
 
     fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CashFlowCardConfig) config.copy(timelineRange = range) else config
             }
         }
@@ -251,7 +237,7 @@ class DashboardViewModel(
 
     fun updateCardAccountsLayout(cardId: String, layout: String) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(layout = layout) else config
             }
         }
@@ -259,7 +245,7 @@ class DashboardViewModel(
 
     fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(gridColumns = columns) else config
             }
         }
@@ -267,7 +253,7 @@ class DashboardViewModel(
 
     fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(showAddAccountCard = show) else config
             }
         }
@@ -275,7 +261,7 @@ class DashboardViewModel(
 
     fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
-            cardManagerViewModel.updateCard(cardId) { config ->
+            cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(timelineRange = range) else config
             }
         }
@@ -334,31 +320,33 @@ class DashboardViewModel(
         return cardComputationService.computeCategoryExpenseTreemap(cardConfig, allTransactions, ComputationContext(baseCurrency, exchangeRates, precision))
     }
 
-    val uiState: StateFlow<DashboardUiState> = settingsDataStore.currentProfileId
+    val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             val budgetStateFlow = budgetUseCases.getBudgetsWithAnalysis(profileId)
             
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
-                analyticsViewModel.uiState,
-                settingsDataStore.decimalPrecision,
-                settingsDataStore.dashboardSettings,
+                computationRepository.exchangeRates,
+                computationRepository.selectedCurrency,
+                computationRepository.hasLoadedExchangeRates,
+                settingsRepository.decimalPrecision,
+                settingsRepository.dashboardSettings,
                 budgetStateFlow
             ) { args: Array<Any> ->
                 val accounts = args[0] as List<Account>
                 val allTransactions = args[1] as List<Transaction>
-                val analyticsState = args[2] as com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
-                val precision = args[3] as Int
-                val dashboardSettings = args[4] as com.osscabinet.ossWallet.data.local.DashboardSettings
-                val budgets = args[5] as List<BudgetAnalysis>
+                val rates = args[2] as Map<String, BigDecimal>
+                val baseCurrency = args[3] as String
+                val hasLoadedExchangeRates = args[4] as Boolean
+                val precision = args[5] as Int
+                val dashboardSettings = args[6] as com.osscabinet.ossWallet.data.local.DashboardSettings
+                val budgets = args[7] as List<BudgetAnalysis>
 
-                if (!analyticsState.hasLoadedExchangeRates) {
+                if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
                 }
 
-                val rates = analyticsState.exchangeRates
-                val baseCurrency = analyticsState.selectedCurrency
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
                 val globalCurrencyTotals = TransactionsUtilityService.breakdownByCurrency(

@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -33,7 +33,7 @@ fun CategoryManagementScreen(
 ) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
-    var selectedCategoryForEdit by remember { mutableStateOf<CategoryEntity?>(null) }
+    var selectedCategoryForEdit by remember { mutableStateOf<Category?>(null) }
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -75,7 +75,8 @@ fun CategoryManagementScreen(
                 isManagementMode = true,
                 onEditClick = { selectedCategoryForEdit = it },
                 onAddSubCategoryClick = { parent ->
-                    selectedCategoryForEdit = CategoryEntity(
+                    selectedCategoryForEdit = Category(
+                        id = 0,
                         name = "",
                         iconName = "Other",
                         colorHex = parent.colorHex,

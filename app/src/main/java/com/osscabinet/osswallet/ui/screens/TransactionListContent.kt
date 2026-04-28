@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
@@ -26,8 +26,8 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,14 +56,14 @@ fun TransactionListContent(
     accounts: List<Account>,
     accountMap: Map<String, String>,
     accountCurrencyMap: Map<String, String>,
-    categories: List<CategoryEntity>,
-    categoryMap: Map<Long, CategoryEntity>,
+    categories: List<Category>,
+    categoryMap: Map<Long, Category>,
     decimalPrecision: Int,
     analyticsState: AnalyticsUiState,
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
-    savedFilters: List<FilterEntity> = emptyList(),
-    templates: List<TemplateEntity> = emptyList(),
+    savedFilters: List<Filter> = emptyList(),
+    templates: List<Template> = emptyList(),
     onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
@@ -200,14 +200,17 @@ fun TransactionListContentPreview() {
         currencyCode = "USD",
         structureType = "Personal",
         colorHex = "#FF0000",
-        icon = "account_balance"
+        icon = "account_balance",
+        allowedCurrencies = listOf("USD")
     )
 
-    val sampleCategory = CategoryEntity(
+    val sampleCategory = Category(
         id = 1L,
         name = "Groceries",
         iconName = "shopping_cart",
-        colorHex = 0xFFFF0000.toInt()
+        colorHex = 0xFFFF0000.toInt(),
+        isDefault = true,
+        parentId = null
     )
 
     val sampleTransaction = Transaction(

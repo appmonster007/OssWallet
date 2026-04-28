@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
@@ -13,6 +13,6 @@ data class CardActions<T>(
     val onDelete: () -> Unit = {},
     val onRecordsClick: (RecordsFilterContext) -> Unit = {},
     val accounts: List<Account> = emptyList(),
-    val allCategories: List<CategoryEntity> = emptyList(),
-    val savedFilters: List<FilterEntity> = emptyList()
+    val allCategories: List<Category> = emptyList(),
+    val savedFilters: List<Filter> = emptyList()
 )

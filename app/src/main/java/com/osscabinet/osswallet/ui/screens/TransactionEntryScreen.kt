@@ -44,9 +44,9 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.TagEntity
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.util.splitByComma
@@ -203,12 +203,12 @@ fun TransactionEntryContent(
     initialTimestamp: Long = System.currentTimeMillis(),
     prefillDto: TransactionPrefillDTO? = null,
     transactions: List<Transaction> = emptyList(),
-    categories: List<CategoryEntity> = emptyList(),
+    categories: List<Category> = emptyList(),
     accounts: List<Account> = emptyList(),
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
     decimalPrecision: Int = 2,
-    dbTemplates: List<TemplateEntity> = emptyList(),
-    allTags: List<TagEntity> = emptyList(),
+    dbTemplates: List<Template> = emptyList(),
+    allTags: List<Tag> = emptyList(),
     onAddTag: (String) -> Unit = {},
     onSave: (String, BigDecimal, String, Long?, Boolean, String, String, List<String>, String, Long, String, String, List<Long>, Boolean, Account?, String, BigDecimal, Pair<Double, Double>?, Long?, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit,
     onDelete: (Long) -> Unit,
@@ -360,7 +360,7 @@ fun TransactionEntryContent(
                     selectedTemplateName = template.name
                     template.note?.let { note = it }
                     if (template.tags.isNotEmpty()) {
-                        selectedTags = template.tags.splitByComma()
+                        selectedTags = template.tags
                     }
                     template.accountId?.let { id ->
                         val acc = accounts.find { it.id == id }
@@ -1975,7 +1975,7 @@ fun TransactionEntryWithLongLinkPreview() {
     )
 
     val sampleCategories = listOf(
-        CategoryEntity(1, "Food", "Restaurant", 0xFF4CAF50.toInt()),
+        Category(1, "Food", "Restaurant", 0xFF4CAF50.toInt(), true, null),
     )
 
     val sampleTransactions = listOf(
@@ -2028,15 +2028,15 @@ fun TransactionEntryPreview() {
     )
 
     val sampleCategories = listOf(
-        CategoryEntity(1, "Food", "Restaurant", 0xFF4CAF50.toInt()),
-        CategoryEntity(2, "Transport", "DirectionsCar", 0xFF2196F3.toInt()),
-        CategoryEntity(3, "Shopping", "ShoppingBag", 0xFFFFC107.toInt())
+        Category(1, "Food", "Restaurant", 0xFF4CAF50.toInt(), true, null),
+        Category(2, "Transport", "DirectionsCar", 0xFF2196F3.toInt(), true, null),
+        Category(3, "Shopping", "ShoppingBag", 0xFFFFC107.toInt(), true, null)
     )
 
     val sampleTags = listOf(
-        TagEntity(1, "Essential", 0xFFE91E63.toInt()),
-        TagEntity(2, "Work", 0xFF2196F3.toInt()),
-        TagEntity(3, "Vacation", 0xFF009688.toInt())
+        Tag(1, "Essential", 0xFFE91E63.toInt()),
+        Tag(2, "Work", 0xFF2196F3.toInt()),
+        Tag(3, "Vacation", 0xFF009688.toInt())
     )
     
     OssWalletTheme {

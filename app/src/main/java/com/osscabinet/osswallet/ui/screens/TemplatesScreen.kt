@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -37,8 +37,8 @@ fun TemplatesScreen(
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
 
-    var editList by remember { mutableStateOf(emptyList<TemplateEntity>()) }
-    var templateToDelete by remember { mutableStateOf<TemplateEntity?>(null) }
+    var editList by remember { mutableStateOf(emptyList<Template>()) }
+    var templateToDelete by remember { mutableStateOf<Template?>(null) }
 
     AeonConfirmDeleteDialog(
         show = templateToDelete != null,
@@ -148,7 +148,7 @@ fun TemplatesScreen(
 
 @Composable
 fun ReorderTemplateItem(
-    template: TemplateEntity,
+    template: Template,
     isDragging: Boolean = false
 ) {
     Surface(
@@ -180,7 +180,7 @@ fun ReorderTemplateItem(
 
 @Composable
 fun TemplateItem(
-    template: TemplateEntity,
+    template: Template,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleStar: () -> Unit
@@ -236,7 +236,7 @@ fun TemplateItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateDialog(
-    template: TemplateEntity?,
+    template: Template?,
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
     onDismiss: () -> Unit,
     onConfirm: (String, String, Double, Int, String?, String?) -> Unit

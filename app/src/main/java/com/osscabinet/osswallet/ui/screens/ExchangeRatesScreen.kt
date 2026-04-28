@@ -288,9 +288,13 @@ fun ConverterTab(uiState: com.osscabinet.ossWallet.ui.viewmodel.CurrencyUiState,
     
     val currencies = uiState.rates.map { it.currencyCode }.sorted()
     
-    val result = remember(amountText, fromCurrency, toCurrency, uiState.rates) {
+    var conversionResult by remember { mutableStateOf(0.0) }
+    
+    LaunchedEffect(amountText, fromCurrency, toCurrency, uiState.rates) {
         val amount = amountText.toDoubleOrNull() ?: 0.0
-        viewModel.convert(amount, fromCurrency, toCurrency)
+        viewModel.convert(amount, fromCurrency, toCurrency) { result ->
+            conversionResult = result
+        }
     }
 
     Column(
@@ -341,7 +345,7 @@ fun ConverterTab(uiState: com.osscabinet.ossWallet.ui.viewmodel.CurrencyUiState,
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
-                        text = String.format(Locale.US, "%.2f", result),
+                        text = String.format(Locale.US, "%.2f", conversionResult),
                         style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.End

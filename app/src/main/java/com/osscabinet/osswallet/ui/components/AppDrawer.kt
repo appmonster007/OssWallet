@@ -23,15 +23,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.data.local.entity.ProfileEntity
-import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Profile
 import android.graphics.Color as AndroidColor
 
 @Composable
 fun AppDrawerContent(
-    currentProfile: ProfileEntity?,
+    currentProfile: Profile?,
     nonArchivedAccounts: List<Account>,
-    starredTemplates: List<TemplateEntity>,
+    starredTemplates: List<Template>,
     selectedDestination: String,
     onDashboardClick: () -> Unit,
     onAccountsViewClick: () -> Unit,
@@ -44,7 +44,7 @@ fun AppDrawerContent(
     onExchangeRatesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onTemplateClick: (TemplateEntity) -> Unit,
+    onTemplateClick: (Template) -> Unit,
     onCloseDrawer: () -> Unit
 ) {
     ModalDrawerSheet(

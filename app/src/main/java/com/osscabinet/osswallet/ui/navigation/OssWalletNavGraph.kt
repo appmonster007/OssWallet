@@ -1,68 +1,17 @@
 package com.osscabinet.ossWallet.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.compose.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.di.AppContainer
-import com.osscabinet.ossWallet.ui.dashboard.DashboardScreen
-import com.osscabinet.ossWallet.ui.dashboard.DashboardViewModel
-import com.osscabinet.ossWallet.ui.dashboard.DashboardUiState
-import com.osscabinet.ossWallet.ui.dashboard.DashboardSection
-import com.osscabinet.ossWallet.ui.accountdetail.AccountDetailScreen
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
-import com.osscabinet.ossWallet.ui.screens.OnboardingScreen
-import com.osscabinet.ossWallet.ui.screens.AccountsViewScreen
-import com.osscabinet.ossWallet.ui.screens.ExchangeRatesScreen
-import com.osscabinet.ossWallet.ui.screens.SettingsScreen
-import com.osscabinet.ossWallet.ui.screens.FiltersSettingsScreen
-import com.osscabinet.ossWallet.ui.screens.EditFilterScreen
-import com.osscabinet.ossWallet.ui.screens.ManageLabelsScreen
-import com.osscabinet.ossWallet.ui.screens.CategoryManagementScreen
-import com.osscabinet.ossWallet.ui.screens.TemplatesScreen
-import com.osscabinet.ossWallet.ui.screens.AddTemplateScreen
-import com.osscabinet.ossWallet.ui.screens.LoansScreen
-import com.osscabinet.ossWallet.ui.screens.BudgetsScreen
-import com.osscabinet.ossWallet.ui.screens.AddEditBudgetScreen
-import com.osscabinet.ossWallet.ui.screens.AddEditLoanScreen
-import com.osscabinet.ossWallet.ui.screens.BudgetDetailScreen
-import com.osscabinet.ossWallet.ui.screens.LoanDetailScreen
-import com.osscabinet.ossWallet.ui.screens.TransactionListScreen
-import com.osscabinet.ossWallet.ui.screens.TransactionEntryScreen
-import com.osscabinet.ossWallet.ui.screens.EditAccountScreen
-import com.osscabinet.ossWallet.ui.screens.AccountSetupScreen
-import com.osscabinet.ossWallet.ui.screens.AccountManagementScreen
-import com.osscabinet.ossWallet.ui.screens.AnalyticsScreen
-import com.osscabinet.ossWallet.ui.screens.SharedWalletScreen
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModelFactory
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModelFactory
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModelFactory
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SharedWalletViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CurrencyViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
-import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
+import com.osscabinet.ossWallet.ui.dashboard.*
+import com.osscabinet.ossWallet.ui.viewmodel.*
+import com.osscabinet.ossWallet.ui.screens.*
+import com.osscabinet.ossWallet.ui.accountdetail.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun OssWalletNavGraph(
@@ -72,11 +21,11 @@ fun OssWalletNavGraph(
 ) {
     val settingsViewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(
-            appContainer.settingsDataStore,
+            appContainer.settingsRepository,
             appContainer.profileRepository,
             appContainer.backupRepository,
             appContainer.currencyRepository,
-            appContainer.db.filterDao()
+            appContainer.filterRepository
         )
     )
 
@@ -85,7 +34,8 @@ fun OssWalletNavGraph(
             AnalyticsViewModel(
                 appContainer.transactionUseCases,
                 appContainer.currencyRepository,
-                appContainer.settingsDataStore,
+                appContainer.settingsRepository,
+                appContainer.computationRepository,
                 appContainer.cardComputationService,
                 appContainer.accountRepository
             )
@@ -95,11 +45,11 @@ fun OssWalletNavGraph(
     val transactionViewModel: TransactionViewModel = viewModel(
         factory = TransactionViewModelFactory(
             appContainer.transactionUseCases,
-            appContainer.settingsDataStore,
-            appContainer.db.categoryDao(),
+            appContainer.settingsRepository,
+            appContainer.categoryRepository,
             appContainer.accountRepository,
-            appContainer.db.filterDao(),
-            analyticsViewModel,
+            appContainer.filterRepository,
+            appContainer.computationRepository,
             appContainer.transactionManager
         )
     )
@@ -108,7 +58,7 @@ fun OssWalletNavGraph(
         factory = AccountViewModelFactory(
             appContainer.accountRepository,
             appContainer.transactionRepository,
-            appContainer.settingsDataStore
+            appContainer.settingsRepository
         )
     )
 
@@ -132,20 +82,21 @@ fun OssWalletNavGraph(
 
     val templateViewModel: TemplateViewModel = viewModel(
         factory = GenericViewModelFactory {
-            TemplateViewModel(appContainer.db.templateDao())
+            TemplateViewModel(appContainer.templateRepository)
         }
     )
 
     val currencyViewModel: CurrencyViewModel = viewModel(
         factory = GenericViewModelFactory {
-            CurrencyViewModel(appContainer.currencyRepository, appContainer.db.currencyDao(), appContainer.settingsDataStore)
+            CurrencyViewModel(appContainer.currencyRepository, appContainer.settingsRepository)
         }
     )
 
     val cardManagerViewModel: CardManagerViewModel = viewModel(
         factory = GenericViewModelFactory {
             CardManagerViewModel(
-                appContainer.settingsDataStore
+                appContainer.settingsRepository,
+                appContainer.cardRepository
             )
         }
     )
@@ -155,10 +106,9 @@ fun OssWalletNavGraph(
             DashboardViewModel(
                 appContainer.accountRepository,
                 appContainer.transactionUseCases,
-                appContainer.settingsDataStore,
-                analyticsViewModel,
-                cardManagerViewModel,
-                settingsViewModel,
+                appContainer.settingsRepository,
+                appContainer.computationRepository,
+                appContainer.cardRepository,
                 appContainer.cardComputationService,
                 appContainer.budgetUseCases
             )
@@ -170,9 +120,9 @@ fun OssWalletNavGraph(
             AccountsViewViewModel(
                 appContainer.accountRepository,
                 appContainer.transactionUseCases,
-                appContainer.settingsDataStore,
-                analyticsViewModel,
-                cardManagerViewModel,
+                appContainer.settingsRepository,
+                appContainer.cardRepository,
+                appContainer.computationRepository,
                 appContainer.cardComputationService
             )
         }
@@ -197,474 +147,453 @@ fun OssWalletNavGraph(
         onSplashConditionChanged(keepSplashOnScreen)
     }
 
-    val safePopBackStack: () -> Unit = {
-        if (navController.previousBackStackEntry != null) {
-            navController.popBackStack()
-        }
-    }
+    if (isOnboardingCompleted == false) {
+        OnboardingScreen(
+            viewModel = settingsViewModel,
+            accountViewModel = accountViewModel,
+            onFinished = { /* State change will trigger re-composition */ }
+        )
+    } else if (isOnboardingCompleted == true) {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Dashboard.route
+        ) {
+            composable(
+                route = Screen.Dashboard.route,
+                arguments = listOf(navArgument("viewContext") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val viewContext = backStackEntry.arguments?.getString("viewContext")
+                DashboardScreen(
+                    onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) },
+                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
+                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onEditBudgetClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
+                    onAddClick = { type, template -> 
+                        navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
+                    },
+                    onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
+                    onLoansClick = { navController.navigate(Screen.Loans.route) },
+                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
+                    onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                    onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    settingsViewModel = settingsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    templateViewModel = templateViewModel,
+                    dashboardViewModel = dashboardViewModel,
+                    budgetViewModel = budgetViewModel,
+                    loanViewModel = loanViewModel,
+                    cardManagerViewModel = cardManagerViewModel,
+                    viewContext = viewContext
+                )
+            }
 
-    if (isOnboardingCompleted == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
+            composable(
+                route = Screen.AccountsView.route,
+                arguments = listOf(navArgument("filterContext") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val filterContext = backStackEntry.arguments?.getString("filterContext")
+                AccountsViewScreen(
+                    onDashboardClick = { navController.popBackStack() },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) },
+                    onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
+                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
+                    onLoansClick = { navController.navigate(Screen.Loans.route) },
+                    onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                    onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                    onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
+                    onAddClick = { type, template -> 
+                        navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
+                    },
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    settingsViewModel = settingsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    templateViewModel = templateViewModel,
+                    accountsViewViewModel = accountsViewViewModel,
+                    cardManagerViewModel = cardManagerViewModel,
+                    filterContext = filterContext
+                )
+            }
 
-    NavHost(
-        navController = navController, 
-        startDestination = if (isOnboardingCompleted == true) Screen.Dashboard.route else "onboarding"
-    ) {
-        composable("onboarding") {
-            OnboardingScreen(
-                viewModel = settingsViewModel,
-                accountViewModel = accountViewModel,
-                onFinished = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo("onboarding") { inclusive = true }
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    viewModel = settingsViewModel,
+                    onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                    onManageLabelsClick = { navController.navigate(Screen.ManageLabels.route) },
+                    onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
+                    onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                    onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.Loans.route) {
+                LoansScreen(
+                    viewModel = loanViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onAddLoanClick = { navController.navigate(Screen.AddEditLoan.route) },
+                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) }
+                )
+            }
+
+            composable(Screen.Budgets.route) {
+                BudgetsScreen(
+                    viewModel = budgetViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onAddBudgetClick = { navController.navigate(Screen.AddEditBudget.route) }
+                )
+            }
+
+            composable(
+                route = Screen.TransactionList.route,
+                arguments = listOf(navArgument("filterContext") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val filterContext = backStackEntry.arguments?.getString("filterContext")
+                TransactionListScreen(
+                    viewModel = transactionViewModel,
+                    accountViewModel = accountViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    onAddTransactionClick = { type, template -> 
+                        navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
+                    },
+                    onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onBackClick = { navController.popBackStack() },
+                    onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    templateViewModel = templateViewModel,
+                    filterContext = filterContext
+                )
+            }
+
+            composable(
+                route = Screen.AddTransaction.route + "?accountId={accountId}&type={type}&template={template}",
+                arguments = listOf(
+                    navArgument("accountId") { type = NavType.StringType; nullable = true },
+                    navArgument("type") { type = NavType.IntType; defaultValue = 0 },
+                    navArgument("template") { type = NavType.StringType; nullable = true }
+                )
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId")
+                val type = backStackEntry.arguments?.getInt("type") ?: 0
+                val template = backStackEntry.arguments?.getString("template")
+                TransactionEntryScreen(
+                    accountId = accountId,
+                    initialType = type,
+                    initialTemplate = template,
+                    viewModel = transactionViewModel,
+                    accountViewModel = accountViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    templateViewModel = templateViewModel,
+                    tagViewModel = tagViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.Analytics.route) {
+                AnalyticsScreen(
+                    viewModel = analyticsViewModel,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    templateViewModel = templateViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) },
+                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
+                    onLoansClick = { navController.navigate(Screen.Loans.route) },
+                    onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
+                    onTemplatesClick = { navController.navigate(Screen.Templates.route) },
+                    onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    onAddClick = { type, template -> 
+                        navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                     }
-                }
-            )
-        }
+                )
+            }
 
-        composable(
-            Screen.Dashboard.route,
-            arguments = listOf(
-                navArgument("viewContext") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val viewContext = backStackEntry.arguments?.getString("viewContext")
-            DashboardScreen(
-                onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
-                onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onBudgetClick = { budgetId -> navController.navigate(Screen.BudgetDetail.createRoute(budgetId)) },
-                onEditBudgetClick = { budgetId -> navController.navigate(Screen.AddEditBudget.createRoute(budgetId)) },
-                onAddClick = { type, template ->
-                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
-                },
-                onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
-                onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
-                onLoansClick = { navController.navigate(Screen.Loans.route) },
-                onLoanClick = { accountId -> navController.navigate(Screen.LoanDetail.createRoute(accountId)) },
-                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
-                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
-                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
-                onCloneTransactionClick = { transactionId ->
-                    transactionViewModel.setCloneTransactionId(transactionId)
-                    navController.navigate(Screen.AddTransaction.route)
-                },
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                settingsViewModel = settingsViewModel,
-                analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel,
-                dashboardViewModel = dashboardViewModel,
-                budgetViewModel = budgetViewModel,
-                loanViewModel = loanViewModel,
-                cardManagerViewModel = cardManagerViewModel,
-                viewContext = viewContext
-            )
-        }
-        
-        composable(
-            Screen.AccountsView.route,
-            arguments = listOf(
-                navArgument("filterContext") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val filterContext = backStackEntry.arguments?.getString("filterContext")
-            AccountsViewScreen(
-                onDashboardClick = {
-                    navController.popBackStack()
-                },
-                onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
-                onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onLoansClick = { navController.navigate(Screen.Loans.route) },
-                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
-                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
-                onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
-                onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
-                onAddClick = { type, template -> 
-                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
-                },
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                settingsViewModel = settingsViewModel,
-                analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel,
-                accountsViewViewModel = accountsViewViewModel,
-                cardManagerViewModel = cardManagerViewModel,
-                filterContext = filterContext
-            )
-        }
+            composable(Screen.SharedWallet.route) {
+                SharedWalletScreen(
+                    viewModel = sharedWalletViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(Screen.ExchangeRates.route) {
-            ExchangeRatesScreen(
-                viewModel = currencyViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(Screen.AccountSetup.route) {
+                AccountSetupScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onAccountCreated = { navController.popBackStack() },
+                    viewModel = accountViewModel
+                )
+            }
 
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                viewModel = settingsViewModel,
-                onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
-                onManageLabelsClick = { navController.navigate(Screen.ManageLabels.route) },
-                onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
-                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
-                onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(Screen.AccountManagement.route) {
+                AccountManagementScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
+                    onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
+                    viewModel = accountViewModel
+                )
+            }
 
-        composable(Screen.ManageFilters.route) {
-            FiltersSettingsScreen(
-                viewModel = settingsViewModel,
-                onBackClick = safePopBackStack,
-                onAddFilterClick = { navController.navigate(Screen.EditFilter.route) },
-                onEditFilterClick = { filter -> 
-                    navController.navigate(Screen.EditFilter.createRoute(filter.id))
-                }
-            )
-        }
+            composable(Screen.ExchangeRates.route) {
+                ExchangeRatesScreen(
+                    viewModel = currencyViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(
-            Screen.EditFilter.route,
-            arguments = listOf(
-                navArgument("filterId") {
+            composable(Screen.Templates.route) {
+                TemplatesScreen(
+                    viewModel = templateViewModel,
+                    accountViewModel = accountViewModel,
+                    onAddTemplateClick = { id -> navController.navigate(Screen.AddTemplate.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.AddTemplate.route,
+                arguments = listOf(navArgument("templateId") {
                     type = NavType.LongType
                     defaultValue = -1L
-                }
-            )
-        ) { backStackEntry ->
-            val filterId = backStackEntry.arguments?.getLong("filterId").takeIf { it != -1L }
-            val filters by settingsViewModel.allFilters.collectAsStateWithLifecycle(initialValue = emptyList())
-            val filterEntity = filters.find { it.id == filterId }
-            
-            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-            val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
+                })
+            ) { backStackEntry ->
+                val templateId = backStackEntry.arguments?.getLong("templateId") ?: -1L
+                AddTemplateScreen(
+                    templateId = if (templateId == -1L) null else templateId,
+                    templateViewModel = templateViewModel,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    tagViewModel = tagViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-            EditFilterScreen(
-                filterEntity = filterEntity,
-                accounts = accounts,
-                allCategories = allCategories,
-                onSaveFilter = { 
-                    settingsViewModel.saveFilter(it)
-                    safePopBackStack()
-                },
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(
+                route = Screen.BudgetDetail.route,
+                arguments = listOf(navArgument("budgetId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val budgetId = backStackEntry.arguments?.getString("budgetId") ?: ""
+                BudgetDetailScreen(
+                    budgetId = budgetId,
+                    budgetViewModel = budgetViewModel,
+                    transactionViewModel = transactionViewModel,
+                    onEditClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(Screen.ManageLabels.route) {
-            ManageLabelsScreen(
-                viewModel = tagViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(
+                route = Screen.LoanDetail.route,
+                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                LoanDetailScreen(
+                    accountId = accountId,
+                    loanViewModel = loanViewModel,
+                    transactionViewModel = transactionViewModel,
+                    onEditClick = { id -> navController.navigate(Screen.AddEditLoan.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(Screen.ManageCategories.route) {
-            CategoryManagementScreen(
-                viewModel = transactionViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(
+                route = Screen.AddEditBudget.route,
+                arguments = listOf(navArgument("budgetId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val budgetId = backStackEntry.arguments?.getString("budgetId")
+                AddEditBudgetScreen(
+                    budgetId = budgetId,
+                    budgetViewModel = budgetViewModel,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    tagViewModel = tagViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(Screen.Templates.route) {
-            TemplatesScreen(
-                viewModel = templateViewModel,
-                accountViewModel = accountViewModel,
-                onAddTemplateClick = { templateId -> 
-                    navController.navigate(Screen.AddTemplate.createRoute(templateId))
-                },
-                onBackClick = safePopBackStack
-            )
-        }
+            composable(
+                route = Screen.AddEditLoan.route,
+                arguments = listOf(navArgument("accountId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId")
+                AddEditLoanScreen(
+                    accountId = accountId,
+                    loanViewModel = loanViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
 
-        composable(
-            Screen.AddTemplate.route,
-            arguments = listOf(
-                navArgument("templateId") {
+            composable(
+                route = Screen.EditTransaction.route,
+                arguments = listOf(navArgument("transactionId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val transactionId = backStackEntry.arguments?.getLong("transactionId") ?: -1L
+                TransactionEntryScreen(
+                    transactionId = transactionId,
+                    viewModel = transactionViewModel,
+                    accountViewModel = accountViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    templateViewModel = templateViewModel,
+                    tagViewModel = tagViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.AccountDetail.route,
+                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                val accountDetailViewModel: AccountDetailViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        AccountDetailViewModel(
+                            accountId = accountId,
+                            accountRepository = appContainer.accountRepository,
+                            transactionUseCases = appContainer.transactionUseCases,
+                            settingsRepository = appContainer.settingsRepository,
+                            cardRepository = appContainer.cardRepository,
+                            computationRepository = appContainer.computationRepository,
+                            cardComputationService = appContainer.cardComputationService
+                        )
+                    }
+                )
+                AccountDetailScreen(
+                    accountId = accountId,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    settingsViewModel = settingsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    accountDetailViewModel = accountDetailViewModel,
+                    cardManagerViewModel = cardManagerViewModel,
+                    templateViewModel = templateViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
+                    onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onCloneTransactionClick = { id ->
+                        transactionViewModel.setCloneTransactionId(id)
+                        navController.navigate(Screen.AddTransaction.route)
+                    },
+                    onAddTransactionClick = { accId, type, template ->
+                        navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = template))
+                    },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) }
+                )
+            }
+
+            composable(
+                route = Screen.EditAccount.route,
+                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+                EditAccountScreen(
+                    accountId = accountId,
+                    viewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.ManageLabels.route) {
+                ManageLabelsScreen(
+                    viewModel = tagViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.ManageCategories.route) {
+                CategoryManagementScreen(
+                    viewModel = transactionViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.ManageFilters.route) {
+                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
+
+                FiltersSettingsScreen(
+                    viewModel = settingsViewModel,
+                    onBackClick = { navController.popBackStack() },
+                    onAddFilterClick = { 
+                        navController.navigate(Screen.EditFilter.route)
+                    },
+                    onEditFilterClick = { filter -> 
+                        navController.navigate(Screen.EditFilter.createRoute(filter.id)) 
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.EditFilter.route,
+                arguments = listOf(navArgument("filterId") {
                     type = NavType.LongType
                     defaultValue = -1L
+                })
+            ) { backStackEntry ->
+                val filterId = backStackEntry.arguments?.getLong("filterId") ?: -1L
+                val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
+                val filterEntity = remember(filterId, savedFilters) {
+                    savedFilters.find { it.id == filterId }
                 }
-            )
-        ) { backStackEntry ->
-            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
-            AddTemplateScreen(
-                templateId = templateId,
-                templateViewModel = templateViewModel,
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                tagViewModel = tagViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(Screen.Loans.route) {
-            LoansScreen(
-                viewModel = loanViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack,
-                onAddLoanClick = { navController.navigate(Screen.AddEditLoan.route) },
-                onLoanClick = { accountId -> navController.navigate(Screen.LoanDetail.createRoute(accountId)) }
-            )
-        }
-
-        composable(
-            Screen.LoanDetail.route,
-            arguments = listOf(navArgument("accountId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            LoanDetailScreen(
-                accountId = accountId,
-                loanViewModel = loanViewModel,
-                transactionViewModel = transactionViewModel,
-                onEditClick = { id -> navController.navigate(Screen.AddEditLoan.createRoute(id)) },
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(
-            Screen.AddEditLoan.route,
-            arguments = listOf(navArgument("accountId") { type = NavType.StringType; nullable = true; defaultValue = null })
-        ) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId")
-            AddEditLoanScreen(
-                accountId = accountId,
-                loanViewModel = loanViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(Screen.Budgets.route) {
-            BudgetsScreen(
-                viewModel = budgetViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack,
-                onAddBudgetClick = { navController.navigate(Screen.AddEditBudget.route) },
-                onBudgetClick = { budgetId -> navController.navigate(Screen.BudgetDetail.createRoute(budgetId)) }
-            )
-        }
-
-        composable(
-            Screen.BudgetDetail.route,
-            arguments = listOf(navArgument("budgetId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val budgetId = backStackEntry.arguments?.getString("budgetId") ?: ""
-            BudgetDetailScreen(
-                budgetId = budgetId,
-                budgetViewModel = budgetViewModel,
-                transactionViewModel = transactionViewModel,
-                onEditClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(
-            Screen.AddEditBudget.route,
-            arguments = listOf(navArgument("budgetId") { type = NavType.StringType; nullable = true; defaultValue = null })
-        ) { backStackEntry ->
-            val budgetId = backStackEntry.arguments?.getString("budgetId")
-            AddEditBudgetScreen(
-                budgetId = budgetId,
-                budgetViewModel = budgetViewModel,
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                tagViewModel = tagViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(
-            Screen.TransactionList.route,
-            arguments = listOf(
-                navArgument("filterContext") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val filterContext = backStackEntry.arguments?.getString("filterContext")
-            TransactionListScreen(
-                viewModel = transactionViewModel,
-                accountViewModel = accountViewModel,
-                analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel,
-                onAddTransactionClick = { type, name ->
-                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = name))
-                },
-                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
-                onCloneTransactionClick = { transactionId ->
-                    transactionViewModel.setCloneTransactionId(transactionId)
-                    navController.navigate(Screen.AddTransaction.route)
-                },
-                onBackClick = safePopBackStack,
-                onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                filterContext = filterContext
-            )
-        }
-
-        composable(
-            Screen.AddTransaction.route,
-            arguments = listOf(
-                navArgument("accountId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                },
-                navArgument("type") {
-                    type = NavType.IntType
-                    defaultValue = 0
-                },
-                navArgument("template") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId")
-            val type = backStackEntry.arguments?.getInt("type") ?: 0
-            val template = backStackEntry.arguments?.getString("template")
-
-            TransactionEntryScreen(
-                accountId = accountId,
-                initialType = type,
-                initialTemplate = template,
-                viewModel = transactionViewModel,
-                accountViewModel = accountViewModel,
-                analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel,
-                tagViewModel = tagViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(Screen.EditTransaction.route) { backStackEntry ->
-            val transactionId = backStackEntry.arguments?.getString("transactionId")?.toLongOrNull() ?: -1L
-            TransactionEntryScreen(
-                transactionId = transactionId,
-                viewModel = transactionViewModel,
-                accountViewModel = accountViewModel,
-                analyticsViewModel = analyticsViewModel,
-                templateViewModel = templateViewModel,
-                tagViewModel = tagViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(Screen.AccountDetail.route) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            val accountDetailViewModel: AccountDetailViewModel = viewModel(
-                key = "AccountDetailViewModel_$accountId",
-                factory = GenericViewModelFactory {
-                    AccountDetailViewModel(
-                        accountId = accountId,
-                        accountRepository = appContainer.accountRepository,
-                        transactionUseCases = appContainer.transactionUseCases,
-                        settingsDataStore = appContainer.settingsDataStore,
-                        analyticsViewModel = analyticsViewModel,
-                        cardManagerViewModel = cardManagerViewModel,
-                        cardComputationService = appContainer.cardComputationService
-                    )
-                }
-            )
-            AccountDetailScreen(
-                accountId = accountId,
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                settingsViewModel = settingsViewModel,
-                analyticsViewModel = analyticsViewModel,
-                accountDetailViewModel = accountDetailViewModel,
-                cardManagerViewModel = cardManagerViewModel,
-                templateViewModel = templateViewModel,
-                onBackClick = safePopBackStack,
-                onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
-                onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
-                onCloneTransactionClick = { transactionId ->
-                    transactionViewModel.setCloneTransactionId(transactionId)
-                    navController.navigate(Screen.AddTransaction.route)
-                },
-                onAddTransactionClick = { accId, type, name ->
-                    navController.navigate(Screen.AddTransaction.createRoute(accountId = accId, type = type, template = name))
-                },
-                onRecordsClick = { context -> navController.navigateToRecords(context) }
-            )
-        }
-
-        composable(Screen.EditAccount.route) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            EditAccountScreen(
-                accountId = accountId,
-                viewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                onBackClick = safePopBackStack
-            )
-        }
-
-        composable(Screen.AccountSetup.route) {
-            AccountSetupScreen(
-                onBackClick = safePopBackStack,
-                onAccountCreated = safePopBackStack,
-                viewModel = accountViewModel
-            )
-        }
-
-        composable(Screen.AccountManagement.route) {
-            AccountManagementScreen(
-                onBackClick = safePopBackStack,
-                onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
-                onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                viewModel = accountViewModel
-            )
-        }
-
-        composable(Screen.Analytics.route) {
-            AnalyticsScreen(
-                viewModel = analyticsViewModel,
-                accountViewModel = accountViewModel,
-                transactionViewModel = transactionViewModel,
-                templateViewModel = templateViewModel,
-                settingsViewModel = settingsViewModel,
-                onBackClick = safePopBackStack,
-                onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
-                onRecordsClick = { context -> navController.navigateToRecords(context) },
-                onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                onLoansClick = { navController.navigate(Screen.Loans.route) },
-                onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
-                onTemplatesClick = { navController.navigate(Screen.Templates.route) },
-                onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                onAccountClick = { accountId -> navController.navigate(Screen.AccountDetail.createRoute(accountId)) },
-                onAddClick = { type, template ->
-                    navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
-                }
-            )
-        }
-
-        composable(Screen.SharedWallet.route) {
-            SharedWalletScreen(
-                viewModel = sharedWalletViewModel,
-                onBackClick = safePopBackStack
-            )
+                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
+                
+                EditFilterScreen(
+                    filter = filterEntity,
+                    accounts = accounts,
+                    allCategories = categories,
+                    onSaveFilter = { entity ->
+                        settingsViewModel.saveFilter(entity)
+                        navController.popBackStack()
+                    },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

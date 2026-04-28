@@ -19,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
-import com.osscabinet.ossWallet.data.local.entity.TagEntity
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Account
 import java.math.BigDecimal
 
@@ -82,7 +82,7 @@ fun LabelPickerSheet(
     selectedTags: List<String>,
     onTagsChanged: (List<String>) -> Unit,
     onDismiss: () -> Unit,
-    allTags: List<TagEntity>,
+    allTags: List<Tag>,
     onAddTag: (String) -> Unit
 ) {
     var tagInput by remember { mutableStateOf("") }
@@ -248,9 +248,9 @@ fun PaymentMethodPickerSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPickerSheet(
-    categories: List<CategoryEntity>,
+    categories: List<Category>,
     selectedCategoryId: Long?,
-    onCategorySelected: (CategoryEntity) -> Unit,
+    onCategorySelected: (Category) -> Unit,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(

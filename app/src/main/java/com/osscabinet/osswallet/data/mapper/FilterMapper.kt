@@ -1,58 +1,58 @@
 package com.osscabinet.ossWallet.data.mapper
 
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.util.splitByComma
-import com.osscabinet.ossWallet.domain.util.joinByComma
 
-/**
- * Mappers for Filter data.
- */
-fun FilterEntity.toDomain(): TransactionFilter {
-    return TransactionFilter(
-        timelineRange = timelineRange,
-        queryNote = queryNote,
-        isNoteRegex = isNoteRegex,
-        queryPayee = queryPayee,
-        isPayeeRegex = isPayeeRegex,
-        categoryIds = categoryIds.splitByComma().map { it.toLong() },
-        accountIds = accountIds.splitByComma(),
-        startDate = startDate,
-        endDate = endDate,
-        paymentMethods = paymentMethods.splitByComma(),
-        hasWarranty = hasWarranty,
-        warrantyExpirationStart = warrantyExpirationStart,
-        warrantyExpirationEnd = warrantyExpirationEnd,
-        minAmount = minAmount,
-        maxAmount = maxAmount,
-        transactionType = transactionType,
-        currencies = currencies.splitByComma(),
-        statuses = statuses.splitByComma().map { TransactionStatus.fromString(it) }
+fun FilterEntity.toDomain(): Filter {
+    return Filter(
+        id = id,
+        name = name,
+        filter = TransactionFilter(
+            timelineRange = timelineRange,
+            queryNote = queryNote,
+            isNoteRegex = isNoteRegex,
+            queryPayee = queryPayee,
+            isPayeeRegex = isPayeeRegex,
+            categoryIds = if (categoryIds.isEmpty()) emptyList() else categoryIds.split(",").map { it.toLong() },
+            accountIds = if (accountIds.isEmpty()) emptyList() else accountIds.split(","),
+            startDate = startDate,
+            endDate = endDate,
+            paymentMethods = if (paymentMethods.isEmpty()) emptyList() else paymentMethods.split(","),
+            hasWarranty = hasWarranty,
+            warrantyExpirationStart = warrantyExpirationStart,
+            warrantyExpirationEnd = warrantyExpirationEnd,
+            minAmount = minAmount,
+            maxAmount = maxAmount,
+            transactionType = transactionType,
+            currencies = if (currencies.isEmpty()) emptyList() else currencies.split(","),
+            statuses = if (statuses.isEmpty()) emptyList() else statuses.split(",").filter { it.isNotBlank() }.map { TransactionStatus.valueOf(it) }
+        )
     )
 }
 
-fun TransactionFilter.toEntity(name: String, id: Long = 0): FilterEntity {
+fun Filter.toEntity(): FilterEntity {
     return FilterEntity(
         id = id,
         name = name,
-        timelineRange = timelineRange,
-        queryNote = queryNote,
-        isNoteRegex = isNoteRegex,
-        queryPayee = queryPayee,
-        isPayeeRegex = isPayeeRegex,
-        categoryIds = categoryIds.joinByComma(),
-        accountIds = accountIds.joinByComma(),
-        startDate = startDate,
-        endDate = endDate,
-        paymentMethods = paymentMethods.joinByComma(),
-        hasWarranty = hasWarranty,
-        warrantyExpirationStart = warrantyExpirationStart,
-        warrantyExpirationEnd = warrantyExpirationEnd,
-        minAmount = minAmount,
-        maxAmount = maxAmount,
-        transactionType = transactionType,
-        currencies = currencies.joinByComma(),
-        statuses = statuses.joinByComma { it.name }
+        timelineRange = filter.timelineRange,
+        queryNote = filter.queryNote,
+        isNoteRegex = filter.isNoteRegex,
+        queryPayee = filter.queryPayee,
+        isPayeeRegex = filter.isPayeeRegex,
+        categoryIds = filter.categoryIds.joinToString(","),
+        accountIds = filter.accountIds.joinToString(","),
+        startDate = filter.startDate,
+        endDate = filter.endDate,
+        paymentMethods = filter.paymentMethods.joinToString(","),
+        hasWarranty = filter.hasWarranty,
+        warrantyExpirationStart = filter.warrantyExpirationStart,
+        warrantyExpirationEnd = filter.warrantyExpirationEnd,
+        minAmount = filter.minAmount,
+        maxAmount = filter.maxAmount,
+        transactionType = filter.transactionType,
+        currencies = filter.currencies.joinToString(","),
+        statuses = filter.statuses.joinToString(",") { it.name }
     )
 }

@@ -15,12 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
 
 @Composable
 fun CategoryListItem(
-    category: CategoryEntity,
+    category: Category,
     isParent: Boolean,
     isSelected: Boolean = false,
     hasChildren: Boolean = false,
@@ -86,12 +86,12 @@ fun CategoryListItem(
 
 @Composable
 fun AeonCategoryList(
-    categories: List<CategoryEntity>,
+    categories: List<Category>,
     selectedCategoryId: Long? = null,
-    onCategorySelected: (CategoryEntity) -> Unit,
+    onCategorySelected: (Category) -> Unit,
     isManagementMode: Boolean = false,
-    onEditClick: (CategoryEntity) -> Unit = {},
-    onAddSubCategoryClick: (CategoryEntity) -> Unit = {}
+    onEditClick: (Category) -> Unit = {},
+    onAddSubCategoryClick: (Category) -> Unit = {}
 ) {
     val parentCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
     

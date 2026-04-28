@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionHeader
@@ -57,7 +57,7 @@ private fun filterToRecentTransactions(
 fun RecentActivitiesCard(
     allTransactions: List<TransactionWithBalance>,
     accountNamesMap: Map<String, String>,
-    categoryMap: Map<Long, CategoryEntity>,
+    categoryMap: Map<Long, Category>,
     decimalPrecision: Int,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
@@ -179,7 +179,7 @@ fun RecentActivitiesCard(
 
             items(dayTransactions, key = { it.transaction.id }) { item ->
                 val transaction = item.transaction
-                val categoryEntity = transaction.categoryId?.let { categoryMap[it] }
+                val category = transaction.categoryId?.let { categoryMap[it] }
                 val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
 
                 SwipeableTransactionItem(
@@ -204,8 +204,8 @@ fun RecentActivitiesCard(
                         timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
                         note = transaction.note,
                         tags = transaction.tags,
-                        icon = categoryEntity?.let { categoryIcons[it.iconName] } ?: categoryIcons[categoryEntity?.name] ?: Icons.Rounded.Category,
-                        iconBg = categoryEntity?.let { Color(it.colorHex) },
+                        icon = category?.let { categoryIcons[it.iconName] } ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,
+                        iconBg = category?.let { Color(it.colorHex) },
                         precision = decimalPrecision,
                         status = transaction.status,
                         onClick = { onTransactionClick(transaction.id) }

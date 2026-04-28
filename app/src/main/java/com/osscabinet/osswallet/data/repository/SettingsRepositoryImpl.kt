@@ -1,0 +1,43 @@
+package com.osscabinet.ossWallet.data.repository
+
+import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.Flow
+
+class SettingsRepositoryImpl(
+    private val settingsDataStore: SettingsDataStore
+) : SettingsRepository {
+    override val currency: Flow<String> = settingsDataStore.currency
+    override val theme: Flow<String> = settingsDataStore.theme
+    override val currentProfileId: Flow<Int> = settingsDataStore.currentProfileId
+    override val decimalPrecision: Flow<Int> = settingsDataStore.decimalPrecision
+    override val autoSaveExchangeRates: Flow<Boolean> = settingsDataStore.autoSaveExchangeRates
+    override val isOnboardingCompleted: Flow<Boolean> = settingsDataStore.isOnboardingCompleted
+    override val cardAnimationEnabled: Flow<Boolean> = settingsDataStore.cardAnimationEnabled
+    override val isDatabaseSeeded: Flow<Boolean> = settingsDataStore.isDatabaseSeeded
+    override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
+    override val accountsViewSettings: Flow<AccountsViewSettings> = settingsDataStore.accountsViewSettings
+    override val accountDetailSettings: Flow<AccountDetailSettings> = settingsDataStore.accountDetailSettings
+    override val recordsSettings: Flow<TransactionSectionSettings> = settingsDataStore.recordsSettings
+    override val dashboardCardsConfig: Flow<String> = settingsDataStore.dashboardCardsConfig
+    override val accountDetailCardsConfig: Flow<String> = settingsDataStore.accountDetailCardsConfig
+    override val accountsViewCardsConfig: Flow<String> = settingsDataStore.accountsViewCardsConfig
+    override val analyticsCardsConfig: Flow<String> = settingsDataStore.analyticsCardsConfig
+
+    override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
+    override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
+    override suspend fun saveCurrentProfileId(profileId: Int) = settingsDataStore.saveCurrentProfileId(profileId)
+    override suspend fun saveDecimalPrecision(precision: Int) = settingsDataStore.saveDecimalPrecision(precision)
+    override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) = settingsDataStore.saveAutoSaveExchangeRates(enabled)
+    override suspend fun saveOnboardingCompleted(completed: Boolean) = settingsDataStore.saveOnboardingCompleted(completed)
+    override suspend fun saveCardAnimationEnabled(enabled: Boolean) = settingsDataStore.saveCardAnimationEnabled(enabled)
+    override suspend fun saveDatabaseSeeded(seeded: Boolean) = settingsDataStore.saveDatabaseSeeded(seeded)
+    override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) = settingsDataStore.updateDashboardSettings(update)
+    override suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) = settingsDataStore.updateAccountsViewSettings(update)
+    override suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings) = settingsDataStore.updateAccountDetailSettings(update)
+    override suspend fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) = settingsDataStore.updateRecordsSettings(update)
+    override suspend fun saveDashboardCardsConfig(config: String) = settingsDataStore.saveDashboardCardsConfig(config)
+    override suspend fun saveAccountDetailCardsConfig(config: String) = settingsDataStore.saveAccountDetailCardsConfig(config)
+    override suspend fun saveAccountsViewCardsConfig(config: String) = settingsDataStore.saveAccountsViewCardsConfig(config)
+    override suspend fun saveAnalyticsCardsConfig(config: String) = settingsDataStore.saveAnalyticsCardsConfig(config)
+}

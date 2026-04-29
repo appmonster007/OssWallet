@@ -323,12 +323,14 @@ class DashboardViewModel(
 
     suspend fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
         val filteredTx = TransactionsUtilityService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
-        val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTx)
-        return currencySummaries.map { (curr, summary) ->
+        return TransactionsUtilityService.breakdownByCurrency(transactions = filteredTx).map { b ->
+            val amountInBase = TransactionsUtilityService.convertToBaseCurrency(
+                b.totalAmount, b.currency, context.baseCurrency, context.exchangeRates
+            )
             CurrencyAggregationItem(
-                currency = curr,
-                amount = summary.totalAmount,
-                amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+                currency = b.currency,
+                amount = b.totalAmount,
+                amountInBase = amountInBase
             )
         }.sortedByDescending { it.amountInBase.abs() }
     }
@@ -488,91 +490,44 @@ class DashboardViewModel(
 
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
-                val globalCurrencyTotals = TransactionsUtilityService.breakdownByCurrency(
-                    TransactionsUtilityService.filter(allTransactions, TransactionFilter(timelineRange = dashboardSettings.currencyBalancesSection.timelineRange))
-                ).map { b ->
-                    CurrencyAggregationItem(
-                        currency = b.currency,
-                        amount = b.totalAmount,
-                        amountInBase = TransactionsUtilityService.convertToBaseCurrency(b.totalAmount, b.currency, baseCurrency, rates)
-                    )
-                }.sortedByDescending { it.amountInBase.abs() }
-
-                val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
-                    TransactionsUtilityService.filter(allTransactions, TransactionFilter(timelineRange = dashboardSettings.accountsSection.timelineRange)),
-                    accounts,
-                    rates,
-                    baseCurrency
+                val globalCurrencyTotals = computeCurrencyAggregation(
+                    accounts = accounts,
+                    transactions = allTransactions,
+                    timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
+                    context = computationContext
                 )
 
-                val accountStats = accountBreakdowns.associate { b ->
-                    val acc = accounts.find { it.id == b.key }!!
-                    val accCurrSummary = b.currencyBreakdown[acc.currencyCode] ?: FinancialSummary.EMPTY
-                    b.key to AccountSummaryItem(
-                        account = acc,
-                        currencyBalances = b.currencyBreakdown.mapValues { it.value.totalAmount },
-                        balanceInBase = b.totalAmount,
-                        incomeInAccountCurrency = accCurrSummary.income,
-                        expenseInAccountCurrency = accCurrSummary.expense
-                    )
-                }
+                val (updatedAccounts, accountStats) = computeAccountStats(
+                    accounts = accounts,
+                    transactions = allTransactions,
+                    timelineRange = dashboardSettings.accountsSection.timelineRange,
+                    context = computationContext
+                )
 
-                val updatedAccounts = accounts.map { account ->
-                    val b = accountBreakdowns.find { it.key == account.id }
-                    if (b != null) {
-                        val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
-                            TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, rates)
-                        }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
-                        account.copy(balance = totalInAccountCurrency)
-                    } else account
-                }
-
-                val netWorth = accountBreakdowns.sumOf { it.totalAmount }
+                val netWorth = computeNetWorth(
+                    accounts = accounts,
+                    transactions = allTransactions,
+                    timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                    context = computationContext
+                )
 
                 // Calculate cash flow for Net Worth section (used for income/expense badges)
                 val netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange
                 val cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange
 
-                // REFACTOR: Use TransactionsUtilityService for cash flow results
-                val currentCashFlowBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
-                    transactions = TransactionsUtilityService.filter(allTransactions, TransactionFilter(timelineRange = cashFlowTimelineRange)),
-                    exchangeRates = rates,
-                    baseCurrency = baseCurrency
-                )
-                
-                val cashFlowResult = CashFlowResult(
-                    totalIncomeInBase = currentCashFlowBreakdown.totalIncome,
-                    totalExpensesInBase = currentCashFlowBreakdown.totalExpense,
-                    netInBase = currentCashFlowBreakdown.netFlow,
-                    breakdown = (currentCashFlowBreakdown.incomeCurrencyBreakdown.keys + currentCashFlowBreakdown.expenseCurrencyBreakdown.keys)
-                        .distinct().sorted().map { curr ->
-                            val inc = currentCashFlowBreakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                            val exp = currentCashFlowBreakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                            CashFlowBreakdownItem(
-                                currency = curr,
-                                income = inc.totalAmount,
-                                incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, rates),
-                                expense = exp.totalAmount,
-                                expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, rates)
-                            )
-                        }.toList(),
-                    filteredTransactions = currentCashFlowBreakdown.incomeTransactions + currentCashFlowBreakdown.expenseTransactions
+                val cashFlowResult = computeCashFlow(
+                    transactions = allTransactions,
+                    timelineRange = cashFlowTimelineRange,
+                    context = computationContext
                 )
 
                 val netWorthCashFlow = if (netWorthTimelineRange == cashFlowTimelineRange) {
                     cashFlowResult
                 } else {
-                    val nwBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
-                        transactions = TransactionsUtilityService.filter(allTransactions, TransactionFilter(timelineRange = netWorthTimelineRange)),
-                        exchangeRates = rates,
-                        baseCurrency = baseCurrency
-                    )
-                    CashFlowResult(
-                        totalIncomeInBase = nwBreakdown.totalIncome,
-                        totalExpensesInBase = nwBreakdown.totalExpense,
-                        netInBase = nwBreakdown.netFlow,
-                        breakdown = emptyList(), // Not needed for badge
-                        filteredTransactions = emptyList()
+                    computeCashFlow(
+                        transactions = allTransactions,
+                        timelineRange = netWorthTimelineRange,
+                        context = computationContext
                     )
                 }
 

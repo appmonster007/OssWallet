@@ -36,7 +36,7 @@ fun OssWalletNavGraph(
                 appContainer.currencyRepository,
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
-                appContainer.cardComputationService,
+                appContainer.db.categoryDao(),
                 appContainer.accountRepository
             )
         }
@@ -109,7 +109,7 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
                 appContainer.cardRepository,
-                appContainer.cardComputationService,
+                appContainer.db.categoryDao(),
                 appContainer.budgetUseCases
             )
         }
@@ -122,8 +122,7 @@ fun OssWalletNavGraph(
                 appContainer.transactionUseCases,
                 appContainer.settingsRepository,
                 appContainer.cardRepository,
-                appContainer.computationRepository,
-                appContainer.cardComputationService
+                appContainer.computationRepository
             )
         }
     )
@@ -497,8 +496,7 @@ fun OssWalletNavGraph(
                             transactionUseCases = appContainer.transactionUseCases,
                             settingsRepository = appContainer.settingsRepository,
                             cardRepository = appContainer.cardRepository,
-                            computationRepository = appContainer.computationRepository,
-                            cardComputationService = appContainer.cardComputationService
+                            computationRepository = appContainer.computationRepository
                         )
                     }
                 )

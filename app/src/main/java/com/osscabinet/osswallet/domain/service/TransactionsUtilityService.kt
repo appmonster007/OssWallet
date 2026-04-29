@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
@@ -139,15 +140,15 @@ object TransactionsUtilityService {
     }
 
     /**
-     * Calculates a cumulative sum (running total) across a list of breakdown items.
+     * Calculates a cumulative sum (running total) across a list of financial metrics.
      * Useful for trajectory charts where each point represents the balance at that time.
      *
-     * @param items List of breakdown items (e.g., DateBreakdown)
+     * @param items List of financial metrics (e.g., DateBreakdown)
      * @param initialBalance Starting balance before the first item
      * @return List of TrajectoryPoint items with cumulative balance
      */
     fun <K> calculateCumulativeSum(
-        items: List<Breakdown<K>>,
+        items: List<FinancialMetrics<K>>,
         initialBalance: BigDecimal = BigDecimal.ZERO
     ): List<TrajectoryPoint<K>> {
         var currentBalance = initialBalance
@@ -217,6 +218,22 @@ object TransactionsUtilityService {
         if (daysActive <= 0) return BigDecimal.ZERO
         val dailyAvg = totalExpense.abs().divide(BigDecimal.valueOf(daysActive), 10, java.math.RoundingMode.HALF_UP)
         return dailyAvg.multiply(BigDecimal.valueOf(30)).setScale(2, java.math.RoundingMode.HALF_UP)
+    }
+
+    /**
+     * Calculates the standard deviation (volatility) of a list of numeric values.
+     * Measures how much values deviate from the mean. Higher volatility indicates
+     * greater variability/unpredictability in the data.
+     *
+     * @param values List of numeric values (e.g., daily cash flows)
+     * @return Standard deviation as BigDecimal
+     */
+    fun calculateVolatility(values: List<Double>): BigDecimal {
+        if (values.isEmpty()) return BigDecimal.ZERO
+        
+        val mean = values.average()
+        val variance = values.map { (it - mean) * (it - mean) }.average()
+        return kotlin.math.sqrt(variance).toBigDecimal()
     }
 
     /**
@@ -297,84 +314,64 @@ object TransactionsUtilityService {
         transactions.filter { it.amount.signum() < 0 }
 
     /**
-     * Filters transactions by currency code.
+     * Filters transactions by currency code(s).
+     * Accepts either a single currency or multiple currencies.
      *
      * @param transactions List of transactions to filter
-     * @param currency Currency code to filter by
-     * @return List of transactions with the specified currency
+     * @param currencies Currency code(s) to filter by (String for single, Set<String> for multiple)
+     * @return List of transactions with the specified currency/currencies
      */
-    fun filterByCurrency(transactions: List<Transaction>, currency: String): List<Transaction> =
-        transactions.filter { it.currency == currency }
+    fun filterByCurrency(transactions: List<Transaction>, currencies: Any): List<Transaction> =
+        when (currencies) {
+            is String -> transactions.filter { it.currency == currencies }
+            is Set<*> -> transactions.filter { it.currency in currencies }
+            else -> throw IllegalArgumentException("currencies must be String or Set<String>")
+        }
 
     /**
-     * Filters transactions by multiple currency codes.
+     * Filters transactions by category name(s).
+     * Accepts either a single category or multiple categories.
      *
      * @param transactions List of transactions to filter
-     * @param currencies Set of currency codes to filter by
-     * @return List of transactions with any of the specified currencies
+     * @param categories Category name(s) to filter by (String for single, Set<String> for multiple)
+     * @return List of transactions with the specified category/categories
      */
-    fun filterByCurrencies(transactions: List<Transaction>, currencies: Set<String>): List<Transaction> =
-        transactions.filter { it.currency in currencies }
+    fun filterByCategory(transactions: List<Transaction>, categories: Any): List<Transaction> =
+        when (categories) {
+            is String -> transactions.filter { it.category == categories }
+            is Set<*> -> transactions.filter { it.category in categories }
+            else -> throw IllegalArgumentException("categories must be String or Set<String>")
+        }
 
     /**
-     * Filters transactions by category name.
+     * Filters transactions by account ID(s).
+     * Accepts either a single account ID or multiple account IDs.
      *
      * @param transactions List of transactions to filter
-     * @param category Category name to filter by
-     * @return List of transactions with the specified category
+     * @param accountIds Account ID(s) to filter by (String for single, Set<String> for multiple)
+     * @return List of transactions for the specified account(s)
      */
-    fun filterByCategory(transactions: List<Transaction>, category: String): List<Transaction> =
-        transactions.filter { it.category == category }
+    fun filterByAccount(transactions: List<Transaction>, accountIds: Any): List<Transaction> =
+        when (accountIds) {
+            is String -> transactions.filter { it.accountId == accountIds }
+            is Set<*> -> transactions.filter { it.accountId in accountIds }
+            else -> throw IllegalArgumentException("accountIds must be String or Set<String>")
+        }
 
     /**
-     * Filters transactions by multiple category names.
+     * Filters transactions by transaction status(es).
+     * Accepts either a single status or multiple statuses.
      *
      * @param transactions List of transactions to filter
-     * @param categories Set of category names to filter by
-     * @return List of transactions with any of the specified categories
+     * @param statuses Status(es) to filter by (TransactionStatus for single, Set<TransactionStatus> for multiple)
+     * @return List of transactions with the specified status(es)
      */
-    fun filterByCategories(transactions: List<Transaction>, categories: Set<String>): List<Transaction> =
-        transactions.filter { it.category in categories }
-
-    /**
-     * Filters transactions by account ID.
-     *
-     * @param transactions List of transactions to filter
-     * @param accountId Account ID to filter by
-     * @return List of transactions for the specified account
-     */
-    fun filterByAccount(transactions: List<Transaction>, accountId: String): List<Transaction> =
-        transactions.filter { it.accountId == accountId }
-
-    /**
-     * Filters transactions by multiple account IDs.
-     *
-     * @param transactions List of transactions to filter
-     * @param accountIds Set of account IDs to filter by
-     * @return List of transactions for any of the specified accounts
-     */
-    fun filterByAccounts(transactions: List<Transaction>, accountIds: Set<String>): List<Transaction> =
-        transactions.filter { it.accountId in accountIds }
-
-    /**
-     * Filters transactions by transaction status.
-     *
-     * @param transactions List of transactions to filter
-     * @param status Status to filter by
-     * @return List of transactions with the specified status
-     */
-    fun filterByStatus(transactions: List<Transaction>, status: TransactionStatus): List<Transaction> =
-        transactions.filter { it.status == status }
-
-    /**
-     * Filters transactions by multiple transaction statuses.
-     *
-     * @param transactions List of transactions to filter
-     * @param statuses Set of statuses to filter by
-     * @return List of transactions with any of the specified statuses
-     */
-    fun filterByStatuses(transactions: List<Transaction>, statuses: Set<TransactionStatus>): List<Transaction> =
-        transactions.filter { it.status in statuses }
+    fun filterByStatus(transactions: List<Transaction>, statuses: Any): List<Transaction> =
+        when (statuses) {
+            is TransactionStatus -> transactions.filter { it.status == statuses }
+            is Set<*> -> transactions.filter { it.status in statuses }
+            else -> throw IllegalArgumentException("statuses must be TransactionStatus or Set<TransactionStatus>")
+        }
 
     /**
      * Filters transactions by transaction type.
@@ -456,119 +453,6 @@ object TransactionsUtilityService {
     fun filterByAllTags(transactions: List<Transaction>, tags: Set<String>): List<Transaction> =
         transactions.filter { tx -> tags.all { it in tx.tags } }
 
-    // ==================== Grouping Logic (Higher-Order Functions) ====================
-
-    /**
-     * Groups transactions by their currency code.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is currency code and value is list of transactions
-     */
-    fun groupByCurrency(transactions: List<Transaction>) = transactions.groupBy { it.currency }
-
-    /**
-     * Groups transactions by their category name.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is category name and value is list of transactions
-     */
-    fun groupByCategory(transactions: List<Transaction>) = transactions.groupBy { it.category }
-
-    /**
-     * Groups transactions by their account ID.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is account ID and value is list of transactions
-     */
-    fun groupByAccount(transactions: List<Transaction>) = transactions.groupBy { it.accountId }
-
-    /**
-     * Groups transactions by their transaction type.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is transaction type and value is list of transactions
-     */
-    fun groupByTransactionType(transactions: List<Transaction>) = transactions.groupBy { it.transactionType }
-
-    /**
-     * Groups transactions by their payment method.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is payment method and value is list of transactions
-     */
-    fun groupByPaymentMethod(transactions: List<Transaction>) = transactions.groupBy { it.paymentMethod }
-
-    /**
-     * Groups transactions by their status name.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is status name and value is list of transactions
-     */
-    fun groupByStatus(transactions: List<Transaction>) = transactions.groupBy { it.status.name }
-
-    /**
-     * Groups transactions by their payee.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is payee and value is list of transactions
-     */
-    fun groupByPayee(transactions: List<Transaction>) = transactions.groupBy { it.payee }
-
-    /**
-     * Groups transactions by their category ID.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is category ID and value is list of transactions
-     */
-    fun groupByCategoryId(transactions: List<Transaction>) = transactions.groupBy { it.categoryId }
-
-    /**
-     * Groups transactions by their title.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is title and value is list of transactions
-     */
-    fun groupByTitle(transactions: List<Transaction>) = transactions.groupBy { it.title }
-
-    /**
-     * Groups transactions by their date (local date string format).
-     * Uses the system timezone for conversion.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is date string (yyyy-MM-dd) and value is list of transactions
-     */
-    fun groupByDate(transactions: List<Transaction>) = transactions.groupBy { tx ->
-        Instant.ofEpochMilli(tx.timestamp)
-            .atZone(systemZoneId)
-            .toLocalDate()
-            .toString()
-    }
-
-    /**
-     * Groups transactions by their month (yyyy-MM format).
-     * Uses the system timezone for conversion.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is month string (yyyy-MM) and value is list of transactions
-     */
-    fun groupByMonth(transactions: List<Transaction>) = transactions.groupBy { tx ->
-        Instant.ofEpochMilli(tx.timestamp)
-            .atZone(systemZoneId)
-            .toLocalDate()
-            .format(monthFormatter)
-    }
-
-    /**
-     * Groups transactions by their tags.
-     * A single transaction can appear in multiple tag groups if it has multiple tags.
-     *
-     * @param transactions List of transactions to group
-     * @return Map where key is tag name and value is list of transactions with that tag
-     */
-    fun groupByTags(transactions: List<Transaction>): Map<String, List<Transaction>> =
-        transactions.flatMap { tx -> tx.tags.map { tag -> tag to tx } }
-            .groupBy { it.first }
-            .mapValues { (_, pairs) -> pairs.map { it.second } }
 
     // ==================== Calculation Methods ====================
 
@@ -577,7 +461,7 @@ object TransactionsUtilityService {
      * All transactions must have the same currency, otherwise throws IllegalArgumentException.
      *
      * @param transactions List of transactions to calculate summary for
-     * @return TransactionSummary with total, income, expense, and count
+     * @return FinancialSummary with total, income, expense, and count
      */
     fun calculateTransactionSummary(transactions: List<Transaction>): FinancialSummary {
         if (transactions.isEmpty()) {
@@ -605,16 +489,19 @@ object TransactionsUtilityService {
      * Groups transactions by currency and calculates summary for each currency group.
      *
      * @param transactions List of transactions to calculate summary for
-     * @return Map where key is currency code and value is TransactionSummary for that currency
+     * @return Map where key is currency code and value is FinancialSummary for that currency
      */
     fun calculateSummaryByCurrency(
         transactions: List<Transaction>
     ): Map<String, FinancialSummary> {
-        val currencyGroups = groupByCurrency(transactions)
-
-        val summaries = currencyGroups.mapValues { (_, txs) -> calculateTransactionSummary(txs) }
-
-        return summaries
+        return transactions.groupBy { it.currency }
+            .mapValues { (_, txs) ->
+                val total = txs.sumOf { it.amount }
+                val (incomeTransactions, expenseTransactions) = txs.partition { it.amount.signum() >= 0 }
+                val income = incomeTransactions.sumOf { it.amount }
+                val expense = expenseTransactions.sumOf { it.amount }
+                FinancialSummary(total, income, expense, txs.size)
+            }
     }
 
     /**
@@ -625,7 +512,7 @@ object TransactionsUtilityService {
      * @return Map where key is currency code and value is total amount for that currency
      */
     fun calculateTotalByCurrency(transactions: List<Transaction>): Map<String, BigDecimal> =
-        groupByCurrency(transactions).mapValues { (_, txs) -> txs.sumOf { it.amount } }
+        transactions.groupBy { it.currency }.mapValues { (_, txs) -> txs.sumOf { it.amount } }
 
     /**
      * Separates transactions into income (positive amounts) and expense (negative amounts).
@@ -685,10 +572,15 @@ object TransactionsUtilityService {
             Triple(totalInc, totalExp, net)
         }
 
+        val summary = FinancialSummary(
+            totalAmount = netFlow,
+            income = totalIncome,
+            expense = totalExpense,
+            transactionCount = income.size + expenses.size
+        )
+
         return IncomeExpenseBreakdown(
-            totalIncome = totalIncome,
-            totalExpense = totalExpense,
-            netFlow = netFlow,
+            financialSummary = summary,
             incomeTransactions = income,
             expenseTransactions = expenses,
             incomeCurrencyBreakdown = incomeCurrencyBreakdown,
@@ -749,7 +641,7 @@ object TransactionsUtilityService {
      * @return List of CurrencyBreakdown sorted by absolute total amount
      */
     fun breakdownByCurrency(transactions: List<Transaction>): List<CurrencyBreakdown> =
-        groupByCurrency(transactions)
+        transactions.groupBy { it.currency }
             .map { (currency, txs) ->
                 val incomeTx = filterIncome(txs)
                 val expenseTx = filterExpense(txs)
@@ -782,15 +674,9 @@ object TransactionsUtilityService {
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): List<AccountBreakdown> {
-        val accountMap = accounts.associateBy { it.id }
         return createBreakdown(transactions, { it.accountId }, { accountId, summaries ->
-            val account = accountMap[accountId]
-            Breakdown(
-                key = AccountInfo(
-                    accountId = accountId,
-                    accountName = account?.name ?: "Unknown",
-                    currency = account?.currencyCode ?: "Unknown"
-                ),
+            FinancialMetrics(
+                key = accountId,
                 financialSummary = FinancialSummary(
                     totalAmount = summaries.values.sumOf { it.totalAmount },
                     income = summaries.values.sumOf { it.income },
@@ -1430,7 +1316,9 @@ object TransactionsUtilityService {
         accounts: List<Account>
     ): Map<String, List<AccountBreakdown>> {
         val accountMap = accounts.associateBy { it.id }
-        return groupByTags(transactions)
+        return transactions.flatMap { tx -> tx.tags.map { tag -> tag to tx } }
+            .groupBy { it.first }
+            .mapValues { (_, pairs) -> pairs.map { it.second } }
             .mapValues { (tag, txs) ->
                 breakdownByAccount(txs, accounts)
             }
@@ -1451,7 +1339,7 @@ object TransactionsUtilityService {
         baseCurrency: String? = null
     ): List<CategoryBreakdown> =
         createBreakdown(transactions, { it.category }, { category, summaries ->
-            Breakdown(
+            FinancialMetrics(
                 key = category,
                 financialSummary = FinancialSummary(
                     totalAmount = summaries.values.sumOf { it.totalAmount },
@@ -1481,7 +1369,9 @@ object TransactionsUtilityService {
             throw IllegalArgumentException("baseCurrency must be provided when exchangeRates is specified")
         }
 
-        return groupByDate(transactions)
+        return transactions.groupBy {
+            Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).toLocalDate().toString()
+        }
             .map { (date, txs) ->
                 val summaries = calculateSummaryByCurrency(txs)
                 val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
@@ -1491,7 +1381,7 @@ object TransactionsUtilityService {
                 } else {
                     summaries
                 }
-                Breakdown(
+                FinancialMetrics(
                     key = date,
                     financialSummary = FinancialSummary(
                         totalAmount = convertedSummaries.values.sumOf { it.totalAmount },
@@ -1523,7 +1413,9 @@ object TransactionsUtilityService {
             throw IllegalArgumentException("baseCurrency must be provided when exchangeRates is specified")
         }
 
-        return groupByMonth(transactions)
+        return transactions.groupBy {
+            Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).format(monthFormatter)
+        }
             .map { (month, txs) ->
                 val summaries = calculateSummaryByCurrency(txs)
                 val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
@@ -1533,7 +1425,7 @@ object TransactionsUtilityService {
                 } else {
                     summaries
                 }
-                Breakdown(
+                FinancialMetrics(
                     key = month,
                     financialSummary = FinancialSummary(
                         totalAmount = convertedSummaries.values.sumOf { it.totalAmount },
@@ -1562,7 +1454,7 @@ object TransactionsUtilityService {
         baseCurrency: String? = null
     ): List<TransactionTypeBreakdown> =
         createBreakdown(transactions, { it.transactionType }, { type, summaries ->
-            Breakdown(
+            FinancialMetrics(
                 key = type,
                 financialSummary = FinancialSummary(
                     totalAmount = summaries.values.sumOf { it.totalAmount },
@@ -1589,7 +1481,7 @@ object TransactionsUtilityService {
         baseCurrency: String? = null
     ): List<PaymentMethodBreakdown> =
         createBreakdown(transactions, { it.paymentMethod }, { method, summaries ->
-            Breakdown(
+            FinancialMetrics(
                 key = method,
                 financialSummary = FinancialSummary(
                     totalAmount = summaries.values.sumOf { it.totalAmount },
@@ -1616,7 +1508,7 @@ object TransactionsUtilityService {
         baseCurrency: String? = null
     ): List<StatusBreakdown> =
         createBreakdown(transactions, { it.status.name }, { status, summaries ->
-            Breakdown(
+            FinancialMetrics(
                 key = status,
                 financialSummary = FinancialSummary(
                     totalAmount = summaries.values.sumOf { it.totalAmount },
@@ -1647,7 +1539,9 @@ object TransactionsUtilityService {
             throw IllegalArgumentException("baseCurrency must be provided when exchangeRates is specified")
         }
 
-        return groupByTags(transactions)
+        return transactions.flatMap { tx -> tx.tags.map { tag -> tag to tx } }
+            .groupBy { it.first }
+            .mapValues { (_, pairs) -> pairs.map { it.second } }
             .map { (tag, txs) ->
                 val summaries = calculateSummaryByCurrency(txs)
                 val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
@@ -1657,7 +1551,7 @@ object TransactionsUtilityService {
                 } else {
                     summaries
                 }
-                Breakdown(
+                FinancialMetrics(
                     key = tag,
                     financialSummary = FinancialSummary(
                         totalAmount = convertedSummaries.values.sumOf { it.totalAmount },
@@ -1716,9 +1610,33 @@ object TransactionsUtilityService {
             }
             .sortedByDescending { it.totalAmount.abs() }
     }
+
+    /**
+     * Generates a list of time buckets (start/end pairs) for a given range.
+     * Useful for chart generation.
+     */
+    fun getTimeBuckets(timelineRange: TimelineRange, numPoints: Int = 30): List<TimeBucket> {
+        val (start, end) = TimelineService.getDateRange(timelineRange)
+        val actualStart = start ?: 0L
+        val actualEnd = end ?: System.currentTimeMillis()
+        
+        val duration = actualEnd - actualStart
+        val step = if (numPoints > 0) duration / numPoints else 0L
+        
+        return if (step > 0) {
+            (0 until numPoints).map { i ->
+                TimeBucket(actualStart + (i * step), actualStart + ((i + 1) * step))
+            }
+        } else listOf(TimeBucket(actualStart, actualEnd))
+    }
 }
 
 // ==================== Data Classes for Return Types ====================
+
+/**
+ * Represents a range of time for grouping transactions.
+ */
+data class TimeBucket(val start: Long, val end: Long)
 
 /**
  * Base financial summary with common metrics for transaction calculations.
@@ -1775,10 +1693,10 @@ data class FinancialDelta(
 )
 
 /**
- * Generic breakdown class with a key field and currency sub-grouping.
- * Composes FinancialSummary for the financial metrics.
+ * Financial metrics for a specific key/category with currency breakdown.
+ * Used for all breakdown operations to provide consistent financial data structure.
  */
-data class Breakdown<K>(
+data class FinancialMetrics<K>(
     val key: K,
     val financialSummary: FinancialSummary,
     val currencyBreakdown: Map<String, FinancialSummary>
@@ -1786,27 +1704,19 @@ data class Breakdown<K>(
     val totalAmount: BigDecimal get() = financialSummary.totalAmount
     val income: BigDecimal get() = financialSummary.income
     val expense: BigDecimal get() = financialSummary.expense
+    val netFlow: BigDecimal get() = financialSummary.netFlow
     val transactionCount: Int get() = financialSummary.transactionCount
 }
 
-// Type aliases for specific breakdown types
-typealias AccountBreakdown = Breakdown<AccountInfo>
-typealias CategoryBreakdown = Breakdown<String>
-typealias DateBreakdown = Breakdown<String>
-typealias MonthBreakdown = Breakdown<String>
-typealias TransactionTypeBreakdown = Breakdown<String>
-typealias PaymentMethodBreakdown = Breakdown<String>
-typealias TagBreakdown = Breakdown<String>
-typealias StatusBreakdown = Breakdown<String>
-
-/**
- * Account info for AccountBreakdown.
- */
-data class AccountInfo(
-    val accountId: String,
-    val accountName: String,
-    val currency: String
-)
+// Type aliases for specific breakdown types (for semantic clarity)
+typealias AccountBreakdown = FinancialMetrics<String>
+typealias CategoryBreakdown = FinancialMetrics<String>
+typealias DateBreakdown = FinancialMetrics<String>
+typealias MonthBreakdown = FinancialMetrics<String>
+typealias TransactionTypeBreakdown = FinancialMetrics<String>
+typealias PaymentMethodBreakdown = FinancialMetrics<String>
+typealias TagBreakdown = FinancialMetrics<String>
+typealias StatusBreakdown = FinancialMetrics<String>
 
 /**
  * Currency breakdown with detailed financial metrics.
@@ -1824,17 +1734,23 @@ data class CurrencyBreakdown(
 
 /**
  * Complete breakdown of income and expense transactions with currency sub-grouping.
+ * Uses FinancialSummary for totals to maintain DRY principle (consistent with LabelGroup).
  * Used by calculateIncomeExpenseBreakdown to provide comprehensive income/expense analysis.
  */
 data class IncomeExpenseBreakdown(
-    val totalIncome: BigDecimal,
-    val totalExpense: BigDecimal,
-    val netFlow: BigDecimal,
+    val financialSummary: FinancialSummary,
     val incomeTransactions: List<Transaction>,
     val expenseTransactions: List<Transaction>,
     val incomeCurrencyBreakdown: Map<String, FinancialSummary>,
     val expenseCurrencyBreakdown: Map<String, FinancialSummary>
-)
+) {
+    // Convenience accessors for backward compatibility
+    val totalIncome: BigDecimal get() = financialSummary.income
+    val totalExpense: BigDecimal get() = financialSummary.expense
+    val netFlow: BigDecimal get() = financialSummary.netFlow
+    val totalAmount: BigDecimal get() = financialSummary.totalAmount
+    val transactionCount: Int get() = financialSummary.transactionCount
+}
 
 /**
  * Generic label group with transactions and currency breakdown.

@@ -28,6 +28,9 @@ import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableData
 import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsData
 import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
+import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
@@ -140,7 +143,7 @@ fun AnalyticsScreen(
                     ) { cardConfig, isDragging, dragModifier ->
                         val cardWithCallbacks = when (cardConfig) {
                             is CategoryBreakdownCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryBreakdownForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions
@@ -163,7 +166,7 @@ fun AnalyticsScreen(
                                 )
                             }
                             is TimelineTrajectoryCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeTimelineTrajectoryForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions,
@@ -187,7 +190,7 @@ fun AnalyticsScreen(
                                 )
                             }
                             is CategoryExpenseTreemapCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
+                                val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
                                     value = viewModel.computeCategoryExpenseTreemapForCard(
                                         cardConfig = cardConfig,
                                         allTransactions = uiState.allTransactions

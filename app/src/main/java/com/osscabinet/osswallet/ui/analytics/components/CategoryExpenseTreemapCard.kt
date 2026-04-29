@@ -18,8 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
@@ -284,12 +285,36 @@ fun CategoryExpenseTreemapCardPreview() {
      OssWalletTheme {
         CategoryExpenseTreemapCard(
             config = CategoryExpenseTreemapCardConfig(
-                cardId = "preview", 
+                cardId = "preview",
                 title = "CATEGORY EXPENSES",
                 showLabels = true,
                 showLegend = true
             ),
             data = sampleData
         )
+    }
+}
+
+/**
+ * Category expense data for treemap card.
+ * Represents expense distribution across categories for visualization.
+ */
+@Serializable
+data class CategoryExpenseTreemapData(
+    val category: String,
+    val categoryId: Long?,
+    @Contextual val expense: BigDecimal,
+    val colorHex: Int,
+    val percentage: Float,
+    val hasSubcategories: Boolean = false,
+    val subcategoryData: List<CategoryExpenseTreemapData>? = null
+) {
+    fun allCategoryIds(): List<String> {
+        val ids = mutableListOf<String>()
+        categoryId?.let { ids.add(it.toString()) }
+        subcategoryData?.forEach {
+            ids.addAll(it.allCategoryIds())
+        }
+        return ids
     }
 }

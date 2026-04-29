@@ -17,8 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
 import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
@@ -185,3 +186,15 @@ fun TimelineTrajectoryCardPreview() {
         )
     }
 }
+
+/**
+ * Timeline trajectory data for multi-line chart card.
+ * Represents balance, expense, and income at a specific point in time.
+ */
+@Serializable
+data class TimelineTrajectoryData(
+    val timestamp: Long,
+    @Contextual val balance: BigDecimal,
+    @Contextual val expense: BigDecimal,
+    @Contextual val income: BigDecimal
+)

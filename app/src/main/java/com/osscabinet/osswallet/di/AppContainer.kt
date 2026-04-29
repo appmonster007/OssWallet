@@ -7,9 +7,6 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
 import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.service.CardComputationEngine
-import com.osscabinet.ossWallet.domain.service.CardComputationService
-import com.osscabinet.ossWallet.domain.service.CardComputationServiceImpl
 import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
@@ -112,15 +109,6 @@ class AppContainer(private val context: Context) {
     }
 
     // Services
-    val cardComputationService: CardComputationService by lazy {
-        CardComputationServiceImpl(db.categoryDao())
-    }
-
-    val cardComputationEngine: CardComputationEngine by lazy {
-        // Use CardComputationService as the default implementation
-        cardComputationService
-    }
-
     val transactionManager: TransactionManager by lazy {
         TransactionManager(transactionUseCases)
     }

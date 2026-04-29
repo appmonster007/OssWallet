@@ -1,8 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryExpenseTreemapData
-import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
 import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TimelineTrajectoryCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig

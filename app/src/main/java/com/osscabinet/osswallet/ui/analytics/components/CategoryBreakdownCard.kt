@@ -17,8 +17,9 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.analytics.CategoryBreakdownData
 import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
@@ -280,5 +281,31 @@ fun CategoryBreakdownCardPreview() {
                 data = richData
             )
         }
+    }
+}
+
+/**
+ * Category breakdown data for pie chart card.
+ * Represents the net balance (income - expense) for each category.
+ */
+@Serializable
+data class CategoryBreakdownData(
+    val category: String,
+    val categoryId: Long?,
+    @Contextual val netBalance: BigDecimal,
+    @Contextual val income: BigDecimal,
+    @Contextual val expense: BigDecimal,
+    val colorHex: Int,
+    val percentage: Float,
+    val hasSubcategories: Boolean = false,
+    val subcategoryData: List<CategoryBreakdownData>? = null
+) {
+    fun allCategoryIds(): List<String> {
+        val ids = mutableListOf<String>()
+        categoryId?.let { ids.add(it.toString()) }
+        subcategoryData?.forEach {
+            ids.addAll(it.allCategoryIds())
+        }
+        return ids
     }
 }

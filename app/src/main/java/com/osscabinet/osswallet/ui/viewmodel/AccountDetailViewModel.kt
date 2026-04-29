@@ -11,12 +11,13 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
-import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
-import com.osscabinet.ossWallet.domain.service.CardComputationService
+import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.FinancialSummary
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import java.math.RoundingMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -29,12 +30,12 @@ class AccountDetailViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val settingsRepository: SettingsRepository,
     private val cardRepository: CardRepository,
-    private val computationRepository: ComputationRepository,
-    private val cardComputationService: CardComputationService
+    private val computationRepository: ComputationRepository
 ) : ViewModel() {
 
     private val cardDataCache = CardDataCache()
 
+    // Direct implementations using TransactionsUtilityService
     suspend fun computeCashFlowCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
         transactions: List<Transaction>,
@@ -44,10 +45,30 @@ class AccountDetailViewModel(
     ): CashFlowResult {
         val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return cardDataCache.getOrCompute(cacheKey) {
-            cardConfig.computeCashFlow(
-                transactions = transactions,
-                engine = cardComputationService,
-                context = ComputationContext(baseCurrency, exchangeRates, precision)
+            val filtered = TransactionsUtilityService.filter(transactions, cardConfig.filter)
+            val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+                transactions = filtered,
+                exchangeRates = exchangeRates,
+                baseCurrency = baseCurrency
+            )
+            val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
+                .distinct().sorted().map { curr ->
+                    val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                    val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                    CashFlowBreakdownItem(
+                        currency = curr,
+                        income = inc.totalAmount,
+                        incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, exchangeRates),
+                        expense = exp.totalAmount,
+                        expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, exchangeRates)
+                    )
+                }
+            CashFlowResult(
+                totalIncomeInBase = breakdown.totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP),
+                totalExpensesInBase = breakdown.totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP),
+                netInBase = breakdown.netFlow.setScale(precision, java.math.RoundingMode.HALF_UP),
+                breakdown = cashFlowBreakdown,
+                filteredTransactions = filtered
             )
         }
     }
@@ -62,12 +83,15 @@ class AccountDetailViewModel(
     ): List<CurrencyAggregationItem> {
         val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return cardDataCache.getOrCompute(cacheKey) {
-            cardConfig.computeCurrencyTotals(
-                accounts = accounts,
-                transactions = transactions,
-                engine = cardComputationService,
-                context = ComputationContext(baseCurrency, exchangeRates, precision)
-            )
+            val filteredTx = TransactionsUtilityService.filter(transactions, cardConfig.filter)
+            val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTx)
+            currencySummaries.map { (curr, summary) ->
+                CurrencyAggregationItem(
+                    currency = curr,
+                    amount = summary.totalAmount,
+                    amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, exchangeRates)
+                )
+            }.sortedByDescending { it.amountInBase.abs() }
         }
     }
 
@@ -218,7 +242,7 @@ class AccountDetailViewModel(
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
-                
+
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
                 }
@@ -228,35 +252,60 @@ class AccountDetailViewModel(
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
-                val currencyTotals = cardComputationService.computeCurrencyTotals(
-                    config = com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
-                        cardId = "account_detail_currency_balances",
-                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
-                    ),
-                    accounts = listOf(account),
-                    allTransactions = accountTransactions,
-                    context = computationContext
+                // Compute currency totals directly
+                val filteredTxForCurrency = TransactionsUtilityService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange))
+                val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTxForCurrency)
+                val currencyTotals = currencySummaries.map { (curr, summary) ->
+                    CurrencyAggregationItem(
+                        currency = curr,
+                        amount = summary.totalAmount,
+                        amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, rates)
+                    )
+                }.sortedByDescending { it.amountInBase.abs() }
+
+                // Compute cash flow directly
+                val filteredTxForCashFlow = TransactionsUtilityService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange))
+                val cfBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+                    transactions = filteredTxForCashFlow,
+                    exchangeRates = rates,
+                    baseCurrency = baseCurrency
+                )
+                val cfCashFlowBreakdown = (cfBreakdown.incomeCurrencyBreakdown.keys + cfBreakdown.expenseCurrencyBreakdown.keys)
+                    .distinct().sorted().map { curr ->
+                        val inc = cfBreakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                        val exp = cfBreakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                        CashFlowBreakdownItem(
+                            currency = curr,
+                            income = inc.totalAmount,
+                            incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, rates),
+                            expense = exp.totalAmount,
+                            expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, rates)
+                        )
+                    }
+                val cashFlowResult = CashFlowResult(
+                    totalIncomeInBase = cfBreakdown.totalIncome.setScale(precision, java.math.RoundingMode.HALF_UP),
+                    totalExpensesInBase = cfBreakdown.totalExpense.setScale(precision, java.math.RoundingMode.HALF_UP),
+                    netInBase = cfBreakdown.netFlow.setScale(precision, java.math.RoundingMode.HALF_UP),
+                    breakdown = cfCashFlowBreakdown,
+                    filteredTransactions = filteredTxForCashFlow
                 )
 
-                val cashFlowResult = cardComputationService.computeCashFlow(
-                    config = com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
-                        cardId = "account_detail_cash_flow",
-                        filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange)
-                    ),
-                    allTransactions = accountTransactions,
-                    context = computationContext
-                )
-
-                val (updatedAccounts, _) = cardComputationService.computeAccountStats(
-                    config = com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig(
-                        cardId = "account_detail_stats",
-                        timelineRange = settings.currencyBalancesSection.timelineRange
-                    ),
+                // Compute account stats directly
+                val filterForAccounts = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
+                val filteredTxForAccounts = TransactionsUtilityService.filter(accountTransactions, filterForAccounts)
+                val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+                    transactions = filteredTxForAccounts,
                     accounts = listOf(account),
-                    allTransactions = accountTransactions,
-                    context = computationContext
+                    exchangeRates = rates,
+                    baseCurrency = baseCurrency
                 )
-                val updatedAccount = updatedAccounts.first()
+                val b = accountBreakdowns.firstOrNull()
+                val updatedAccount = if (b != null) {
+                    val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
+                        TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, rates)
+                    }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+                    account.copy(balance = totalInAccountCurrency)
+                } else account
 
                 AccountDetailUiState.Success(
                     account = updatedAccount,

@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.model.analytics.TimelineTrajectoryData
+import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
 import com.osscabinet.ossWallet.ui.util.formatShortNumber
 import java.math.BigDecimal
 import java.text.SimpleDateFormat

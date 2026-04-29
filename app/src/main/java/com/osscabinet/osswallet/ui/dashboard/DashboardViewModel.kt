@@ -5,9 +5,20 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
+import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.FinancialSummary
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.FilterService
+import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.TimelineService
+import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.service.TimeBucket
+import com.osscabinet.ossWallet.domain.service.FinancialMetrics
+import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import java.math.BigDecimal
@@ -31,7 +42,7 @@ class DashboardViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val cardRepository: CardRepository,
-    private val cardComputationService: CardComputationService,
+    private val categoryDao: CategoryDao,
     private val budgetUseCases: BudgetUseCases
 ) : ViewModel() {
 
@@ -267,40 +278,91 @@ class DashboardViewModel(
         }
     }
 
+    // Direct implementations using TransactionsUtilityService
     suspend fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
-        val (value, _) = cardComputationService.computeNetWorth(
-            config = NetWorthCardConfig(cardId = "dashboard_net_worth", timelineRange = timelineRange),
+        val filter = TransactionFilter(timelineRange = timelineRange, accountIds = emptyList())
+        val filteredTx = TransactionsUtilityService.filter(transactions, filter)
+        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+            transactions = filteredTx,
             accounts = accounts,
-            allTransactions = transactions,
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
         )
-        return value
+        return accountBreakdowns.sumOf { it.totalAmount }
     }
 
     suspend fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
-        return cardComputationService.computeCashFlow(
-            config = CashFlowCardConfig(cardId = "dashboard_cash_flow", filter = TransactionFilter(timelineRange = timelineRange)),
-            allTransactions = transactions,
-            context = context
+        val filtered = TransactionsUtilityService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
+        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            transactions = filtered,
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
+        )
+
+        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
+            .distinct().sorted().map { curr ->
+                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                CashFlowBreakdownItem(
+                    currency = curr,
+                    income = inc.totalAmount,
+                    incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, context.baseCurrency, context.exchangeRates),
+                    expense = exp.totalAmount,
+                    expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+                )
+            }
+
+        return CashFlowResult(
+            totalIncomeInBase = breakdown.totalIncome.setScale(context.precision, RoundingMode.HALF_UP),
+            totalExpensesInBase = breakdown.totalExpense.setScale(context.precision, RoundingMode.HALF_UP),
+            netInBase = breakdown.netFlow.setScale(context.precision, RoundingMode.HALF_UP),
+            breakdown = cashFlowBreakdown,
+            filteredTransactions = filtered
         )
     }
 
     suspend fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
-        return cardComputationService.computeCurrencyTotals(
-            config = CurrencyBalancesCardConfig(cardId = "dashboard_currency", filter = TransactionFilter(timelineRange = timelineRange)),
-            accounts = accounts,
-            allTransactions = transactions,
-            context = context
-        )
+        val filteredTx = TransactionsUtilityService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
+        val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTx)
+        return currencySummaries.map { (curr, summary) ->
+            CurrencyAggregationItem(
+                currency = curr,
+                amount = summary.totalAmount,
+                amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+            )
+        }.sortedByDescending { it.amountInBase.abs() }
     }
 
     suspend fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        return cardComputationService.computeAccountStats(
-            config = AccountsCardConfig(cardId = "dashboard_accounts", timelineRange = timelineRange),
+        val filter = TransactionFilter(timelineRange = timelineRange)
+        val filteredTx = TransactionsUtilityService.filter(transactions, filter)
+        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+            transactions = filteredTx,
             accounts = accounts,
-            allTransactions = transactions,
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency
         )
+        val accountStats = accountBreakdowns.associate { b ->
+            val acc = accounts.find { it.id == b.key }!!
+            val accCurrSummary = b.currencyBreakdown[acc.currencyCode] ?: FinancialSummary.EMPTY
+            b.key to AccountSummaryItem(
+                account = acc,
+                currencyBalances = b.currencyBreakdown.mapValues { it.value.totalAmount },
+                balanceInBase = b.totalAmount,
+                incomeInAccountCurrency = accCurrSummary.income,
+                expenseInAccountCurrency = accCurrSummary.expense
+            )
+        }
+        val updatedAccounts = accounts.map { account ->
+            val b = accountBreakdowns.find { it.key == account.id }
+            if (b != null) {
+                val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
+                    TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, context.exchangeRates)
+                }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
+                account.copy(balance = totalInAccountCurrency)
+            } else account
+        }
+        return Pair(updatedAccounts, accountStats)
     }
 
     suspend fun getTotalBalances(accounts: List<Account>, transactions: List<Transaction>, context: ComputationContext, timelineRange: TimelineRange): List<Account> {
@@ -309,15 +371,92 @@ class DashboardViewModel(
     }
 
     suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
-        return cardComputationService.computeCategoryBreakdown(cardConfig, allTransactions, ComputationContext(baseCurrency, exchangeRates, precision))
+        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
+        val categoryBreakdown = TransactionsUtilityService.breakdownByCategory(
+            transactions = filtered,
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency
+        )
+        
+        val totalBalance = categoryBreakdown.sumOf { it.totalAmount.abs() }
+        
+        return categoryBreakdown.mapIndexed { index, metric ->
+            CategoryBreakdownData(
+                category = metric.key,
+                categoryId = null,
+                netBalance = metric.totalAmount.setScale(precision, RoundingMode.HALF_UP),
+                income = metric.income.setScale(precision, RoundingMode.HALF_UP),
+                expense = metric.expense.setScale(precision, RoundingMode.HALF_UP),
+                colorHex = 0xFF6750A4.toInt(), // Default purple color
+                percentage = if (totalBalance > BigDecimal.ZERO) {
+                    (metric.totalAmount.abs().toDouble() / totalBalance.toDouble() * 100).toFloat()
+                } else 0f
+            )
+        }.sortedByDescending { it.netBalance.abs() }
     }
 
     suspend fun computeTimelineTrajectoryForCard(cardConfig: TimelineTrajectoryCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<TimelineTrajectoryData> {
-        return cardComputationService.computeTimelineTrajectory(cardConfig, allTransactions, accounts, ComputationContext(baseCurrency, exchangeRates, precision))
+        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
+        val timeBuckets = TransactionsUtilityService.getTimeBuckets(cardConfig.filter.timelineRange)
+
+        val bucketed = TransactionsUtilityService.createBreakdown<TimeBucket, FinancialMetrics<TimeBucket>>(
+            transactions = filtered,
+            selector = { tx -> timeBuckets.find { it.start <= tx.timestamp && tx.timestamp < it.end } ?: TimeBucket(0,0) },
+            mapper = { bucket, summaries ->
+                val baseSummary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, baseCurrency, exchangeRates)
+                FinancialMetrics(bucket, baseSummary, summaries)
+            },
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency
+        ).filter { it.key.start != 0L }.sortedBy { it.key.start }
+
+        val (startTime, _) = TimelineService.getDateRange(cardConfig.filter.timelineRange)
+        val priorTransactions = allTransactions.filter { tx ->
+            (cardConfig.filter.accountIds.isEmpty() || tx.accountId in cardConfig.filter.accountIds) &&
+            tx.timestamp < (startTime ?: 0L)
+        }
+
+        val priorBalance = TransactionsUtilityService.breakdownByAccount(
+            priorTransactions, accounts, exchangeRates, baseCurrency
+        ).sumOf { it.totalAmount }
+
+        val trajectory = TransactionsUtilityService.calculateCumulativeSum(bucketed, priorBalance)
+
+        return trajectory.map { point ->
+            TimelineTrajectoryData(
+                timestamp = point.key.start,
+                balance = point.cumulativeBalance,
+                expense = point.expense,
+                income = point.income
+            )
+        }
     }
 
     suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
-        return cardComputationService.computeCategoryExpenseTreemap(cardConfig, allTransactions, ComputationContext(baseCurrency, exchangeRates, precision))
+        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
+        val expenseTransactions = filtered.filter { it.amount < BigDecimal.ZERO }
+        
+        val categoryBreakdown = TransactionsUtilityService.breakdownByCategory(
+            transactions = expenseTransactions,
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency
+        )
+        
+        val totalExpense = categoryBreakdown.sumOf { it.expense.abs() }
+        
+        return categoryBreakdown.mapIndexed { index, metric ->
+            CategoryExpenseTreemapData(
+                category = metric.key.ifEmpty { "Uncategorized" },
+                categoryId = null,
+                expense = metric.expense.abs().setScale(precision, RoundingMode.HALF_UP),
+                colorHex = 0xFF6750A4.toInt(), // Default purple color as Int
+                percentage = if (totalExpense > BigDecimal.ZERO) {
+                    ((metric.expense.abs().toDouble() / totalExpense.toDouble() * 100).toFloat())
+                } else 0f,
+                hasSubcategories = false,
+                subcategoryData = null
+            )
+        }.sortedByDescending { it.expense }
     }
 
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
@@ -367,9 +506,9 @@ class DashboardViewModel(
                 )
 
                 val accountStats = accountBreakdowns.associate { b ->
-                    val acc = accounts.find { it.id == b.key.accountId }!!
+                    val acc = accounts.find { it.id == b.key }!!
                     val accCurrSummary = b.currencyBreakdown[acc.currencyCode] ?: FinancialSummary.EMPTY
-                    b.key.accountId to AccountSummaryItem(
+                    b.key to AccountSummaryItem(
                         account = acc,
                         currencyBalances = b.currencyBreakdown.mapValues { it.value.totalAmount },
                         balanceInBase = b.totalAmount,
@@ -379,7 +518,7 @@ class DashboardViewModel(
                 }
 
                 val updatedAccounts = accounts.map { account ->
-                    val b = accountBreakdowns.find { it.key.accountId == account.id }
+                    val b = accountBreakdowns.find { it.key == account.id }
                     if (b != null) {
                         val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
                             TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, rates)

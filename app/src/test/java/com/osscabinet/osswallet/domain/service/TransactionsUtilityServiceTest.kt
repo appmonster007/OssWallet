@@ -384,15 +384,16 @@ class TransactionsUtilityServiceTest {
         val result = TransactionsUtilityService.breakdownByAccount(testTransactions, testAccounts)
         
         assertEquals(2, result.size)
-        val acc1Breakdown = result.find { it.key.accountId == "acc1" }
-        val acc2Breakdown = result.find { it.key.accountId == "acc2" }
+        val acc1Breakdown = result.find { it.key == "acc1" }
+        val acc2Breakdown = result.find { it.key == "acc2" }
         
         assertNotNull(acc1Breakdown)
         assertNotNull(acc2Breakdown)
-        
-        assertEquals("Checking", acc1Breakdown?.key?.accountName)
-        assertEquals("Savings", acc2Breakdown?.key?.accountName)
-        
+
+        // Key is now just the accountId String
+        assertEquals("acc1", acc1Breakdown?.key)
+        assertEquals("acc2", acc2Breakdown?.key)
+
         assertEquals(6, acc1Breakdown?.transactionCount)
         assertEquals(4, acc2Breakdown?.transactionCount)
     }

@@ -159,6 +159,35 @@ class TransactionViewModel(
     }
 
     /**
+     * Converts RecordsFilterContext to TransactionFilter
+     */
+    private fun RecordsFilterContext.toTransactionFilter(): TransactionFilter = when (this) {
+        is RecordsFilterContext.None -> TransactionFilter()
+        is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(accountId))
+        is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
+            accountIds = listOf(accountId),
+            transactionType = if (isIncome) "income" else "expense"
+        )
+        is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
+            accountIds = listOf(accountId),
+            currencies = listOf(currency)
+        )
+        is RecordsFilterContext.Custom -> TransactionFilter(
+            accountIds = accountIds,
+            transactionType = isIncome?.let { if (it) "income" else "expense" },
+            startDate = startDate,
+            endDate = endDate,
+            categoryIds = categoryIds.map { it.toLong() },
+            currencies = currencies,
+            paymentMethods = paymentMethods,
+            queryNote = queryNote,
+            minAmount = minAmount?.let { java.math.BigDecimal(it) },
+            maxAmount = maxAmount?.let { java.math.BigDecimal(it) },
+            queryPayee = queryPayee
+        )
+    }
+
+    /**
      * Initialize the filter from a navigation context
      * This should be called when the screen opens with a context parameter
      * Converts RecordsFilterContext to TransactionFilter and sets it in FilterManager
@@ -166,34 +195,7 @@ class TransactionViewModel(
     fun initializeRecordsFilter(context: RecordsFilterContext) {
         _initialFilterContext.value = context
         recordsFilterManager.clear()
-        
-        val filter = when (context) {
-            is RecordsFilterContext.None -> TransactionFilter()
-            is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf(context.accountId))
-            is RecordsFilterContext.ByAccountAndType -> TransactionFilter(
-                accountIds = listOf(context.accountId),
-                transactionType = if (context.isIncome) "income" else "expense"
-            )
-            is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
-                accountIds = listOf(context.accountId),
-                currencies = listOf(context.currency)
-            )
-            is RecordsFilterContext.Custom -> TransactionFilter(
-                accountIds = context.accountIds,
-                transactionType = context.isIncome?.let { if (it) "income" else "expense" },
-                startDate = context.startDate,
-                endDate = context.endDate,
-                categoryIds = context.categoryIds.map { it.toLong() },
-                currencies = context.currencies,
-                paymentMethods = context.paymentMethods,
-                queryNote = context.queryNote,
-                minAmount = context.minAmount?.let { java.math.BigDecimal(it) },
-                maxAmount = context.maxAmount?.let { java.math.BigDecimal(it) },
-                queryPayee = context.queryPayee
-            )
-        }
-        
-        recordsFilterManager.setFilter("initial", filter)
+        recordsFilterManager.setFilter("initial", context.toTransactionFilter())
         _recordsFilterInitialized.value = true
     }
 
@@ -201,34 +203,7 @@ class TransactionViewModel(
      * Check if the current filter has been modified from the initial context
      */
     fun hasModifiedFilter(): Boolean {
-        val initialFilter = when (_initialFilterContext.value) {
-            is RecordsFilterContext.None -> TransactionFilter()
-            is RecordsFilterContext.ByAccount -> TransactionFilter(accountIds = listOf((_initialFilterContext.value as RecordsFilterContext.ByAccount).accountId))
-            is RecordsFilterContext.ByAccountAndType -> {
-                val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndType
-                TransactionFilter(accountIds = listOf(ctx.accountId), transactionType = if (ctx.isIncome) "income" else "expense")
-            }
-            is RecordsFilterContext.ByAccountAndCurrency -> {
-                val ctx = _initialFilterContext.value as RecordsFilterContext.ByAccountAndCurrency
-                TransactionFilter(accountIds = listOf(ctx.accountId), currencies = listOf(ctx.currency))
-            }
-            is RecordsFilterContext.Custom -> {
-                val ctx = _initialFilterContext.value as RecordsFilterContext.Custom
-                TransactionFilter(
-                    accountIds = ctx.accountIds,
-                    transactionType = ctx.isIncome?.let { if (it) "income" else "expense" },
-                    startDate = ctx.startDate,
-                    endDate = ctx.endDate,
-                    categoryIds = ctx.categoryIds.map { it.toLong() },
-                    currencies = ctx.currencies,
-                    paymentMethods = ctx.paymentMethods,
-                    queryNote = ctx.queryNote,
-                    minAmount = ctx.minAmount?.let { java.math.BigDecimal(it) },
-                    maxAmount = ctx.maxAmount?.let { java.math.BigDecimal(it) },
-                    queryPayee = ctx.queryPayee
-                )
-            }
-        }
+        val initialFilter = _initialFilterContext.value.toTransactionFilter()
         return recordsFilter.value != initialFilter
     }
 

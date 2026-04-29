@@ -27,7 +27,6 @@ android {
 
         val currencyApiKey = localProps.getProperty("CURRENCY_API_KEY") ?: ""
         buildConfigField("String", "CURRENCY_API_KEY", "\"$currencyApiKey\"")
-        buildConfigField("boolean", "ENABLE_SEEDING", "true")
     }
 
     packaging {
@@ -37,8 +36,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "ENABLE_SEEDING", "true")
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

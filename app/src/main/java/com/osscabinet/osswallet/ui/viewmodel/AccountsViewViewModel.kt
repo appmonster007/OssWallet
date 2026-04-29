@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.util.joinByComma
@@ -48,41 +49,7 @@ class AccountsViewViewModel(
     private val cardComputationService: CardComputationService
 ) : ViewModel() {
 
-    // Cache for computed card data to avoid recomputation
-    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
-    private val cacheExpirationMinutes = 5L
-
-    /**
-     * Get cached data if available and not expired, otherwise compute and cache
-     */
-    private inline fun <T> getCachedOrCompute(
-        cacheKey: String,
-        compute: () -> T
-    ): T {
-        val cached = cardDataCache[cacheKey]
-        @Suppress("UNCHECKED_CAST")
-        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
-            return cached.data as T
-        }
-
-        val result = compute()
-        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
-        return result
-    }
-
-    /**
-     * Invalidate cache for a specific card
-     */
-    fun invalidateCardCache(cardId: String) {
-        cardDataCache.keys.removeIf { it.startsWith(cardId) }
-    }
-
-    /**
-     * Invalidate all cache (called when data changes significantly)
-     */
-    fun invalidateAllCache() {
-        cardDataCache.clear()
-    }
+    private val cardDataCache = CardDataCache()
 
     suspend fun computeNetWorthCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig,
@@ -93,7 +60,7 @@ class AccountsViewViewModel(
         precision: Int
     ): Pair<BigDecimal, CashFlowResult> {
         val cacheKey = "networth_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeNetWorth(
                 accounts = accounts,
                 transactions = transactions,
@@ -112,7 +79,7 @@ class AccountsViewViewModel(
         precision: Int
     ): List<CurrencyAggregationItem> {
         val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeCurrencyTotals(
                 accounts = accounts,
                 transactions = transactions,
@@ -130,7 +97,7 @@ class AccountsViewViewModel(
         precision: Int
     ): CashFlowResult {
         val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeCashFlow(
                 transactions = transactions,
                 engine = cardComputationService,
@@ -148,7 +115,7 @@ class AccountsViewViewModel(
         precision: Int
     ): Pair<List<Account>, Map<String, AccountSummaryItem>> {
         val cacheKey = "accounts_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeAccountStats(
                 accounts = accounts,
                 transactions = transactions,
@@ -336,7 +303,7 @@ class AccountsViewViewModel(
                 val accountsViewSettings = args[6] as com.osscabinet.ossWallet.data.local.AccountsViewSettings
 
                 // Invalidate cache when transactions change
-                invalidateAllCache()
+                cardDataCache.invalidateAll()
                 
                 if (!hasLoadedRates) {
                     return@combine AccountsViewUiState.Loading
@@ -436,7 +403,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(fontSize = fontSize)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -447,7 +414,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(timelineRange = range)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -458,7 +425,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -469,7 +436,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -480,7 +447,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(timelineRange = range)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -491,7 +458,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -502,7 +469,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(timelineRange = range)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -513,7 +480,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -524,7 +491,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(gridColumns = columns)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -535,7 +502,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(showAddAccountCard = show)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -546,7 +513,7 @@ class AccountsViewViewModel(
                     cardConfig.copy(timelineRange = range)
                 } else cardConfig
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 }

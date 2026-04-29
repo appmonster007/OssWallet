@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.computeCashFlow
 import com.osscabinet.ossWallet.ui.components.cards.computeCurrencyTotals
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
+import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,41 +33,7 @@ class AccountDetailViewModel(
     private val cardComputationService: CardComputationService
 ) : ViewModel() {
 
-    // Cache for computed card data to avoid recomputation
-    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
-    private val cacheExpirationMinutes = 5L
-
-    /**
-     * Get cached data if available and not expired, otherwise compute and cache
-     */
-    private inline fun <T> getCachedOrCompute(
-        cacheKey: String,
-        compute: () -> T
-    ): T {
-        val cached = cardDataCache[cacheKey]
-        @Suppress("UNCHECKED_CAST")
-        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
-            return cached.data as T
-        }
-
-        val result = compute()
-        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
-        return result
-    }
-
-    /**
-     * Invalidate cache for a specific card
-     */
-    fun invalidateCardCache(cardId: String) {
-        cardDataCache.keys.removeIf { it.startsWith(cardId) }
-    }
-
-    /**
-     * Invalidate all cache (called when data changes significantly)
-     */
-    fun invalidateAllCache() {
-        cardDataCache.clear()
-    }
+    private val cardDataCache = CardDataCache()
 
     suspend fun computeCashFlowCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
@@ -76,7 +43,7 @@ class AccountDetailViewModel(
         precision: Int
     ): CashFlowResult {
         val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeCashFlow(
                 transactions = transactions,
                 engine = cardComputationService,
@@ -94,7 +61,7 @@ class AccountDetailViewModel(
         precision: Int
     ): List<CurrencyAggregationItem> {
         val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             cardConfig.computeCurrencyTotals(
                 accounts = accounts,
                 transactions = transactions,
@@ -154,7 +121,7 @@ class AccountDetailViewModel(
                     config.copy(showCurrencyBadges = show)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -165,7 +132,7 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -176,7 +143,7 @@ class AccountDetailViewModel(
                     config.copy(timelineRange = range)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -187,7 +154,7 @@ class AccountDetailViewModel(
                     config.copy(layout = layout)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -198,7 +165,7 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -209,7 +176,7 @@ class AccountDetailViewModel(
                     config.copy(timelineRange = range)
                 } else config
             }
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -217,7 +184,7 @@ class AccountDetailViewModel(
         viewModelScope.launch {
             cardRepository.updateAccountDetailCard(cardId) { it } // Mock update to trigger re-flow if needed, but repository should have a remove method
             // cardRepository.removeAccountDetailCard(cardId) // Assuming this exists or using update to remove
-            invalidateCardCache(cardId)
+            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -244,7 +211,7 @@ class AccountDetailViewModel(
                 val settings = args[6] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
 
                 // Invalidate cache when transactions change
-                invalidateAllCache()
+                cardDataCache.invalidateAll()
                 
                 val account = accounts.find { it.id == accountId } ?: return@combine AccountDetailUiState.Error("Account not found")
 

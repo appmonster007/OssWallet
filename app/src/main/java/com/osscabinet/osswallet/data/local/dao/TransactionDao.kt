@@ -34,7 +34,12 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
         val id = _insertTransaction(transaction)
-        accountDao.updateBalance(transaction.accountId, transaction.amount)
+        val balanceChange = if (transaction.transactionType == "expense") {
+            transaction.amount.negate()
+        } else {
+            transaction.amount
+        }
+        accountDao.updateBalance(transaction.accountId, balanceChange)
         return id
     }
 
@@ -50,16 +55,31 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
         _deleteTransaction(transaction)
-        accountDao.updateBalance(transaction.accountId, transaction.amount.negate())
+        val balanceChange = if (transaction.transactionType == "expense") {
+            transaction.amount // Adding back an expense
+        } else {
+            transaction.amount.negate() // Subtracting income
+        }
+        accountDao.updateBalance(transaction.accountId, balanceChange)
     }
 
     @Transaction
     open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
         // Reverse old transaction impact
-        accountDao.updateBalance(oldTransaction.accountId, oldTransaction.amount.negate())
+        val oldBalanceChange = if (oldTransaction.transactionType == "expense") {
+            oldTransaction.amount // Adding back old expense
+        } else {
+            oldTransaction.amount.negate() // Subtracting old income
+        }
+        accountDao.updateBalance(oldTransaction.accountId, oldBalanceChange)
 
         // Apply new transaction impact
-        accountDao.updateBalance(newTransaction.accountId, newTransaction.amount)
+        val newBalanceChange = if (newTransaction.transactionType == "expense") {
+            newTransaction.amount.negate() // Subtracting new expense
+        } else {
+            newTransaction.amount // Adding new income
+        }
+        accountDao.updateBalance(newTransaction.accountId, newBalanceChange)
 
         // Perform the database update
         insertTransaction(newTransaction)

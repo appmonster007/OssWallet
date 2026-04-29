@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.domain.service.CardComputationService
 import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.analytics.components.*
@@ -48,41 +49,7 @@ class AnalyticsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
     private var _currentPrecision: Int = 2
 
-    // Cache for computed card data to avoid recomputation
-    private val cardDataCache = mutableMapOf<String, CachedCardData<*>>()
-    private val cacheExpirationMinutes = 5L
-
-    /**
-     * Get cached data if available and not expired, otherwise compute and cache
-     */
-    private inline fun <T> getCachedOrCompute(
-        cacheKey: String,
-        compute: () -> T
-    ): T {
-        val cached = cardDataCache[cacheKey]
-        @Suppress("UNCHECKED_CAST")
-        if (cached != null && !cached.isExpired(cacheExpirationMinutes)) {
-            return cached.data as T
-        }
-
-        val result = compute()
-        cardDataCache[cacheKey] = CachedCardData(System.currentTimeMillis(), result)
-        return result
-    }
-
-    /**
-     * Invalidate cache for a specific card
-     */
-    fun invalidateCardCache(cardId: String) {
-        cardDataCache.keys.removeIf { it.startsWith(cardId) }
-    }
-
-    /**
-     * Invalidate all cache (called when data changes significantly)
-     */
-    fun invalidateAllCache() {
-        cardDataCache.clear()
-    }
+    private val cardDataCache = CardDataCache()
 
     // Analytics cards config
     private val _analyticsCardsConfig = MutableStateFlow(defaultAnalyticsCardsConfig())
@@ -139,7 +106,7 @@ class AnalyticsViewModel(
                 allTransactions = transactions
                 _uiState.update { it.copy(allTransactions = transactions) }
                 calculateAnalytics()
-                invalidateAllCache()
+                cardDataCache.invalidateAll()
             }
         }
 
@@ -150,7 +117,7 @@ class AnalyticsViewModel(
                     allAccounts = accounts
                     _uiState.update { it.copy(accounts = accounts) }
                     calculateAnalytics()
-                    invalidateAllCache()
+                    cardDataCache.invalidateAll()
                 }
         }
     }
@@ -317,98 +284,98 @@ class AnalyticsViewModel(
     // Simplified ViewModel compute methods using cache
     suspend fun computeCategoryBreakdownCard(config: CategoryBreakdownCardConfig): List<CategoryBreakdownData> {
         val cacheKey = "category_breakdown_${config.cardId}_${config.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeCategoryBreakdownForCard(config, allTransactions)
         }
     }
 
     suspend fun computeTimelineTrajectoryCard(config: TimelineTrajectoryCardConfig): List<TimelineTrajectoryData> {
         val cacheKey = "timeline_trajectory_${config.cardId}_${config.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeTimelineTrajectoryForCard(config, allTransactions, allAccounts)
         }
     }
 
     suspend fun computeCategoryExpenseTreemapCard(config: CategoryExpenseTreemapCardConfig): List<CategoryExpenseTreemapData> {
         val cacheKey = "category_treemap_${config.cardId}_${config.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeCategoryExpenseTreemapForCard(config, allTransactions)
         }
     }
 
     suspend fun computeIncomeExpensesSummaryCard(cardConfig: IncomeExpensesSummaryCardConfig): IncomeExpensesSummaryData {
         val cacheKey = "income_expenses_summary_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeIncomeExpensesSummaryForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computePeriodComparisonCard(cardConfig: PeriodComparisonCardConfig): PeriodComparisonData {
         val cacheKey = "period_comparison_${cardConfig.cardId}_${cardConfig.filter.hashCode()}_${cardConfig.selectedTab}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computePeriodComparisonForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeCashFlowTrendCard(cardConfig: CashFlowTrendCardConfig): CashFlowTrendData {
         val cacheKey = "cash_flow_trend_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeCashFlowTrendForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeCashFlowProgressCard(cardConfig: CashFlowProgressCardConfig): CashFlowProgressData {
         val cacheKey = "cash_flow_progress_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeCashFlowProgressForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeBalanceForecastCard(cardConfig: BalanceForecastCardConfig): BalanceForecastData {
         val cacheKey = "balance_forecast_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeBalanceForecastForCard(cardConfig, allTransactions, allAccounts)
         }
     }
 
     suspend fun computePlannedPaymentsCard(cardConfig: PlannedPaymentsCardConfig): PlannedPaymentsData {
         val cacheKey = "planned_payments_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computePlannedPaymentsForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeIncomeExpensesBookCard(cardConfig: IncomeExpensesBookCardConfig): IncomeExpensesBookData {
         val cacheKey = "income_expenses_book_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeIncomeExpensesBookForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeCashFlowTableCard(cardConfig: CashFlowTableCardConfig): CashFlowTableData {
         val cacheKey = "cash_flow_table_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeCashFlowTableForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computePlannedPaymentsTimelineCard(cardConfig: PlannedPaymentsTimelineCardConfig): PlannedPaymentsTimelineData {
         val cacheKey = "planned_payments_timeline_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computePlannedPaymentsTimelineForCard(cardConfig, allTransactions)
         }
     }
 
     suspend fun computeBalanceByAccountsCard(cardConfig: BalanceByAccountsCardConfig): BalanceByAccountsData {
         val cacheKey = "balance_by_accounts_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeBalanceByAccountsForCard(cardConfig, allTransactions, allAccounts)
         }
     }
 
     suspend fun computeBalanceTrendCard(cardConfig: BalanceTrendCardConfig): BalanceTrendData {
         val cacheKey = "balance_trend_${cardConfig.cardId}_${cardConfig.filter.hashCode()}"
-        return getCachedOrCompute(cacheKey) {
+        return cardDataCache.getOrCompute(cacheKey) {
             computeBalanceTrendForCard(cardConfig, allTransactions, allAccounts)
         }
     }

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.di
 
 import android.content.Context
 import com.osscabinet.ossWallet.data.local.AppDatabase
+import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
@@ -20,8 +21,12 @@ import com.osscabinet.ossWallet.domain.model.analytics.*
  */
 class AppContainer(private val context: Context) {
 
+    private val securePassphraseManager by lazy {
+        SecurePassphraseManager(context)
+    }
+
     val db: AppDatabase by lazy {
-        AppDatabase.getDatabase(context, "secret_passphrase".toByteArray())
+        AppDatabase.getDatabase(context, securePassphraseManager.getOrGeneratePassphrase())
     }
 
     val settingsDataStore: SettingsDataStore by lazy {
@@ -53,39 +58,39 @@ class AppContainer(private val context: Context) {
     }
 
     // Repositories
-    val transactionRepository: TransactionRepositoryImpl by lazy {
+    val transactionRepository: TransactionRepository by lazy {
         TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), db.transactionLinkDao(), db)
     }
 
-    val accountRepository: AccountRepositoryImpl by lazy {
+    val accountRepository: AccountRepository by lazy {
         AccountRepositoryImpl(db.accountDao())
     }
 
-    val budgetRepository: BudgetRepositoryImpl by lazy {
+    val budgetRepository: BudgetRepository by lazy {
         BudgetRepositoryImpl(db.budgetDao(), db.transactionDao())
     }
 
-    val currencyRepository: CurrencyRepositoryImpl by lazy {
+    val currencyRepository: CurrencyRepository by lazy {
         CurrencyRepositoryImpl(RetrofitClient.currencyApi, db.currencyDao())
     }
 
-    val profileRepository: ProfileRepositoryImpl by lazy {
+    val profileRepository: ProfileRepository by lazy {
         ProfileRepositoryImpl(db.profileDao(), settingsDataStore)
     }
 
-    val loanRepository: LoanRepositoryImpl by lazy {
+    val loanRepository: LoanRepository by lazy {
         LoanRepositoryImpl(db.loanDao(), db.accountDao())
     }
-    
-    val sharedWalletRepository: SharedWalletRepositoryImpl by lazy {
+
+    val sharedWalletRepository: SharedWalletRepository by lazy {
         SharedWalletRepositoryImpl(db.transactionDao())
     }
 
-    val backupRepository: BackupRepositoryImpl by lazy {
+    val backupRepository: BackupRepository by lazy {
         BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), db.transactionLinkDao(), context)
     }
 
-    val tagRepository: TagRepositoryImpl by lazy {
+    val tagRepository: TagRepository by lazy {
         TagRepositoryImpl(db.tagDao(), db.transactionDao())
     }
 

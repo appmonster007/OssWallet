@@ -65,19 +65,43 @@ fun TransactionMetadataSection(
                 onShowSheet = { onEvent(TransactionEntryEvent.ShowLabelSheet(true)) }
             )
 
-            // Payment Method and Status row
+            // Payment Method and Status row with icons like original design
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Payment Method with specific icon
+                val paymentIcon = when (state.paymentMethod) {
+                    "Cash" -> Icons.Rounded.Money
+                    "Credit Card" -> Icons.Rounded.CreditCard
+                    "Debit Card" -> Icons.Rounded.CreditCard
+                    "Bank Transfer" -> Icons.Rounded.AccountBalance
+                    "Check" -> Icons.Rounded.RequestPage
+                    "Cryptocurrency" -> Icons.Rounded.CurrencyBitcoin
+                    "Other" -> Icons.Rounded.MoreHoriz
+                    else -> Icons.Rounded.Contactless
+                }
+
                 ActionChip(
-                    icon = Icons.Rounded.Payment,
+                    icon = paymentIcon,
                     label = state.paymentMethod,
                     onClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },
                     modifier = Modifier.weight(1f)
                 )
+
+                // Status with colored icon
+                val (statusIcon, statusColor) = when (state.status) {
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED ->
+                        Icons.Rounded.CheckCircle to androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE ->
+                        Icons.Rounded.Refresh to androidx.compose.ui.graphics.Color(0xFF2196F3)
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED ->
+                        Icons.Rounded.RadioButtonUnchecked to androidx.compose.ui.graphics.Color(0xFFFF9800)
+                }
+
                 ActionChip(
-                    icon = Icons.Rounded.Flag,
-                    label = state.status.name.lowercase().replaceFirstChar { it.uppercase() },
+                    icon = statusIcon,
+                    label = state.status.displayName,
                     onClick = { onEvent(TransactionEntryEvent.ShowStatusSheet(true)) },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    iconTint = statusColor
                 )
             }
 

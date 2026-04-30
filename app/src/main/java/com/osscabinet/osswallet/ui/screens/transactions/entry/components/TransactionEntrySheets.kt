@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
@@ -169,6 +170,18 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetAmount(amount))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowNumpad(false)) }
+        )
+    }
+
+    // Exchange Rate Dialog (for transfers)
+    if (state.showExchangeRateDialog) {
+        ExchangeRateDialog(
+            initialRate = state.exchangeRate,
+            onDismiss = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(false)) },
+            onConfirm = { rate ->
+                onEvent(TransactionEntryEvent.SetExchangeRate(rate))
+                onEvent(TransactionEntryEvent.ShowExchangeRateDialog(false))
+            }
         )
     }
 }

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -9,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Box
 
 /**
  * Compact action chip for metadata actions.
@@ -19,7 +21,8 @@ fun ActionChip(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    iconTint: Color? = null
+    iconTint: Color? = null,
+    iconContainerColor: Color? = null
 ) {
     Surface(
         onClick = onClick,
@@ -36,12 +39,30 @@ fun ActionChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = iconTint ?: LocalContentColor.current
-            )
+            // Icon container with optional background
+            if (iconContainerColor != null) {
+                Surface(
+                    shape = CircleShape,
+                    color = iconContainerColor,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = iconTint ?: LocalContentColor.current
+                        )
+                    }
+                }
+            } else {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = iconTint ?: LocalContentColor.current
+                )
+            }
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium

@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +89,7 @@ fun AccountSelectionSheet(
                     }
 
                     item {
-                        Divider(
+                        HorizontalDivider(
                             modifier = Modifier.padding(vertical = 8.dp),
                             color = MaterialTheme.colorScheme.outlineVariant
                         )
@@ -116,7 +118,22 @@ fun AccountSelectionSheet(
                             modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Rounded.AccountBalance, contentDescription = null)
+                            // Use account icon from AccountIconMap
+                            val accountIcon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+                            val accountColor = androidx.compose.ui.graphics.Color(account.colorHex.toColorInt())
+
+                            Surface(
+                                shape = androidx.compose.foundation.shape.CircleShape,
+                                color = accountColor.copy(alpha = 0.2f),
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    accountIcon,
+                                    contentDescription = null,
+                                    tint = accountColor,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(

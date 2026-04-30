@@ -15,11 +15,14 @@ import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
+import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.domain.service.TimeBucket
 import com.osscabinet.ossWallet.domain.service.FinancialMetrics
+import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
+import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import java.math.BigDecimal
@@ -265,170 +268,34 @@ class DashboardViewModel(
         }
     }
 
-    // Direct implementations using split services
-    suspend fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
-        val filter = TransactionFilter(timelineRange = timelineRange, accountIds = emptyList())
-        val filteredTx = TransactionFilterService.filter(transactions, filter)
-        val accountBreakdowns = AggregationService.breakdownByAccount(
-            transactions = filteredTx,
-            accounts = accounts,
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency
-        )
-        return accountBreakdowns.sumOf { it.totalAmount }
-    }
+    // Registry-based engine handles all computations
+    private val engine = CardComputationEngine
 
-    suspend fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
-        val filtered = TransactionFilterService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
-        val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
-            transactions = filtered,
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency
-        )
-
-        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
-            .distinct().sorted().map { curr ->
-                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                CashFlowBreakdownItem(
-                    currency = curr,
-                    income = inc.totalAmount,
-                    incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, context.baseCurrency, context.exchangeRates),
-                    expense = exp.totalAmount,
-                    expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, context.baseCurrency, context.exchangeRates)
-                )
-            }
-
-        return CashFlowResult(
-            totalIncomeInBase = breakdown.totalIncome.setScale(context.precision, RoundingMode.HALF_UP),
-            totalExpensesInBase = breakdown.totalExpense.setScale(context.precision, RoundingMode.HALF_UP),
-            netInBase = breakdown.netFlow.setScale(context.precision, RoundingMode.HALF_UP),
-            breakdown = cashFlowBreakdown,
-            filteredTransactions = filtered
-        )
-    }
-
-    suspend fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
-        val filteredTx = TransactionFilterService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
-        return AggregationService.breakdownByCurrency(transactions = filteredTx).map { b ->
-            val amountInBase = CurrencyConversionService.convertToBaseCurrency(
-                b.totalAmount, b.currency, context.baseCurrency, context.exchangeRates
-            )
-            CurrencyAggregationItem(
-                currency = b.currency,
-                amount = b.totalAmount,
-                amountInBase = amountInBase
-            )
-        }.sortedByDescending { it.amountInBase.abs() }
-    }
-
-    suspend fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val filter = TransactionFilter(timelineRange = timelineRange)
-        val filteredTx = TransactionFilterService.filter(transactions, filter)
-        val accountBreakdowns = AggregationService.breakdownByAccount(
-            transactions = filteredTx,
-            accounts = accounts,
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency
-        )
-        val accountStats = accountBreakdowns.associate { b ->
-            val acc = accounts.find { it.id == b.key }!!
-            val accCurrSummary = b.currencyBreakdown[acc.currencyCode] ?: FinancialSummary.EMPTY
-            b.key to AccountSummaryItem(
-                account = acc,
-                currencyBalances = b.currencyBreakdown.mapValues { it.value.totalAmount },
-                balanceInBase = b.totalAmount,
-                incomeInAccountCurrency = accCurrSummary.income,
-                expenseInAccountCurrency = accCurrSummary.expense
-            )
-        }
-        val updatedAccounts = accounts.map { account ->
-            val b = accountBreakdowns.find { it.key == account.id }
-            if (b != null) {
-                val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
-                    CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, context.exchangeRates)
-                }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
-                account.copy(balance = totalInAccountCurrency)
-            } else account
-        }
-        return Pair(updatedAccounts, accountStats)
-    }
-
-    suspend fun getTotalBalances(accounts: List<Account>, transactions: List<Transaction>, context: ComputationContext, timelineRange: TimelineRange): List<Account> {
-        val (updatedAccounts, _) = computeAccountStats(accounts, transactions, timelineRange, context)
-        return updatedAccounts
-    }
-
-    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
-        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
-        val categoryBreakdown = AggregationService.breakdownByCategory(
-            transactions = filtered,
-            exchangeRates = exchangeRates,
-            baseCurrency = baseCurrency
-        )
-        
-        val totalBalance = categoryBreakdown.sumOf { it.totalAmount.abs() }
-        
-        return categoryBreakdown.mapIndexed { index, metric ->
-            CategoryBreakdownData(
-                category = metric.key,
-                categoryId = null,
-                netBalance = metric.totalAmount.setScale(precision, RoundingMode.HALF_UP),
-                income = metric.income.setScale(precision, RoundingMode.HALF_UP),
-                expense = metric.expense.setScale(precision, RoundingMode.HALF_UP),
-                colorHex = 0xFF6750A4.toInt(), // Default purple color
-                percentage = if (totalBalance > BigDecimal.ZERO) {
-                    (metric.totalAmount.abs().toDouble() / totalBalance.toDouble() * 100).toFloat()
-                } else 0f
-            )
-        }.sortedByDescending { it.netBalance.abs() }
-    }
-
-    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
-        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
-        val expenseTransactions = TransactionFilterService.filterExpense(filtered)
-
-        val categoryBreakdown = AggregationService.breakdownByCategory(
-            transactions = expenseTransactions,
-            exchangeRates = exchangeRates,
-            baseCurrency = baseCurrency
-        )
-        
-        val totalExpense = categoryBreakdown.sumOf { it.expense.abs() }
-        
-        return categoryBreakdown.mapIndexed { index, metric ->
-            CategoryExpenseTreemapData(
-                category = metric.key.ifEmpty { "Uncategorized" },
-                categoryId = null,
-                expense = metric.expense.abs().setScale(precision, RoundingMode.HALF_UP),
-                colorHex = 0xFF6750A4.toInt(), // Default purple color as Int
-                percentage = if (totalExpense > BigDecimal.ZERO) {
-                    ((metric.expense.abs().toDouble() / totalExpense.toDouble() * 100).toFloat())
-                } else 0f,
-                hasSubcategories = false,
-                subcategoryData = null
-            )
-        }.sortedByDescending { it.expense }
-    }
-
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
+                categoryDao.getAllCategories(),
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
                 settingsRepository.dashboardSettings
             ) { args: Array<Any> ->
+                @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
+                @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
-                val rates = args[2] as Map<String, BigDecimal>
-                val baseCurrency = args[3] as String
-                val hasLoadedExchangeRates = args[4] as Boolean
-                val precision = args[5] as Int
-                val dashboardSettings = args[6] as com.osscabinet.ossWallet.data.local.DashboardSettings
+                @Suppress("UNCHECKED_CAST")
+                val categories = (args[2] as List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>).map { it.toDomain() }
+                @Suppress("UNCHECKED_CAST")
+                val rates = args[3] as Map<String, BigDecimal>
+                val baseCurrency = args[4] as String
+                val hasLoadedExchangeRates = args[5] as Boolean
+                val precision = args[6] as Int
+                val dashboardSettings = args[7] as com.osscabinet.ossWallet.data.local.DashboardSettings
 
                 if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
@@ -436,48 +303,64 @@ class DashboardViewModel(
 
                 val computationContext = ComputationContext(baseCurrency, rates, precision)
 
-                val globalCurrencyTotals = computeCurrencyAggregation(
+                val currencyTotals = (engine.computeCard(
+                    config = CurrencyBalancesCardConfig(
+                        cardId = "currency_balances_main",
+                        timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
+                        showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
+                    ),
                     accounts = accounts,
                     transactions = allTransactions,
-                    timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
+                    categories = categories,
                     context = computationContext
-                )
+                ) as CardRenderData.CurrencyBalances).items
 
-                val (updatedAccounts, accountStats) = computeAccountStats(
+                val accountsData = engine.computeCard(
+                    config = AccountsCardConfig(
+                        cardId = "accounts_main",
+                        timelineRange = dashboardSettings.accountsSection.timelineRange,
+                        layout = dashboardSettings.accountsSection.layout,
+                        gridColumns = dashboardSettings.accountsSection.gridColumns,
+                        showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
+                    ),
                     accounts = accounts,
                     transactions = allTransactions,
-                    timelineRange = dashboardSettings.accountsSection.timelineRange,
+                    categories = categories,
                     context = computationContext
-                )
+                ) as CardRenderData.Accounts
 
-                val netWorth = computeNetWorth(
+                val netWorthData = engine.computeCard(
+                    config = NetWorthCardConfig(
+                        cardId = "net_worth_main",
+                        timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                        fontSize = dashboardSettings.netWorthSection.fontSize
+                    ),
                     accounts = accounts,
                     transactions = allTransactions,
-                    timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                    categories = categories,
                     context = computationContext
-                )
+                ) as CardRenderData.NetWorth
 
-                // Calculate cash flow for Net Worth section (used for income/expense badges)
-                val netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange
-                val cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange
-
-                val cashFlowResult = computeCashFlow(
+                val cashFlowResult = (engine.computeCard(
+                    config = CashFlowCardConfig(
+                        cardId = "cash_flow_main",
+                        timelineRange = dashboardSettings.cashFlowSection.timelineRange,
+                        showBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
+                    ),
+                    accounts = accounts,
                     transactions = allTransactions,
-                    timelineRange = cashFlowTimelineRange,
+                    categories = categories,
                     context = computationContext
-                )
+                ) as CardRenderData.CashFlow).result
 
-                val netWorthCashFlow = if (netWorthTimelineRange == cashFlowTimelineRange) {
+                val netWorthCashFlow = if (dashboardSettings.netWorthSection.timelineRange == dashboardSettings.cashFlowSection.timelineRange) {
                     cashFlowResult
                 } else {
-                    computeCashFlow(
-                        transactions = allTransactions,
-                        timelineRange = netWorthTimelineRange,
-                        context = computationContext
-                    )
+                    netWorthData.cashFlowResult
                 }
 
                 // Calculate all transactions with balance (without filtering)
+                val updatedAccounts = accountsData.updatedAccounts
                 val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
                     .groupBy { it.accountId }
                     .flatMap { (accId, accountTransactions) ->
@@ -512,9 +395,9 @@ class DashboardViewModel(
                     allTransactionsWithBalance = transactionsWithBalance,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
-                    currencyTotals = globalCurrencyTotals,
+                    currencyTotals = currencyTotals,
                     decimalPrecision = precision,
-                    accountStats = accountStats,
+                    accountStats = accountsData.accountStats,
                     gridColumns = dashboardSettings.accountsSection.gridColumns,
                     accountsLayout = dashboardSettings.accountsSection.layout,
                     showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard,
@@ -523,12 +406,12 @@ class DashboardViewModel(
                     showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion,
                     currencyBalancesTimelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
                     cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion,
-                    cashFlowTimelineRange = cashFlowTimelineRange,
-                    netWorth = netWorth,
+                    cashFlowTimelineRange = dashboardSettings.cashFlowSection.timelineRange,
+                    netWorth = netWorthData.value,
                     netIncome = netWorthCashFlow.totalIncomeInBase,
                     netExpense = netWorthCashFlow.totalExpensesInBase,
                     netWorthFontSize = dashboardSettings.netWorthSection.fontSize,
-                    netWorthTimelineRange = netWorthTimelineRange,
+                    netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange,
                     cashFlowResult = cashFlowResult
                 )
             }.flowOn(Dispatchers.Default)
@@ -538,6 +421,106 @@ class DashboardViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = DashboardUiState.Loading
         )
+
+    fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
+        val data = engine.computeCard(
+            config = NetWorthCardConfig(cardId = "temp", timelineRange = timelineRange),
+            accounts = accounts,
+            transactions = transactions,
+            categories = emptyList(),
+            context = context
+        ) as CardRenderData.NetWorth
+        return data.value
+    }
+
+    fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
+        val data = engine.computeCard(
+            config = CashFlowCardConfig(cardId = "temp", timelineRange = timelineRange),
+            accounts = emptyList(),
+            transactions = transactions,
+            categories = emptyList(),
+            context = context
+        ) as CardRenderData.CashFlow
+        return data.result
+    }
+
+    fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
+        val data = engine.computeCard(
+            config = CurrencyBalancesCardConfig(cardId = "temp", timelineRange = timelineRange),
+            accounts = accounts,
+            transactions = transactions,
+            categories = emptyList(),
+            context = context
+        ) as CardRenderData.CurrencyBalances
+        return data.items
+    }
+
+    fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
+        val data = engine.computeCard(
+            config = AccountsCardConfig(cardId = "temp", timelineRange = timelineRange),
+            accounts = accounts,
+            transactions = transactions,
+            categories = emptyList(),
+            context = context
+        ) as CardRenderData.Accounts
+        return Pair(data.updatedAccounts, data.accountStats)
+    }
+
+    suspend fun getTotalBalances(accounts: List<Account>, transactions: List<Transaction>, context: ComputationContext, timelineRange: TimelineRange): List<Account> {
+        return computeAccountStats(accounts, transactions, timelineRange, context).first
+    }
+
+    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
+        val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+        val data = engine.computeCard(
+            config = cardConfig,
+            accounts = emptyList(),
+            transactions = allTransactions,
+            categories = categories,
+            context = ComputationContext(baseCurrency, exchangeRates, precision)
+        ) as CardRenderData.CategoryBreakdownResult
+        
+        fun mapToUi(metric: CategoryTreeMetrics): CategoryBreakdownData {
+            return CategoryBreakdownData(
+                category = metric.category,
+                categoryId = metric.categoryId,
+                netBalance = metric.netBalance.setScale(precision, RoundingMode.HALF_UP),
+                income = metric.income.setScale(precision, RoundingMode.HALF_UP),
+                expense = metric.expense.setScale(precision, RoundingMode.HALF_UP),
+                colorHex = metric.colorHex,
+                percentage = metric.percentage,
+                hasSubcategories = metric.hasSubcategories,
+                subcategoryData = metric.subcategoryData.map { mapToUi(it) }
+            )
+        }
+
+        return data.items.map { mapToUi(it) }
+    }
+
+    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
+        val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+        val data = engine.computeCard(
+            config = cardConfig,
+            accounts = emptyList(),
+            transactions = allTransactions,
+            categories = categories,
+            context = ComputationContext(baseCurrency, exchangeRates, precision)
+        ) as CardRenderData.CategoryTreemapResult
+        
+        fun mapToUi(metric: CategoryTreeMetrics): CategoryExpenseTreemapData {
+            return CategoryExpenseTreemapData(
+                category = if (metric.category.isEmpty()) "Uncategorized" else metric.category,
+                categoryId = metric.categoryId,
+                expense = metric.expense.abs().setScale(precision, RoundingMode.HALF_UP),
+                colorHex = metric.colorHex,
+                percentage = metric.percentage,
+                hasSubcategories = metric.hasSubcategories,
+                subcategoryData = metric.subcategoryData.map { mapToUi(it) }
+            )
+        }
+
+        return data.items.map { mapToUi(it) }
+    }
 }
 
 sealed class DashboardUiState {

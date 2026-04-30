@@ -127,9 +127,8 @@ fun AnalyticsScreen(
                         val cardWithCallbacks = when (cardConfig) {
                             is CategoryBreakdownCardConfig -> {
                                 val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
-                                    value = viewModel.computeCategoryBreakdownForCard(
-                                        cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions
+                                    value = viewModel.computeCategoryBreakdownCard(
+                                        config = cardConfig
                                     )
                                 }
                                 CardWithCallbacks(
@@ -150,9 +149,8 @@ fun AnalyticsScreen(
                             }
                             is CategoryExpenseTreemapCardConfig -> {
                                 val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
-                                    value = viewModel.computeCategoryExpenseTreemapForCard(
-                                        cardConfig = cardConfig,
-                                        allTransactions = uiState.allTransactions
+                                    value = viewModel.computeCategoryExpenseTreemapCard(
+                                        config = cardConfig
                                     )
                                 }
                                 CardWithCallbacks(

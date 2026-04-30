@@ -15,6 +15,9 @@ import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.TimeBucket
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.domain.service.CardComputationEngine
+import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
 import com.osscabinet.ossWallet.domain.service.TrajectoryPoint
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.util.CardDataCache
@@ -60,6 +63,7 @@ class AnalyticsViewModel(
     private var _currentPrecision: Int = 2
 
     private val cardDataCache = CardDataCache()
+    private val engine = CardComputationEngine
 
     // Analytics cards config
     private val _analyticsCardsConfig = MutableStateFlow(defaultAnalyticsCardsConfig())
@@ -156,136 +160,60 @@ class AnalyticsViewModel(
         precision = _currentPrecision
     )
 
-    // Direct computation implementations using split services
-    // Note: Category tree building with colors requires CategoryDao and is implemented below
-
-    suspend fun computeCategoryBreakdownForCard(
-        cardConfig: CategoryBreakdownCardConfig,
-        allTransactions: List<Transaction>
-    ): List<CategoryBreakdownData> {
-        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
-        val allCategories = categoryDao.getAllCategoriesSync()
-        val categoryMap = allCategories.associateBy { it.name }
-
-        val categoryBreakdowns = AggregationService.breakdownByCategory(
-            transactions = filtered,
-            exchangeRates = getComputationContext().exchangeRates,
-            baseCurrency = getComputationContext().baseCurrency
-        ).associateBy { it.key }
-
-        val globalTotal = categoryBreakdowns.values.sumOf { it.totalAmount }
-
-        fun buildTree(categoryName: String?, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryBreakdownData? {
-            val entity = categoryMap[categoryName] ?: return null
-            val breakdown = categoryBreakdowns[categoryName]
-                ?: FinancialMetrics(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
-
-            val baseColor = if (parentColor == null) Color(entity.colorHex) else {
-                val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
-                parentColor.copy(
-                    red = (parentColor.red * factor).coerceIn(0f, 1f),
-                    green = (parentColor.green * factor).coerceIn(0f, 1f),
-                    blue = (parentColor.blue * factor).coerceIn(0f, 1f)
-                )
-            }
-
-            val childrenEntities = allCategories.filter { it.parentId == entity.id }
-            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
-                buildTree(child.name, baseColor, i, childrenEntities.size)
-            }.sortedByDescending { it.netBalance.abs() }
-
-            val totalIncome = breakdown.income + childrenData.sumOf { it.income }
-            val totalExpense = breakdown.expense + childrenData.sumOf { it.expense }
-            val totalNet = totalIncome + totalExpense
-
-            return CategoryBreakdownData(
-                category = entity.name,
-                categoryId = entity.id,
-                netBalance = totalNet,
-                income = totalIncome,
-                expense = totalExpense,
-                colorHex = baseColor.toArgb(),
-                percentage = if (globalTotal.signum() != 0) (totalNet.abs().divide(globalTotal.abs(), 4, RoundingMode.HALF_UP)).toFloat() else 0f,
-                hasSubcategories = childrenData.isNotEmpty(),
-                subcategoryData = childrenData
-            )
-        }
-
-        val rootCategories = allCategories.filter { it.parentId == null }
-        return rootCategories.mapNotNull { root ->
-            buildTree(root.name)
-        }.sortedByDescending { it.netBalance.abs() }
-    }
-
-    suspend fun computeCategoryExpenseTreemapForCard(
-        cardConfig: CategoryExpenseTreemapCardConfig,
-        allTransactions: List<Transaction>
-    ): List<CategoryExpenseTreemapData> {
-        // Similar to category breakdown but only for expenses
-        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
-        val expenseTransactions = TransactionFilterService.filterExpense(filtered)
-
-        val allCategories = categoryDao.getAllCategoriesSync()
-        val categoryMap = allCategories.associateBy { it.name }
-
-        val categoryBreakdowns = AggregationService.breakdownByCategory(
-            transactions = expenseTransactions,
-            exchangeRates = getComputationContext().exchangeRates,
-            baseCurrency = getComputationContext().baseCurrency
-        ).associateBy { it.key }
-
-        val totalExpenseGlobal = categoryBreakdowns.values.sumOf { it.expense }.abs()
-
-        fun buildTree(categoryName: String?, parentColor: Color? = null, index: Int = 0, totalSiblings: Int = 1): CategoryExpenseTreemapData? {
-            val entity = categoryMap[categoryName] ?: return null
-            val breakdown = categoryBreakdowns[categoryName]
-                ?: FinancialMetrics(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
-
-            val baseColor = if (parentColor == null) Color(entity.colorHex) else {
-                val factor = 0.7f + (index.toFloat() / totalSiblings.coerceAtLeast(1)) * 0.4f
-                parentColor.copy(
-                    red = (parentColor.red * factor).coerceIn(0f, 1f),
-                    green = (parentColor.green * factor).coerceIn(0f, 1f),
-                    blue = (parentColor.blue * factor).coerceIn(0f, 1f)
-                )
-            }
-
-            val childrenEntities = allCategories.filter { it.parentId == entity.id }
-            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
-                buildTree(child.name, baseColor, i, childrenEntities.size)
-            }.sortedByDescending { it.expense.abs() }
-
-            val totalExpense = breakdown.expense + childrenData.sumOf { it.expense }
-
-            return CategoryExpenseTreemapData(
-                category = entity.name,
-                categoryId = entity.id,
-                expense = totalExpense,
-                colorHex = baseColor.toArgb(),
-                percentage = if (totalExpenseGlobal.signum() != 0) (totalExpense.abs().divide(totalExpenseGlobal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
-                hasSubcategories = childrenData.isNotEmpty(),
-                subcategoryData = childrenData
-            )
-        }
-
-        val rootCategories = allCategories.filter { it.parentId == null }
-        return rootCategories.mapNotNull { root ->
-            buildTree(root.name)
-        }.sortedByDescending { it.expense.abs() }
-    }
-
-    // Simplified ViewModel compute methods using cache
+    // Simplified ViewModel compute methods using registry engine
     suspend fun computeCategoryBreakdownCard(config: CategoryBreakdownCardConfig): List<CategoryBreakdownData> {
         val cacheKey = "category_breakdown_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
-            computeCategoryBreakdownForCard(config, allTransactions)
+            val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+            val data = engine.computeCard(
+                config = config,
+                accounts = emptyList(),
+                transactions = allTransactions,
+                categories = categories,
+                context = getComputationContext()
+            ) as CardRenderData.CategoryBreakdownResult
+            
+            fun mapToUi(metric: CategoryTreeMetrics): CategoryBreakdownData {
+                return CategoryBreakdownData(
+                    category = metric.category,
+                    categoryId = metric.categoryId,
+                    netBalance = metric.netBalance,
+                    income = metric.income,
+                    expense = metric.expense,
+                    colorHex = metric.colorHex,
+                    percentage = metric.percentage,
+                    hasSubcategories = metric.hasSubcategories,
+                    subcategoryData = metric.subcategoryData.map { mapToUi(it) }
+                )
+            }
+            data.items.map { mapToUi(it) }
         }
     }
 
     suspend fun computeCategoryExpenseTreemapCard(config: CategoryExpenseTreemapCardConfig): List<CategoryExpenseTreemapData> {
         val cacheKey = "category_treemap_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
-            computeCategoryExpenseTreemapForCard(config, allTransactions)
+            val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+            val data = engine.computeCard(
+                config = config,
+                accounts = emptyList(),
+                transactions = allTransactions,
+                categories = categories,
+                context = getComputationContext()
+            ) as CardRenderData.CategoryTreemapResult
+            
+            fun mapToUi(metric: CategoryTreeMetrics): CategoryExpenseTreemapData {
+                return CategoryExpenseTreemapData(
+                    category = if (metric.category.isEmpty()) "Uncategorized" else metric.category,
+                    categoryId = metric.categoryId,
+                    expense = metric.expense,
+                    colorHex = metric.colorHex,
+                    percentage = metric.percentage,
+                    hasSubcategories = metric.hasSubcategories,
+                    subcategoryData = metric.subcategoryData.map { mapToUi(it) }
+                )
+            }
+            data.items.map { mapToUi(it) }
         }
     }
 

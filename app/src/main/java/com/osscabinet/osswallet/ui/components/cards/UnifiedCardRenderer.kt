@@ -176,9 +176,11 @@ fun UnifiedCardRenderer(
             AccountHeroCard(
                 account = renderData.account,
                 balance = renderData.balance,
-                netBalance = renderData.netBalance,
+                income = renderData.income,
+                expense = renderData.expense,
                 baseCurrency = renderData.baseCurrency,
                 exchangeRates = renderData.exchangeRates,
+                currencyBalances = renderData.currencyBalances,
                 modifier = modifier.fillMaxWidth(),
                 precision = renderData.precision,
                 showCurrencyBadges = renderData.config.showCurrencyBadges,

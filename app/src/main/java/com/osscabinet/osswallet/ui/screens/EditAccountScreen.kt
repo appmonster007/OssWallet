@@ -26,6 +26,8 @@ import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.util.isDark
+import com.osscabinet.ossWallet.domain.service.AggregationService
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -37,6 +39,7 @@ fun EditAccountScreen(
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val allTransactions by transactionViewModel.transactions.collectAsStateWithLifecycle()
+    val exchangeRates by transactionViewModel.exchangeRates.collectAsStateWithLifecycle()
     val account = accounts.find { it.id == accountId }
 
     if (account == null) {
@@ -46,6 +49,15 @@ fun EditAccountScreen(
         return
     }
 
+    val accountBalance = remember(allTransactions, accountId, exchangeRates) {
+        AggregationService.calculateAccountBalance(
+            accountId = accountId,
+            allTransactions = allTransactions,
+            accountCurrency = account.currencyCode,
+            exchangeRates = exchangeRates
+        )
+    }
+    
     var accountName by remember { mutableStateOf(account.name) }
     var structureType by remember { mutableStateOf(account.structureType) }
     var isStructureMenuExpanded by remember { mutableStateOf(false) }
@@ -122,7 +134,7 @@ innerPadding ->
             // Header Section
             AeonHeroHeader(
                 title = accountName,
-                subtitle = "$primaryCurrency ${account.balance}",
+                subtitle = "$primaryCurrency $accountBalance",
                 accentColorHex = accentColorHex,
                 iconName = selectedIconName
             )

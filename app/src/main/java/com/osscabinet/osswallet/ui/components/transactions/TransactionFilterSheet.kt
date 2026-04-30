@@ -79,7 +79,6 @@ fun TransactionFilterSheetPreview() {
                         Account(
                             id = "1",
                             name = "Cash",
-                            balance = BigDecimal.TEN,
                             currencyCode = "USD",
                             structureType = "Personal",
                             colorHex = "#FF0000",
@@ -88,7 +87,6 @@ fun TransactionFilterSheetPreview() {
                         Account(
                             id = "2",
                             name = "Bank",
-                            balance = BigDecimal(1000),
                             currencyCode = "USD",
                             structureType = "Personal",
                             colorHex = "#00FF00",

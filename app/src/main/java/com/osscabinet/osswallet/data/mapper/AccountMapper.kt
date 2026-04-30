@@ -12,7 +12,6 @@ import com.osscabinet.ossWallet.domain.util.joinByComma
 fun AccountEntity.toDomain() = Account(
     id = id,
     name = name,
-    balance = balance,
     currencyCode = currencyCode,
     structureType = structureType,
     colorHex = colorHex,
@@ -25,7 +24,6 @@ fun AccountEntity.toDomain() = Account(
 fun Account.toEntity(profileId: Int) = AccountEntity(
     id = id,
     name = name,
-    balance = balance,
     currencyCode = currencyCode,
     structureType = structureType,
     colorHex = colorHex,

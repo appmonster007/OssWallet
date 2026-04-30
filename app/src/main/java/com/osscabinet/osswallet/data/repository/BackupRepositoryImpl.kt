@@ -34,7 +34,6 @@ class BackupRepositoryImpl(
                 AccountBackup(
                     id = it.id,
                     name = it.name,
-                    balance = it.balance,
                     currencyCode = it.currencyCode,
                     structureType = it.structureType,
                     colorHex = it.colorHex,
@@ -123,7 +122,6 @@ class BackupRepositoryImpl(
                 AccountEntity(
                     id = it.id,
                     name = it.name,
-                    balance = it.balance,
                     currencyCode = it.currencyCode,
                     structureType = it.structureType,
                     colorHex = it.colorHex,

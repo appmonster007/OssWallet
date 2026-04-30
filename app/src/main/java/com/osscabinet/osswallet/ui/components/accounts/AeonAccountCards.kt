@@ -34,6 +34,7 @@ import java.math.BigDecimal
 @Composable
 fun AeonAccountCardSmall(
     account: Account,
+    balance: BigDecimal,
     balanceInBase: BigDecimal,
     baseCurrency: String,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
@@ -85,7 +86,7 @@ fun AeonAccountCardSmall(
                 )
                 Column {
                     Text(
-                        formatCurrencyRight(account.balance, account.currencyCode, precision),
+                        formatCurrencyRight(balance, account.currencyCode, precision),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -106,6 +107,7 @@ fun AeonAccountCardSmall(
 @Composable
 fun AeonAccountCardMedium(
     account: Account,
+    balance: BigDecimal,
     balanceInBase: BigDecimal,
     baseCurrency: String,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
@@ -166,7 +168,7 @@ fun AeonAccountCardMedium(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    formatCurrencyRight(account.balance, account.currencyCode, precision),
+                    formatCurrencyRight(balance, account.currencyCode, precision),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -186,6 +188,7 @@ fun AeonAccountCardMedium(
 @Composable
 fun AeonAccountCardLarge(
     account: Account,
+    balance: BigDecimal,
     balanceInBase: BigDecimal,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
@@ -279,7 +282,7 @@ fun AeonAccountCardLarge(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        formatCurrencyRight(balanceInBase, baseCurrency, precision = precision),
+                        formatCurrencyRight(balance, account.currencyCode, precision = precision),
                         style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
                         color = contentColor
                     )
@@ -423,7 +426,7 @@ fun AccountPickerSheet(
                             }
                             
                             Text(
-                                formatCurrencyRight(account.balance, account.currencyCode),
+                                formatCurrencyRight(BigDecimal.ZERO, account.currencyCode),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }

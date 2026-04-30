@@ -57,9 +57,11 @@ sealed class CardRenderData {
         val config: AccountHeroCardConfig,
         val account: Account,
         val balance: BigDecimal,
-        val netBalance: BigDecimal,
+        val income: BigDecimal,
+        val expense: BigDecimal,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
+        val currencyBalances: Map<String, BigDecimal> = emptyMap(),
         val precision: Int
     ) : CardRenderData()
 }

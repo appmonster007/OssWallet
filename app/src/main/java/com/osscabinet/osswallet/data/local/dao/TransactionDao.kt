@@ -33,14 +33,7 @@ abstract class TransactionDao {
 
     @Transaction
     open suspend fun insertTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao): Long {
-        val id = _insertTransaction(transaction)
-        val balanceChange = if (transaction.transactionType == "expense") {
-            transaction.amount.negate()
-        } else {
-            transaction.amount
-        }
-        accountDao.updateBalance(transaction.accountId, balanceChange)
-        return id
+        return _insertTransaction(transaction)
     }
 
     @Query("SELECT * FROM transactions WHERE id = :id")
@@ -55,32 +48,10 @@ abstract class TransactionDao {
     @Transaction
     open suspend fun deleteTransactionWithBalanceUpdate(transaction: TransactionEntity, accountDao: AccountDao) {
         _deleteTransaction(transaction)
-        val balanceChange = if (transaction.transactionType == "expense") {
-            transaction.amount // Adding back an expense
-        } else {
-            transaction.amount.negate() // Subtracting income
-        }
-        accountDao.updateBalance(transaction.accountId, balanceChange)
     }
 
     @Transaction
     open suspend fun updateTransactionWithBalanceUpdate(oldTransaction: TransactionEntity, newTransaction: TransactionEntity, accountDao: AccountDao) {
-        // Reverse old transaction impact
-        val oldBalanceChange = if (oldTransaction.transactionType == "expense") {
-            oldTransaction.amount // Adding back old expense
-        } else {
-            oldTransaction.amount.negate() // Subtracting old income
-        }
-        accountDao.updateBalance(oldTransaction.accountId, oldBalanceChange)
-
-        // Apply new transaction impact
-        val newBalanceChange = if (newTransaction.transactionType == "expense") {
-            newTransaction.amount.negate() // Subtracting new expense
-        } else {
-            newTransaction.amount // Adding new income
-        }
-        accountDao.updateBalance(newTransaction.accountId, newBalanceChange)
-
         // Perform the database update
         insertTransaction(newTransaction)
     }

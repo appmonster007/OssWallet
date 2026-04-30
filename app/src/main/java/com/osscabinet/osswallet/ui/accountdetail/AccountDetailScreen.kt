@@ -268,17 +268,18 @@ fun AccountDetailScreen(
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                             // Calculate running balance for all account transactions
-                            val transactionsWithBalanceList = remember(state.allAccountTransactions, state.account.balance) {
+                            val transactionsWithBalanceList = remember(state.allAccountTransactions) {
                                 // Calculate running balance from transactions
-                                // Start from zero and apply transactions in reverse order
-                                var currentBalance = BigDecimal.ZERO
+                                // Start from the total sum and work backwards
+                                val totalBalance = state.allAccountTransactions.sumOf { it.amount }
+                                var currentBalance = totalBalance
                                 state.allAccountTransactions.sortedByDescending { it.timestamp }.map { tx ->
                                     val balanceAfter = currentBalance
                                     val balanceBefore = currentBalance.subtract(tx.amount) // tx.amount is already signed
                                     currentBalance = balanceBefore
                                     TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                                }.reversed()
-                            }.sortedByDescending { it.transaction.timestamp }
+                                }
+                            }
 
                             if (transactionsWithBalanceList.isEmpty()) {
                                 Box(

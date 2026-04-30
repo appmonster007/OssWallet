@@ -36,11 +36,11 @@ class AccountViewModel(
     ) {
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
+            val accountId = UUID.randomUUID().toString()
             accountRepository.insertAccount(
                 Account(
-                    id = UUID.randomUUID().toString(),
+                    id = accountId,
                     name = name,
-                    balance = initialBalance,
                     currencyCode = currencyCode,
                     structureType = structureType,
                     colorHex = colorHex,
@@ -51,6 +51,24 @@ class AccountViewModel(
                 ),
                 profileId = profileId
             )
+
+            // Create initial balance transaction if non-zero
+            if (initialBalance.signum() != 0) {
+                val transactionType = if (initialBalance.signum() > 0) "income" else "expense"
+                val initialTransaction = Transaction(
+                    title = "Initial Balance",
+                    amount = initialBalance.abs(),
+                    category = "Adjustment",
+                    timestamp = System.currentTimeMillis(),
+                    currency = currencyCode,
+                    transactionType = transactionType,
+                    accountId = accountId,
+                    note = "Initial balance for $name",
+                    paymentMethod = structureType,
+                    payee = "System"
+                )
+                transactionRepository.insertTransaction(initialTransaction, profileId)
+            }
         }
     }
 
@@ -67,11 +85,10 @@ class AccountViewModel(
             val profileId = settingsRepository.currentProfileId.first()
             val accountId = UUID.randomUUID().toString()
             
-            // 1. Create Account with balance = 0
+            // 1. Create Account
             val account = Account(
                 id = accountId,
                 name = name,
-                balance = BigDecimal.ZERO,
                 currencyCode = currency,
                 structureType = structureType,
                 colorHex = colorHex,

@@ -22,9 +22,6 @@ interface AccountDao {
     @Delete
     suspend fun deleteAccount(account: AccountEntity)
 
-    @Query("UPDATE accounts SET balance = balance + :amount WHERE id = :accountId")
-    suspend fun updateBalance(accountId: String, amount: BigDecimal)
-
     @Query("SELECT * FROM accounts WHERE profileId = :profileId ORDER BY displayOrder ASC")
     suspend fun getAllAccountsSync(profileId: Int): List<AccountEntity>
 

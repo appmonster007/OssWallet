@@ -163,9 +163,6 @@ class DatabaseSeeder @Inject constructor(
                 val transactionWithCategoryId = transaction.copy(categoryId = categoryId)
                 transactionDao.insertTransaction(transactionWithCategoryId)
 
-                // Update account balance
-                accountDao.updateBalance(transaction.accountId, transaction.amount)
-
                 successfulTransactions++
             } catch (e: Exception) {
                 android.util.Log.e("DatabaseSeeder", "Failed to insert transaction '${transaction.title}': ${e.message}")
@@ -289,7 +286,6 @@ class DatabaseSeeder @Inject constructor(
             return AccountEntity(
                 id = id,
                 name = name,
-                balance = BigDecimal.ZERO,
                 currencyCode = currencyCode,
                 structureType = structureType,
                 colorHex = colorHex,

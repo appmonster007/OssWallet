@@ -34,8 +34,6 @@ data class ProfileBackup(val id: Int, val name: String, val type: String)
 data class AccountBackup(
     val id: String,
     val name: String,
-    @Serializable(with = BigDecimalSerializer::class)
-    val balance: BigDecimal,
     val currencyCode: String,
     val structureType: String,
     val colorHex: String,

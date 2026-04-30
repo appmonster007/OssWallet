@@ -68,6 +68,9 @@ class TransactionViewModel(
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     val recordsSettings: StateFlow<com.osscabinet.ossWallet.data.local.TransactionSectionSettings> = settingsRepository.recordsSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.osscabinet.ossWallet.data.local.TransactionSectionSettings())
 

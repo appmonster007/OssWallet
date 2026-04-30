@@ -17,23 +17,40 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
         val effectiveFilter = config.filter.copy(accountIds = listOf(accountId))
         val filteredTx = TransactionFilterService.filter(input.transactions, effectiveFilter)
         
-        // Calculate net balance for the filtered period in account currency
+        // Calculate total balance from ALL transactions for this account using exchange rates
+        val totalBalance = AggregationService.calculateAccountBalance(
+            accountId = accountId,
+            allTransactions = input.transactions,
+            accountCurrency = account.currencyCode,
+            exchangeRates = input.exchangeRates
+        )
+        
+        // Calculate income/expense breakdown for the filtered period in account currency
         val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
             transactions = filteredTx,
             exchangeRates = input.exchangeRates,
             baseCurrency = account.currencyCode
         )
         
-        // The net balance in account currency for the period
-        val netBalance = breakdown.netFlow
+        // Calculate currency balances for this account (based on filtered transactions or all?)
+        // Usually currency balances on a card like this should reflect the overall state, 
+        // but since we have a filter, let's see. 
+        // If it's like a "hero" card, maybe it should show overall currency balances?
+        // Let's stick to filtered transactions for now as it's a "card" which often has a timeframe.
+        // Actually, the user said "it should always be calculated from transactions".
+        val currencyBalances = AggregationService.calculateTotalByCurrency(
+            input.transactions.filter { it.accountId == accountId }
+        )
 
         return CardRenderData.AccountHero(
             config = config,
             account = account,
-            balance = account.balance,
-            netBalance = netBalance,
+            balance = totalBalance,
+            income = breakdown.totalIncome,
+            expense = breakdown.totalExpense,
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
+            currencyBalances = currencyBalances,
             precision = input.precision
         )
     }

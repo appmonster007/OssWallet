@@ -400,6 +400,7 @@ private fun AccountItemContent(
     modifier: Modifier = Modifier
 ) {
     val stats = accountStats[account.id]
+    val balance = stats?.balance ?: BigDecimal.ZERO
     val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
 
     val handleAccountClick = {
@@ -416,6 +417,7 @@ private fun AccountItemContent(
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
             account = account,
+            balance = balance,
             balanceInBase = totalInBase,
             baseCurrency = baseCurrency,
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
@@ -429,6 +431,7 @@ private fun AccountItemContent(
         )
         2 -> AeonAccountCardMedium(
             account = account,
+            balance = balance,
             balanceInBase = totalInBase,
             baseCurrency = baseCurrency,
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
@@ -440,6 +443,7 @@ private fun AccountItemContent(
         )
         else -> AeonAccountCardSmall(
             account = account,
+            balance = balance,
             balanceInBase = totalInBase,
             baseCurrency = baseCurrency,
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
@@ -495,7 +499,6 @@ private fun AeonAddAccountCardContent(
     val placeholderAccount = Account(
         "empty",
         "GET STARTED",
-        BigDecimal.ZERO,
         baseCurrency,
         "Default",
         "#808080",
@@ -506,6 +509,7 @@ private fun AeonAddAccountCardContent(
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
             account = placeholderAccount,
+            balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
             isDarkTheme = isDarkTheme,
@@ -517,6 +521,7 @@ private fun AeonAddAccountCardContent(
         )
         2 -> AeonAccountCardMedium(
             account = placeholderAccount,
+            balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
             isDarkTheme = isDarkTheme,
@@ -527,6 +532,7 @@ private fun AeonAddAccountCardContent(
         )
         else -> AeonAccountCardSmall(
             account = placeholderAccount,
+            balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
             isDarkTheme = isDarkTheme,

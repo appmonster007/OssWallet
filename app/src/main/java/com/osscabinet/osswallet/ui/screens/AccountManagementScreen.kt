@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +85,7 @@ fun AccountManagementScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(account.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text(formatCurrencyRight(account.balance, account.currencyCode), style = MaterialTheme.typography.bodySmall)
+                        Text(formatCurrencyRight(BigDecimal.ZERO, account.currencyCode), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

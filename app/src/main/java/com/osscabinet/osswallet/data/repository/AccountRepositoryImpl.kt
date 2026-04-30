@@ -22,10 +22,6 @@ class AccountRepositoryImpl(
         accountDao.upsertAccount(account.toEntity(profileId))
     }
 
-    override suspend fun updateBalance(accountId: String, amount: java.math.BigDecimal) {
-        accountDao.updateBalance(accountId, amount)
-    }
-
     override suspend fun deleteAccount(accountId: String) {
         accountDao.getAccountById(accountId)?.let {
             accountDao.deleteAccount(it)

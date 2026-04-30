@@ -27,15 +27,21 @@ fun CalculatorSheet(
         else -> "expense" // transfers show as expense (negative)
     }
 
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .wrapContentHeight()
                 .padding(16.dp)
-                .padding(bottom = 32.dp)
+                .padding(bottom = 48.dp)
         ) {
             CalculatorNumpad(
                 amount = currentAmount,

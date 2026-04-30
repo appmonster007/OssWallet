@@ -17,8 +17,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
+import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 
 /**
  * Metadata section containing note, payee, linked transactions, tags, and other details.
@@ -56,7 +59,12 @@ fun TransactionMetadataSection(
             // Linked Transactions
             LinkedTransactionsSection(
                 linkedTransactions = state.displayLinkedTxs,
-                onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) }
+                accounts = state.accounts,
+                categories = state.categories,
+                onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
+                onRemoveLink = { txId ->
+                    state.transactionId?.let { onEvent(TransactionEntryEvent.RemoveLinkedTransaction(it, txId)) }
+                }
             )
 
             // Tags
@@ -125,7 +133,10 @@ fun TransactionMetadataSection(
 @Composable
 private fun LinkedTransactionsSection(
     linkedTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
-    onShowSheet: () -> Unit
+    accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+    categories: List<com.osscabinet.ossWallet.domain.model.Category>,
+    onShowSheet: () -> Unit,
+    onRemoveLink: (Long) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(
@@ -167,52 +178,63 @@ private fun LinkedTransactionsSection(
             }
         }
 
-        // Display linked transactions
+        // Display linked transactions with AeonTransactionItem
         linkedTransactions.forEach { tx ->
-            LinkedTransactionItem(tx = tx)
+            LinkedTransactionItem(
+                tx = tx,
+                account = accounts.find { it.id == tx.accountId },
+                category = categories.find { it.name == tx.category },
+                onRemove = { onRemoveLink(tx.id) }
+            )
         }
     }
 }
 
 @Composable
-private fun LinkedTransactionItem(tx: com.osscabinet.ossWallet.domain.model.Transaction) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+private fun LinkedTransactionItem(
+    tx: com.osscabinet.ossWallet.domain.model.Transaction,
+    account: com.osscabinet.ossWallet.domain.model.Account?,
+    category: com.osscabinet.ossWallet.domain.model.Category?,
+    onRemove: () -> Unit
+) {
+    val icon: ImageVector = category?.iconName?.let { categoryIcons[it] }
+        ?: categoryIcons[tx.category]
+        ?: Icons.Rounded.Category
+    val iconBg = category?.colorHex?.let { Color(it) }
+
+    Box {
+        com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem(
+            category = tx.category,
+            account = account?.name ?: "Unknown",
+            amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+            balanceBefore = java.math.BigDecimal.ZERO.toPlainString(),
+            balanceAfter = tx.amount.toPlainString(),
+            type = if (tx.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
+            timestamp = formatDateTime(tx.timestamp),
+            note = tx.note,
+            tags = tx.tags,
+            icon = icon,
+            iconBg = iconBg,
+            precision = 2,
+            showOpeningBalance = false,
+            showClosingBalance = false,
+            status = tx.status,
+            onClick = { /* Linked transactions are read-only here */ }
+        )
+
+        // Remove button overlay
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .size(28.dp)
         ) {
             Icon(
-                Icons.Rounded.Link,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tx.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1
-                )
-                Text(
-                    text = formatDateTime(tx.timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(
-                text = tx.amount.abs().toPlainString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (tx.amount.signum() >= 0) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                }
+                Icons.Rounded.Close,
+                contentDescription = "Remove link",
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                modifier = Modifier.size(16.dp)
             )
         }
     }

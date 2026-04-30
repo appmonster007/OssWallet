@@ -342,8 +342,7 @@ fun AccountsViewScreen(
                                 
                                 cardWithCallbacks?.let {
                                     UnifiedCardRenderer(
-                                        renderData = it.renderData,
-                                        callbacks = it.callbacks,
+                                        cardWithCallbacks = it,
                                         modifier = Modifier.fillMaxWidth(),
                                         headerModifier = dragModifier,
                                         showTitle = true,

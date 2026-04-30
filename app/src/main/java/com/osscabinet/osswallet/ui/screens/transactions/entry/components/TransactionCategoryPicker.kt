@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
+package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,7 +18,7 @@ import com.osscabinet.ossWallet.ui.components.categoryIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategorySelectionSheet(
+fun TransactionCategoryPicker(
     categories: List<Category>,
     selectedCategoryId: Long?,
     onCategorySelected: (String, Long?) -> Unit,

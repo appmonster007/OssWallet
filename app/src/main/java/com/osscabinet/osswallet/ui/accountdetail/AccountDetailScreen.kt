@@ -35,7 +35,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardLayoutViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -75,7 +75,7 @@ fun AccountDetailScreen(
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
     accountDetailViewModel: AccountDetailViewModel,
-    cardManagerViewModel: CardManagerViewModel,
+    cardLayoutViewModel: CardLayoutViewModel,
     cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
@@ -129,7 +129,7 @@ fun AccountDetailScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddCardDialog by remember { mutableStateOf(false) }
 
-    val accountDetailCardsConfig by cardManagerViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
+    val accountDetailCardsConfig by cardLayoutViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -240,7 +240,7 @@ fun AccountDetailScreen(
                                 DynamicAccountDetailCards(
                                     state = state,
                                     cardsConfig = accountDetailCardsConfig,
-                                    cardManagerViewModel = cardManagerViewModel,
+                                    cardLayoutViewModel = cardLayoutViewModel,
                                     accountDetailViewModel = accountDetailViewModel,
                                     cardComputerRegistry = cardComputerRegistry,
                                     onRecordsClick = onRecordsClick,
@@ -339,7 +339,7 @@ fun AccountDetailScreen(
             AccountDetailCardTypeSelectionDialog(
                 onDismiss = { showAddCardDialog = false },
                 onCardTypeSelected = { cardType ->
-                    cardManagerViewModel.addAccountDetailCard(cardType, accountId)
+                    cardLayoutViewModel.addAccountDetailCard(cardType, accountId)
                     showAddCardDialog = false
                 }
             )
@@ -351,7 +351,7 @@ fun AccountDetailScreen(
 fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
     cardsConfig: com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig,
-    cardManagerViewModel: CardManagerViewModel,
+    cardLayoutViewModel: CardLayoutViewModel,
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
@@ -373,7 +373,7 @@ fun DynamicAccountDetailCards(
             key = { it.cardId },
             onReorder = { reorderedCards ->
                 // Update order property based on new position and save atomically
-                cardManagerViewModel.reorderAccountDetailCards(reorderedCards)
+                cardLayoutViewModel.reorderAccountDetailCards(reorderedCards)
             },
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(
@@ -424,7 +424,7 @@ fun DynamicAccountDetailCards(
         AccountDetailCardTypeSelectionDialog(
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
-                cardManagerViewModel.addAccountDetailCard(cardType, accountId)
+                cardLayoutViewModel.addAccountDetailCard(cardType, accountId)
                 onShowAddCardDialogChange(false)
             }
         )

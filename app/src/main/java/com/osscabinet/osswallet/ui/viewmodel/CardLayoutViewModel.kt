@@ -4,27 +4,26 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
 
-class CardManagerViewModel(
-    private val settingsRepository: SettingsRepository,
+/**
+ * ViewModel focused on managing card layout: order, visibility, and adding/removing cards.
+ */
+class CardLayoutViewModel(
     private val cardRepository: CardRepository
 ) : ViewModel() {
 
-    // Dashboard Cards Configuration
-    private val _cardsConfig = MutableStateFlow(DashboardCardsConfig())
-    val cardsConfig: StateFlow<DashboardCardsConfig> = _cardsConfig.asStateFlow()
+    val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.dashboardCardsConfig
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
-    // Account Detail Cards Configuration
-    private val _accountDetailCardsConfig = MutableStateFlow(DashboardCardsConfig())
-    val accountDetailCardsConfig: StateFlow<DashboardCardsConfig> = _accountDetailCardsConfig.asStateFlow()
+    val accountDetailCardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.accountDetailCardsConfig
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
-    // Accounts View Cards Configuration
-    private val _accountsViewCardsConfig = MutableStateFlow(DashboardCardsConfig())
-    val accountsViewCardsConfig: StateFlow<DashboardCardsConfig> = _accountsViewCardsConfig.asStateFlow()
+    val accountsViewCardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.accountsViewCardsConfig
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     val availableDashboardCardTypes: StateFlow<List<CardType>> = cardsConfig.map { config ->
         val usedTypes = config.cards.mapNotNull { card ->
@@ -38,30 +37,8 @@ class CardManagerViewModel(
                 else -> null
             }
         }.toSet()
-        // For now, allow all on dashboard if not used. 
-        // In a real app, we might want screen-specific filtering logic in CardType or a separate service.
         CardType.entries.filter { it !in usedTypes && it != CardType.ACCOUNT_HERO && it != CardType.BUDGETS }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CardType.entries.filter { it != CardType.ACCOUNT_HERO })
-
-    init {
-        viewModelScope.launch {
-            cardRepository.dashboardCardsConfig.collect { config ->
-                _cardsConfig.value = config
-            }
-        }
-        
-        viewModelScope.launch {
-            cardRepository.accountDetailCardsConfig.collect { config ->
-                _accountDetailCardsConfig.value = config
-            }
-        }
-        
-        viewModelScope.launch {
-            cardRepository.accountsViewCardsConfig.collect { config ->
-                _accountsViewCardsConfig.value = config
-            }
-        }
-    }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addDashboardCard(type: CardType) {
         viewModelScope.launch {
@@ -84,19 +61,12 @@ class CardManagerViewModel(
         }
     }
 
-    fun updateCard(cardId: String, update: (CardConfig) -> CardConfig) {
-        viewModelScope.launch {
-            cardRepository.updateDashboardCard(cardId, update)
-        }
-    }
-
     fun reorderDashboardCards(cards: List<CardConfig>) {
         viewModelScope.launch {
             cardRepository.reorderDashboardCards(cards)
         }
     }
 
-    // Account Detail Cards Management
     fun addAccountDetailCard(type: CardType, accountId: String) {
         viewModelScope.launch {
             val card = when (type) {
@@ -126,19 +96,12 @@ class CardManagerViewModel(
         }
     }
 
-    fun updateAccountDetailCard(cardId: String, update: (CardConfig) -> CardConfig) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId, update)
-        }
-    }
-
     fun reorderAccountDetailCards(cards: List<CardConfig>) {
         viewModelScope.launch {
             cardRepository.reorderAccountDetailCards(cards)
         }
     }
 
-    // Accounts View Cards Management
     fun addAccountsViewCard(type: CardType) {
         viewModelScope.launch {
             val card = when (type) {
@@ -167,12 +130,6 @@ class CardManagerViewModel(
     fun removeAccountsViewCard(cardId: String) {
         viewModelScope.launch {
             cardRepository.removeAccountsViewCard(cardId)
-        }
-    }
-
-    fun updateAccountsViewCard(cardId: String, update: (CardConfig) -> CardConfig) {
-        viewModelScope.launch {
-            cardRepository.updateAccountsViewCard(cardId, update)
         }
     }
 

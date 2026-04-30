@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.dashboard.*
 import com.osscabinet.ossWallet.ui.viewmodel.*
 import com.osscabinet.ossWallet.ui.screens.*
+import com.osscabinet.ossWallet.ui.analytics.AnalyticsScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
 import com.osscabinet.ossWallet.ui.accountdetail.*
 import androidx.navigation.NavType
@@ -82,12 +83,15 @@ fun OssWalletNavGraph(
         }
     )
 
-    val cardManagerViewModel: CardManagerViewModel = viewModel(
+    val cardLayoutViewModel: CardLayoutViewModel = viewModel(
         factory = GenericViewModelFactory {
-            CardManagerViewModel(
-                appContainer.settingsRepository,
-                appContainer.cardRepository
-            )
+            CardLayoutViewModel(appContainer.cardRepository)
+        }
+    )
+
+    val cardConfigViewModel: CardConfigViewModel = viewModel(
+        factory = GenericViewModelFactory {
+            CardConfigViewModel(appContainer.cardRepository)
         }
     )
 
@@ -180,7 +184,7 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     templateViewModel = templateViewModel,
                     dashboardViewModel = dashboardViewModel,
-                    cardManagerViewModel = cardManagerViewModel,
+                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     viewContext = viewContext
                 )
@@ -214,7 +218,7 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     templateViewModel = templateViewModel,
                     accountsViewViewModel = accountsViewViewModel,
-                    cardManagerViewModel = cardManagerViewModel,
+                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     filterContext = filterContext
                 )
@@ -430,7 +434,7 @@ fun OssWalletNavGraph(
                     settingsViewModel = settingsViewModel,
                     analyticsViewModel = analyticsViewModel,
                     accountDetailViewModel = accountDetailViewModel,
-                    cardManagerViewModel = cardManagerViewModel,
+                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     templateViewModel = templateViewModel,
                     onBackClick = { navController.popBackStack() },

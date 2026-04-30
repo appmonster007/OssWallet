@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountPicker
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategoryPicker
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
@@ -34,7 +36,7 @@ fun TransactionEntrySheets(
 
     // Category Selection Sheet
     if (state.showCategorySheet) {
-        CategorySelectionSheet(
+        TransactionCategoryPicker(
             categories = state.categories,
             selectedCategoryId = state.selectedCategoryId,
             onCategorySelected = { category, id ->
@@ -47,7 +49,7 @@ fun TransactionEntrySheets(
 
     // Account Selection Sheet
     if (state.showAccountSheet) {
-        AccountSelectionSheet(
+        TransactionAccountPicker(
             accounts = state.accounts,
             selectedAccountId = state.selectedAccount?.id,
             onAccountSelected = { account ->
@@ -60,7 +62,7 @@ fun TransactionEntrySheets(
 
     // Target Account Selection Sheet (for transfers)
     if (state.showTargetAccountSheet) {
-        AccountSelectionSheet(
+        TransactionAccountPicker(
             accounts = state.accounts.filter { it.id != state.selectedAccount?.id },
             selectedAccountId = state.targetAccount?.id,
             onAccountSelected = { account ->

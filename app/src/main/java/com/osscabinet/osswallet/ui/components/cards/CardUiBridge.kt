@@ -46,7 +46,8 @@ fun rememberCardWithCallbacks(
                         onFontSizeChange = { id, size -> updateHandler.updateCardNetWorthFontSize(id, size) },
                         onFilterChange = { id, filter -> updateHandler.updateCardNetWorthFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is CurrencyBalancesCardConfig && renderData is CardRenderData.CurrencyBalances -> {
@@ -61,7 +62,8 @@ fun rememberCardWithCallbacks(
                             onRecordsClick(RecordsFilterContext.Custom(currencies = listOf(currency), startDate = start, endDate = end))
                         },
                         onDelete = { onDelete(config.cardId) }
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is CashFlowCardConfig && renderData is CardRenderData.CashFlow -> {
@@ -79,7 +81,8 @@ fun rememberCardWithCallbacks(
                             onRecordsClick(RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
                         },
                         onDelete = { onDelete(config.cardId) }
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is AccountsCardConfig && renderData is CardRenderData.Accounts -> {
@@ -95,7 +98,8 @@ fun rememberCardWithCallbacks(
                         onAccountClick = onAccountClick,
                         onRecordsClick = onRecordsClick,
                         onDelete = { onDelete(config.cardId) }
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is CategoryBreakdownCardConfig && renderData is CardRenderData.CategoryBreakdown -> {
@@ -109,7 +113,8 @@ fun rememberCardWithCallbacks(
                         },
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is CategoryExpenseTreemapCardConfig && renderData is CardRenderData.CategoryTreemap -> {
@@ -123,7 +128,8 @@ fun rememberCardWithCallbacks(
                         },
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             config is AccountHeroCardConfig && renderData is CardRenderData.AccountHero -> {
@@ -133,7 +139,8 @@ fun rememberCardWithCallbacks(
                         onShowCurrencyBadgesChange = { id, show -> updateHandler.updateCardHeroShowCurrencyBadges(id, show) },
                         onFilterChange = { id, filter -> updateHandler.updateCardHeroFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
-                    )
+                    ),
+                    filterRules = config.filterRules
                 )
             }
             else -> null

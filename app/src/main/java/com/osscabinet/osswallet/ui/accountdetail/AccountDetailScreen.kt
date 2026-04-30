@@ -92,6 +92,7 @@ fun AccountDetailScreen(
     val scope = rememberCoroutineScope()
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
@@ -246,6 +247,7 @@ fun AccountDetailScreen(
                                     onRecordsClick = onRecordsClick,
                                     accountId = accountId,
                                     currentTheme = currentTheme,
+                                    savedFilters = savedFilters,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .padding(horizontal = 16.dp),
@@ -357,6 +359,7 @@ fun DynamicAccountDetailCards(
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     accountId: String,
     currentTheme: String,
+    savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
     modifier: Modifier = Modifier,
     screenPadding: PaddingValues = PaddingValues(),
     showAddCardDialog: Boolean,
@@ -388,10 +391,11 @@ fun DynamicAccountDetailCards(
             val input = com.osscabinet.ossWallet.domain.card.CardInput(
                 transactions = state.allAccountTransactions,
                 accounts = listOf(state.account),
-                categories = emptyList(),
+                categories = state.allCategories,
                 exchangeRates = state.exchangeRates,
                 baseCurrency = if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) state.account.currencyCode else state.baseCurrency,
-                precision = state.decimalPrecision
+                precision = state.decimalPrecision,
+                scopeAccountId = accountId
             )
 
             val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
@@ -413,8 +417,8 @@ fun DynamicAccountDetailCards(
                     showTitle = true,
                     currentTheme = currentTheme,
                     accounts = listOf(state.account),
-                    allCategories = emptyList(),
-                    savedFilters = emptyList()
+                    allCategories = state.allCategories,
+                    savedFilters = savedFilters
                 )
             } ?: Box(modifier = Modifier.size(0.dp))
         }

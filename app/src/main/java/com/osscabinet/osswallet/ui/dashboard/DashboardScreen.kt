@@ -228,10 +228,10 @@ fun DashboardScreen(
     // We no longer need this LaunchedEffect because AnalyticsViewModel
     // now observes settingsDataStore.currency directly in its init block.
     // However, we might still want to ensure it's synced if it was overridden by other screens.
-    val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-    LaunchedEffect(settingsCurrency) {
-        analyticsViewModel.onCurrencySelected(settingsCurrency)
-    }
+    // val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+    // LaunchedEffect(settingsCurrency) {
+    //     analyticsViewModel.onCurrencySelected(settingsCurrency)
+    // }
 
     Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
@@ -412,10 +412,12 @@ fun DashboardContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         animateCards = cardAnimationEnabled
                     ) { cardConfig, isDragging, dragModifier ->
+                        val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
+
                         val input = CardInput(
                             transactions = state.allTransactions,
                             accounts = state.accounts,
-                            categories = emptyList(),
+                            categories = state.allCategories,
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
                             precision = state.decimalPrecision
@@ -442,8 +444,8 @@ fun DashboardContent(
                                 showTitle = true,
                                 currentTheme = currentTheme,
                                 accounts = state.accounts,
-                                allCategories = emptyList(),
-                                savedFilters = emptyList()
+                                allCategories = state.allCategories,
+                                savedFilters = savedFilters
                             )
                         } ?: Box(modifier = Modifier.size(0.dp))
                     }

@@ -3,10 +3,12 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
@@ -34,6 +36,7 @@ class AccountDetailViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val settingsRepository: SettingsRepository,
     private val cardRepository: CardRepository,
+    private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
@@ -153,6 +156,7 @@ class AccountDetailViewModel(
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
+                categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
@@ -164,11 +168,13 @@ class AccountDetailViewModel(
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
                 @Suppress("UNCHECKED_CAST")
-                val rates = args[2] as Map<String, BigDecimal>
-                val baseCurrency = args[3] as String
-                val hasLoadedExchangeRates = args[4] as Boolean
-                val precision = args[5] as Int
-                val settings = args[6] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
+                val categories = args[2] as List<Category>
+                @Suppress("UNCHECKED_CAST")
+                val rates = args[3] as Map<String, BigDecimal>
+                val baseCurrency = args[4] as String
+                val hasLoadedExchangeRates = args[5] as Boolean
+                val precision = args[6] as Int
+                val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
 
                 // Invalidate cache when transactions change
                 cardDataCache.invalidateAll()
@@ -189,10 +195,11 @@ class AccountDetailViewModel(
                 val input = CardInput(
                     transactions = accountTransactions,
                     accounts = listOf(account),
-                    categories = emptyList(),
+                    categories = categories,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
-                    precision = precision
+                    precision = precision,
+                    scopeAccountId = accountId
                 )
 
                 // Compute currency totals directly
@@ -229,6 +236,7 @@ class AccountDetailViewModel(
                 AccountDetailUiState.Success(
                     account = updatedAccount,
                     allAccountTransactions = accountTransactions,
+                    allCategories = categories,
                     currencyTotals = currencyTotals,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -256,6 +264,7 @@ sealed class AccountDetailUiState {
     data class Success(
         val account: Account,
         val allAccountTransactions: List<Transaction>,
+        val allCategories: List<Category> = emptyList(),
         val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

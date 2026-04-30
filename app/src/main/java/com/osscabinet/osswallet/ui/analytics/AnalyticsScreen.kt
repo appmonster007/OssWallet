@@ -51,7 +51,6 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -108,51 +107,65 @@ fun AnalyticsScreen(
             }
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    // Analytics Cards from config
-                    CardReorderableList(
-                        items = cardsConfig.cards.sortedBy { it.order },
-                        key = { it.cardId },
-                        onReorder = { reorderedCards ->
-                            coroutineScope.launch { viewModel.reorderCards(reorderedCards) }
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-                        verticalArrangement = Arrangement.spacedBy(32.dp)
-                    ) { cardConfig, isDragging, dragModifier ->
-                        val input = CardInput(
-                            transactions = uiState.allTransactions,
-                            accounts = uiState.accounts,
-                            categories = allCategories,
-                            exchangeRates = uiState.exchangeRates,
-                            baseCurrency = uiState.selectedCurrency,
-                            precision = uiState.decimalPrecision
-                        )
+                when (val state = uiState) {
+                    is AnalyticsUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is AnalyticsUiState.Error -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(state.message)
+                        }
+                    }
+                    is AnalyticsUiState.Success -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .background(MaterialTheme.colorScheme.background)
+                        ) {
+                            // Analytics Cards from config
+                            CardReorderableList(
+                                items = cardsConfig.cards.sortedBy { it.order },
+                                key = { it.cardId },
+                                onReorder = { reorderedCards ->
+                                    viewModel.reorderCards(reorderedCards)
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                                verticalArrangement = Arrangement.spacedBy(32.dp)
+                            ) { cardConfig, isDragging, dragModifier ->
+                                val input = CardInput(
+                                    transactions = state.allTransactions,
+                                    accounts = state.accounts,
+                                    categories = state.allCategories,
+                                    exchangeRates = state.exchangeRates,
+                                    baseCurrency = state.selectedCurrency,
+                                    precision = state.decimalPrecision
+                                )
 
-                        val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
-                            config = cardConfig,
-                            input = input,
-                            registry = cardComputerRegistry,
-                            updateHandler = viewModel,
-                            onDelete = { coroutineScope.launch { viewModel.removeCard(it) } },
-                            onRecordsClick = onRecordsClick,
-                            onAccountClick = onAccountClick,
-                            currentTheme = "light" // Or observe from settings
-                        )
+                                val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
+                                    config = cardConfig,
+                                    input = input,
+                                    registry = cardComputerRegistry,
+                                    updateHandler = viewModel,
+                                    onDelete = { viewModel.removeCard(it) },
+                                    onRecordsClick = onRecordsClick,
+                                    onAccountClick = onAccountClick,
+                                    currentTheme = "light" // Or observe from settings
+                                )
 
-                        cardWithCallbacks?.let {
-                            UnifiedCardRenderer(
-                                cardWithCallbacks = it,
-                                headerModifier = dragModifier,
-                                accounts = nonArchivedAccounts,
-                                allCategories = allCategories,
-                                savedFilters = savedFilters
-                            )
+                                cardWithCallbacks?.let {
+                                    UnifiedCardRenderer(
+                                        cardWithCallbacks = it,
+                                        headerModifier = dragModifier,
+                                        accounts = nonArchivedAccounts,
+                                        allCategories = state.allCategories,
+                                        savedFilters = savedFilters
+                                    )
+                                }
+                            }
                         }
                     }
                 }

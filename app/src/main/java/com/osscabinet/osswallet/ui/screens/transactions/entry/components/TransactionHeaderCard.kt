@@ -1,9 +1,12 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -15,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
@@ -83,6 +87,36 @@ private fun TransactionTypeSelector(
         Icons.Rounded.SwapHoriz to "Transfer"
     )
 
+    // Expense: red tint, Income: green tint, Transfer: tertiary
+    val expenseColor = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.primary, Color(0xFFB71C1C), 0.6f)
+    val incomeColor = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.secondary, Color(0xFF2E7D32), 0.6f)
+    val transferColor = MaterialTheme.colorScheme.tertiary
+
+    // Animated indicator color
+    val indicatorColor by animateColorAsState(
+        targetValue = when (selectedType) {
+            0 -> expenseColor
+            1 -> incomeColor
+            else -> transferColor
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "indicatorColor"
+    )
+
+    // Animated indicator offset (sliding effect)
+    val indicatorOffset by animateDpAsState(
+        targetValue = when (selectedType) {
+            0 -> 0.dp
+            1 -> 72.dp
+            else -> 144.dp
+        },
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "indicatorOffset"
+    )
+
     Box(
         modifier = Modifier
             .height(40.dp)
@@ -90,38 +124,49 @@ private fun TransactionTypeSelector(
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .padding(6.dp)
     ) {
-        Row {
+        // Animated sliding indicator
+        Box(
+            modifier = Modifier
+                .offset(x = indicatorOffset)
+                .width(72.dp)
+                .fillMaxHeight()
+                .clip(CircleShape)
+                .background(indicatorColor)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxHeight(),
+            horizontalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
             types.forEachIndexed { index, (icon, label) ->
                 val isSelected = selectedType == index
-                val backgroundColor = when {
-                    isSelected && index == 0 -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                    isSelected && index == 1 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    isSelected && index == 2 -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
-                    else -> Color.Transparent
-                }
-                val contentColor = when {
-                    isSelected && index == 0 -> MaterialTheme.colorScheme.error
-                    isSelected && index == 1 -> MaterialTheme.colorScheme.primary
-                    isSelected && index == 2 -> MaterialTheme.colorScheme.tertiary
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                }
+
+                // Icon scale animation when selected
+                val scale by animateFloatAsState(
+                    targetValue = if (isSelected) 1.2f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                    label = "iconScale"
+                )
 
                 Box(
                     modifier = Modifier
-                        .weight(1f)
+                        .width(72.dp)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(backgroundColor)
-                        .clickable { onTypeSelected(index) },
+                        .clip(CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onTypeSelected(index) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(icon, contentDescription = null, tint = contentColor)
-                        Text(label, color = contentColor, style = MaterialTheme.typography.labelLarge)
-                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier
+                            .size(26.dp)
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                    )
                 }
             }
         }

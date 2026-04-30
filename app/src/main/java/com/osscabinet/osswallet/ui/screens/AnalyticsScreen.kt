@@ -15,13 +15,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -45,7 +45,8 @@ fun AnalyticsScreen(
     onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onAddClick: (Int?, String?) -> Unit
+    onAddClick: (Int?, String?) -> Unit,
+    cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
@@ -124,53 +125,25 @@ fun AnalyticsScreen(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
                         verticalArrangement = Arrangement.spacedBy(32.dp)
                     ) { cardConfig, isDragging, dragModifier ->
-                        val cardWithCallbacks = when (cardConfig) {
-                            is CategoryBreakdownCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
-                                    value = viewModel.computeCategoryBreakdownCard(
-                                        config = cardConfig
-                                    )
-                                }
-                                CardWithCallbacks(
-                                    renderData = CardRenderData.CategoryBreakdown(
-                                        config = cardConfig,
-                                        data = cardData ?: emptyList()
-                                    ),
-                                    callbacks = CardCallbacks.Analytics(
-                                        onUpdate = { updatedConfig ->
-                                            coroutineScope.launch {
-                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
-                                            }
-                                        },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
-                                        onRecordsClick = onRecordsClick
-                                    )
-                                )
-                            }
-                            is CategoryExpenseTreemapCardConfig -> {
-                                val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter, key3 = uiState) {
-                                    value = viewModel.computeCategoryExpenseTreemapCard(
-                                        config = cardConfig
-                                    )
-                                }
-                                CardWithCallbacks(
-                                    renderData = CardRenderData.CategoryExpenseTreemap(
-                                        config = cardConfig,
-                                        data = cardData ?: emptyList()
-                                    ),
-                                    callbacks = CardCallbacks.Analytics(
-                                        onUpdate = { updatedConfig ->
-                                            coroutineScope.launch {
-                                                viewModel.updateCardConfigById(cardConfig.cardId) { updatedConfig as CardConfig }
-                                            }
-                                        },
-                                        onDelete = { coroutineScope.launch { viewModel.removeCard(cardConfig.cardId) } },
-                                        onRecordsClick = onRecordsClick
-                                    )
-                                )
-                            }
-                            else -> null
-                        }
+                        val input = CardInput(
+                            transactions = uiState.allTransactions,
+                            accounts = uiState.accounts,
+                            categories = allCategories,
+                            exchangeRates = uiState.exchangeRates,
+                            baseCurrency = uiState.selectedCurrency,
+                            precision = uiState.decimalPrecision
+                        )
+
+                        val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
+                            config = cardConfig,
+                            input = input,
+                            registry = cardComputerRegistry,
+                            updateHandler = viewModel,
+                            onDelete = { coroutineScope.launch { viewModel.removeCard(it) } },
+                            onRecordsClick = onRecordsClick,
+                            onAccountClick = onAccountClick,
+                            currentTheme = "light" // Or observe from settings
+                        )
 
                         cardWithCallbacks?.let {
                             UnifiedCardRenderer(

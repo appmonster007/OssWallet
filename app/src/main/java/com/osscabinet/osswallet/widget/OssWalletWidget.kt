@@ -18,11 +18,9 @@ import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.mapper.toDomain
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.model.analytics.CardRenderData
+import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
-import com.osscabinet.ossWallet.domain.service.CardComputationEngine
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 
@@ -41,7 +39,6 @@ class OssWalletWidget : GlanceAppWidget() {
         val rates = db.currencyDao().getAllRates()
         
         val exchangeRates = rates.associate { it.currencyCode to BigDecimal.valueOf(it.rate) }
-        val computationContext = ComputationContext(baseCurrency, exchangeRates, precision)
 
         val netWorthConfig = NetWorthCardConfig(
             cardId = "widget_net_worth",
@@ -49,12 +46,19 @@ class OssWalletWidget : GlanceAppWidget() {
             screenContext = ScreenContext.DASHBOARD
         )
 
-        val renderData = CardComputationEngine.computeCard(
-            config = netWorthConfig,
-            accounts = accounts,
+        val input = CardInput(
             transactions = transactions,
+            accounts = accounts,
             categories = categories,
-            context = computationContext
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency,
+            precision = precision
+        )
+
+        val renderData = CardComputerRegistry.DEFAULT.compute(
+            type = CardType.NET_WORTH,
+            input = input,
+            config = netWorthConfig
         ) as CardRenderData.NetWorth
 
         provideContent {

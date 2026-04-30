@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.di
 
 import android.content.Context
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
@@ -52,6 +53,10 @@ class AppContainer(private val context: Context) {
 
     val cardRepository: CardRepository by lazy {
         CardRepositoryImpl(settingsDataStore)
+    }
+
+    val cardComputerRegistry: CardComputerRegistry by lazy {
+        CardComputerRegistry.DEFAULT
     }
 
     // Repositories

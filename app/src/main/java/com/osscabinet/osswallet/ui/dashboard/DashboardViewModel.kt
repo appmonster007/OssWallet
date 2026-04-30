@@ -2,17 +2,17 @@ package com.osscabinet.ossWallet.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.FinancialSummary
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
+import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -34,8 +34,9 @@ class DashboardViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val cardRepository: CardRepository,
-    private val categoryRepository: CategoryRepository
-) : ViewModel() {
+    private val categoryRepository: CategoryRepository,
+    private val registry: CardComputerRegistry
+) : ViewModel(), CardUpdateHandler {
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
@@ -169,7 +170,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
+    override fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(fontSize = fontSize) else config
@@ -177,7 +178,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(timelineRange = range) else config
@@ -185,7 +186,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
+    override fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(layout = layout) else config
@@ -193,7 +194,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
+    override fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(showBaseConversion = show) else config
@@ -201,7 +202,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CurrencyBalancesCardConfig) config.copy(timelineRange = range) else config
@@ -209,7 +210,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
+    override fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CashFlowCardConfig) config.copy(showBaseConversion = show) else config
@@ -217,7 +218,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is CashFlowCardConfig) config.copy(timelineRange = range) else config
@@ -225,7 +226,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardAccountsLayout(cardId: String, layout: String) {
+    override fun updateCardAccountsLayout(cardId: String, layout: String) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(layout = layout) else config
@@ -233,7 +234,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
+    override fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(gridColumns = columns) else config
@@ -241,7 +242,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
+    override fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(showAddAccountCard = show) else config
@@ -249,7 +250,7 @@ class DashboardViewModel(
         }
     }
 
-    fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
                 if (config is AccountsCardConfig) config.copy(timelineRange = range) else config
@@ -258,7 +259,7 @@ class DashboardViewModel(
     }
 
     // Registry-based engine handles all computations
-    private val engine = CardComputationEngine
+    // Use the injected registry instead of a local reference
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
@@ -290,56 +291,56 @@ class DashboardViewModel(
                     return@combine DashboardUiState.Loading
                 }
 
-                val computationContext = ComputationContext(baseCurrency, rates, precision)
+                // Construct base CardInput
+                val baseInput = CardInput(
+                    transactions = allTransactions,
+                    accounts = accounts,
+                    categories = categories,
+                    exchangeRates = rates,
+                    baseCurrency = baseCurrency,
+                    precision = precision
+                )
 
-                val currencyTotals = (engine.computeCard(
+                val currencyTotals = (registry.compute(
+                    type = CardType.CURRENCY_BALANCES,
+                    input = baseInput,
                     config = CurrencyBalancesCardConfig(
                         cardId = "currency_balances_main",
                         timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
                         showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
-                    ),
-                    accounts = accounts,
-                    transactions = allTransactions,
-                    categories = categories,
-                    context = computationContext
+                    )
                 ) as CardRenderData.CurrencyBalances).items
 
-                val accountsData = engine.computeCard(
+                val accountsData = registry.compute(
+                    type = CardType.ACCOUNTS,
+                    input = baseInput,
                     config = AccountsCardConfig(
                         cardId = "accounts_main",
                         timelineRange = dashboardSettings.accountsSection.timelineRange,
                         layout = dashboardSettings.accountsSection.layout,
                         gridColumns = dashboardSettings.accountsSection.gridColumns,
                         showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
-                    ),
-                    accounts = accounts,
-                    transactions = allTransactions,
-                    categories = categories,
-                    context = computationContext
+                    )
                 ) as CardRenderData.Accounts
 
-                val netWorthData = engine.computeCard(
+                val netWorthData = registry.compute(
+                    type = CardType.NET_WORTH,
+                    input = baseInput,
                     config = NetWorthCardConfig(
                         cardId = "net_worth_main",
                         timelineRange = dashboardSettings.netWorthSection.timelineRange,
                         fontSize = dashboardSettings.netWorthSection.fontSize
-                    ),
-                    accounts = accounts,
-                    transactions = allTransactions,
-                    categories = categories,
-                    context = computationContext
+                    )
                 ) as CardRenderData.NetWorth
 
-                val cashFlowResult = (engine.computeCard(
+                val cashFlowResult = (registry.compute(
+                    type = CardType.CASH_FLOW,
+                    input = baseInput,
                     config = CashFlowCardConfig(
                         cardId = "cash_flow_main",
                         timelineRange = dashboardSettings.cashFlowSection.timelineRange,
                         showBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
-                    ),
-                    accounts = accounts,
-                    transactions = allTransactions,
-                    categories = categories,
-                    context = computationContext
+                    )
                 ) as CardRenderData.CashFlow).result
 
                 val netWorthCashFlow = if (dashboardSettings.netWorthSection.timelineRange == dashboardSettings.cashFlowSection.timelineRange) {
@@ -412,45 +413,69 @@ class DashboardViewModel(
         )
 
     fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
-        val data = engine.computeCard(
-            config = NetWorthCardConfig(cardId = "temp", timelineRange = timelineRange),
-            accounts = accounts,
+        val input = CardInput(
             transactions = transactions,
+            accounts = accounts,
             categories = emptyList(),
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency,
+            precision = context.precision
+        )
+        val data = registry.compute(
+            type = CardType.NET_WORTH,
+            input = input,
+            config = NetWorthCardConfig(cardId = "temp", timelineRange = timelineRange)
         ) as CardRenderData.NetWorth
         return data.value
     }
 
     fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
-        val data = engine.computeCard(
-            config = CashFlowCardConfig(cardId = "temp", timelineRange = timelineRange),
-            accounts = emptyList(),
+        val input = CardInput(
             transactions = transactions,
+            accounts = emptyList(),
             categories = emptyList(),
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency,
+            precision = context.precision
+        )
+        val data = registry.compute(
+            type = CardType.CASH_FLOW,
+            input = input,
+            config = CashFlowCardConfig(cardId = "temp", timelineRange = timelineRange)
         ) as CardRenderData.CashFlow
         return data.result
     }
 
     fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
-        val data = engine.computeCard(
-            config = CurrencyBalancesCardConfig(cardId = "temp", timelineRange = timelineRange),
-            accounts = accounts,
+        val input = CardInput(
             transactions = transactions,
+            accounts = accounts,
             categories = emptyList(),
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency,
+            precision = context.precision
+        )
+        val data = registry.compute(
+            type = CardType.CURRENCY_BALANCES,
+            input = input,
+            config = CurrencyBalancesCardConfig(cardId = "temp", timelineRange = timelineRange)
         ) as CardRenderData.CurrencyBalances
         return data.items
     }
 
     fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val data = engine.computeCard(
-            config = AccountsCardConfig(cardId = "temp", timelineRange = timelineRange),
-            accounts = accounts,
+        val input = CardInput(
             transactions = transactions,
+            accounts = accounts,
             categories = emptyList(),
-            context = context
+            exchangeRates = context.exchangeRates,
+            baseCurrency = context.baseCurrency,
+            precision = context.precision
+        )
+        val data = registry.compute(
+            type = CardType.ACCOUNTS,
+            input = input,
+            config = AccountsCardConfig(cardId = "temp", timelineRange = timelineRange)
         ) as CardRenderData.Accounts
         return Pair(data.updatedAccounts, data.accountStats)
     }
@@ -461,13 +486,19 @@ class DashboardViewModel(
 
     suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
         val categories = categoryRepository.getAllCategoriesSync()
-        val data = engine.computeCard(
-            config = cardConfig,
-            accounts = emptyList(),
+        val input = CardInput(
             transactions = allTransactions,
+            accounts = emptyList(),
             categories = categories,
-            context = ComputationContext(baseCurrency, exchangeRates, precision)
-        ) as CardRenderData.CategoryBreakdownResult
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency,
+            precision = precision
+        )
+        val data = registry.compute(
+            type = CardType.CATEGORY_BREAKDOWN,
+            input = input,
+            config = cardConfig
+        ) as CardRenderData.CategoryBreakdown
         
         fun mapToUi(metric: CategoryTreeMetrics): CategoryBreakdownData {
             return CategoryBreakdownData(
@@ -488,13 +519,19 @@ class DashboardViewModel(
 
     suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
         val categories = categoryRepository.getAllCategoriesSync()
-        val data = engine.computeCard(
-            config = cardConfig,
-            accounts = emptyList(),
+        val input = CardInput(
             transactions = allTransactions,
+            accounts = emptyList(),
             categories = categories,
-            context = ComputationContext(baseCurrency, exchangeRates, precision)
-        ) as CardRenderData.CategoryTreemapResult
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency,
+            precision = precision
+        )
+        val data = registry.compute(
+            type = CardType.CATEGORY_EXPENSE_TREEMAP,
+            input = input,
+            config = cardConfig
+        ) as CardRenderData.CategoryTreemap
         
         fun mapToUi(metric: CategoryTreeMetrics): CategoryExpenseTreemapData {
             return CategoryExpenseTreemapData(

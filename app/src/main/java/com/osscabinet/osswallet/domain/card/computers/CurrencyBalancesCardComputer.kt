@@ -11,16 +11,21 @@ class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig
     override val supportedType = CardType.CURRENCY_BALANCES
 
     override fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-        val filteredTx = TransactionFilterService.filter(input.transactions, config.filter)
-        val currencySummaries = AggregationService.calculateSummaryByCurrency(filteredTx)
-        
-        val items = currencySummaries.map { (curr, summary) ->
-            CurrencyAggregationItem(
-                currency = curr,
-                amount = summary.totalAmount,
-                amountInBase = CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, input.baseCurrency, input.exchangeRates)
-            )
-        }.sortedByDescending { it.amountInBase.abs() }
+        // "Currency Balances" should usually reflect the current total holdings.
+        // If accounts are filtered in the card config, we only sum those accounts, 
+        // but we use ALL their transactions to get the correct current balance.
+        val targetAccountIds = config.filter.accountIds
+        val balanceTransactions = if (targetAccountIds.isEmpty()) {
+            input.transactions
+        } else {
+            input.transactions.filter { targetAccountIds.contains(it.accountId) }
+        }
+
+        val items = AggregationService.calculateCurrencyBalances(
+            transactions = balanceTransactions,
+            baseCurrency = input.baseCurrency,
+            exchangeRates = input.exchangeRates
+        )
         
         return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)
     }

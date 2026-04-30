@@ -3,14 +3,14 @@ package com.osscabinet.ossWallet.domain.service
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService.calculateTotalInBaseCurrency
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService.convertFinancialSummary
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterByAccount
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterExpense
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterIncome
+import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.service.CurrencyService.convertAmount
 import com.osscabinet.ossWallet.domain.service.TimelineGroupingService.formatDate
 import com.osscabinet.ossWallet.domain.service.TimelineGroupingService.formatMonth
 import com.osscabinet.ossWallet.domain.service.TimelineGroupingService.systemZoneId
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterByAccount
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterExpense
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService.filterIncome
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -31,6 +31,88 @@ object AggregationService {
     val EMPTY_SUMMARY = FinancialSummary.EMPTY
 
     // ==================== Calculation Methods ====================
+
+    /**
+     * Converts a FinancialSummary from one currency to another.
+     */
+    fun convertFinancialSummary(
+        summary: FinancialSummary,
+        fromCurrency: String,
+        toCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary {
+        return FinancialSummary(
+            totalAmount = CurrencyService.convertAmount(summary.totalAmount, fromCurrency, toCurrency, exchangeRates, 10),
+            income = CurrencyService.convertAmount(summary.income, fromCurrency, toCurrency, exchangeRates, 10),
+            expense = CurrencyService.convertAmount(summary.expense, fromCurrency, toCurrency, exchangeRates, 10),
+            transactionCount = summary.transactionCount
+        )
+    }
+
+    /**
+     * Calculates the total balance for an account in its target currency.
+     */
+    fun calculateAccountBalance(
+        accountId: String,
+        allTransactions: List<Transaction>,
+        accountCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): BigDecimal {
+        val accountTransactions = allTransactions.filter { it.accountId == accountId }
+        val totalsByCurrency = calculateTotalByCurrency(accountTransactions)
+        return CurrencyService.calculateTotalInCurrency(totalsByCurrency, accountCurrency, exchangeRates)
+    }
+
+    /**
+     * Calculates a comprehensive CashFlowResult for a set of transactions.
+     */
+    fun calculateCashFlowResult(
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): CashFlowResult {
+        val breakdown = calculateIncomeExpenseBreakdown(transactions, exchangeRates, baseCurrency)
+        
+        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
+            .distinct().sorted().map { curr ->
+                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
+                CashFlowBreakdownItem(
+                    currency = curr,
+                    income = inc.totalAmount,
+                    incomeInBase = CurrencyService.convertAmount(inc.totalAmount, curr, baseCurrency, exchangeRates, 10),
+                    expense = exp.totalAmount,
+                    expenseInBase = CurrencyService.convertAmount(exp.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                )
+            }
+            
+        return CashFlowResult(
+            totalIncomeInBase = breakdown.totalIncome.setScale(precision, RoundingMode.HALF_UP),
+            totalExpensesInBase = breakdown.totalExpense.setScale(precision, RoundingMode.HALF_UP),
+            netInBase = breakdown.netFlow.setScale(precision, RoundingMode.HALF_UP),
+            breakdown = cashFlowBreakdown,
+            filteredTransactions = transactions
+        )
+    }
+
+    /**
+     * Calculates currency balances with base currency conversion.
+     */
+    fun calculateCurrencyBalances(
+        transactions: List<Transaction>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): List<CurrencyAggregationItem> {
+        val summaries = calculateSummaryByCurrency(transactions)
+        return summaries.map { (curr, summary) ->
+            CurrencyAggregationItem(
+                currency = curr,
+                amount = summary.totalAmount,
+                amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, baseCurrency, exchangeRates, 10)
+            )
+        }.sortedByDescending { it.amountInBase.abs() }
+    }
 
     /**
      * Calculates summary metrics for a list of transactions.
@@ -258,7 +340,14 @@ object AggregationService {
             },
             mapper = { timestamp, summaries ->
                 val baseSummary = if (exchangeRates != null && baseCurrency != null) {
-                    calculateTotalInBaseCurrency(summaries, baseCurrency, exchangeRates)
+                    summaries.values.fold(FinancialSummary.EMPTY) { acc, summary ->
+                        FinancialSummary(
+                            totalAmount = acc.totalAmount + summary.totalAmount,
+                            income = acc.income + summary.income,
+                            expense = acc.expense + summary.expense,
+                            transactionCount = acc.transactionCount + summary.transactionCount
+                        )
+                    }
                 } else {
                     FinancialSummary(
                         totalAmount = summaries.values.sumOf { it.totalAmount },

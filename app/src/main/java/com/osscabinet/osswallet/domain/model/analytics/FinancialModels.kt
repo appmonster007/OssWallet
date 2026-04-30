@@ -59,6 +59,7 @@ data class CurrencyAggregationItem(
 data class AccountSummaryItem(
     val account: Account,
     val currencyBalances: Map<String, BigDecimal>,
+    val balance: BigDecimal, // Total balance in account currency
     val balanceInBase: BigDecimal,
     val incomeInAccountCurrency: BigDecimal,
     val expenseInAccountCurrency: BigDecimal

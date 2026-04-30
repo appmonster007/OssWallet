@@ -196,7 +196,6 @@ fun TransactionListContentPreview() {
     val sampleAccount = Account(
         id = "1",
         name = "Checking",
-        balance = BigDecimal("1500.00"),
         currencyCode = "USD",
         structureType = "Personal",
         colorHex = "#FF0000",

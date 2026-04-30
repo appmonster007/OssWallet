@@ -612,7 +612,6 @@ fun FilterSheetContentPreview() {
         Account(
             id = "1",
             name = "Checking",
-            balance = BigDecimal("1000.00"),
             currencyCode = "USD",
             structureType = "Personal",
             colorHex = "#FF0000",
@@ -622,7 +621,6 @@ fun FilterSheetContentPreview() {
         Account(
             id = "2",
             name = "Savings",
-            balance = BigDecimal("5000.00"),
             currencyCode = "USD",
             structureType = "Personal",
             colorHex = "#00FF00",

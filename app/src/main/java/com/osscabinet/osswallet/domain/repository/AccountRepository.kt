@@ -8,7 +8,6 @@ interface AccountRepository {
     fun getAllAccounts(profileId: Int): Flow<List<Account>>
     suspend fun getAllAccountsSync(profileId: Int): List<Account>
     suspend fun insertAccount(account: Account, profileId: Int)
-    suspend fun updateBalance(accountId: String, amount: BigDecimal)
     suspend fun deleteAccount(accountId: String)
     suspend fun updateAccounts(accounts: List<Account>, profileId: Int)
 }

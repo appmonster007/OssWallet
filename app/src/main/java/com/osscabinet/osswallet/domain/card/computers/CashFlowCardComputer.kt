@@ -11,31 +11,12 @@ class CashFlowCardComputer : CardDataComputer<CashFlowCardConfig, CardRenderData
 
     override fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
         val filtered = TransactionFilterService.filter(input.transactions, config.filter)
-        val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
-            transactions = filtered,
-            exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
-        )
         
-        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
-            .distinct().sorted().map { curr ->
-                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                CashFlowBreakdownItem(
-                    currency = curr,
-                    income = inc.totalAmount,
-                    incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, input.baseCurrency, input.exchangeRates),
-                    expense = exp.totalAmount,
-                    expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, input.baseCurrency, input.exchangeRates)
-                )
-            }
-            
-        val result = CashFlowResult(
-            totalIncomeInBase = breakdown.totalIncome.setScale(input.precision, RoundingMode.HALF_UP),
-            totalExpensesInBase = breakdown.totalExpense.setScale(input.precision, RoundingMode.HALF_UP),
-            netInBase = breakdown.netFlow.setScale(input.precision, RoundingMode.HALF_UP),
-            breakdown = cashFlowBreakdown,
-            filteredTransactions = filtered
+        val result = AggregationService.calculateCashFlowResult(
+            transactions = filtered,
+            baseCurrency = input.baseCurrency,
+            exchangeRates = input.exchangeRates,
+            precision = input.precision
         )
         
         return CardRenderData.CashFlow(config, result, input.baseCurrency, input.precision)

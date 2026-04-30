@@ -12,41 +12,32 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
+        // Filter transactions for the period (used for Flow/Delta calculation)
         val filteredTx = TransactionFilterService.filter(input.transactions, config.filter)
         
-        val accountBreakdowns = AggregationService.breakdownByAccount(
-            transactions = filteredTx,
-            accounts = input.accounts,
-            exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
-        )
-        val netWorth = accountBreakdowns.sumOf { it.totalAmount }
+        // Calculate LIFETIME net worth for the relevant accounts
+        // We filter accounts based on the card config, but use ALL their transactions for the total
+        val targetAccountIds = config.filter.accountIds
+        val balanceTransactions = if (targetAccountIds.isEmpty()) {
+            input.transactions
+        } else {
+            input.transactions.filter { targetAccountIds.contains(it.accountId) }
+        }
 
-        val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
-            transactions = filteredTx,
+        val totalsByCurrency = AggregationService.calculateTotalByCurrency(balanceTransactions)
+        val netWorth = CurrencyService.calculateTotalInCurrency(
+            currencyTotals = totalsByCurrency,
+            targetCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
+            precision = 10
         )
-        
-        val cashFlowBreakdown = (breakdown.incomeCurrencyBreakdown.keys + breakdown.expenseCurrencyBreakdown.keys)
-            .distinct().sorted().map { curr ->
-                val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
-                CashFlowBreakdownItem(
-                    currency = curr,
-                    income = inc.totalAmount,
-                    incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, input.baseCurrency, input.exchangeRates),
-                    expense = exp.totalAmount,
-                    expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, input.baseCurrency, input.exchangeRates)
-                )
-            }
-            
-        val cashFlowResult = CashFlowResult(
-            totalIncomeInBase = breakdown.totalIncome.setScale(input.precision, RoundingMode.HALF_UP),
-            totalExpensesInBase = breakdown.totalExpense.setScale(input.precision, RoundingMode.HALF_UP),
-            netInBase = breakdown.netFlow.setScale(input.precision, RoundingMode.HALF_UP),
-            breakdown = cashFlowBreakdown,
-            filteredTransactions = filteredTx
+
+        // Calculate flow for the SELECTED period only
+        val cashFlowResult = AggregationService.calculateCashFlowResult(
+            transactions = filteredTx,
+            baseCurrency = input.baseCurrency,
+            exchangeRates = input.exchangeRates,
+            precision = input.precision
         )
         
         return CardRenderData.NetWorth(config, netWorth, cashFlowResult, input.baseCurrency, input.precision)

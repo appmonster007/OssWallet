@@ -16,8 +16,8 @@ import java.util.*
 @Composable
 fun TransactionListFilteredPreview() {
     val mockAccounts = listOf(
-        Account("1", "Main Bank", BigDecimal("1000.00"), "USD", "REGULAR", "#2196F3", "AccountBalance", listOf("AccountBalance")),
-        Account("2", "Cash", BigDecimal("500.00"), "USD", "REGULAR", "#4CAF50", "AccountBalanceWallet", listOf("AccountBalanceWallet"))
+        Account("1", "Main Bank", "USD", "REGULAR", "#2196F3", "AccountBalance", listOf("USD")),
+        Account("2", "Cash", "USD", "REGULAR", "#4CAF50", "AccountBalanceWallet", listOf("USD"))
     )
     
     val mockCategories = listOf(

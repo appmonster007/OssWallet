@@ -11,7 +11,9 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.FilterService
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.AggregationService
+import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.TimeBucket
 import com.osscabinet.ossWallet.domain.service.TrajectoryPoint
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -154,18 +156,18 @@ class AnalyticsViewModel(
         precision = _currentPrecision
     )
 
-    // Direct computation implementations using TransactionsUtilityService
+    // Direct computation implementations using split services
     // Note: Category tree building with colors requires CategoryDao and is implemented below
 
     suspend fun computeCategoryBreakdownForCard(
         cardConfig: CategoryBreakdownCardConfig,
         allTransactions: List<Transaction>
     ): List<CategoryBreakdownData> {
-        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
+        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
 
-        val categoryBreakdowns = TransactionsUtilityService.breakdownByCategory(
+        val categoryBreakdowns = AggregationService.breakdownByCategory(
             transactions = filtered,
             exchangeRates = getComputationContext().exchangeRates,
             baseCurrency = getComputationContext().baseCurrency
@@ -220,13 +222,13 @@ class AnalyticsViewModel(
         allTransactions: List<Transaction>
     ): List<CategoryExpenseTreemapData> {
         // Similar to category breakdown but only for expenses
-        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
-        val expenseTransactions = filtered.filter { it.amount.signum() < 0 }
+        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
+        val expenseTransactions = TransactionFilterService.filterExpense(filtered)
 
         val allCategories = categoryDao.getAllCategoriesSync()
         val categoryMap = allCategories.associateBy { it.name }
 
-        val categoryBreakdowns = TransactionsUtilityService.breakdownByCategory(
+        val categoryBreakdowns = AggregationService.breakdownByCategory(
             transactions = expenseTransactions,
             exchangeRates = getComputationContext().exchangeRates,
             baseCurrency = getComputationContext().baseCurrency
@@ -292,8 +294,8 @@ class AnalyticsViewModel(
         val selectedCurrency = _uiState.value.selectedCurrency
         val currentRates = _uiState.value.exchangeRates
         
-        // 1. Global Totals using TransactionsUtilityService
-        val globalBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+        // 1. Global Totals using AggregationService
+        val globalBreakdown = AggregationService.calculateIncomeExpenseBreakdown(
             transactions = allTransactions,
             exchangeRates = currentRates,
             baseCurrency = selectedCurrency
@@ -322,34 +324,34 @@ class AnalyticsViewModel(
             cal.get(Calendar.MONTH) == lastMonth && cal.get(Calendar.YEAR) == lastYear
         }
 
-        val thisMonthBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+        val thisMonthBreakdown = AggregationService.calculateIncomeExpenseBreakdown(
             thisMonthTransactions, currentRates, selectedCurrency
         )
-        val lastMonthBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+        val lastMonthBreakdown = AggregationService.calculateIncomeExpenseBreakdown(
             lastMonthTransactions, currentRates, selectedCurrency
         )
 
-        val thisMonthSavingsRate = TransactionsUtilityService.calculateSavingsRate(
+        val thisMonthSavingsRate = AggregationService.calculateSavingsRate(
             thisMonthBreakdown.totalIncome, thisMonthBreakdown.totalExpense
         )
-        val lastMonthSavingsRate = TransactionsUtilityService.calculateSavingsRate(
+        val lastMonthSavingsRate = AggregationService.calculateSavingsRate(
             lastMonthBreakdown.totalIncome, lastMonthBreakdown.totalExpense
         )
-        
+
         // 3. Burn Rate
         val firstTx = allTransactions.minByOrNull { it.timestamp }
         val daysActive = if (firstTx != null) {
             val diff = System.currentTimeMillis() - firstTx.timestamp
             (diff / (24 * 60 * 60 * 1000L)).coerceAtLeast(1)
         } else 1
-        
-        val monthlyBurnRate = TransactionsUtilityService.calculateBurnRate(
+
+        val monthlyBurnRate = AggregationService.calculateBurnRate(
             totalExpense = globalBreakdown.totalExpense,
             daysActive = daysActive
         )
 
         // 4. Daily Net Flow (Last 7 days)
-        val dailyNetFlow = TransactionsUtilityService.calculateDailyNetFlow(
+        val dailyNetFlow = AggregationService.calculateDailyNetFlow(
             transactions = allTransactions,
             days = 7,
             exchangeRates = currentRates,

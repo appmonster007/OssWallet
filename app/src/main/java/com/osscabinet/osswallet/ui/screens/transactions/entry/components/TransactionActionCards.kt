@@ -39,37 +39,19 @@ fun TransactionActionCards(
             iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
         )
 
-        // Account selector row
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Account and Category/Target Account in same row
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Account selector
             ActionCard(
                 icon = Icons.Rounded.AccountBalanceWallet,
-                label = "FROM",
-                value = state.selectedAccount?.name ?: "Select Account",
+                label = if (state.isTransfer) "FROM" else "ACCOUNT",
+                value = state.selectedAccount?.name ?: "Select",
                 onClick = { onEvent(TransactionEntryEvent.ShowAccountSheet(true)) },
                 modifier = Modifier.weight(1f),
-                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
             )
 
-            // Currency display
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.height(56.dp)
-            ) {
-                Box(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    Text(
-                        text = state.selectedCurrency.ifEmpty { "---" },
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-        }
-
-        // Target account (transfer) or Category (expense/income)
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Target account (transfer) or Category (expense/income)
             if (state.isTransfer) {
                 val targetDisplay = when {
                     state.targetAccount != null -> state.targetAccount.name

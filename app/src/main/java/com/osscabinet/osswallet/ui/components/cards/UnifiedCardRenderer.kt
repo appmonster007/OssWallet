@@ -24,6 +24,19 @@ import java.math.RoundingMode
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
+ *
+ * ⚠️ TYPE SAFETY: This renderer validates that the [callbacks] type matches the
+ * [renderData] type at runtime. Passing an incompatible callback type will throw
+ * an [IllegalArgumentException] immediately rather than silently failing.
+ *
+ * Expected pairings:
+ * - NetWorth → WithFontSizeAndTimeline
+ * - CurrencyBalances → CurrencyBalances
+ * - CashFlow → CashFlow
+ * - CategoryBreakdown → Analytics
+ * - CategoryTreemap → Analytics
+ * - AccountHero → AccountHero
+ * - Accounts → Accounts
  */
 @Composable
 fun UnifiedCardRenderer(
@@ -39,11 +52,9 @@ fun UnifiedCardRenderer(
 ) {
     when (renderData) {
         is CardRenderData.NetWorth -> {
-            val cb = callbacks as? CardCallbacks.WithFontSizeAndTimeline 
-                ?: CardCallbacks.WithFontSizeAndTimeline(
-                    onFontSizeChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onDelete = {}
+            val cb = callbacks as? CardCallbacks.WithFontSizeAndTimeline
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.WithFontSizeAndTimeline for NetWorth card, got ${callbacks::class.simpleName}"
                 )
             
             NetWorthCard(
@@ -67,12 +78,8 @@ fun UnifiedCardRenderer(
         
         is CardRenderData.CurrencyBalances -> {
             val cb = callbacks as? CardCallbacks.CurrencyBalances
-                ?: CardCallbacks.CurrencyBalances(
-                    onLayoutChange = { _, _ -> },
-                    onShowBaseConversionChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onCurrencyClick = null,
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.CurrencyBalances for CurrencyBalances card, got ${callbacks::class.simpleName}"
                 )
             
             CurrencyBalancesCard(
@@ -95,12 +102,8 @@ fun UnifiedCardRenderer(
         
         is CardRenderData.CashFlow -> {
             val cb = callbacks as? CardCallbacks.CashFlow
-                ?: CardCallbacks.CashFlow(
-                    onShowBaseConversionChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onClickIncome = {},
-                    onClickExpense = {},
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.CashFlow for CashFlow card, got ${callbacks::class.simpleName}"
                 )
             
             CashFlowCard(
@@ -124,9 +127,8 @@ fun UnifiedCardRenderer(
         
         is CardRenderData.CategoryBreakdown -> {
             val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.Analytics for CategoryBreakdown card, got ${callbacks::class.simpleName}"
                 )
             
             val uiData = renderData.items.map { metric ->
@@ -159,9 +161,8 @@ fun UnifiedCardRenderer(
         
         is CardRenderData.CategoryTreemap -> {
             val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.Analytics for CategoryTreemap card, got ${callbacks::class.simpleName}"
                 )
             
             val uiData = renderData.items.map { metric ->
@@ -192,10 +193,8 @@ fun UnifiedCardRenderer(
 
         is CardRenderData.AccountHero -> {
             val cb = callbacks as? CardCallbacks.AccountHero
-                ?: CardCallbacks.AccountHero(
-                    onShowCurrencyBadgesChange = { _, _ -> },
-                    onClick = null,
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.AccountHero for AccountHero card, got ${callbacks::class.simpleName}"
                 )
             
             AccountHeroCard(
@@ -215,12 +214,8 @@ fun UnifiedCardRenderer(
         
         is CardRenderData.Accounts -> {
             val cb = callbacks as? CardCallbacks.Accounts
-                ?: CardCallbacks.Accounts(
-                    onGridColumnsChange = { _, _ -> },
-                    onLayoutChange = { _, _ -> },
-                    onTimelineRangeChange = { _, _ -> },
-                    onShowAddAccountCardChange = { _, _ -> },
-                    onDelete = {}
+                ?: throw IllegalArgumentException(
+                    "Expected CardCallbacks.Accounts for Accounts card, got ${callbacks::class.simpleName}"
                 )
             
             AccountsCard(

@@ -967,38 +967,77 @@ object AggregationService {
     /**
      * Generic breakdown method that groups transactions by a custom label selector.
      */
-    fun <L> breakdownByLabel(
+    /**
+     * Builds a hierarchical category tree with financial metrics.
+     * 
+     * @param transactions Filtered list of transactions to process.
+     * @param allCategories Full list of categories for tree building.
+     * @param exchangeRates Optional exchange rates for conversion.
+     * @param baseCurrency Optional base currency for conversion.
+     * @param onlyExpenses If true, only process expense transactions.
+     * @return List of root-level CategoryTreeMetrics.
+     */
+    fun buildCategoryTree(
         transactions: List<Transaction>,
-        labelSelector: (Transaction) -> L,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
-        baseCurrency: String? = null
-    ): List<LabelGroup<L>> where L : Any {
-        if (exchangeRates != null && baseCurrency.isNullOrEmpty()) {
-            throw IllegalArgumentException("baseCurrency must be provided when exchangeRates is specified")
+        baseCurrency: String? = null,
+        onlyExpenses: Boolean = false
+    ): List<CategoryTreeMetrics> {
+        val filteredTx = if (onlyExpenses) {
+            TransactionFilterService.filterExpense(transactions)
+        } else {
+            transactions
         }
 
-        return transactions.groupBy(labelSelector)
-            .map { (label, txs) ->
-                val summaries = calculateSummaryByCurrency(txs)
-                val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
-                    summaries.mapValues { (currency, summary) ->
-                        convertFinancialSummary(summary, currency, baseCurrency, exchangeRates)
-                    }
-                } else {
-                    summaries
-                }
-                LabelGroup(
-                    label = label,
-                    financialSummary = FinancialSummary(
-                        totalAmount = convertedSummaries.values.sumOf { it.totalAmount },
-                        income = convertedSummaries.values.sumOf { it.income },
-                        expense = convertedSummaries.values.sumOf { it.expense },
-                        transactionCount = convertedSummaries.values.sumOf { it.transactionCount }
-                    ),
-                    transactions = txs,
-                    currencyBreakdown = summaries
-                )
-            }
-            .sortedByDescending { it.totalAmount.abs() }
+        val categoryMap = allCategories.associateBy { it.name }
+        
+        val categoryBreakdowns = breakdownByCategory(
+            transactions = filteredTx,
+            exchangeRates = exchangeRates,
+            baseCurrency = baseCurrency
+        ).associateBy { it.key }
+
+        val globalTotal = if (onlyExpenses) {
+            categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.expense.abs()) }
+        } else {
+            categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
+        }
+
+        fun buildSubTree(categoryName: String?, index: Int = 0, totalSiblings: Int = 1): CategoryTreeMetrics? {
+            val entity = categoryMap[categoryName] ?: return null
+            val breakdown = categoryBreakdowns[categoryName]
+                ?: FinancialMetrics(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
+
+            val childrenEntities = allCategories.filter { it.parentId == entity.id }
+            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
+                buildSubTree(child.name, i, childrenEntities.size)
+            }.sortedByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
+
+            val totalIncome = childrenData.fold(breakdown.income) { acc, child -> acc.add(child.income) }
+            val totalExpense = childrenData.fold(breakdown.expense) { acc, child -> acc.add(child.expense) }
+            val totalNet = totalIncome + totalExpense
+
+            val currentMetric = if (onlyExpenses) totalExpense.abs() else totalNet.abs()
+
+            return CategoryTreeMetrics(
+                category = entity.name,
+                categoryId = entity.id,
+                netBalance = totalNet,
+                income = totalIncome,
+                expense = totalExpense,
+                colorHex = entity.colorHex,
+                percentage = if (globalTotal.signum() != 0) {
+                    (currentMetric.divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat()
+                } else 0f,
+                hasSubcategories = childrenData.isNotEmpty(),
+                subcategoryData = childrenData
+            )
+        }
+
+        val rootCategories = allCategories.filter { it.parentId == null }
+        return rootCategories.mapNotNull { root ->
+            buildSubTree(root.name)
+        }.sortedByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
     }
 }

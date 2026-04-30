@@ -73,6 +73,22 @@ typealias TagBreakdown = FinancialMetrics<String>
 typealias StatusBreakdown = FinancialMetrics<String>
 
 /**
+ * Hierarchical financial metrics for categories.
+ * Supports tree structures for breakdown visualizations.
+ */
+data class CategoryTreeMetrics(
+    val category: String,
+    val categoryId: Long?,
+    val netBalance: BigDecimal,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val colorHex: Int,
+    val percentage: Float,
+    val hasSubcategories: Boolean = false,
+    val subcategoryData: List<CategoryTreeMetrics> = emptyList()
+)
+
+/**
  * Currency breakdown with detailed financial metrics.
  * Used by breakdownByCurrency to provide per-currency breakdowns.
  */

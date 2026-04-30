@@ -6,12 +6,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -23,21 +24,18 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@Serializable
-data class CashFlowSettings(
-    val showBaseConversion: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime
-)
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
 @Composable
 fun CashFlowCard(
@@ -50,23 +48,25 @@ fun CashFlowCard(
     showTitle: Boolean = true,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    filter: TransactionFilter = TransactionFilter(),
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
-    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
+    onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
     onClickIncome: (TimelineRange) -> Unit = {},
-    onClickExpense: (TimelineRange) -> Unit = {}
+    onClickExpense: (TimelineRange) -> Unit = {},
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    var showSettings by remember { mutableStateOf(false) }
+    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSettings by remember { mutableStateOf(false) }
 
-    val timelineLabel = when (timelineRange) {
+    val timelineLabel = when (val tr = filter.timelineRange) {
         is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> timelineRange.period.label
-        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.ThisPeriod -> tr.period.label
+        is TimelineRange.LastPeriod -> tr.period.label
         is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
-            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
-            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(tr.start))
+            val end = formatter.format(Instant.ofEpochMilli(tr.end))
             "$start - $end"
         }
     }
@@ -85,10 +85,11 @@ fun CashFlowCard(
                 AeonFlowSectionHeader(
                     title = "CASH FLOW SUMMARY",
                     modifier = headerModifier,
+                    filter = filter,
                     trailing = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = timelineLabel.uppercase(),
@@ -100,13 +101,25 @@ fun CashFlowCard(
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                             )
                             IconButton(
-                                onClick = { showSettings = true },
-                                modifier = Modifier.size(24.dp)
+                                onClick = { showFilterSettings = true },
+                                modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    Icons.Default.MoreHoriz,
-                                    contentDescription = "Settings",
-                                    tint = MaterialTheme.colorScheme.primary
+                                    Icons.Default.FilterList,
+                                    contentDescription = "Filter",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { showDisplaySettings = true },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    contentDescription = "Display Settings",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -126,7 +139,7 @@ fun CashFlowCard(
                     currentTheme = currentTheme,
                     precision = precision,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(timelineRange) }
+                    onClick = { onClickIncome(filter.timelineRange) }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->
@@ -150,7 +163,7 @@ fun CashFlowCard(
                     currentTheme = currentTheme,
                     precision = precision,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(timelineRange) }
+                    onClick = { onClickExpense(filter.timelineRange) }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         cashFlowResult?.breakdown?.forEach { item ->
@@ -169,76 +182,82 @@ fun CashFlowCard(
         }
     }
 
-    if (showSettings) {
-        AlertDialog(
-            onDismissRequest = { showSettings = false },
-            dismissButton = {
-                TextButton(
-                    onClick = onDelete,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete card",
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Delete")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showSettings = false }) {
-                    Text("Done")
-                }
-            },
-            title = {
-                Text(
-                    "Cash Flow Settings",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Timeline Range Selection
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                "TIMELINE",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            TimelineFilterBar(
-                                currentRange = timelineRange,
-                                onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    AeonBaseConversionToggle(
-                        baseCurrency = baseCurrency,
-                        showBaseConversion = showBaseConversion,
-                        onShowBaseConversionChange = { show -> onShowBaseConversionChange(cardId, show) }
-                    )
-                }
-            },
-            shape = RoundedCornerShape(32.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
+    if (showDisplaySettings) {
+        CashFlowDisplaySettingsDialog(
+            showBaseConversion = showBaseConversion,
+            baseCurrency = baseCurrency,
+            cardId = cardId,
+            onShowBaseConversionChange = onShowBaseConversionChange,
+            onDismiss = { showDisplaySettings = false },
+            onDelete = onDelete
         )
     }
+
+    if (showFilterSettings) {
+        AeonCardSettingsSheet(
+            title = "Cash Flow Filter",
+            filter = filter,
+            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
+            onDismiss = { showFilterSettings = false },
+            onDelete = onDelete,
+            filterRules = filterRules
+        )
+    }
+}
+
+@Composable
+private fun CashFlowDisplaySettingsDialog(
+    showBaseConversion: Boolean,
+    baseCurrency: String,
+    cardId: String,
+    onShowBaseConversionChange: (String, Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDelete()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete card",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        },
+        title = {
+            Text(
+                "Cash Flow Display",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonBaseConversionToggle(
+                    baseCurrency = baseCurrency,
+                    showBaseConversion = showBaseConversion,
+                    onShowBaseConversionChange = { show -> onShowBaseConversionChange(cardId, show) }
+                )
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    )
 }
 
 @Composable

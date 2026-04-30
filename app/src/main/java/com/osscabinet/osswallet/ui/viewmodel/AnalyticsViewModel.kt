@@ -237,8 +237,8 @@ class AnalyticsViewModel(
             baseCurrency = selectedCurrency
         )
 
-        val totalIncome = globalBreakdown.totalIncome.setScale(_currentPrecision, RoundingMode.HALF_UP)
-        val totalExpense = globalBreakdown.totalExpense.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        globalBreakdown.totalIncome.setScale(_currentPrecision, RoundingMode.HALF_UP)
+        globalBreakdown.totalExpense.setScale(_currentPrecision, RoundingMode.HALF_UP)
         val currentBalance = globalBreakdown.netFlow.setScale(_currentPrecision, RoundingMode.HALF_UP)
         
         // 2. Monthly Data
@@ -344,7 +344,11 @@ class AnalyticsViewModel(
                     when (card) {
                         is CategoryBreakdownCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
                         is CategoryExpenseTreemapCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
-                        else -> card
+                        is NetWorthCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
+                        is CurrencyBalancesCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
+                        is CashFlowCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
+                        is AccountsCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
+                        is AccountHeroCardConfig -> card.copy(filter = card.filter.copy(timelineRange = newTimelineRange))
                     }
                 } else {
                     card
@@ -361,6 +365,50 @@ class AnalyticsViewModel(
             }
         )
         settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
+    }
+
+    override fun updateCardCategoryBreakdownConfig(cardId: String, config: CategoryBreakdownCardConfig) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config }
+        }
+    }
+
+    override fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: CategoryExpenseTreemapCardConfig) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config }
+        }
+    }
+
+    override fun updateCardNetWorthFilter(cardId: String, filter: TransactionFilter) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(filter = filter) else config
+            }
+        }
+    }
+
+    override fun updateCardCurrencyBalancesFilter(cardId: String, filter: TransactionFilter) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) config.copy(filter = filter) else config
+            }
+        }
+    }
+
+    override fun updateCardCashFlowFilter(cardId: String, filter: TransactionFilter) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(filter = filter) else config
+            }
+        }
+    }
+
+    override fun updateCardAccountsFilter(cardId: String, filter: TransactionFilter) {
+        viewModelScope.launch {
+            updateCardConfigById(cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(filter = filter) else config
+            }
+        }
     }
 
     suspend fun reorderCards(newOrder: List<CardConfig>) {

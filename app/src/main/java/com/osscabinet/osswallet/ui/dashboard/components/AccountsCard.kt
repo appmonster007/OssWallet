@@ -9,43 +9,38 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.*
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@Serializable
-data class AccountsSectionSettings(
-    val layout: String = "grid", // "scroll" or "grid"
-    val gridColumns: Int = 2,
-    val showAddAccountCard: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime
-)
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsCard(
     onManageClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onRecordsClick: ((com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit)? = null,
+    onRecordsClick: ((RecordsFilterContext) -> Unit)? = null,
     onGridColumnsChange: (String, Int) -> Unit,
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
@@ -57,25 +52,27 @@ fun AccountsCard(
     gridColumns: Int = 2,
     layout: String = "grid",
     precision: Int = 2,
-    timelineRange: TimelineRange = TimelineRange.AllTime,
+    filter: TransactionFilter = TransactionFilter(),
     onLayoutChange: (String, String) -> Unit = { _, _ -> },
-    onTimelineRangeChange: (String, TimelineRange) -> Unit = { _, _ -> },
+    onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
     onHeaderClick: (() -> Unit)? = null,
-    settingsTitle: String = "Account Settings",
+    settingsTitle: String = "Accounts View",
     showAddAccountCard: Boolean = true,
     onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> },
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSettings by remember { mutableStateOf(false) }
 
-    val timelineLabel = when (timelineRange) {
+    val timelineLabel = when (val tr = filter.timelineRange) {
         is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> timelineRange.period.label
-        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.ThisPeriod -> tr.period.label
+        is TimelineRange.LastPeriod -> tr.period.label
         is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
-            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
-            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(tr.start))
+            val end = formatter.format(Instant.ofEpochMilli(tr.end))
             "$start - $end"
         }
     }
@@ -90,10 +87,11 @@ fun AccountsCard(
             AeonFlowSectionHeader(
                 title = "ACCOUNTS",
                 modifier = if (onHeaderClick != null) headerModifier.clickable(onClick = onHeaderClick) else headerModifier,
+                filter = filter,
                 trailing = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = timelineLabel.uppercase(),
@@ -105,122 +103,30 @@ fun AccountsCard(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
                         IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier.size(24.dp)
+                            onClick = { showFilterSettings = true },
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                Icons.Default.MoreHoriz,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.colorScheme.primary
+                                Icons.Default.FilterList,
+                                contentDescription = "Filter",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = { showDisplaySettings = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Tune,
+                                contentDescription = "Display Settings",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
             )
-
-            if (showMenu) {
-                AlertDialog(
-                    onDismissRequest = { showMenu = false },
-                    dismissButton = {
-                        TextButton(
-                            onClick = onDelete,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete card",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Delete")
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { showMenu = false }) {
-                            Text("Done")
-                        }
-                    },
-                    title = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                settingsTitle,
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            IconButton(
-                                onClick = {
-                                    onManageClick()
-                                    showMenu = false
-                                },
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = "Manage Accounts"
-                                )
-                            }
-                        }
-                    },
-                    text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            // Timeline Range Selection
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(20.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        "TIMELINE",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 1.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-
-                                    TimelineFilterBar(
-                                        currentRange = timelineRange,
-                                        onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-
-                            AeonLayoutToggle(
-                                layout = layout,
-                                onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
-                            )
-
-                            if (layout == "grid") {
-                                AeonGridColumnsSettings(
-                                    gridColumns = gridColumns,
-                                    onGridColumnsChange = { columns -> onGridColumnsChange(cardId, columns) }
-                                )
-                            }
-
-                            AeonSettingsToggle(
-                                label = "SHOW ADD ACCOUNT CARD",
-                                checked = showAddAccountCard,
-                                onCheckedChange = { show -> onShowAddAccountCardChange(cardId, show) }
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(32.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            }
 
             if (accounts.isEmpty()) {
                 AeonAddAccountCard(
@@ -247,7 +153,7 @@ fun AccountsCard(
                             gridColumns = gridColumns,
                             onAccountClick = onAccountClick,
                             onRecordsClick = onRecordsClick,
-                            timelineRange = timelineRange,
+                            timelineRange = filter.timelineRange,
                             precision = precision,
                             modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
                         )
@@ -282,7 +188,7 @@ fun AccountsCard(
                             gridColumns = 2,
                             onAccountClick = onAccountClick,
                             onRecordsClick = onRecordsClick,
-                            timelineRange = timelineRange,
+                            timelineRange = filter.timelineRange,
                             precision = precision,
                             modifier = Modifier.width(160.dp)
                         )
@@ -303,6 +209,126 @@ fun AccountsCard(
             }
         }
     }
+
+    if (showDisplaySettings) {
+        AccountsDisplaySettingsDialog(
+            layout = layout,
+            gridColumns = gridColumns,
+            showAddAccountCard = showAddAccountCard,
+            cardId = cardId,
+            onLayoutChange = onLayoutChange,
+            onGridColumnsChange = onGridColumnsChange,
+            onShowAddAccountCardChange = onShowAddAccountCardChange,
+            onManageClick = onManageClick,
+            onDismiss = { showDisplaySettings = false },
+            onDelete = onDelete,
+            settingsTitle = settingsTitle
+        )
+    }
+
+    if (showFilterSettings) {
+        AeonCardSettingsSheet(
+            title = "Accounts Filter",
+            filter = filter,
+            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
+            onDismiss = { showFilterSettings = false },
+            onDelete = onDelete,
+            filterRules = filterRules
+        )
+    }
+}
+
+@Composable
+private fun AccountsDisplaySettingsDialog(
+    layout: String,
+    gridColumns: Int,
+    showAddAccountCard: Boolean,
+    cardId: String,
+    onLayoutChange: (String, String) -> Unit,
+    onGridColumnsChange: (String, Int) -> Unit,
+    onShowAddAccountCardChange: (String, Boolean) -> Unit,
+    onManageClick: () -> Unit,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    settingsTitle: String
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDelete()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete card",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Accounts Display",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                IconButton(
+                    onClick = {
+                        onManageClick()
+                        onDismiss()
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = "Manage Accounts"
+                    )
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonLayoutToggle(
+                    layout = layout,
+                    onLayoutChange = { newLayout -> onLayoutChange(cardId, newLayout) }
+                )
+
+                if (layout == "grid") {
+                    AeonGridColumnsSettings(
+                        gridColumns = gridColumns,
+                        onGridColumnsChange = { columns -> onGridColumnsChange(cardId, columns) }
+                    )
+                }
+
+                AeonSettingsToggle(
+                    label = "SHOW ADD ACCOUNT CARD",
+                    checked = showAddAccountCard,
+                    onCheckedChange = { show -> onShowAddAccountCardChange(cardId, show) }
+                )
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

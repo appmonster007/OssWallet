@@ -7,7 +7,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -43,7 +46,8 @@ fun CategoryExpenseTreemapCard(
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList()
 ) {
-    var showSettings by remember { mutableStateOf(false) }
+    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSettings by remember { mutableStateOf(false) }
     
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryExpenseTreemapData>>(data)) }
@@ -106,12 +110,12 @@ fun CategoryExpenseTreemapCard(
                     navigationStack = navigationStack.take(index + 2)
                 },
                 trailing = {
-                    Row {
-                        IconButton(onClick = { showSettings = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.size(20.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(onClick = { showFilterSettings = true }) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(20.dp))
                         }
-                        IconButton(onClick = onDelete) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp))
+                        IconButton(onClick = { showDisplaySettings = true }) {
+                            Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -189,32 +193,89 @@ fun CategoryExpenseTreemapCard(
             }
         }
     }
+
+    if (showDisplaySettings) {
+        CategoryTreemapDisplaySettingsDialog(
+            config = config,
+            onUpdate = onUpdate,
+            onDismiss = { showDisplaySettings = false },
+            onDelete = onDelete
+        )
+    }
     
-    if (showSettings) {
+    if (showFilterSettings) {
         AeonCardSettingsSheet(
-            title = config.title,
+            title = "Treemap Filter",
             filter = config.filter,
             onFilterChange = { newFilter -> onUpdate(config.copy(filter = newFilter)) },
-            onDismiss = { showSettings = false },
+            onDismiss = { showFilterSettings = false },
             onDelete = onDelete,
             accounts = accounts,
             allCategories = allCategories,
-            savedFilters = savedFilters
-        ) {
-            AeonSettingsToggle(
-                label = "SHOW LABELS",
-                description = "Display category names on treemap",
-                checked = config.showLabels,
-                onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
-            )
-            AeonSettingsToggle(
-                label = "SHOW LEGEND",
-                description = "Display list of categories beneath the map",
-                checked = config.showLegend,
-                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
-            )
-        }
+            savedFilters = savedFilters,
+            filterRules = config.filterRules
+        )
     }
+}
+
+@Composable
+private fun CategoryTreemapDisplaySettingsDialog(
+    config: CategoryExpenseTreemapCardConfig,
+    onUpdate: (CategoryExpenseTreemapCardConfig) -> Unit,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDelete()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete card",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Delete")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        },
+        title = {
+            Text(
+                "Treemap Display",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AeonSettingsToggle(
+                    label = "SHOW LABELS",
+                    description = "Display category names on treemap",
+                    checked = config.showLabels,
+                    onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+                )
+                AeonSettingsToggle(
+                    label = "SHOW LEGEND",
+                    description = "Display list of categories beneath the map",
+                    checked = config.showLegend,
+                    onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+                )
+            }
+        },
+        shape = RoundedCornerShape(32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    )
 }
 
 @Composable

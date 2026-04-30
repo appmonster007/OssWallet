@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonClassDiscriminator
 
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+
 /**
  * Card scope determines the context in which a card operates.
  * GLOBAL: Dashboard - all accounts
@@ -38,7 +40,6 @@ enum class ScreenContext {
  */
 @Serializable
 data class CardSettings(
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val showBaseConversion: Boolean = true,
     val layout: String = "grid"
 )
@@ -56,6 +57,12 @@ sealed class CardConfig : BaseCardConfig {
     abstract override val isEnabled: Boolean
     abstract override val order: Int
     abstract override val screenContext: ScreenContext
+
+    /**
+     * Rules that define constraints for this card's filter.
+     * These are hardcoded per card type and used to restrict the filter UI.
+     */
+    abstract val filterRules: CardFilterRules
 }
 
 /**
@@ -70,10 +77,11 @@ data class NetWorthCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
-    val profileId: Int? = null,
-    val selectedAccountIds: List<String>? = null
-) : CardConfig()
+    val filter: TransactionFilter = TransactionFilter(),
+    val profileId: Int? = null
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
 
 /**
  * Configuration for Currency Balances card instances
@@ -88,9 +96,10 @@ data class CurrencyBalancesCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
 
 /**
  * Configuration for Cash Flow card instances
@@ -104,9 +113,10 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
     val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
 
 /**
  * Configuration for Accounts card instances
@@ -122,8 +132,10 @@ data class AccountsCardConfig(
     val layout: String = "grid",
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
-    val timelineRange: TimelineRange = TimelineRange.AllTime
-) : CardConfig()
+    val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
 
 /**
  * Configuration for Category Breakdown card (Pie Wheel Chart)
@@ -139,7 +151,9 @@ data class CategoryBreakdownCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+}
 
 /**
  * Configuration for Category Expense Treemap card
@@ -155,7 +169,9 @@ data class CategoryExpenseTreemapCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.EXPENSE_ONLY
+}
 
 /**
  * Configuration for Account Hero card (account detail screen)
@@ -168,8 +184,11 @@ data class AccountHeroCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
-    val showCurrencyBadges: Boolean = true
-) : CardConfig()
+    val showCurrencyBadges: Boolean = true,
+    val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
 
 @Serializable
 data class DashboardCardsConfig(

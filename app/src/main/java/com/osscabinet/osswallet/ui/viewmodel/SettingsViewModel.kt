@@ -4,6 +4,9 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.ProfileType

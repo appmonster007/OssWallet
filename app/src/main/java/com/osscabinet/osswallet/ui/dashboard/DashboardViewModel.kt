@@ -6,6 +6,9 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -178,10 +181,10 @@ class DashboardViewModel(
         }
     }
 
-    override fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardNetWorthFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(timelineRange = range) else config
+                if (config is NetWorthCardConfig) config.copy(filter = filter) else config
             }
         }
     }
@@ -202,10 +205,10 @@ class DashboardViewModel(
         }
     }
 
-    override fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCurrencyBalancesFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
-                if (config is CurrencyBalancesCardConfig) config.copy(timelineRange = range) else config
+                if (config is CurrencyBalancesCardConfig) config.copy(filter = filter) else config
             }
         }
     }
@@ -218,10 +221,10 @@ class DashboardViewModel(
         }
     }
 
-    override fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCashFlowFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
-                if (config is CashFlowCardConfig) config.copy(timelineRange = range) else config
+                if (config is CashFlowCardConfig) config.copy(filter = filter) else config
             }
         }
     }
@@ -250,11 +253,23 @@ class DashboardViewModel(
         }
     }
 
-    override fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardAccountsFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateDashboardCard(cardId) { config ->
-                if (config is AccountsCardConfig) config.copy(timelineRange = range) else config
+                if (config is AccountsCardConfig) config.copy(filter = filter) else config
             }
+        }
+    }
+
+    override fun updateCardCategoryBreakdownConfig(cardId: String, config: CategoryBreakdownCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateDashboardCard(cardId) { config }
+        }
+    }
+
+    override fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: CategoryExpenseTreemapCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateDashboardCard(cardId) { config }
         }
     }
 
@@ -306,7 +321,7 @@ class DashboardViewModel(
                     input = baseInput,
                     config = CurrencyBalancesCardConfig(
                         cardId = "currency_balances_main",
-                        timelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
+                        filter = TransactionFilter(timelineRange = dashboardSettings.currencyBalancesSection.timelineRange),
                         showBaseConversion = dashboardSettings.currencyBalancesSection.showBaseConversion
                     )
                 ) as CardRenderData.CurrencyBalances).items
@@ -316,7 +331,7 @@ class DashboardViewModel(
                     input = baseInput,
                     config = AccountsCardConfig(
                         cardId = "accounts_main",
-                        timelineRange = dashboardSettings.accountsSection.timelineRange,
+                        filter = TransactionFilter(timelineRange = dashboardSettings.accountsSection.timelineRange),
                         layout = dashboardSettings.accountsSection.layout,
                         gridColumns = dashboardSettings.accountsSection.gridColumns,
                         showAddAccountCard = dashboardSettings.accountsSection.showAddAccountCard
@@ -328,7 +343,7 @@ class DashboardViewModel(
                     input = baseInput,
                     config = NetWorthCardConfig(
                         cardId = "net_worth_main",
-                        timelineRange = dashboardSettings.netWorthSection.timelineRange,
+                        filter = TransactionFilter(timelineRange = dashboardSettings.netWorthSection.timelineRange),
                         fontSize = dashboardSettings.netWorthSection.fontSize
                     )
                 ) as CardRenderData.NetWorth
@@ -338,7 +353,7 @@ class DashboardViewModel(
                     input = baseInput,
                     config = CashFlowCardConfig(
                         cardId = "cash_flow_main",
-                        timelineRange = dashboardSettings.cashFlowSection.timelineRange,
+                        filter = TransactionFilter(timelineRange = dashboardSettings.cashFlowSection.timelineRange),
                         showBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion
                     )
                 ) as CardRenderData.CashFlow).result
@@ -424,7 +439,7 @@ class DashboardViewModel(
         val data = registry.compute(
             type = CardType.NET_WORTH,
             input = input,
-            config = NetWorthCardConfig(cardId = "temp", timelineRange = timelineRange)
+            config = NetWorthCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
         ) as CardRenderData.NetWorth
         return data.value
     }
@@ -441,7 +456,7 @@ class DashboardViewModel(
         val data = registry.compute(
             type = CardType.CASH_FLOW,
             input = input,
-            config = CashFlowCardConfig(cardId = "temp", timelineRange = timelineRange)
+            config = CashFlowCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
         ) as CardRenderData.CashFlow
         return data.result
     }
@@ -458,7 +473,7 @@ class DashboardViewModel(
         val data = registry.compute(
             type = CardType.CURRENCY_BALANCES,
             input = input,
-            config = CurrencyBalancesCardConfig(cardId = "temp", timelineRange = timelineRange)
+            config = CurrencyBalancesCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
         ) as CardRenderData.CurrencyBalances
         return data.items
     }
@@ -475,7 +490,7 @@ class DashboardViewModel(
         val data = registry.compute(
             type = CardType.ACCOUNTS,
             input = input,
-            config = AccountsCardConfig(cardId = "temp", timelineRange = timelineRange)
+            config = AccountsCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
         ) as CardRenderData.Accounts
         return Pair(data.updatedAccounts, data.accountStats)
     }

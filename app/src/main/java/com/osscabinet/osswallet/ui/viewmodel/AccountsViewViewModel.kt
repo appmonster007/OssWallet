@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.FinancialSummary
+import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import java.math.RoundingMode
 import kotlinx.coroutines.Dispatchers
@@ -261,18 +262,18 @@ class AccountsViewViewModel(
                 val globalCurrencyTotals = (registry.compute(
                     CardType.CURRENCY_BALANCES,
                     input,
-                    com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig(
+                    CurrencyBalancesCardConfig(
                         cardId = "currency_balances_main",
-                        timelineRange = currencyBalancesTimelineRange
+                        filter = TransactionFilter(timelineRange = currencyBalancesTimelineRange)
                     )
                 ) as CardRenderData.CurrencyBalances).items
 
                 val accountsData = registry.compute(
                     CardType.ACCOUNTS,
                     input,
-                    com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig(
+                    AccountsCardConfig(
                         cardId = "accounts_main",
-                        timelineRange = accountsTimelineRange
+                        filter = TransactionFilter(timelineRange = accountsTimelineRange)
                     )
                 ) as CardRenderData.Accounts
                 val updatedAccounts = accountsData.updatedAccounts
@@ -281,9 +282,9 @@ class AccountsViewViewModel(
                 val netWorthData = registry.compute(
                     CardType.NET_WORTH,
                     input,
-                    com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig(
+                    NetWorthCardConfig(
                         cardId = "net_worth_main",
-                        timelineRange = netWorthTimelineRange
+                        filter = TransactionFilter(timelineRange = netWorthTimelineRange)
                     )
                 ) as CardRenderData.NetWorth
                 val nwValue = netWorthData.value
@@ -292,9 +293,9 @@ class AccountsViewViewModel(
                 val cashFlowResult = (registry.compute(
                     CardType.CASH_FLOW,
                     input,
-                    com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig(
+                    CashFlowCardConfig(
                         cardId = "cash_flow_main",
-                        timelineRange = cashFlowTimelineRange
+                        filter = TransactionFilter(timelineRange = cashFlowTimelineRange)
                     )
                 ) as CardRenderData.CashFlow).result
 
@@ -335,7 +336,7 @@ class AccountsViewViewModel(
     override fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
+                if (cardConfig is NetWorthCardConfig) {
                     cardConfig.copy(fontSize = fontSize)
                 } else cardConfig
             }
@@ -343,11 +344,11 @@ class AccountsViewViewModel(
         }
     }
 
-    override fun updateCardNetWorthTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardNetWorthFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig) {
-                    cardConfig.copy(timelineRange = range)
+                if (cardConfig is NetWorthCardConfig) {
+                    cardConfig.copy(filter = filter)
                 } else cardConfig
             }
             cardDataCache.invalidateCard(cardId)
@@ -357,7 +358,7 @@ class AccountsViewViewModel(
     override fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                if (cardConfig is CurrencyBalancesCardConfig) {
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
@@ -368,7 +369,7 @@ class AccountsViewViewModel(
     override fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
+                if (cardConfig is CurrencyBalancesCardConfig) {
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
@@ -376,11 +377,11 @@ class AccountsViewViewModel(
         }
     }
 
-    override fun updateCardCurrencyBalancesTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCurrencyBalancesFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig) {
-                    cardConfig.copy(timelineRange = range)
+                if (cardConfig is CurrencyBalancesCardConfig) {
+                    cardConfig.copy(filter = filter)
                 } else cardConfig
             }
             cardDataCache.invalidateCard(cardId)
@@ -390,7 +391,7 @@ class AccountsViewViewModel(
     override fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
+                if (cardConfig is CashFlowCardConfig) {
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
@@ -398,11 +399,11 @@ class AccountsViewViewModel(
         }
     }
 
-    override fun updateCardCashFlowTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardCashFlowFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) {
-                    cardConfig.copy(timelineRange = range)
+                if (cardConfig is CashFlowCardConfig) {
+                    cardConfig.copy(filter = filter)
                 } else cardConfig
             }
             cardDataCache.invalidateCard(cardId)
@@ -412,7 +413,7 @@ class AccountsViewViewModel(
     override fun updateCardAccountsLayout(cardId: String, layout: String) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                if (cardConfig is AccountsCardConfig) {
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
@@ -423,7 +424,7 @@ class AccountsViewViewModel(
     override fun updateCardAccountsGridColumns(cardId: String, columns: Int) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                if (cardConfig is AccountsCardConfig) {
                     cardConfig.copy(gridColumns = columns)
                 } else cardConfig
             }
@@ -434,7 +435,7 @@ class AccountsViewViewModel(
     override fun updateCardAccountsShowAddAccountCard(cardId: String, show: Boolean) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
+                if (cardConfig is AccountsCardConfig) {
                     cardConfig.copy(showAddAccountCard = show)
                 } else cardConfig
             }
@@ -442,13 +443,27 @@ class AccountsViewViewModel(
         }
     }
 
-    override fun updateCardAccountsTimelineRange(cardId: String, range: TimelineRange) {
+    override fun updateCardAccountsFilter(cardId: String, filter: TransactionFilter) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { cardConfig ->
-                if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig) {
-                    cardConfig.copy(timelineRange = range)
+                if (cardConfig is AccountsCardConfig) {
+                    cardConfig.copy(filter = filter)
                 } else cardConfig
             }
+            cardDataCache.invalidateCard(cardId)
+        }
+    }
+
+    override fun updateCardCategoryBreakdownConfig(cardId: String, config: CategoryBreakdownCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { config }
+            cardDataCache.invalidateCard(cardId)
+        }
+    }
+
+    override fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: CategoryExpenseTreemapCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateAccountsViewCard(cardId) { config }
             cardDataCache.invalidateCard(cardId)
         }
     }

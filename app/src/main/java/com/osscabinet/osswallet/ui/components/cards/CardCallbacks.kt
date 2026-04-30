@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 /**
@@ -19,37 +20,11 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
     
     /**
-     * Callbacks with timeline range change capability
+     * Callbacks for Net Worth
      */
-    data class WithTimeline(
-        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
-        val onDelete: () -> Unit
-    ) : CardCallbacks()
-    
-    /**
-     * Callbacks with font size change capability
-     */
-    data class WithFontSize(
+    data class NetWorth(
         val onFontSizeChange: (String, String) -> Unit,
-        val onDelete: () -> Unit
-    ) : CardCallbacks()
-    
-    /**
-     * Callbacks with both font size and timeline range change
-     */
-    data class WithFontSizeAndTimeline(
-        val onFontSizeChange: (String, String) -> Unit,
-        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
-        val onDelete: () -> Unit
-    ) : CardCallbacks()
-    
-    /**
-     * Callbacks with click actions (income/expense/currency)
-     */
-    data class WithClickActions(
-        val onClickIncome: ((TimelineRange) -> Unit)? = null,
-        val onClickExpense: ((TimelineRange) -> Unit)? = null,
-        val onCurrencyClick: ((String, TimelineRange) -> Unit)? = null,
+        val onFilterChange: (String, TransactionFilter) -> Unit,
         val onDelete: () -> Unit
     ) : CardCallbacks()
     
@@ -59,7 +34,7 @@ sealed class CardCallbacks {
     data class CurrencyBalances(
         val onLayoutChange: (String, String) -> Unit,
         val onShowBaseConversionChange: (String, Boolean) -> Unit,
-        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
+        val onFilterChange: (String, TransactionFilter) -> Unit,
         val onCurrencyClick: ((String, TimelineRange) -> Unit)? = null,
         val onDelete: () -> Unit
     ) : CardCallbacks()
@@ -69,7 +44,7 @@ sealed class CardCallbacks {
      */
     data class CashFlow(
         val onShowBaseConversionChange: (String, Boolean) -> Unit,
-        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
+        val onFilterChange: (String, TransactionFilter) -> Unit,
         val onClickIncome: (TimelineRange) -> Unit = {},
         val onClickExpense: (TimelineRange) -> Unit = {},
         val onDelete: () -> Unit
@@ -89,6 +64,7 @@ sealed class CardCallbacks {
      */
     data class AccountHero(
         val onShowCurrencyBadgesChange: (String, Boolean) -> Unit,
+        val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClick: (() -> Unit)? = null,
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
@@ -99,7 +75,7 @@ sealed class CardCallbacks {
     data class Accounts(
         val onGridColumnsChange: (String, Int) -> Unit,
         val onLayoutChange: (String, String) -> Unit,
-        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
+        val onFilterChange: (String, TransactionFilter) -> Unit,
         val onShowAddAccountCardChange: (String, Boolean) -> Unit,
         val onManageClick: () -> Unit = {},
         val onHeaderClick: () -> Unit = {},
@@ -107,5 +83,13 @@ sealed class CardCallbacks {
         val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
-    
+
+    /**
+     * Legacy/Deprecated
+     */
+    data class WithFontSizeAndTimeline(
+        val onFontSizeChange: (String, String) -> Unit,
+        val onTimelineRangeChange: (String, TimelineRange) -> Unit,
+        val onDelete: () -> Unit
+    ) : CardCallbacks()
 }

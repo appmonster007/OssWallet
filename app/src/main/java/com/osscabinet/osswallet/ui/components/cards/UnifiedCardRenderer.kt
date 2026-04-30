@@ -48,14 +48,15 @@ fun UnifiedCardRenderer(
                 precision = renderData.precision,
                 cardId = renderData.config.cardId,
                 fontSize = renderData.config.fontSize,
-                timelineRange = renderData.config.timelineRange,
+                filter = renderData.config.filter,
                 onFontSizeChange = cb.onFontSizeChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
+                onFilterChange = cb.onFilterChange,
                 onDelete = { cb.onDelete() },
                 onClickIncome = {},
                 onClickExpense = {},
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier
+                headerModifier = headerModifier,
+                filterRules = renderData.config.filterRules
             )
         }
         
@@ -71,13 +72,14 @@ fun UnifiedCardRenderer(
                 precision = renderData.precision,
                 layout = renderData.config.layout,
                 showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
+                filter = renderData.config.filter,
                 cardId = renderData.config.cardId,
                 onLayoutChange = cb.onLayoutChange,
                 onShowBaseConversionChange = cb.onShowBaseConversionChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
+                onFilterChange = cb.onFilterChange,
                 onDelete = { cb.onDelete() },
-                onCurrencyClick = cb.onCurrencyClick ?: { _, _ -> }
+                onCurrencyClick = cb.onCurrencyClick ?: { _, _ -> },
+                filterRules = renderData.config.filterRules
             )
         }
         
@@ -95,12 +97,13 @@ fun UnifiedCardRenderer(
                 showTitle = showTitle,
                 precision = renderData.precision,
                 showBaseConversion = renderData.config.showBaseConversion,
-                timelineRange = renderData.config.timelineRange,
+                filter = renderData.config.filter,
                 onShowBaseConversionChange = cb.onShowBaseConversionChange,
-                onTimelineRangeChange = cb.onTimelineRangeChange,
+                onFilterChange = cb.onFilterChange,
                 onDelete = { cb.onDelete() },
                 onClickIncome = cb.onClickIncome,
-                onClickExpense = cb.onClickExpense
+                onClickExpense = cb.onClickExpense,
+                filterRules = renderData.config.filterRules
             )
         }
         
@@ -179,9 +182,12 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 precision = renderData.precision,
                 showCurrencyBadges = renderData.config.showCurrencyBadges,
+                filter = renderData.config.filter,
                 onShowCurrencyBadgesChange = { show -> cb.onShowCurrencyBadgesChange(renderData.config.cardId, show) },
+                onFilterChange = { filter -> cb.onFilterChange(renderData.config.cardId, filter) },
                 onClick = cb.onClick,
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                filterRules = renderData.config.filterRules
             )
         }
         
@@ -204,14 +210,14 @@ fun UnifiedCardRenderer(
                 precision = renderData.precision,
                 layout = renderData.config.layout,
                 onLayoutChange = { id, layout -> cb.onLayoutChange(id, layout) },
-                timelineRange = renderData.config.timelineRange,
-                onTimelineRangeChange = { id, range -> cb.onTimelineRangeChange(id, range) },
+                filter = renderData.config.filter,
+                onFilterChange = { id, filter -> cb.onFilterChange(id, filter) },
                 showAddAccountCard = renderData.config.showAddAccountCard,
                 onShowAddAccountCardChange = { id, show -> cb.onShowAddAccountCardChange(id, show) },
                 cardId = renderData.config.cardId,
                 headerModifier = headerModifier.fillMaxWidth(),
-                settingsTitle = "Settings",
-                onDelete = { cb.onDelete() }
+                onDelete = { cb.onDelete() },
+                filterRules = renderData.config.filterRules
             )
         }
     }

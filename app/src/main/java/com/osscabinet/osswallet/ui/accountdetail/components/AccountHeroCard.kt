@@ -36,6 +36,16 @@ import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
 import androidx.core.graphics.toColorInt
 
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Tune
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+
 @Composable
 fun AccountHeroCard(
     account: Account,
@@ -46,11 +56,16 @@ fun AccountHeroCard(
     modifier: Modifier = Modifier,
     precision: Int = 2,
     showCurrencyBadges: Boolean = true,
+    filter: TransactionFilter = TransactionFilter(),
     onShowCurrencyBadgesChange: (Boolean) -> Unit = {},
+    onFilterChange: (TransactionFilter) -> Unit = {},
     onClick: (() -> Unit)? = null,
-    onDelete: () -> Unit = {}
+    onDelete: () -> Unit = {},
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    var showSettings by remember { mutableStateOf(false) }
+    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSettings by remember { mutableStateOf(false) }
+
     val accountColor = try {
         Color(account.colorHex.toColorInt())
     } catch (e: Exception) {
@@ -64,6 +79,18 @@ fun AccountHeroCard(
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
 
+    val timelineLabel = when (val tr = filter.timelineRange) {
+        is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime -> "All Time"
+        is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod -> tr.period.label
+        is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod -> tr.period.label
+        is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange -> {
+            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(tr.start))
+            val end = formatter.format(Instant.ofEpochMilli(tr.end))
+            "$start - $end"
+        }
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -75,7 +102,7 @@ fun AccountHeroCard(
         shadowElevation = 0.dp
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            // Background Icon - Standardized with Large Card
+            // Background Icon
             val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
             Icon(
                 imageVector = icon,
@@ -87,19 +114,45 @@ fun AccountHeroCard(
                 tint = contentColor
             )
 
-            // More Options Button
-            IconButton(
-                onClick = { showSettings = true },
+            // Settings Buttons
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(24.dp)
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    Icons.Default.MoreHoriz,
-                    contentDescription = "Settings",
-                    tint = contentColor.copy(alpha = 0.7f)
+                Text(
+                    text = timelineLabel.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = contentColor.copy(alpha = 0.6f)
                 )
+                IconButton(
+                    onClick = { showFilterSettings = true },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        Icons.Default.FilterList,
+                        contentDescription = "Filter",
+                        tint = contentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                IconButton(
+                    onClick = { showDisplaySettings = true },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = "Display Settings",
+                        tint = contentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             Column(modifier = Modifier.padding(24.dp)) {
@@ -164,7 +217,7 @@ fun AccountHeroCard(
                 ) {
                     Column {
                         Text(
-                            text = "MONTHLY NET",
+                            text = "NET FLOW",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = contentColor.copy(alpha = 0.7f)
                         )
@@ -184,12 +237,15 @@ fun AccountHeroCard(
         }
     }
 
-    if (showSettings) {
+    if (showDisplaySettings) {
         AlertDialog(
-            onDismissRequest = { showSettings = false },
+            onDismissRequest = { showDisplaySettings = false },
             dismissButton = {
                 TextButton(
-                    onClick = onDelete,
+                    onClick = {
+                        onDelete()
+                        showDisplaySettings = false
+                    },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
@@ -204,7 +260,7 @@ fun AccountHeroCard(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showSettings = false }) {
+                TextButton(onClick = { showDisplaySettings = false }) {
                     Text("Done")
                 }
             },
@@ -234,6 +290,17 @@ fun AccountHeroCard(
             },
             shape = RoundedCornerShape(32.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
+    }
+
+    if (showFilterSettings) {
+        AeonCardSettingsSheet(
+            title = "Account Hero Filter",
+            filter = filter,
+            onFilterChange = onFilterChange,
+            onDismiss = { showFilterSettings = false },
+            onDelete = onDelete,
+            filterRules = filterRules
         )
     }
 }

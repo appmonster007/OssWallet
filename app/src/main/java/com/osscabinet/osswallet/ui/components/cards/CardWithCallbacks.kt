@@ -11,7 +11,7 @@ sealed class CardWithCallbacks {
     
     data class NetWorth(
         val renderData: CardRenderData.NetWorth,
-        val callbacks: CardCallbacks.WithFontSizeAndTimeline
+        val callbacks: CardCallbacks.NetWorth
     ) : CardWithCallbacks()
 
     data class CurrencyBalances(

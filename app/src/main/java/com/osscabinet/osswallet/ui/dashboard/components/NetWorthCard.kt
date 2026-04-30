@@ -8,31 +8,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
-import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.TimelineService
-import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
+import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
 @Composable
 fun NetWorthCard(
@@ -43,53 +42,18 @@ fun NetWorthCard(
     precision: Int,
     cardId: String,
     fontSize: String,
-    timelineRange: TimelineRange,
+    filter: TransactionFilter,
     onFontSizeChange: (String, String) -> Unit,
-    onTimelineRangeChange: (String, TimelineRange) -> Unit,
+    onFilterChange: (String, TransactionFilter) -> Unit,
     onDelete: () -> Unit = {},
     onClickIncome: (TimelineRange) -> Unit = {},
     onClickExpense: (TimelineRange) -> Unit = {},
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier
+    headerModifier: Modifier = Modifier,
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
-    NetWorthContent(
-        netWorth = netWorth,
-        netIncome = netIncome,
-        netExpense = netExpense,
-        baseCurrency = baseCurrency,
-        precision = precision,
-        fontSize = fontSize,
-        timelineRange = timelineRange,
-        cardId = cardId,
-        onFontSizeChange = onFontSizeChange,
-        onTimelineRangeChange = onTimelineRangeChange,
-        onDelete = onDelete,
-        onClickIncome = onClickIncome,
-        onClickExpense = onClickExpense,
-        modifier = modifier,
-        headerModifier = headerModifier
-    )
-}
-
-@Composable
-private fun NetWorthContent(
-    netWorth: BigDecimal,
-    netIncome: BigDecimal,
-    netExpense: BigDecimal,
-    baseCurrency: String,
-    precision: Int,
-    fontSize: String,
-    timelineRange: TimelineRange,
-    cardId: String,
-    onFontSizeChange: (String, String) -> Unit,
-    onTimelineRangeChange: (String, TimelineRange) -> Unit,
-    onDelete: () -> Unit,
-    onClickIncome: (TimelineRange) -> Unit = {},
-    onClickExpense: (TimelineRange) -> Unit = {},
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier
-) {
-    var showSettings by remember { mutableStateOf(false) }
+    var showDisplaySettings by remember { mutableStateOf(false) }
+    var showFilterSettings by remember { mutableStateOf(false) }
 
     val textStyle = when (fontSize) {
         "Small" -> MaterialTheme.typography.displaySmall
@@ -98,14 +62,14 @@ private fun NetWorthContent(
         else -> MaterialTheme.typography.displayMedium
     }
 
-    val timelineLabel = when (timelineRange) {
+    val timelineLabel = when (val tr = filter.timelineRange) {
         is TimelineRange.AllTime -> "All Time"
-        is TimelineRange.ThisPeriod -> timelineRange.period.label
-        is TimelineRange.LastPeriod -> timelineRange.period.label
+        is TimelineRange.ThisPeriod -> tr.period.label
+        is TimelineRange.LastPeriod -> tr.period.label
         is TimelineRange.CustomRange -> {
-            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
-            val start = formatter.format(Instant.ofEpochMilli(timelineRange.start))
-            val end = formatter.format(Instant.ofEpochMilli(timelineRange.end))
+            val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
+            val start = formatter.format(Instant.ofEpochMilli(tr.start))
+            val end = formatter.format(Instant.ofEpochMilli(tr.end))
             "$start - $end"
         }
     }
@@ -123,10 +87,11 @@ private fun NetWorthContent(
             AeonFlowSectionHeader(
                 title = "NET WORTH",
                 modifier = headerModifier,
+                filter = filter,
                 trailing = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = timelineLabel.uppercase(),
@@ -138,13 +103,25 @@ private fun NetWorthContent(
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                         )
                         IconButton(
-                            onClick = { showSettings = true },
-                            modifier = Modifier.size(24.dp)
+                            onClick = { showFilterSettings = true },
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                Icons.Default.MoreHoriz,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.colorScheme.primary
+                                Icons.Default.FilterList,
+                                contentDescription = "Filter",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = { showDisplaySettings = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Tune,
+                                contentDescription = "Display Settings",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -166,7 +143,7 @@ private fun NetWorthContent(
                         precision = precision,
                         color = PositiveAmountColor,
                         isIncome = true,
-                        onClick = { onClickIncome(timelineRange) }
+                        onClick = { onClickIncome(filter.timelineRange) }
                     )
                     FlowBadge(
                         label = "EXPENSE",
@@ -175,7 +152,7 @@ private fun NetWorthContent(
                         precision = precision,
                         color = NegativeAmountColor,
                         isIncome = false,
-                        onClick = { onClickExpense(timelineRange) }
+                        onClick = { onClickExpense(filter.timelineRange) }
                     )
                 }
 
@@ -191,15 +168,24 @@ private fun NetWorthContent(
         }
     }
 
-    if (showSettings) {
-        NetWorthSettingsDialog(
+    if (showDisplaySettings) {
+        NetWorthDisplaySettingsDialog(
             fontSize = fontSize,
-            timelineRange = timelineRange,
             cardId = cardId,
             onFontSizeChange = onFontSizeChange,
-            onTimelineRangeChange = onTimelineRangeChange,
-            onDismiss = { showSettings = false },
-            onDelete = { onDelete }
+            onDismiss = { showDisplaySettings = false },
+            onDelete = onDelete
+        )
+    }
+
+    if (showFilterSettings) {
+        AeonCardSettingsSheet(
+            title = "Net Worth Filter",
+            filter = filter,
+            onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
+            onDismiss = { showFilterSettings = false },
+            onDelete = onDelete,
+            filterRules = filterRules
         )
     }
 }
@@ -245,12 +231,10 @@ private fun FlowBadge(
 }
 
 @Composable
-private fun NetWorthSettingsDialog(
+private fun NetWorthDisplaySettingsDialog(
     fontSize: String,
-    timelineRange: TimelineRange,
     cardId: String,
     onFontSizeChange: (String, String) -> Unit,
-    onTimelineRangeChange: (String, TimelineRange) -> Unit,
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -258,7 +242,10 @@ private fun NetWorthSettingsDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
             TextButton(
-                onClick = onDelete,
+                onClick = {
+                    onDelete()
+                    onDismiss()
+                },
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
@@ -279,39 +266,12 @@ private fun NetWorthSettingsDialog(
         },
         title = {
             Text(
-                "Net Worth Settings",
+                "Net Worth Display",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Timeline Range Selection
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            "TIMELINE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        TimelineFilterBar(
-                            currentRange = timelineRange,
-                            onRangeSelected = { range -> onTimelineRangeChange(cardId, range) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
                 // Font Size Selection
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),

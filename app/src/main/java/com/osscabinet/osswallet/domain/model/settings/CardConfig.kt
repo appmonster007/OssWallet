@@ -89,7 +89,7 @@ data class CurrencyBalancesCardConfig(
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
-    val filter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig()
 
 /**
@@ -105,7 +105,7 @@ data class CashFlowCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
     val timelineRange: TimelineRange = TimelineRange.AllTime,
-    val filter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig()
 
 /**

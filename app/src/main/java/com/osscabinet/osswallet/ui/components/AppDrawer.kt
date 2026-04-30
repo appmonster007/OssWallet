@@ -37,8 +37,6 @@ fun AppDrawerContent(
     onAccountsViewClick: () -> Unit,
     onRecordsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
-    onBudgetsClick: () -> Unit,
-    onLoansClick: () -> Unit,
     onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onExchangeRatesClick: () -> Unit,
@@ -108,8 +106,6 @@ fun AppDrawerContent(
                     Triple("ACCOUNTS", "accounts_view", Icons.Default.Wallet),
                     Triple("RECORDS", "records", Icons.AutoMirrored.Filled.ListAlt),
                     Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
-                    Triple("BUDGETS", "budgets", Icons.Default.PieChart),
-                    Triple("LOANS", "loans", Icons.Default.AccountBalanceWallet),
                     Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange),
                     Triple("TEMPLATES", "templates", Icons.Default.AutoAwesome)
                 )
@@ -129,8 +125,6 @@ fun AppDrawerContent(
                                 "accounts_view" -> onAccountsViewClick()
                                 "records" -> onRecordsClick()
                                 "analytics" -> onAnalyticsClick()
-                                "budgets" -> onBudgetsClick()
-                                "loans" -> onLoansClick()
                                 "exchange_rates" -> onExchangeRatesClick()
                                 "templates" -> onTemplatesClick()
                             }

@@ -126,33 +126,6 @@ data class AccountsCardConfig(
 ) : CardConfig()
 
 /**
- * Configuration for Budgets card instances
- */
-@Serializable
-@SerialName("budgets")
-data class BudgetsCardConfig(
-    override val cardId: String,
-    override val title: String = "BUDGETS",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 4,
-    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    val showProgressLabels: Boolean = true
-) : CardConfig()
-
-/**
- * Configuration for Loans card instances
- */
-@Serializable
-@SerialName("loans")
-data class LoansCardConfig(
-    override val cardId: String,
-    override val title: String = "LOANS & DEBTS",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 19,
-    override val screenContext: ScreenContext = ScreenContext.DASHBOARD
-) : CardConfig()
-
-/**
  * Configuration for Category Breakdown card (Pie Wheel Chart)
  */
 @Serializable
@@ -165,23 +138,6 @@ data class CategoryBreakdownCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Timeline Trajectory card (Multi-Line Chart)
- */
-@Serializable
-@SerialName("timeline_trajectory")
-data class TimelineTrajectoryCardConfig(
-    override val cardId: String,
-    override val title: String = "TIMELINE TRAJECTORY",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 6,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val showBalance: Boolean = true,
-    val showExpense: Boolean = true,
-    val showIncome: Boolean = true,
     val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig()
 
@@ -202,102 +158,6 @@ data class CategoryExpenseTreemapCardConfig(
 ) : CardConfig()
 
 /**
- * Configuration for Income & Expenses Summary card
- */
-@Serializable
-@SerialName("income_expenses_summary")
-data class IncomeExpensesSummaryCardConfig(
-    override val cardId: String,
-    override val title: String = "INCOME & EXPENSES",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 8,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val showPercentage: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter(),
-    val showSavingsRate: Boolean = true
-) : CardConfig()
-
-/**
- * Configuration for Period Comparison Line Chart card
- */
-@Serializable
-@SerialName("period_comparison")
-data class PeriodComparisonCardConfig(
-    override val cardId: String,
-    override val title: String = "PERIOD COMPARISON",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 9,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val selectedTab: String = "Income", // "Cash flow", "Expenses", "Income"
-    val filter: TransactionFilter = TransactionFilter(),
-    val showGhosting: Boolean = true
-) : CardConfig()
-
-/**
- * Configuration for Cash Flow Trend card (Bar + Line)
- */
-@Serializable
-@SerialName("cash_flow_trend")
-data class CashFlowTrendCardConfig(
-    override val cardId: String,
-    override val title: String = "CASH FLOW TREND",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 10,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val filter: TransactionFilter = TransactionFilter(),
-    val showSMA: Boolean = true,
-    val smaPeriod: Int = 7
-) : CardConfig()
-
-/**
- * Configuration for Cash Flow Progress card
- */
-@Serializable
-@SerialName("cash_flow_progress")
-data class CashFlowProgressCardConfig(
-    override val cardId: String,
-    override val title: String = "CASH FLOW",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 11,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val subtitle: String = "Am I spending less than I make?",
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Balance Forecast card
- */
-@Serializable
-@SerialName("balance_forecast")
-data class BalanceForecastCardConfig(
-    override val cardId: String,
-    override val title: String = "BALANCE FORECAST",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 12,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val subtitle: String = "Will I have enough money?",
-    val forecastDays: Int = 30,
-    val filter: TransactionFilter = TransactionFilter(),
-    val includePlannedPayments: Boolean = true
-) : CardConfig()
-
-/**
- * Configuration for Planned Payments card
- */
-@Serializable
-@SerialName("planned_payments")
-data class PlannedPaymentsCardConfig(
-    override val cardId: String,
-    override val title: String = "PLANNED PAYMENTS",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 13,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val subtitle: String = "Planned Payments by Category",
-    val filter: TransactionFilter = TransactionFilter(),
-    val safetyBuffer: Double = 500.0
-) : CardConfig()
-
-/**
  * Configuration for Account Hero card (account detail screen)
  */
 @Serializable
@@ -309,78 +169,6 @@ data class AccountHeroCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true
-) : CardConfig()
-
-/**
- * Configuration for Income & Expenses Book card (General Summary)
- */
-@Serializable
-@SerialName("income_expenses_book")
-data class IncomeExpensesBookCardConfig(
-    override val cardId: String,
-    override val title: String = "INCOME & EXPENSES BOOK",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 14,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val subtitle: String = "Want to see where your money goes?",
-    val showShareButton: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Cash Flow Table card (Statistical Analysis)
- */
-@Serializable
-@SerialName("cash_flow_table")
-data class CashFlowTableCardConfig(
-    override val cardId: String,
-    override val title: String = "CASH FLOW TABLE",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 15,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Planned Payments Timeline card (Weekly Bar Chart)
- */
-@Serializable
-@SerialName("planned_payments_timeline")
-data class PlannedPaymentsTimelineCardConfig(
-    override val cardId: String,
-    override val title: String = "PLANNED PAYMENTS TIMELINE",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 16,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Balance by Accounts card (Liquidity Distribution)
- */
-@Serializable
-@SerialName("balance_by_accounts")
-data class BalanceByAccountsCardConfig(
-    override val cardId: String,
-    override val title: String = "BALANCE BY ACCOUNTS",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 17,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val filter: TransactionFilter = TransactionFilter()
-) : CardConfig()
-
-/**
- * Configuration for Balance Trend card (Area Chart)
- */
-@Serializable
-@SerialName("balance_trend")
-data class BalanceTrendCardConfig(
-    override val cardId: String,
-    override val title: String = "BALANCE TREND",
-    override val isEnabled: Boolean = true,
-    override val order: Int = 18,
-    override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
-    val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig()
 
 @Serializable

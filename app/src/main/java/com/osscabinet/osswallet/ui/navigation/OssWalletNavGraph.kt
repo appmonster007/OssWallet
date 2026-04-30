@@ -62,18 +62,6 @@ fun OssWalletNavGraph(
         )
     )
 
-    val budgetViewModel: BudgetViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            BudgetViewModel(appContainer.budgetUseCases)
-        }
-    )
-
-    val loanViewModel: LoanViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            LoanViewModel(appContainer.loanUseCases)
-        }
-    )
-    
     val sharedWalletViewModel: SharedWalletViewModel = viewModel(
         factory = GenericViewModelFactory {
             SharedWalletViewModel(appContainer.sharedWalletRepository)
@@ -109,8 +97,7 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
                 appContainer.cardRepository,
-                appContainer.db.categoryDao(),
-                appContainer.budgetUseCases
+                appContainer.db.categoryDao()
             )
         }
     )
@@ -169,17 +156,12 @@ fun OssWalletNavGraph(
                 DashboardScreen(
                     onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
                     onRecordsClick = { context -> navController.navigateToRecords(context) },
-                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onEditBudgetClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
                     onAddClick = { type, template -> 
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
                     },
                     onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
-                    onLoansClick = { navController.navigate(Screen.Loans.route) },
-                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
                     onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                     onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
@@ -194,8 +176,6 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     templateViewModel = templateViewModel,
                     dashboardViewModel = dashboardViewModel,
-                    budgetViewModel = budgetViewModel,
-                    loanViewModel = loanViewModel,
                     cardManagerViewModel = cardManagerViewModel,
                     viewContext = viewContext
                 )
@@ -214,8 +194,6 @@ fun OssWalletNavGraph(
                     onDashboardClick = { navController.popBackStack() },
                     onRecordsClick = { context -> navController.navigateToRecords(context) },
                     onAnalyticsClick = { navController.navigate(Screen.Analytics.route) },
-                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                    onLoansClick = { navController.navigate(Screen.Loans.route) },
                     onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                     onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                     onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
@@ -245,26 +223,6 @@ fun OssWalletNavGraph(
                     onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                     onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
                     onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(Screen.Loans.route) {
-                LoansScreen(
-                    viewModel = loanViewModel,
-                    settingsViewModel = settingsViewModel,
-                    onBackClick = { navController.popBackStack() },
-                    onAddLoanClick = { navController.navigate(Screen.AddEditLoan.route) },
-                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) }
-                )
-            }
-
-            composable(Screen.Budgets.route) {
-                BudgetsScreen(
-                    viewModel = budgetViewModel,
-                    settingsViewModel = settingsViewModel,
-                    onBackClick = { navController.popBackStack() },
-                    onBudgetClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onAddBudgetClick = { navController.navigate(Screen.AddEditBudget.route) }
                 )
             }
 
@@ -331,8 +289,6 @@ fun OssWalletNavGraph(
                     onBackClick = { navController.popBackStack() },
                     onAccountsViewClick = { navController.navigate(Screen.AccountsView.route) },
                     onRecordsClick = { context -> navController.navigateToRecords(context) },
-                    onBudgetsClick = { navController.navigate(Screen.Budgets.route) },
-                    onLoansClick = { navController.navigate(Screen.Loans.route) },
                     onExchangeRatesClick = { navController.navigate(Screen.ExchangeRates.route) },
                     onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                     onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
@@ -399,69 +355,6 @@ fun OssWalletNavGraph(
                     transactionViewModel = transactionViewModel,
                     tagViewModel = tagViewModel,
                     settingsViewModel = settingsViewModel,
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.BudgetDetail.route,
-                arguments = listOf(navArgument("budgetId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val budgetId = backStackEntry.arguments?.getString("budgetId") ?: ""
-                BudgetDetailScreen(
-                    budgetId = budgetId,
-                    budgetViewModel = budgetViewModel,
-                    transactionViewModel = transactionViewModel,
-                    onEditClick = { id -> navController.navigate(Screen.AddEditBudget.createRoute(id)) },
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.LoanDetail.route,
-                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-                LoanDetailScreen(
-                    accountId = accountId,
-                    loanViewModel = loanViewModel,
-                    transactionViewModel = transactionViewModel,
-                    onEditClick = { id -> navController.navigate(Screen.AddEditLoan.createRoute(id)) },
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.AddEditBudget.route,
-                arguments = listOf(navArgument("budgetId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                })
-            ) { backStackEntry ->
-                val budgetId = backStackEntry.arguments?.getString("budgetId")
-                AddEditBudgetScreen(
-                    budgetId = budgetId,
-                    budgetViewModel = budgetViewModel,
-                    accountViewModel = accountViewModel,
-                    transactionViewModel = transactionViewModel,
-                    tagViewModel = tagViewModel,
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Screen.AddEditLoan.route,
-                arguments = listOf(navArgument("accountId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                })
-            ) { backStackEntry ->
-                val accountId = backStackEntry.arguments?.getString("accountId")
-                AddEditLoanScreen(
-                    accountId = accountId,
-                    loanViewModel = loanViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }

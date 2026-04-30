@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.FinancialSummary
@@ -32,8 +31,7 @@ enum class DashboardSection {
     NET_WORTH,
     CURRENCY_BALANCES,
     CASHFLOW,
-    ACCOUNTS,
-    BUDGETS
+    ACCOUNTS
 }
 
 class DashboardViewModel(
@@ -42,8 +40,7 @@ class DashboardViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val cardRepository: CardRepository,
-    private val categoryDao: CategoryDao,
-    private val budgetUseCases: BudgetUseCases
+    private val categoryDao: CategoryDao
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
@@ -158,18 +155,6 @@ class DashboardViewModel(
         viewModelScope.launch {
             settingsRepository.updateDashboardSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
         }
-    }
-
-    fun updateBudgetShowProgressLabels(cardId: String, show: Boolean) {
-        viewModelScope.launch {
-            cardRepository.updateDashboardCard(cardId) { config ->
-                if (config is BudgetsCardConfig) config.copy(showProgressLabels = show) else config
-            }
-        }
-    }
-
-    fun updateCardBudgetsShowProgressLabels(cardId: String, show: Boolean) {
-        updateBudgetShowProgressLabels(cardId, show)
     }
 
     fun updateAccountsLayout(layout: String) {
@@ -397,43 +382,6 @@ class DashboardViewModel(
         }.sortedByDescending { it.netBalance.abs() }
     }
 
-    suspend fun computeTimelineTrajectoryForCard(cardConfig: TimelineTrajectoryCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<TimelineTrajectoryData> {
-        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
-        val timeBuckets = TransactionsUtilityService.getTimeBuckets(cardConfig.filter.timelineRange)
-
-        val bucketed = TransactionsUtilityService.createBreakdown<TimeBucket, FinancialMetrics<TimeBucket>>(
-            transactions = filtered,
-            selector = { tx -> timeBuckets.find { it.start <= tx.timestamp && tx.timestamp < it.end } ?: TimeBucket(0,0) },
-            mapper = { bucket, summaries ->
-                val baseSummary = TransactionsUtilityService.calculateTotalInBaseCurrency(summaries, baseCurrency, exchangeRates)
-                FinancialMetrics(bucket, baseSummary, summaries)
-            },
-            exchangeRates = exchangeRates,
-            baseCurrency = baseCurrency
-        ).filter { it.key.start != 0L }.sortedBy { it.key.start }
-
-        val (startTime, _) = TimelineService.getDateRange(cardConfig.filter.timelineRange)
-        val priorTransactions = allTransactions.filter { tx ->
-            (cardConfig.filter.accountIds.isEmpty() || tx.accountId in cardConfig.filter.accountIds) &&
-            tx.timestamp < (startTime ?: 0L)
-        }
-
-        val priorBalance = TransactionsUtilityService.breakdownByAccount(
-            priorTransactions, accounts, exchangeRates, baseCurrency
-        ).sumOf { it.totalAmount }
-
-        val trajectory = TransactionsUtilityService.calculateCumulativeSum(bucketed, priorBalance)
-
-        return trajectory.map { point ->
-            TimelineTrajectoryData(
-                timestamp = point.key.start,
-                balance = point.cumulativeBalance,
-                expense = point.expense,
-                income = point.income
-            )
-        }
-    }
-
     suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
         val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
         val expenseTransactions = filtered.filter { it.amount < BigDecimal.ZERO }
@@ -463,8 +411,6 @@ class DashboardViewModel(
 
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
-            val budgetStateFlow = budgetUseCases.getBudgetsWithAnalysis(profileId)
-            
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
@@ -472,8 +418,7 @@ class DashboardViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
-                settingsRepository.dashboardSettings,
-                budgetStateFlow
+                settingsRepository.dashboardSettings
             ) { args: Array<Any> ->
                 val accounts = args[0] as List<Account>
                 val allTransactions = args[1] as List<Transaction>
@@ -482,7 +427,6 @@ class DashboardViewModel(
                 val hasLoadedExchangeRates = args[4] as Boolean
                 val precision = args[5] as Int
                 val dashboardSettings = args[6] as com.osscabinet.ossWallet.data.local.DashboardSettings
-                val budgets = args[7] as List<BudgetAnalysis>
 
                 if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
@@ -560,9 +504,6 @@ class DashboardViewModel(
                     .filter { it.transaction.accountId in updatedAccounts.filter { !it.isArchived }.map { it.id }.toSet() }
                     .sortedByDescending { it.transaction.timestamp }
 
-                val budgetAnalysis = budgets.find { it.budget.id == "primary" } // Mock or logic to find relevant budget
-                val showProgressLabels = budgetAnalysis?.budget?.isPredictiveAlertEnabled ?: true
-
                 DashboardUiState.Success(
                     accounts = updatedAccounts.filter { !it.isArchived },
                     allTransactions = allTransactions,
@@ -581,7 +522,6 @@ class DashboardViewModel(
                     currencyBalancesTimelineRange = dashboardSettings.currencyBalancesSection.timelineRange,
                     cashFlowShowBaseConversion = dashboardSettings.cashFlowSection.showBaseConversion,
                     cashFlowTimelineRange = cashFlowTimelineRange,
-                    budgetShowProgressLabels = showProgressLabels,
                     netWorth = netWorth,
                     netIncome = netWorthCashFlow.totalIncomeInBase,
                     netExpense = netWorthCashFlow.totalExpensesInBase,
@@ -618,7 +558,6 @@ sealed class DashboardUiState {
         val currencyBalancesTimelineRange: TimelineRange,
         val cashFlowShowBaseConversion: Boolean,
         val cashFlowTimelineRange: TimelineRange,
-        val budgetShowProgressLabels: Boolean,
         val netWorth: BigDecimal,
         val netIncome: BigDecimal,
         val netExpense: BigDecimal,

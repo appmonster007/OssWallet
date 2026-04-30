@@ -90,16 +90,19 @@ fun TransactionHeaderCard(
                 if (state.isTransfer && state.targetAccount != null) {
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Arrow with exchange rate to the right
+                    // Arrow with exchange rate to the right (clickable to edit)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.clickable {
+                            onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true))
+                        }
                     ) {
                         Icon(
-                            Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null,
+                            Icons.Rounded.CurrencyExchange,
+                            contentDescription = "Edit Exchange Rate",
                             modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "1:${state.exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
@@ -11,6 +12,7 @@ import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toEnum
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -48,6 +50,7 @@ class AccountsViewViewModel(
     private val transactionUseCases: TransactionUseCases,
     private val settingsRepository: SettingsRepository,
     private val cardRepository: CardRepository,
+    private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
@@ -214,6 +217,7 @@ class AccountsViewViewModel(
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
+                categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
@@ -225,11 +229,13 @@ class AccountsViewViewModel(
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
                 @Suppress("UNCHECKED_CAST")
-                val rates = args[2] as Map<String, BigDecimal>
-                val baseCurrency = args[3] as String
-                val hasLoadedRates = args[4] as Boolean
-                val precision = args[5] as Int
-                val accountsViewSettings = args[6] as com.osscabinet.ossWallet.data.local.AccountsViewSettings
+                val categories = args[2] as List<Category>
+                @Suppress("UNCHECKED_CAST")
+                val rates = args[3] as Map<String, BigDecimal>
+                val baseCurrency = args[4] as String
+                val hasLoadedRates = args[5] as Boolean
+                val precision = args[6] as Int
+                val accountsViewSettings = args[7] as com.osscabinet.ossWallet.data.local.AccountsViewSettings
 
                 // Invalidate cache when transactions change
                 cardDataCache.invalidateAll()
@@ -253,7 +259,7 @@ class AccountsViewViewModel(
                 val input = CardInput(
                     transactions = allTransactions,
                     accounts = accounts,
-                    categories = emptyList(),
+                    categories = categories,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
                     precision = precision
@@ -304,6 +310,7 @@ class AccountsViewViewModel(
                 AccountsViewUiState.Success(
                     accounts = nonArchivedAccounts,
                     allTransactions = allTransactions,
+                    allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     currencyTotals = globalCurrencyTotals,
@@ -474,6 +481,7 @@ sealed class AccountsViewUiState {
     data class Success(
         val accounts: List<Account>,
         val allTransactions: List<Transaction> = emptyList(),
+        val allCategories: List<Category> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyTotals: List<CurrencyAggregationItem> = emptyList(),

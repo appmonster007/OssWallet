@@ -55,7 +55,7 @@ fun TransactionListFilteredPreview() {
             categories = mockCategories,
             categoryMap = mockCategories.associateBy { it.id },
             decimalPrecision = 2,
-            analyticsState = AnalyticsUiState(selectedCurrency = "USD"),
+            analyticsState = AnalyticsUiState.Success(selectedCurrency = "USD"),
             filter = TransactionFilter(queryPayee = "Burger"),
             recordsSettings = com.osscabinet.ossWallet.data.local.TransactionSectionSettings(),
             onAddTransactionClick = { _, _ -> },

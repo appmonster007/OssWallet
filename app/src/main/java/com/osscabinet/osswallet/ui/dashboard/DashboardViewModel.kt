@@ -398,6 +398,7 @@ class DashboardViewModel(
                     accounts = updatedAccounts.filter { !it.isArchived },
                     allTransactions = allTransactions,
                     allTransactionsWithBalance = transactionsWithBalance,
+                    allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     currencyTotals = currencyTotals,
@@ -499,11 +500,11 @@ class DashboardViewModel(
         return computeAccountStats(accounts, transactions, timelineRange, context).first
     }
 
-    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
+    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
         val categories = categoryRepository.getAllCategoriesSync()
         val input = CardInput(
             transactions = allTransactions,
-            accounts = emptyList(),
+            accounts = accounts,
             categories = categories,
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency,
@@ -532,11 +533,11 @@ class DashboardViewModel(
         return data.items.map { mapToUi(it) }
     }
 
-    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
+    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
         val categories = categoryRepository.getAllCategoriesSync()
         val input = CardInput(
             transactions = allTransactions,
-            accounts = emptyList(),
+            accounts = accounts,
             categories = categories,
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency,
@@ -570,6 +571,7 @@ sealed class DashboardUiState {
         val accounts: List<Account>,
         val allTransactions: List<Transaction>,
         val allTransactionsWithBalance: List<TransactionWithBalance>,
+        val allCategories: List<Category>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyTotals: List<CurrencyAggregationItem>,

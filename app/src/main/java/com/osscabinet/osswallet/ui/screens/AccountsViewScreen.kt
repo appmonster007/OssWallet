@@ -156,11 +156,11 @@ fun AccountsViewScreen(
     val accountsViewCardsConfig by cardLayoutViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
     val accountFilter by accountsViewViewModel.accountFilter.collectAsStateWithLifecycle()
     val initialFilterContext by accountsViewViewModel.initialFilterContext.collectAsStateWithLifecycle()
+    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     var showAddCardDialog by remember { mutableStateOf(false) }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val accountMap = remember(accounts) { accounts.associateBy { it.id to it.name } }
     val accountNameMap = remember(accounts) { accounts.associate { it.id to it.name } }
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
@@ -199,10 +199,10 @@ fun AccountsViewScreen(
 
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-    LaunchedEffect(settingsCurrency) {
-        analyticsViewModel.onCurrencySelected(settingsCurrency)
-    }
+    // val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+    // LaunchedEffect(settingsCurrency) {
+    //     analyticsViewModel.onCurrencySelected(settingsCurrency)
+    // }
 
     Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
@@ -322,7 +322,7 @@ fun AccountsViewScreen(
                                 val input = com.osscabinet.ossWallet.domain.card.CardInput(
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,
-                                    categories = emptyList(),
+                                    categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.baseCurrency,
                                     precision = state.decimalPrecision
@@ -348,8 +348,8 @@ fun AccountsViewScreen(
                                         showTitle = true,
                                         currentTheme = currentTheme,
                                         accounts = state.accounts,
-                                        allCategories = emptyList(),
-                                        savedFilters = emptyList()
+                                        allCategories = state.allCategories,
+                                        savedFilters = savedFilters
                                     )
                                 } ?: Box(modifier = Modifier.size(0.dp))
                             }

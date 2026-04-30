@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 
 /**
@@ -8,39 +9,47 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
  * in the renderer.
  */
 sealed class CardWithCallbacks {
+    abstract val filterRules: CardFilterRules
     
     data class NetWorth(
         val renderData: CardRenderData.NetWorth,
-        val callbacks: CardCallbacks.NetWorth
+        val callbacks: CardCallbacks.NetWorth,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
     ) : CardWithCallbacks()
 
     data class CurrencyBalances(
         val renderData: CardRenderData.CurrencyBalances,
-        val callbacks: CardCallbacks.CurrencyBalances
+        val callbacks: CardCallbacks.CurrencyBalances,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
     ) : CardWithCallbacks()
 
     data class CashFlow(
         val renderData: CardRenderData.CashFlow,
-        val callbacks: CardCallbacks.CashFlow
+        val callbacks: CardCallbacks.CashFlow,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
     ) : CardWithCallbacks()
 
     data class Accounts(
         val renderData: CardRenderData.Accounts,
-        val callbacks: CardCallbacks.Accounts
+        val callbacks: CardCallbacks.Accounts,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
     ) : CardWithCallbacks()
 
     data class CategoryBreakdown(
         val renderData: CardRenderData.CategoryBreakdown,
-        val callbacks: CardCallbacks.Analytics
+        val callbacks: CardCallbacks.Analytics,
+        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY
     ) : CardWithCallbacks()
 
     data class CategoryTreemap(
         val renderData: CardRenderData.CategoryTreemap,
-        val callbacks: CardCallbacks.Analytics
+        val callbacks: CardCallbacks.Analytics,
+        override val filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY
     ) : CardWithCallbacks()
 
     data class AccountHero(
         val renderData: CardRenderData.AccountHero,
-        val callbacks: CardCallbacks.AccountHero
+        val callbacks: CardCallbacks.AccountHero,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
     ) : CardWithCallbacks()
 }

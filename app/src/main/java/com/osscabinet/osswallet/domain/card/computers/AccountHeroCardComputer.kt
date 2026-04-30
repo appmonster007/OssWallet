@@ -17,15 +17,14 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
         val effectiveFilter = config.filter.copy(accountIds = listOf(accountId))
         val filteredTx = TransactionFilterService.filter(input.transactions, effectiveFilter)
         
-        // Calculate net balance for the filtered period
+        // Calculate net balance for the filtered period in account currency
         val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
             transactions = filteredTx,
             exchangeRates = input.exchangeRates,
-            baseCurrency = input.baseCurrency
+            baseCurrency = account.currencyCode
         )
         
         // The net balance in account currency for the period
-        // For hero card, we often want to show how much was made/spent in this period
         val netBalance = breakdown.netFlow
 
         return CardRenderData.AccountHero(

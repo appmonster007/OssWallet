@@ -166,6 +166,8 @@ fun TransactionEntrySheets(
     if (state.isNumpadVisible) {
         CalculatorSheet(
             currentAmount = state.amount,
+            transactionType = state.transactionType,
+            decimalPrecision = state.decimalPrecision,
             onAmountChanged = { amount ->
                 onEvent(TransactionEntryEvent.SetAmount(amount))
             },

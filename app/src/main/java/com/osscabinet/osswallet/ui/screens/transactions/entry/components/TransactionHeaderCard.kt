@@ -37,7 +37,7 @@ fun TransactionHeaderCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(240.dp),
+            .wrapContentHeight(),
         shape = RoundedCornerShape(48.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 2.dp
@@ -57,31 +57,34 @@ fun TransactionHeaderCard(
             // Amount & Currency Area
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { onEvent(TransactionEntryEvent.ShowNumpad(true)) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .fillMaxWidth()
+                    .clickable { onEvent(TransactionEntryEvent.ShowNumpad(true)) }
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Primary amount centered
-                Text(
-                    text = if (state.amount.isEmpty()) "0.00" else state.amount,
-                    style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = when {
-                        state.isExpense -> MaterialTheme.colorScheme.error
-                        state.isIncome -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.tertiary
-                    }
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Currency selector dropdown
-                CurrencySelector(
-                    selectedCurrency = state.selectedCurrency.ifEmpty { "USD" },
-                    onCurrencySelected = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
-                    supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD")
-                )
+                // Primary amount row with currency selector on left
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CurrencySelector(
+                        selectedCurrency = state.selectedCurrency.ifEmpty { "USD" },
+                        onCurrencySelected = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
+                        supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD")
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = if (state.amount.isEmpty()) "0.00" else state.amount,
+                        style = MaterialTheme.typography.displayLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            state.isExpense -> MaterialTheme.colorScheme.error
+                            state.isIncome -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.tertiary
+                        }
+                    )
+                }
 
                 // Transfer-specific: Show converted amount and exchange rate
                 if (state.isTransfer && state.targetAccount != null) {
@@ -89,10 +92,10 @@ fun TransactionHeaderCard(
                     Icon(
                         Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.outline
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     // Exchange rate label
                     Text(
@@ -101,32 +104,35 @@ fun TransactionHeaderCard(
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Converted amount centered
-                    val amountValue = state.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val convertedAmount = amountValue.multiply(state.exchangeRate)
-                    val convertedText = convertedAmount.setScale(state.decimalPrecision, RoundingMode.HALF_UP).toPlainString()
-
-                    Text(
-                        text = convertedText,
-                        style = MaterialTheme.typography.displayMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = androidx.compose.ui.graphics.lerp(
-                            MaterialTheme.colorScheme.secondary,
-                            Color(0xFF2E7D32),
-                            0.5f
-                        )
-                    )
-                    
                     Spacer(modifier = Modifier.height(4.dp))
-                    
-                    // Target currency selector dropdown
-                    CurrencySelector(
-                        selectedCurrency = state.targetCurrency.ifEmpty { "USD" },
-                        onCurrencySelected = { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) },
-                        supportedCurrencies = state.targetAccount?.allowedCurrencies ?: listOf("USD")
-                    )
+
+                    // Converted amount row with target currency selector on left
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        val amountValue = state.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val convertedAmount = amountValue.multiply(state.exchangeRate)
+                        val convertedText = convertedAmount.setScale(state.decimalPrecision, RoundingMode.HALF_UP).toPlainString()
+
+                        CurrencySelector(
+                            selectedCurrency = state.targetCurrency.ifEmpty { "USD" },
+                            onCurrencySelected = { onEvent(TransactionEntryEvent.SetTargetCurrency(it)) },
+                            supportedCurrencies = state.targetAccount?.allowedCurrencies ?: listOf("USD")
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = convertedText,
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.lerp(
+                                MaterialTheme.colorScheme.secondary,
+                                Color(0xFF2E7D32),
+                                0.5f
+                            )
+                        )
+                    }
                 }
             }
         }

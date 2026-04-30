@@ -520,27 +520,21 @@ fun DynamicAccountDetailCards(
 @Composable
 fun AccountDetailCardTypeSelectionDialog(
     onDismiss: () -> Unit,
-    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType) -> Unit
+    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType) -> Unit
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
         cardOptions = listOf(
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNT_DETAIL_HERO,
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNT_DETAIL_CASH_FLOW,
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNT_DETAIL_CURRENCY_BALANCES
+        ).map { type ->
             CardTypeOptionData(
-                title = "Account Summary",
-                description = "Display account balance and details",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.ACCOUNT_HERO) }
-            ),
-            CardTypeOptionData(
-                title = "Cash Flow",
-                description = "Track income and expenses for this account",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.CASH_FLOW) }
-            ),
-            CardTypeOptionData(
-                title = "Currency Balances",
-                description = "Show currency breakdown for this account",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountDetailCardType.CURRENCY_BALANCES) }
+                title = type.displayName,
+                description = type.description,
+                onClick = { onCardTypeSelected(type) }
             )
-        )
+        }
     )
 }
 

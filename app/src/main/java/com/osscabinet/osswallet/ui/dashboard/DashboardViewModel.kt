@@ -12,7 +12,9 @@ import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.FilterService
-import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.AggregationService
+import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.domain.service.TimeBucket
@@ -263,11 +265,11 @@ class DashboardViewModel(
         }
     }
 
-    // Direct implementations using TransactionsUtilityService
+    // Direct implementations using split services
     suspend fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
         val filter = TransactionFilter(timelineRange = timelineRange, accountIds = emptyList())
-        val filteredTx = TransactionsUtilityService.filter(transactions, filter)
-        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+        val filteredTx = TransactionFilterService.filter(transactions, filter)
+        val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,
             accounts = accounts,
             exchangeRates = context.exchangeRates,
@@ -277,8 +279,8 @@ class DashboardViewModel(
     }
 
     suspend fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
-        val filtered = TransactionsUtilityService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
-        val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+        val filtered = TransactionFilterService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
+        val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
             transactions = filtered,
             exchangeRates = context.exchangeRates,
             baseCurrency = context.baseCurrency
@@ -291,9 +293,9 @@ class DashboardViewModel(
                 CashFlowBreakdownItem(
                     currency = curr,
                     income = inc.totalAmount,
-                    incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, context.baseCurrency, context.exchangeRates),
+                    incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, context.baseCurrency, context.exchangeRates),
                     expense = exp.totalAmount,
-                    expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, context.baseCurrency, context.exchangeRates)
+                    expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, context.baseCurrency, context.exchangeRates)
                 )
             }
 
@@ -307,9 +309,9 @@ class DashboardViewModel(
     }
 
     suspend fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
-        val filteredTx = TransactionsUtilityService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
-        return TransactionsUtilityService.breakdownByCurrency(transactions = filteredTx).map { b ->
-            val amountInBase = TransactionsUtilityService.convertToBaseCurrency(
+        val filteredTx = TransactionFilterService.filter(transactions, TransactionFilter(timelineRange = timelineRange))
+        return AggregationService.breakdownByCurrency(transactions = filteredTx).map { b ->
+            val amountInBase = CurrencyConversionService.convertToBaseCurrency(
                 b.totalAmount, b.currency, context.baseCurrency, context.exchangeRates
             )
             CurrencyAggregationItem(
@@ -322,8 +324,8 @@ class DashboardViewModel(
 
     suspend fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
         val filter = TransactionFilter(timelineRange = timelineRange)
-        val filteredTx = TransactionsUtilityService.filter(transactions, filter)
-        val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+        val filteredTx = TransactionFilterService.filter(transactions, filter)
+        val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,
             accounts = accounts,
             exchangeRates = context.exchangeRates,
@@ -344,7 +346,7 @@ class DashboardViewModel(
             val b = accountBreakdowns.find { it.key == account.id }
             if (b != null) {
                 val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
-                    TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, context.exchangeRates)
+                    CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, context.exchangeRates)
                 }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
                 account.copy(balance = totalInAccountCurrency)
             } else account
@@ -358,8 +360,8 @@ class DashboardViewModel(
     }
 
     suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
-        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
-        val categoryBreakdown = TransactionsUtilityService.breakdownByCategory(
+        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
+        val categoryBreakdown = AggregationService.breakdownByCategory(
             transactions = filtered,
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency
@@ -383,10 +385,10 @@ class DashboardViewModel(
     }
 
     suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
-        val filtered = TransactionsUtilityService.filter(allTransactions, cardConfig.filter)
-        val expenseTransactions = filtered.filter { it.amount < BigDecimal.ZERO }
-        
-        val categoryBreakdown = TransactionsUtilityService.breakdownByCategory(
+        val filtered = TransactionFilterService.filter(allTransactions, cardConfig.filter)
+        val expenseTransactions = TransactionFilterService.filterExpense(filtered)
+
+        val categoryBreakdown = AggregationService.breakdownByCategory(
             transactions = expenseTransactions,
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency

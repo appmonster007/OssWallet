@@ -14,7 +14,9 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
-import com.osscabinet.ossWallet.domain.service.TransactionsUtilityService
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.AggregationService
+import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import java.math.RoundingMode
@@ -35,7 +37,7 @@ class AccountDetailViewModel(
 
     private val cardDataCache = CardDataCache()
 
-    // Direct implementations using TransactionsUtilityService
+    // Direct implementations using split services
     suspend fun computeCashFlowCard(
         cardConfig: com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig,
         transactions: List<Transaction>,
@@ -45,8 +47,8 @@ class AccountDetailViewModel(
     ): CashFlowResult {
         val cacheKey = "cashflow_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return cardDataCache.getOrCompute(cacheKey) {
-            val filtered = TransactionsUtilityService.filter(transactions, cardConfig.filter)
-            val breakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+            val filtered = TransactionFilterService.filter(transactions, cardConfig.filter)
+            val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
                 transactions = filtered,
                 exchangeRates = exchangeRates,
                 baseCurrency = baseCurrency
@@ -58,9 +60,9 @@ class AccountDetailViewModel(
                     CashFlowBreakdownItem(
                         currency = curr,
                         income = inc.totalAmount,
-                        incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, exchangeRates),
+                        incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, exchangeRates),
                         expense = exp.totalAmount,
-                        expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, exchangeRates)
+                        expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, exchangeRates)
                     )
                 }
             CashFlowResult(
@@ -83,13 +85,13 @@ class AccountDetailViewModel(
     ): List<CurrencyAggregationItem> {
         val cacheKey = "currency_${cardConfig.cardId}_${cardConfig.timelineRange}"
         return cardDataCache.getOrCompute(cacheKey) {
-            val filteredTx = TransactionsUtilityService.filter(transactions, cardConfig.filter)
-            val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTx)
+            val filteredTx = TransactionFilterService.filter(transactions, cardConfig.filter)
+            val currencySummaries = AggregationService.calculateSummaryByCurrency(filteredTx)
             currencySummaries.map { (curr, summary) ->
                 CurrencyAggregationItem(
                     currency = curr,
                     amount = summary.totalAmount,
-                    amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, exchangeRates)
+                    amountInBase = CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, exchangeRates)
                 )
             }.sortedByDescending { it.amountInBase.abs() }
         }
@@ -253,19 +255,19 @@ class AccountDetailViewModel(
                 }
 
                 // Compute currency totals directly
-                val filteredTxForCurrency = TransactionsUtilityService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange))
-                val currencySummaries = TransactionsUtilityService.calculateSummaryByCurrency(filteredTxForCurrency)
+                val filteredTxForCurrency = TransactionFilterService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange))
+                val currencySummaries = AggregationService.calculateSummaryByCurrency(filteredTxForCurrency)
                 val currencyTotals = currencySummaries.map { (curr, summary) ->
                     CurrencyAggregationItem(
                         currency = curr,
                         amount = summary.totalAmount,
-                        amountInBase = TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, rates)
+                        amountInBase = CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, baseCurrency, rates)
                     )
                 }.sortedByDescending { it.amountInBase.abs() }
 
                 // Compute cash flow directly
-                val filteredTxForCashFlow = TransactionsUtilityService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange))
-                val cfBreakdown = TransactionsUtilityService.calculateIncomeExpenseBreakdown(
+                val filteredTxForCashFlow = TransactionFilterService.filter(accountTransactions, com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange))
+                val cfBreakdown = AggregationService.calculateIncomeExpenseBreakdown(
                     transactions = filteredTxForCashFlow,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency
@@ -277,9 +279,9 @@ class AccountDetailViewModel(
                         CashFlowBreakdownItem(
                             currency = curr,
                             income = inc.totalAmount,
-                            incomeInBase = TransactionsUtilityService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, rates),
+                            incomeInBase = CurrencyConversionService.convertToBaseCurrency(inc.totalAmount, curr, baseCurrency, rates),
                             expense = exp.totalAmount,
-                            expenseInBase = TransactionsUtilityService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, rates)
+                            expenseInBase = CurrencyConversionService.convertToBaseCurrency(exp.totalAmount, curr, baseCurrency, rates)
                         )
                     }
                 val cashFlowResult = CashFlowResult(
@@ -292,8 +294,8 @@ class AccountDetailViewModel(
 
                 // Compute account stats directly
                 val filterForAccounts = com.osscabinet.ossWallet.domain.model.TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
-                val filteredTxForAccounts = TransactionsUtilityService.filter(accountTransactions, filterForAccounts)
-                val accountBreakdowns = TransactionsUtilityService.breakdownByAccount(
+                val filteredTxForAccounts = TransactionFilterService.filter(accountTransactions, filterForAccounts)
+                val accountBreakdowns = AggregationService.breakdownByAccount(
                     transactions = filteredTxForAccounts,
                     accounts = listOf(account),
                     exchangeRates = rates,
@@ -302,7 +304,7 @@ class AccountDetailViewModel(
                 val b = accountBreakdowns.firstOrNull()
                 val updatedAccount = if (b != null) {
                     val totalInAccountCurrency = b.currencyBreakdown.map { (curr, summary) ->
-                        TransactionsUtilityService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, rates)
+                        CurrencyConversionService.convertToBaseCurrency(summary.totalAmount, curr, account.currencyCode, rates)
                     }.fold(BigDecimal.ZERO) { acc, amount -> acc.add(amount) }
                     account.copy(balance = totalInAccountCurrency)
                 } else account

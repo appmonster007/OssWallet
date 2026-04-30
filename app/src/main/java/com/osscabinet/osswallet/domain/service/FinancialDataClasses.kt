@@ -1,0 +1,123 @@
+package com.osscabinet.ossWallet.domain.service
+
+import com.osscabinet.ossWallet.domain.model.Transaction
+import java.math.BigDecimal
+
+/**
+ * Base financial summary with common metrics for transaction calculations.
+ * Used as the foundation for other financial data structures.
+ */
+data class FinancialSummary(
+    val totalAmount: BigDecimal,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val transactionCount: Int
+) {
+    /**
+     * Net flow (income + expense)
+     */
+    val netFlow: BigDecimal get() = income + expense
+
+    companion object {
+        /**
+         * Empty financial summary for use when no transactions are available.
+         */
+        val EMPTY = FinancialSummary(
+            totalAmount = BigDecimal.ZERO,
+            income = BigDecimal.ZERO,
+            expense = BigDecimal.ZERO,
+            transactionCount = 0
+        )
+    }
+}
+
+/**
+ * Type alias for backward compatibility. TransactionSummary is now FinancialSummary.
+ */
+typealias TransactionSummary = FinancialSummary
+
+/**
+ * Represents the delta (change) between two financial summaries.
+ */
+data class FinancialDelta(
+    val absoluteChange: BigDecimal,
+    val percentageChange: Double,
+    val incomeChange: BigDecimal,
+    val expenseChange: BigDecimal
+)
+
+/**
+ * Financial metrics for a specific key/category with currency breakdown.
+ * Used for all breakdown operations to provide consistent financial data structure.
+ */
+data class FinancialMetrics<K>(
+    val key: K,
+    val financialSummary: FinancialSummary,
+    val currencyBreakdown: Map<String, FinancialSummary>
+) {
+    val totalAmount: BigDecimal get() = financialSummary.totalAmount
+    val income: BigDecimal get() = financialSummary.income
+    val expense: BigDecimal get() = financialSummary.expense
+    val netFlow: BigDecimal get() = financialSummary.netFlow
+    val transactionCount: Int get() = financialSummary.transactionCount
+}
+
+// Type aliases for specific breakdown types (for semantic clarity)
+typealias AccountBreakdown = FinancialMetrics<String>
+typealias CategoryBreakdown = FinancialMetrics<String>
+typealias DateBreakdown = FinancialMetrics<String>
+typealias MonthBreakdown = FinancialMetrics<String>
+typealias TransactionTypeBreakdown = FinancialMetrics<String>
+typealias PaymentMethodBreakdown = FinancialMetrics<String>
+typealias TagBreakdown = FinancialMetrics<String>
+typealias StatusBreakdown = FinancialMetrics<String>
+
+/**
+ * Currency breakdown with detailed financial metrics.
+ * Used by breakdownByCurrency to provide per-currency breakdowns.
+ */
+data class CurrencyBreakdown(
+    val currency: String,
+    val financialSummary: FinancialSummary
+) {
+    val totalAmount: BigDecimal get() = financialSummary.totalAmount
+    val income: BigDecimal get() = financialSummary.income
+    val expense: BigDecimal get() = financialSummary.expense
+    val transactionCount: Int get() = financialSummary.transactionCount
+}
+
+/**
+ * Complete breakdown of income and expense transactions with currency sub-grouping.
+ * Uses FinancialSummary for totals to maintain DRY principle.
+ */
+data class IncomeExpenseBreakdown(
+    val financialSummary: FinancialSummary,
+    val incomeTransactions: List<Transaction>,
+    val expenseTransactions: List<Transaction>,
+    val incomeCurrencyBreakdown: Map<String, FinancialSummary>,
+    val expenseCurrencyBreakdown: Map<String, FinancialSummary>
+) {
+    // Convenience accessors for backward compatibility
+    val totalIncome: BigDecimal get() = financialSummary.income
+    val totalExpense: BigDecimal get() = financialSummary.expense
+    val netFlow: BigDecimal get() = financialSummary.netFlow
+    val totalAmount: BigDecimal get() = financialSummary.totalAmount
+    val transactionCount: Int get() = financialSummary.transactionCount
+}
+
+/**
+ * Generic label group with transactions and currency breakdown.
+ * Unlike other breakdown types, this includes the actual transactions in each group.
+ * Used by breakdownByLabel for custom label-based breakdowns.
+ */
+data class LabelGroup<L>(
+    val label: L,
+    val financialSummary: FinancialSummary,
+    val transactions: List<Transaction>,
+    val currencyBreakdown: Map<String, FinancialSummary>
+) {
+    val totalAmount: BigDecimal get() = financialSummary.totalAmount
+    val income: BigDecimal get() = financialSummary.income
+    val expense: BigDecimal get() = financialSummary.expense
+    val transactionCount: Int get() = financialSummary.transactionCount
+}

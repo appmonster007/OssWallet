@@ -356,7 +356,19 @@ class AnalyticsViewModel(
     }
 
     suspend fun reorderCards(newOrder: List<CardConfig>) {
-        _analyticsCardsConfig.value = AnalyticsCardsConfig(newOrder)
+        // Update order property to match new positions for each card type
+        val reorderedWithUpdatedOrder = newOrder.mapIndexed { index, card ->
+            when (card) {
+                is NetWorthCardConfig -> card.copy(order = index)
+                is CurrencyBalancesCardConfig -> card.copy(order = index)
+                is CashFlowCardConfig -> card.copy(order = index)
+                is AccountsCardConfig -> card.copy(order = index)
+                is CategoryBreakdownCardConfig -> card.copy(order = index)
+                is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                is AccountHeroCardConfig -> card.copy(order = index)
+            }
+        }
+        _analyticsCardsConfig.value = AnalyticsCardsConfig(reorderedWithUpdatedOrder)
         settingsRepository.saveAnalyticsCardsConfig(Json.encodeToString(_analyticsCardsConfig.value))
     }
 }

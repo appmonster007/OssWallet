@@ -1,14 +1,12 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -20,19 +18,12 @@ import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import java.math.RoundingMode
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
- * 
- * This composable provides a single entry point for rendering any card type by using
- * sealed classes for type-safe dispatch. The renderer separates data fetching (done in
- * the screen) from rendering logic (done here).
- * 
- * @param renderData The data required for the card, wrapped in a sealed class
- * @param callbacks The callbacks for the card, wrapped in a sealed class
- * @param modifier Modifier for the card container
- * @param headerModifier Modifier for the card header (for draggable headers)
- * @param showTitle Whether to show the card title (for cards that support it)
  */
 @Composable
 fun UnifiedCardRenderer(
@@ -56,7 +47,11 @@ fun UnifiedCardRenderer(
                 )
             
             NetWorthCard(
-                uiState = renderData.uiState,
+                netWorth = renderData.value,
+                netIncome = renderData.cashFlowResult.totalIncomeInBase,
+                netExpense = renderData.cashFlowResult.totalExpensesInBase,
+                baseCurrency = renderData.baseCurrency,
+                precision = renderData.precision,
                 cardId = renderData.config.cardId,
                 fontSize = renderData.config.fontSize,
                 timelineRange = renderData.config.timelineRange,
@@ -81,7 +76,7 @@ fun UnifiedCardRenderer(
                 )
             
             CurrencyBalancesCard(
-                currencyTotals = renderData.currencyTotals,
+                currencyTotals = renderData.items,
                 baseCurrency = renderData.baseCurrency,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -109,7 +104,7 @@ fun UnifiedCardRenderer(
                 )
             
             CashFlowCard(
-                cashFlowResult = renderData.cashFlowResult,
+                cashFlowResult = renderData.result,
                 baseCurrency = renderData.baseCurrency,
                 currentTheme = "light",
                 cardId = renderData.config.cardId,
@@ -134,9 +129,23 @@ fun UnifiedCardRenderer(
                     onDelete = {}
                 )
             
+            val uiData = renderData.items.map { metric ->
+                CategoryBreakdownData(
+                    category = metric.category,
+                    categoryId = metric.categoryId,
+                    netBalance = metric.netBalance,
+                    income = metric.income,
+                    expense = metric.expense,
+                    colorHex = metric.colorHex,
+                    percentage = metric.percentage,
+                    hasSubcategories = metric.hasSubcategories,
+                    subcategoryData = emptyList() // Simplified mapping
+                )
+            }
+
             CategoryBreakdownCard(
                 config = renderData.config,
-                data = renderData.data,
+                data = uiData,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
@@ -148,16 +157,28 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.CategoryExpenseTreemap -> {
+        is CardRenderData.CategoryTreemap -> {
             val cb = callbacks as? CardCallbacks.Analytics
                 ?: CardCallbacks.Analytics(
                     onUpdate = {},
                     onDelete = {}
                 )
             
+            val uiData = renderData.items.map { metric ->
+                CategoryExpenseTreemapData(
+                    category = metric.category,
+                    categoryId = metric.categoryId,
+                    expense = metric.expense.abs(),
+                    colorHex = metric.colorHex,
+                    percentage = metric.percentage,
+                    hasSubcategories = metric.hasSubcategories,
+                    subcategoryData = emptyList() // Simplified mapping
+                )
+            }
+
             CategoryExpenseTreemapCard(
                 config = renderData.config,
-                data = renderData.data,
+                data = uiData,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 onUpdate = { cb.onUpdate(it) },
@@ -185,7 +206,7 @@ fun UnifiedCardRenderer(
                 exchangeRates = renderData.exchangeRates,
                 modifier = modifier.fillMaxWidth(),
                 precision = renderData.precision,
-                showCurrencyBadges = (renderData.config as? com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig)?.showCurrencyBadges ?: true,
+                showCurrencyBadges = renderData.config.showCurrencyBadges,
                 onShowCurrencyBadgesChange = { show -> cb.onShowCurrencyBadgesChange(renderData.config.cardId, show) },
                 onClick = cb.onClick,
                 onDelete = { cb.onDelete() }
@@ -208,7 +229,7 @@ fun UnifiedCardRenderer(
                 onAccountClick = cb.onAccountClick,
                 onRecordsClick = { cb.onRecordsClick(it) },
                 onGridColumnsChange = { _, _ -> cb.onGridColumnsChange(renderData.config.cardId, renderData.config.gridColumns) },
-                accounts = renderData.accounts,
+                accounts = renderData.updatedAccounts,
                 accountStats = renderData.accountStats,
                 baseCurrency = renderData.baseCurrency,
                 currentTheme = renderData.currentTheme,
@@ -227,48 +248,5 @@ fun UnifiedCardRenderer(
                 onDelete = { cb.onDelete() }
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun UnifiedCardRendererPreview() {
-    // Preview would require mock data for all card types
-    // This is a placeholder to show the structure
-}
-
-/**
- * Renders a list of cards using the unified renderer.
- *
- * This composable iterates through a list of CardWithCallbacks and renders each card
- * using the UnifiedCardRenderer. This allows screens to pass a list of all possible
- * cards they support, with their corresponding callbacks.
- *
- * @param cards List of cards to render, each with its own data and callbacks
- * @param modifier Modifier for each card
- * @param headerModifier Modifier for each card header (for draggable headers)
- * @param showTitle Whether to show the card title (for cards that support it)
- */
-@Composable
-fun UnifiedCardListRenderer(
-    cards: List<CardWithCallbacks>,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    showTitle: Boolean = false,
-    accounts: List<Account> = emptyList(),
-    allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
-) {
-    cards.forEach { card ->
-        UnifiedCardRenderer(
-            renderData = card.renderData,
-            callbacks = card.callbacks,
-            modifier = modifier,
-            headerModifier = headerModifier,
-            showTitle = showTitle,
-            accounts = accounts,
-            allCategories = allCategories,
-            savedFilters = savedFilters
-        )
     }
 }

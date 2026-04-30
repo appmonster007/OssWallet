@@ -1,19 +1,21 @@
 package com.osscabinet.ossWallet.ui.viewmodel
 
+import com.osscabinet.ossWallet.domain.card.*
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.service.FinancialMetrics
-import com.osscabinet.ossWallet.domain.service.FinancialSummary
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.card.*
+import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
-import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.analytics.components.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -36,8 +38,9 @@ class AnalyticsViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val categoryRepository: CategoryRepository,
-    private val accountRepository: AccountRepository
-) : ViewModel() {
+    private val accountRepository: AccountRepository,
+    private val registry: CardComputerRegistry
+) : ViewModel(), CardUpdateHandler {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
     val uiState: StateFlow<AnalyticsUiState> = _uiState.asStateFlow()
@@ -54,7 +57,7 @@ class AnalyticsViewModel(
     private var _currentPrecision: Int = 2
 
     private val cardDataCache = CardDataCache()
-    private val engine = CardComputationEngine
+    // Use the injected registry instead of a local reference
 
     // Analytics cards config
     private val _analyticsCardsConfig = MutableStateFlow(defaultAnalyticsCardsConfig())
@@ -156,13 +159,20 @@ class AnalyticsViewModel(
         val cacheKey = "category_breakdown_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
             val categories = categoryRepository.getAllCategoriesSync()
-            val data = engine.computeCard(
-                config = config,
-                accounts = emptyList(),
+            val input = CardInput(
                 transactions = allTransactions,
+                accounts = allAccounts,
                 categories = categories,
-                context = getComputationContext()
-            ) as CardRenderData.CategoryBreakdownResult
+                exchangeRates = _uiState.value.exchangeRates,
+                baseCurrency = _uiState.value.selectedCurrency,
+                precision = _currentPrecision,
+                filter = config.filter
+            )
+            val data = registry.compute(
+                type = CardType.CATEGORY_BREAKDOWN,
+                input = input,
+                config = config
+            ) as CardRenderData.CategoryBreakdown
             
             fun mapToUi(metric: CategoryTreeMetrics): CategoryBreakdownData {
                 return CategoryBreakdownData(
@@ -185,13 +195,20 @@ class AnalyticsViewModel(
         val cacheKey = "category_treemap_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
             val categories = categoryRepository.getAllCategoriesSync()
-            val data = engine.computeCard(
-                config = config,
-                accounts = emptyList(),
+            val input = CardInput(
                 transactions = allTransactions,
+                accounts = allAccounts,
                 categories = categories,
-                context = getComputationContext()
-            ) as CardRenderData.CategoryTreemapResult
+                exchangeRates = _uiState.value.exchangeRates,
+                baseCurrency = _uiState.value.selectedCurrency,
+                precision = _currentPrecision,
+                filter = config.filter
+            )
+            val data = registry.compute(
+                type = CardType.CATEGORY_EXPENSE_TREEMAP,
+                input = input,
+                config = config
+            ) as CardRenderData.CategoryTreemap
             
             fun mapToUi(metric: CategoryTreeMetrics): CategoryExpenseTreemapData {
                 return CategoryExpenseTreemapData(

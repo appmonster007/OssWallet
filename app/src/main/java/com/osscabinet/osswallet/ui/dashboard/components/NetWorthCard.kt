@@ -36,7 +36,11 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun NetWorthCard(
-    uiState: NetWorthUiState,
+    netWorth: BigDecimal,
+    netIncome: BigDecimal,
+    netExpense: BigDecimal,
+    baseCurrency: String,
+    precision: Int,
     cardId: String,
     fontSize: String,
     timelineRange: TimelineRange,
@@ -48,33 +52,23 @@ fun NetWorthCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier
 ) {
-    when (val state = uiState) {
-        is NetWorthUiState.Loading -> {
-            Spacer(modifier = modifier)
-        }
-        is NetWorthUiState.Success -> {
-            NetWorthContent(
-                netWorth = state.netWorth,
-                netIncome = state.netIncome,
-                netExpense = state.netExpense,
-                baseCurrency = state.baseCurrency,
-                precision = state.precision,
-                fontSize = fontSize,
-                timelineRange = timelineRange,
-                cardId = cardId,
-                onFontSizeChange = onFontSizeChange,
-                onTimelineRangeChange = onTimelineRangeChange,
-                onDelete = onDelete,
-                onClickIncome = onClickIncome,
-                onClickExpense = onClickExpense,
-                modifier = modifier,
-                headerModifier = headerModifier
-            )
-        }
-        is NetWorthUiState.Error -> {
-            Text("Error: ${state.message}")
-        }
-    }
+    NetWorthContent(
+        netWorth = netWorth,
+        netIncome = netIncome,
+        netExpense = netExpense,
+        baseCurrency = baseCurrency,
+        precision = precision,
+        fontSize = fontSize,
+        timelineRange = timelineRange,
+        cardId = cardId,
+        onFontSizeChange = onFontSizeChange,
+        onTimelineRangeChange = onTimelineRangeChange,
+        onDelete = onDelete,
+        onClickIncome = onClickIncome,
+        onClickExpense = onClickExpense,
+        modifier = modifier,
+        headerModifier = headerModifier
+    )
 }
 
 @Composable

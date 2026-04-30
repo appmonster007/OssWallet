@@ -37,7 +37,8 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
                 appContainer.categoryRepository,
-                appContainer.accountRepository
+                appContainer.accountRepository,
+                appContainer.cardComputerRegistry
             )
         }
     )
@@ -97,7 +98,8 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
                 appContainer.cardRepository,
-                appContainer.categoryRepository
+                appContainer.categoryRepository,
+                appContainer.cardComputerRegistry
             )
         }
     )
@@ -109,7 +111,8 @@ fun OssWalletNavGraph(
                 appContainer.transactionUseCases,
                 appContainer.settingsRepository,
                 appContainer.cardRepository,
-                appContainer.computationRepository
+                appContainer.computationRepository,
+                appContainer.cardComputerRegistry
             )
         }
     )
@@ -177,6 +180,7 @@ fun OssWalletNavGraph(
                     templateViewModel = templateViewModel,
                     dashboardViewModel = dashboardViewModel,
                     cardManagerViewModel = cardManagerViewModel,
+                    cardComputerRegistry = appContainer.cardComputerRegistry,
                     viewContext = viewContext
                 )
             }
@@ -210,6 +214,7 @@ fun OssWalletNavGraph(
                     templateViewModel = templateViewModel,
                     accountsViewViewModel = accountsViewViewModel,
                     cardManagerViewModel = cardManagerViewModel,
+                    cardComputerRegistry = appContainer.cardComputerRegistry,
                     filterContext = filterContext
                 )
             }
@@ -296,7 +301,8 @@ fun OssWalletNavGraph(
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onAddClick = { type, template -> 
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
-                    }
+                    },
+                    cardComputerRegistry = appContainer.cardComputerRegistry
                 )
             }
 
@@ -389,7 +395,8 @@ fun OssWalletNavGraph(
                             transactionUseCases = appContainer.transactionUseCases,
                             settingsRepository = appContainer.settingsRepository,
                             cardRepository = appContainer.cardRepository,
-                            computationRepository = appContainer.computationRepository
+                            computationRepository = appContainer.computationRepository,
+                            registry = appContainer.cardComputerRegistry
                         )
                     }
                 )
@@ -401,6 +408,7 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     accountDetailViewModel = accountDetailViewModel,
                     cardManagerViewModel = cardManagerViewModel,
+                    cardComputerRegistry = appContainer.cardComputerRegistry,
                     templateViewModel = templateViewModel,
                     onBackClick = { navController.popBackStack() },
                     onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },

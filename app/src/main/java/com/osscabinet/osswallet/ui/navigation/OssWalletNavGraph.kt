@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.dashboard.*
 import com.osscabinet.ossWallet.ui.viewmodel.*
 import com.osscabinet.ossWallet.ui.screens.*
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
 import com.osscabinet.ossWallet.ui.accountdetail.*
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -270,16 +271,28 @@ fun OssWalletNavGraph(
                 val accountId = backStackEntry.arguments?.getString("accountId")
                 val type = backStackEntry.arguments?.getInt("type") ?: 0
                 val template = backStackEntry.arguments?.getString("template")
+                val prefillDto by transactionViewModel.prefillDto.collectAsStateWithLifecycle()
+                val entryViewModel: com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel(
+                            savedStateHandle = androidx.lifecycle.SavedStateHandle(),
+                            transactionUseCases = appContainer.transactionUseCases,
+                            transactionManager = appContainer.transactionManager,
+                            settingsRepository = appContainer.settingsRepository,
+                            computationRepository = appContainer.computationRepository,
+                            accountRepository = appContainer.accountRepository,
+                            categoryRepository = appContainer.categoryRepository,
+                            tagRepository = appContainer.tagRepository,
+                            templateRepository = appContainer.templateRepository
+                        )
+                    }
+                )
                 TransactionEntryScreen(
                     accountId = accountId,
                     initialType = type,
                     initialTemplate = template,
-                    viewModel = transactionViewModel,
-                    accountViewModel = accountViewModel,
-                    analyticsViewModel = analyticsViewModel,
-                    templateViewModel = templateViewModel,
-                    tagViewModel = tagViewModel,
-                    settingsViewModel = settingsViewModel,
+                    prefillDto = prefillDto,
+                    viewModel = entryViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -370,14 +383,24 @@ fun OssWalletNavGraph(
                 arguments = listOf(navArgument("transactionId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val transactionId = backStackEntry.arguments?.getLong("transactionId") ?: -1L
+                val entryViewModel: com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel(
+                            savedStateHandle = androidx.lifecycle.SavedStateHandle(),
+                            transactionUseCases = appContainer.transactionUseCases,
+                            transactionManager = appContainer.transactionManager,
+                            settingsRepository = appContainer.settingsRepository,
+                            computationRepository = appContainer.computationRepository,
+                            accountRepository = appContainer.accountRepository,
+                            categoryRepository = appContainer.categoryRepository,
+                            tagRepository = appContainer.tagRepository,
+                            templateRepository = appContainer.templateRepository
+                        )
+                    }
+                )
                 TransactionEntryScreen(
                     transactionId = transactionId,
-                    viewModel = transactionViewModel,
-                    accountViewModel = accountViewModel,
-                    analyticsViewModel = analyticsViewModel,
-                    templateViewModel = templateViewModel,
-                    tagViewModel = tagViewModel,
-                    settingsViewModel = settingsViewModel,
+                    viewModel = entryViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }

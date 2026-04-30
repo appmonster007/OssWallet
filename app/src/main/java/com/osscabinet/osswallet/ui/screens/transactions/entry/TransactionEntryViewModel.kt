@@ -224,7 +224,14 @@ class TransactionEntryViewModel(
             }
             is TransactionEntryEvent.SetStatus -> update { it.copy(status = event.status) }
             is TransactionEntryEvent.SetTransactionType -> {
+                val oldType = _state.value.transactionType
                 update { it.copy(transactionType = event.type) }
+
+                // Auto-select target account when switching to transfer
+                if (event.type == 2 && oldType != 2) {
+                    autoSelectTargetAccount()
+                }
+
                 // Recalculate exchange rate if switching to/from transfer
                 if (event.type == 2) {
                     recalculateExchangeRate()
@@ -332,6 +339,32 @@ class TransactionEntryViewModel(
         }
     }
 
+    /**
+     * Auto-select a different account as target when switching to transfer.
+     * If only one account exists, target remains null (Outside of wallet).
+     */
+    private fun autoSelectTargetAccount() {
+        val currentState = _state.value
+        val selectedAccount = currentState.selectedAccount
+        val accounts = currentState.accounts
+
+        if (selectedAccount != null && accounts.size > 1) {
+            // Find a different account to auto-select as target
+            val targetAccount = accounts.find { it.id != selectedAccount.id }
+                ?: accounts.firstOrNull()
+
+            if (targetAccount != null && targetAccount.id != selectedAccount.id) {
+                update {
+                    it.copy(
+                        targetAccount = targetAccount,
+                        targetCurrency = targetAccount.currencyCode
+                    )
+                }
+                recalculateExchangeRate()
+            }
+        }
+    }
+
     private fun recalculateExchangeRate() {
         viewModelScope.launch {
             val currentState = _state.value
@@ -427,6 +460,18 @@ class TransactionEntryViewModel(
                 }
                 onSuccess(newId)
             }
+        }
+    }
+
+    /**
+     * Set target account to null for outside-of-wallet transfers.
+     */
+    fun clearTargetAccount() {
+        update {
+            it.copy(
+                targetAccount = null,
+                targetCurrency = ""
+            )
         }
     }
 

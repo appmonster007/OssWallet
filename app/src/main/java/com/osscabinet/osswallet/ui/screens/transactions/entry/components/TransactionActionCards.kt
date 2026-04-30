@@ -71,10 +71,14 @@ fun TransactionActionCards(
         // Target account (transfer) or Category (expense/income)
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             if (state.isTransfer) {
+                val targetDisplay = when {
+                    state.targetAccount != null -> state.targetAccount.name
+                    else -> "Outside Wallet"
+                }
                 ActionCard(
                     icon = Icons.Rounded.AccountBalance,
                     label = "TO",
-                    value = state.targetAccount?.name ?: "Select",
+                    value = targetDisplay,
                     onClick = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(true)) },
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)

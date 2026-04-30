@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 
@@ -43,7 +44,7 @@ fun TransactionActionCards(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Account selector
             ActionCard(
-                icon = Icons.Rounded.AccountBalanceWallet,
+                icon = Icons.Rounded.AccountBalance,
                 label = if (state.isTransfer) "FROM" else "ACCOUNT",
                 value = state.selectedAccount?.name ?: "Select",
                 onClick = { onEvent(TransactionEntryEvent.ShowAccountSheet(true)) },
@@ -70,8 +71,11 @@ fun TransactionActionCards(
                     state.categories.find { it.id == state.selectedCategoryId }?.name ?: state.category
                 } else state.category
 
+                // Use categoryIcons map like original, fallback to Category icon
+                val categoryIcon = categoryIcons[displayCategory] ?: Icons.Rounded.Category
+
                 ActionCard(
-                    icon = Icons.Rounded.Category,
+                    icon = categoryIcon,
                     label = "CATEGORY",
                     value = displayCategory,
                     onClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },

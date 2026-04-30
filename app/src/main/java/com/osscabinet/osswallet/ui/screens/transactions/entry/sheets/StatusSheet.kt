@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,17 +20,8 @@ fun StatusSheet(
     onStatusSelected: (TransactionStatus) -> Unit,
     onDismiss: () -> Unit
 ) {
-    data class StatusOption(
-        val status: TransactionStatus,
-        val icon: ImageVector,
-        val label: String
-    )
-
-    val statuses = listOf(
-        StatusOption(TransactionStatus.CLEARED, Icons.Rounded.CheckCircle, "Cleared"),
-        StatusOption(TransactionStatus.UNCLEARED, Icons.Rounded.Schedule, "Uncleared"),
-        StatusOption(TransactionStatus.RECONCILE, Icons.Rounded.Book, "Reconcile")
-    )
+    // Get all statuses from enum - each status has iconName, colorHex, displayName, description
+    val statuses = TransactionStatus.values()
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -40,33 +32,51 @@ fun StatusSheet(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            statuses.forEach { option ->
-                val isSelected = option.status == selectedStatus
+            statuses.forEach { status ->
+                val isSelected = status == selectedStatus
+                val statusColor = Color(android.graphics.Color.parseColor(status.colorHex))
+                val statusIcon = com.osscabinet.ossWallet.ui.components.AccountIconMap[status.iconName]
+                    ?: Icons.Rounded.CheckCircle
 
                 Surface(
-                    onClick = { onStatusSelected(option.status) },
+                    onClick = { onStatusSelected(status) },
                     shape = MaterialTheme.shapes.medium,
                     color = if (isSelected) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        statusColor.copy(alpha = 0.15f)
                     } else {
                         MaterialTheme.colorScheme.surface
                     },
+                    border = if (isSelected) {
+                        androidx.compose.foundation.BorderStroke(2.dp, statusColor)
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(option.icon, contentDescription = null)
+                        // Status icon with colored background
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = statusColor.copy(alpha = 0.2f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                statusIcon,
+                                contentDescription = null,
+                                tint = statusColor,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = option.label,
+                                text = status.displayName,
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = getStatusDescription(option.status),
+                                text = status.description,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -75,7 +85,7 @@ fun StatusSheet(
                             Icon(
                                 Icons.Rounded.Check,
                                 contentDescription = "Selected",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = statusColor
                             )
                         }
                     }
@@ -84,13 +94,5 @@ fun StatusSheet(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
-    }
-}
-
-private fun getStatusDescription(status: TransactionStatus): String {
-    return when (status) {
-        TransactionStatus.CLEARED -> "Transaction has been confirmed"
-        TransactionStatus.UNCLEARED -> "Awaiting confirmation"
-        TransactionStatus.RECONCILE -> "Needs to be reconciled with bank statement"
     }
 }

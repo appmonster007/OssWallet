@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 
@@ -62,22 +63,25 @@ fun TransactionMetadataSection(
             TagsSection(
                 tags = state.selectedTags,
                 allTags = state.allTags,
-                onShowSheet = { onEvent(TransactionEntryEvent.ShowLabelSheet(true)) }
+                onShowSheet = { onEvent(TransactionEntryEvent.ShowLabelSheet(true)) },
+                onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) }
             )
 
             // Payment Method and Status row with icons like original design
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Payment Method with specific icon
-                val paymentIcon = when (state.paymentMethod) {
-                    "Cash" -> Icons.Rounded.Money
-                    "Credit Card" -> Icons.Rounded.CreditCard
-                    "Debit Card" -> Icons.Rounded.CreditCard
-                    "Bank Transfer" -> Icons.Rounded.AccountBalance
-                    "Check" -> Icons.Rounded.RequestPage
-                    "Cryptocurrency" -> Icons.Rounded.CurrencyBitcoin
-                    "Other" -> Icons.Rounded.MoreHoriz
-                    else -> Icons.Rounded.Contactless
-                }
+                // Payment Method with exact same icon logic as original
+                val methods = listOf(
+                    "Cash" to Icons.Rounded.Payments,
+                    "Credit Card" to Icons.Rounded.CreditCard,
+                    "Debit Card" to Icons.Rounded.CreditCard,
+                    "Bank Transfer" to Icons.Rounded.AccountBalance,
+                    "Digital Wallet" to Icons.Rounded.Wallet,
+                    "Mobile Payment" to Icons.Rounded.Contactless,
+                    "Check" to Icons.Rounded.Description,
+                    "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                    "Other" to Icons.Rounded.MoreHoriz
+                )
+                val paymentIcon = methods.find { it.first == state.paymentMethod }?.second ?: Icons.Rounded.Contactless
 
                 ActionChip(
                     icon = paymentIcon,
@@ -86,21 +90,17 @@ fun TransactionMetadataSection(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Status with colored icon
-                val (statusIcon, statusColor) = when (state.status) {
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED ->
-                        Icons.Rounded.CheckCircle to androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE ->
-                        Icons.Rounded.Refresh to androidx.compose.ui.graphics.Color(0xFF2196F3)
-                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED ->
-                        Icons.Rounded.RadioButtonUnchecked to androidx.compose.ui.graphics.Color(0xFFFF9800)
-                }
+                // Status with icon and color from TransactionStatus enum
+                val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
+                val statusIcon = com.osscabinet.ossWallet.ui.components.AccountIconMap[state.status.iconName]
+                    ?: Icons.Rounded.CheckCircle
 
                 ActionChip(
                     icon = statusIcon,
                     label = state.status.displayName,
                     onClick = { onEvent(TransactionEntryEvent.ShowStatusSheet(true)) },
                     modifier = Modifier.weight(1f),
+                    iconContainerColor = statusColor.copy(alpha = 0.2f),
                     iconTint = statusColor
                 )
             }
@@ -223,7 +223,8 @@ private fun LinkedTransactionItem(tx: com.osscabinet.ossWallet.domain.model.Tran
 private fun TagsSection(
     tags: List<String>,
     allTags: List<com.osscabinet.ossWallet.domain.model.Tag>,
-    onShowSheet: () -> Unit
+    onShowSheet: () -> Unit,
+    onRemoveTag: (String) -> Unit
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -246,7 +247,7 @@ private fun TagsSection(
             }
         }
 
-        // Selected tags
+        // Selected tags with remove button
         tags.forEach { tag ->
             Surface(
                 shape = RoundedCornerShape(16.dp),
@@ -254,10 +255,23 @@ private fun TagsSection(
                 modifier = Modifier.height(32.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp),
+                    modifier = Modifier.padding(start = 12.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(tag, style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    // Remove button
+                    IconButton(
+                        onClick = { onRemoveTag(tag) },
+                        modifier = Modifier.size(20.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Remove tag",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }

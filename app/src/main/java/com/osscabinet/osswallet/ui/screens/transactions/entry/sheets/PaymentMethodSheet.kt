@@ -4,8 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Payment
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,13 +19,17 @@ fun PaymentMethodSheet(
     onMethodSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    // Use the same icon mapping as the original TransactionEntryScreen
     val methods = listOf(
-        "Cash" to Icons.Rounded.Payment,
-        "Credit Card" to Icons.Rounded.Payment,
-        "Debit Card" to Icons.Rounded.Payment,
-        "Bank Transfer" to Icons.Rounded.Payment,
-        "Mobile Payment" to Icons.Rounded.Payment,
-        "Other" to Icons.Rounded.Payment
+        "Cash" to Icons.Rounded.Payments,
+        "Credit Card" to Icons.Rounded.CreditCard,
+        "Debit Card" to Icons.Rounded.CreditCard,
+        "Bank Transfer" to Icons.Rounded.AccountBalance,
+        "Digital Wallet" to Icons.Rounded.Wallet,
+        "Mobile Payment" to Icons.Rounded.Contactless,
+        "Check" to Icons.Rounded.Description,
+        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+        "Other" to Icons.Rounded.MoreHoriz
     )
 
     ModalBottomSheet(onDismissRequest = onDismiss) {

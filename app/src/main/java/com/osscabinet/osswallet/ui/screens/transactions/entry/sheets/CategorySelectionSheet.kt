@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.ui.components.categoryIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,13 +56,16 @@ fun CategorySelectionSheet(
                             modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // Use category icon from iconName if available
+                            val categoryIcon = categoryIcons[category.iconName] ?: Icons.Rounded.Category
+
                             Surface(
                                 shape = androidx.compose.foundation.shape.CircleShape,
                                 color = categoryColor.copy(alpha = 0.2f),
                                 modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
-                                    Icons.Rounded.Category,
+                                    categoryIcon,
                                     contentDescription = null,
                                     tint = categoryColor,
                                     modifier = Modifier.padding(8.dp)

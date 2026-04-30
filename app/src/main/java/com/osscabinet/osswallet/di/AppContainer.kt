@@ -63,20 +63,12 @@ class AppContainer(private val context: Context) {
         AccountRepositoryImpl(db.accountDao())
     }
 
-    val budgetRepository: BudgetRepository by lazy {
-        BudgetRepositoryImpl(db.budgetDao(), db.transactionDao())
-    }
-
     val currencyRepository: CurrencyRepository by lazy {
         CurrencyRepositoryImpl(RetrofitClient.currencyApi, db.currencyDao())
     }
 
     val profileRepository: ProfileRepository by lazy {
         ProfileRepositoryImpl(db.profileDao(), settingsDataStore)
-    }
-
-    val loanRepository: LoanRepository by lazy {
-        LoanRepositoryImpl(db.loanDao(), db.accountDao())
     }
 
     val sharedWalletRepository: SharedWalletRepository by lazy {
@@ -96,16 +88,8 @@ class AppContainer(private val context: Context) {
         TransactionUseCases(transactionRepository, sharedWalletRepository) 
     }
     
-    val budgetUseCases by lazy { 
-        BudgetUseCases(budgetRepository, transactionRepository) 
-    }
-    
     val accountUseCases by lazy {
         AccountUseCases(accountRepository)
-    }
-
-    val loanUseCases by lazy {
-        LoanUseCases(loanRepository, transactionRepository)
     }
 
     // Services

@@ -12,8 +12,6 @@ sealed class Screen(val route: String) {
         }
     }
     object Settings : Screen("settings")
-    object Loans : Screen("loans")
-    object Budgets : Screen("budgets")
     object TransactionList : Screen("list?filterContext={filterContext}") {
         fun createRoute(filterContext: String? = null): String {
             return if (filterContext != null) "list?filterContext=$filterContext" else "list"
@@ -36,22 +34,6 @@ sealed class Screen(val route: String) {
     object Templates : Screen("templates")
     object AddTemplate : Screen("add_template?templateId={templateId}") {
         fun createRoute(templateId: Long? = null) = if (templateId != null) "add_template?templateId=$templateId" else "add_template"
-    }
-    
-    object BudgetDetail : Screen("budget_detail/{budgetId}") {
-        fun createRoute(budgetId: String) = "budget_detail/$budgetId"
-    }
-    
-    object LoanDetail : Screen("loan_detail/{accountId}") {
-        fun createRoute(accountId: String) = "loan_detail/$accountId"
-    }
-
-    object AddEditBudget : Screen("add_edit_budget?budgetId={budgetId}") {
-        fun createRoute(budgetId: String? = null) = if (budgetId != null) "add_edit_budget?budgetId=$budgetId" else "add_edit_budget"
-    }
-
-    object AddEditLoan : Screen("add_edit_loan?accountId={accountId}") {
-        fun createRoute(accountId: String? = null) = if (accountId != null) "add_edit_loan?accountId=$accountId" else "add_edit_loan"
     }
     
     object EditTransaction : Screen("edit_transaction/{transactionId}") {

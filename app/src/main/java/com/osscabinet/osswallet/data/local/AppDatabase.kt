@@ -17,8 +17,6 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TransactionEntity::class,
         TransactionLinkEntity::class,
         CurrencyRateEntity::class,
-        BudgetEntity::class,
-        LoanEntity::class,
         AccountEntity::class,
         CategoryEntity::class,
         TagEntity::class,
@@ -34,8 +32,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun transactionLinkDao(): TransactionLinkDao
     abstract fun currencyDao(): CurrencyDao
-    abstract fun budgetDao(): BudgetDao
-    abstract fun loanDao(): LoanDao
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
     abstract fun tagDao(): TagDao

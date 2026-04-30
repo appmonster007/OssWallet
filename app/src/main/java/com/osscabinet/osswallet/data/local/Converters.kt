@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.data.local
 
 import androidx.room.TypeConverter
-import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.encodeToString
@@ -27,16 +26,6 @@ class Converters {
     @TypeConverter
     fun toTimelineRange(value: String?): TimelineRange? {
         return value?.let { Json.decodeFromString(it) }
-    }
-
-    @TypeConverter
-    fun fromBudgetPeriod(value: BudgetPeriod?): String? {
-        return value?.name
-    }
-
-    @TypeConverter
-    fun toBudgetPeriod(value: String?): BudgetPeriod? {
-        return value?.let { BudgetPeriod.valueOf(it) }
     }
 
     @TypeConverter

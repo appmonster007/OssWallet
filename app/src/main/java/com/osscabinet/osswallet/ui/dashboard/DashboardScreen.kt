@@ -58,11 +58,6 @@ import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
-import com.osscabinet.ossWallet.domain.usecase.BudgetAnalysis
-import com.osscabinet.ossWallet.domain.usecase.LoanAnalysis
-import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -92,13 +87,10 @@ import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
-import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.CardRenderData
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
@@ -127,15 +119,10 @@ private fun calculateScrollBottomPadding(): Dp {
 fun DashboardScreen(
     onAnalyticsClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
-    onBudgetsClick: () -> Unit,
-    onBudgetClick: (String) -> Unit,
-    onEditBudgetClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAccountsViewClick: () -> Unit,
-    onLoansClick: () -> Unit,
-    onLoanClick: (String) -> Unit,
     onExchangeRatesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -147,8 +134,6 @@ fun DashboardScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
-    budgetViewModel: BudgetViewModel,
-    loanViewModel: LoanViewModel,
     cardManagerViewModel: CardManagerViewModel,
     viewContext: String? = null
 ) {
@@ -201,8 +186,6 @@ fun DashboardScreen(
     val cardsConfig by cardManagerViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val budgetState by budgetViewModel.state.collectAsStateWithLifecycle()
-    val loanState by loanViewModel.state.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     
@@ -255,8 +238,6 @@ fun DashboardScreen(
                     onAccountsViewClick = { navigate(onAccountsViewClick) },
                     onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
                     onAnalyticsClick = { navigate(onAnalyticsClick) },
-                    onBudgetsClick = { navigate(onBudgetsClick) },
-                    onLoansClick = { navigate(onLoansClick) },
                     onExchangeRatesClick = { navigate(onExchangeRatesClick) },
                     onTemplatesClick = { navigate(onTemplatesClick) },
                     onManageAccountsClick = { navigate(onManageAccountsClick) },
@@ -318,16 +299,9 @@ fun DashboardScreen(
                                 onAccountsViewClick = { navigate(onAccountsViewClick) },
                                 onAccountClick = { id -> navigate { onAccountClick(id) } },
                                 onRecordsClick = { context -> navigate { onRecordsClick(context) } },
-                                onBudgetsClick = { navigate(onBudgetsClick) },
-                                onBudgetClick = { id -> navigate { onBudgetClick(id) } },
-                                onEditBudgetClick = { category -> navigate { onEditBudgetClick(category) } },
-                                onLoansClick = { navigate(onLoansClick) },
-                                onLoanClick = { id -> navigate { onLoanClick(id) } },
                                 onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
                                 onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
-                                budgets = budgetState.budgets,
-                                loans = loanState.loans,
                                 dashboardViewModel = dashboardViewModel,
                                 cardManagerViewModel = cardManagerViewModel,
                                 cardsConfig = cardsConfig,
@@ -368,16 +342,9 @@ fun DashboardContent(
     onAccountsViewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
-    onBudgetsClick: () -> Unit,
-    onBudgetClick: (String) -> Unit,
-    onEditBudgetClick: (String) -> Unit,
-    onLoansClick: () -> Unit,
-    onLoanClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     transactionViewModel: TransactionViewModel,
-    budgets: List<com.osscabinet.ossWallet.domain.usecase.BudgetAnalysis>,
-    loans: List<com.osscabinet.ossWallet.domain.usecase.LoanAnalysis>,
     dashboardViewModel: DashboardViewModel,
     cardManagerViewModel: CardManagerViewModel,
     cardsConfig: DashboardCardsConfig,
@@ -597,43 +564,6 @@ fun DashboardContent(
                         )
                     } ?: null
                 }
-                is BudgetsCardConfig -> {
-                    if (budgets.isNotEmpty()) {
-                        CardWithCallbacks(
-                            renderData = CardRenderData.Budgets(
-                                config = cardConfig,
-                                budgets = budgets,
-                                baseCurrency = state.baseCurrency,
-                                precision = decimalPrecision
-                            ),
-                            callbacks = CardCallbacks.Budgets(
-                                onShowProgressLabelsChange = { cardId, show -> dashboardViewModel.updateCardBudgetsShowProgressLabels(cardId, show) },
-                                onManageClick = onBudgetsClick,
-                                onBudgetClick = onBudgetClick,
-                                onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
-                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
-                            )
-                        )
-                    } else null
-                }
-                is LoansCardConfig -> {
-                    if (loans.isNotEmpty()) {
-                        CardWithCallbacks(
-                            renderData = CardRenderData.Loans(
-                                config = cardConfig,
-                                loans = loans,
-                                baseCurrency = state.baseCurrency,
-                                precision = decimalPrecision
-                            ),
-                            callbacks = CardCallbacks.Loans(
-                                onManageClick = onLoansClick,
-                                onLoanClick = onLoanClick,
-                                onRecordsClick = { filterContext -> onRecordsClick(filterContext) },
-                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
-                            )
-                        )
-                    } else null
-                }
                 is CategoryBreakdownCardConfig -> {
                     val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter.timelineRange, key3 = state) {
                         value = dashboardViewModel.computeCategoryBreakdownForCard(
@@ -648,31 +578,6 @@ fun DashboardContent(
                     cardData?.let { data ->
                         CardWithCallbacks(
                             renderData = CardRenderData.CategoryBreakdown(
-                                config = cardConfig,
-                                data = data
-                            ),
-                            callbacks = CardCallbacks.Analytics(
-                                onUpdate = { },
-                                onDelete = { cardManagerViewModel.removeCard(cardConfig.cardId) }
-                            )
-                        )
-                    }
-                }
-                is TimelineTrajectoryCardConfig -> {
-                    val cardData by produceState<List<com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryData>?>(initialValue = null, key1 = cardConfig.cardId, key2 = cardConfig.filter.timelineRange, key3 = state) {
-                        value = dashboardViewModel.computeTimelineTrajectoryForCard(
-                            cardConfig = cardConfig,
-                            allTransactions = state.allTransactions,
-                            accounts = state.accounts,
-                            baseCurrency = state.baseCurrency,
-                            exchangeRates = state.exchangeRates,
-                            precision = state.decimalPrecision
-                        )
-                    }
-                    
-                    cardData?.let { data ->
-                        CardWithCallbacks(
-                            renderData = CardRenderData.TimelineTrajectory(
                                 config = cardConfig,
                                 data = data
                             ),
@@ -798,12 +703,6 @@ fun AddCardDialog(
                 description = "View your account summaries",
                 icon = Icons.Default.AccountBox,
                 onClick = { onAddCard("accounts") }
-            ),
-            CardTypeOptionData(
-                title = "Budgets",
-                description = "Monitor your budget progress",
-                icon = Icons.Default.PieChart,
-                onClick = { onAddCard("budgets") }
             )
         )
     )

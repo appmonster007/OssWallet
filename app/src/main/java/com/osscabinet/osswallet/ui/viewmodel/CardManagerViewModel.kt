@@ -19,10 +19,7 @@ enum class DashboardCardType(val displayName: String, val serialName: String) {
     CURRENCY_BALANCES("Currency Balances", "currency_balances"),
     CASH_FLOW("Cash Flow", "cash_flow"),
     ACCOUNTS("Accounts", "accounts"),
-    BUDGETS("Budgets", "budgets"),
-    LOANS("Loans", "loans"),
     CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown"),
-    TIMELINE_TRAJECTORY("Timeline Trajectory", "timeline_trajectory"),
     CATEGORY_EXPENSE_TREEMAP("Category Treemap", "category_expense_treemap");
 
     companion object {
@@ -68,10 +65,7 @@ class CardManagerViewModel(
                 is CurrencyBalancesCardConfig -> DashboardCardType.CURRENCY_BALANCES
                 is CashFlowCardConfig -> DashboardCardType.CASH_FLOW
                 is AccountsCardConfig -> DashboardCardType.ACCOUNTS
-                is BudgetsCardConfig -> DashboardCardType.BUDGETS
-                is LoansCardConfig -> DashboardCardType.LOANS
                 is CategoryBreakdownCardConfig -> DashboardCardType.CATEGORY_BREAKDOWN
-                is TimelineTrajectoryCardConfig -> DashboardCardType.TIMELINE_TRAJECTORY
                 is CategoryExpenseTreemapCardConfig -> DashboardCardType.CATEGORY_EXPENSE_TREEMAP
                 else -> null
             }
@@ -106,10 +100,7 @@ class CardManagerViewModel(
                 DashboardCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = UUID.randomUUID().toString())
                 DashboardCardType.CASH_FLOW -> CashFlowCardConfig(cardId = UUID.randomUUID().toString())
                 DashboardCardType.ACCOUNTS -> AccountsCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.BUDGETS -> BudgetsCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.LOANS -> LoansCardConfig(cardId = UUID.randomUUID().toString())
                 DashboardCardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.TIMELINE_TRAJECTORY -> TimelineTrajectoryCardConfig(cardId = UUID.randomUUID().toString())
                 DashboardCardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = UUID.randomUUID().toString())
             }
             cardRepository.addDashboardCard(card)

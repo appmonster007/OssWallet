@@ -14,24 +14,10 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
-import com.osscabinet.ossWallet.ui.analytics.components.TimelineTrajectoryCard
-import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesSummaryCard
-import com.osscabinet.ossWallet.ui.analytics.components.PeriodComparisonCard
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTrendCard
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowProgressCard
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceForecastCard
-import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsCard
-import com.osscabinet.ossWallet.ui.analytics.components.IncomeExpensesBookCard
-import com.osscabinet.ossWallet.ui.analytics.components.CashFlowTableCard
-import com.osscabinet.ossWallet.ui.analytics.components.PlannedPaymentsTimelineCard
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceByAccountsCard
-import com.osscabinet.ossWallet.ui.analytics.components.BalanceTrendCard
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
@@ -162,27 +148,6 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.TimelineTrajectory -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            TimelineTrajectoryCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
         is CardRenderData.CategoryExpenseTreemap -> {
             val cb = callbacks as? CardCallbacks.Analytics
                 ?: CardCallbacks.Analytics(
@@ -203,133 +168,7 @@ fun UnifiedCardRenderer(
                 savedFilters = savedFilters
             )
         }
-        
-        is CardRenderData.IncomeExpensesSummary -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            IncomeExpensesSummaryCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.PeriodComparison -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            PeriodComparisonCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.CashFlowTrend -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            CashFlowTrendCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.CashFlowProgress -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            CashFlowProgressCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.BalanceForecast -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            BalanceForecastCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.PlannedPayments -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            PlannedPaymentsCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
+
         is CardRenderData.AccountHero -> {
             val cb = callbacks as? CardCallbacks.AccountHero
                 ?: CardCallbacks.AccountHero(
@@ -388,153 +227,6 @@ fun UnifiedCardRenderer(
                 onDelete = { cb.onDelete() }
             )
         }
-        
-        is CardRenderData.Budgets -> {
-            val cb = callbacks as? CardCallbacks.Budgets
-                ?: CardCallbacks.Budgets(
-                    onShowProgressLabelsChange = { _, _ -> },
-                    onDelete = {}
-                )
-            
-            BudgetsCard(
-                onManageClick = cb.onManageClick,
-                onBudgetClick = cb.onBudgetClick,
-                onRecordsClick = { cb.onRecordsClick(it) },
-                budgets = renderData.budgets,
-                baseCurrency = renderData.baseCurrency,
-                modifier = modifier.fillMaxWidth(),
-                precision = renderData.precision,
-                headerModifier = headerModifier.fillMaxWidth(),
-                showProgressLabels = renderData.config.showProgressLabels,
-                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
-                cardId = renderData.config.cardId,
-                onShowProgressLabelsChange = { _, _ -> cb.onShowProgressLabelsChange(renderData.config.cardId, renderData.config.showProgressLabels) },
-                onDelete = { cb.onDelete() }
-            )
-        }
-
-        is CardRenderData.Loans -> {
-            val cb = callbacks as? CardCallbacks.Loans
-                ?: CardCallbacks.Loans(onDelete = {})
-
-            LoansCard(
-                onManageClick = cb.onManageClick,
-                onLoanClick = cb.onLoanClick,
-                onRecordsClick = { cb.onRecordsClick(it) },
-                loans = renderData.loans,
-                baseCurrency = renderData.baseCurrency,
-                cardId = renderData.config.cardId,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier.fillMaxWidth(),
-                precision = renderData.precision,
-                onDelete = { cb.onDelete() }
-            )
-        }
-        
-        is CardRenderData.IncomeExpensesBook -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            IncomeExpensesBookCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.CashFlowTable -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            CashFlowTableCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.PlannedPaymentsTimeline -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            PlannedPaymentsTimelineCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.BalanceByAccounts -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            BalanceByAccountsCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
-        
-        is CardRenderData.BalanceTrend -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: CardCallbacks.Analytics(
-                    onUpdate = {},
-                    onDelete = {}
-                )
-            
-            BalanceTrendCard(
-                config = renderData.config,
-                data = renderData.data,
-                modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
-                onUpdate = { cb.onUpdate(it) },
-                onDelete = { cb.onDelete() },
-                onRecordsClick = { cb.onRecordsClick(it) },
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        }
     }
 }
 
@@ -546,20 +238,12 @@ fun UnifiedCardRendererPreview() {
 }
 
 /**
- * Data class that pairs card render data with its callbacks
- */
-data class CardWithCallbacks(
-    val renderData: CardRenderData,
-    val callbacks: CardCallbacks
-)
-
-/**
  * Renders a list of cards using the unified renderer.
- * 
+ *
  * This composable iterates through a list of CardWithCallbacks and renders each card
  * using the UnifiedCardRenderer. This allows screens to pass a list of all possible
  * cards they support, with their corresponding callbacks.
- * 
+ *
  * @param cards List of cards to render, each with its own data and callbacks
  * @param modifier Modifier for each card
  * @param headerModifier Modifier for each card header (for draggable headers)

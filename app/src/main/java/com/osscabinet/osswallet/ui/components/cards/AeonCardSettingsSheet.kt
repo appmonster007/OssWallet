@@ -17,6 +17,8 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.AdvancedFilterSection
 
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+
 /**
  * A standardized bottom sheet for configuring analytical and dashboard cards.
  * Combines advanced filtering with card-specific settings.
@@ -32,6 +34,7 @@ fun AeonCardSettingsSheet(
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     settingsContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     ModalBottomSheet(
@@ -82,7 +85,8 @@ fun AeonCardSettingsSheet(
                         onFilterChange = onFilterChange,
                         accounts = accounts,
                         allCategories = allCategories,
-                        savedFilters = savedFilters
+                        savedFilters = savedFilters,
+                        filterRules = filterRules
                     )
                 }
             }

@@ -28,6 +28,8 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.components.TimelineFilterBar
 import kotlinx.coroutines.delay
 
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedFilterSection(
@@ -36,7 +38,8 @@ fun AdvancedFilterSection(
     accounts: List<Account>,
     allCategories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
     var expandedFilters by remember { mutableStateOf(false) }
     var presetsExpanded by remember { mutableStateOf(false) }
@@ -50,22 +53,24 @@ fun AdvancedFilterSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Timeline Section
-        Text(
-            "TIMELINE",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            ),
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        TimelineFilterBar(
-            currentRange = filter.timelineRange,
-            onRangeSelected = { range -> onFilterChange(filter.copy(timelineRange = range)) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        if (filterRules.allowTimelineSelection) {
+            Text(
+                "TIMELINE",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            TimelineFilterBar(
+                currentRange = filter.timelineRange,
+                onRangeSelected = { range -> onFilterChange(filter.copy(timelineRange = range)) },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -208,8 +213,9 @@ fun AdvancedFilterSection(
                     onFilterChange = onFilterChange,
                     accounts = accounts,
                     allCategories = allCategories,
-                    showAccountFilter = true,
-                    onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) }
+                    showAccountFilter = filterRules.allowAccountSelection,
+                    onImmediateApply = { newFilter, _ -> onFilterChange(newFilter) },
+                    filterRules = filterRules
                 )
             }
         }

@@ -2,7 +2,8 @@ package com.osscabinet.ossWallet.domain.card.computers
 
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
+import com.osscabinet.ossWallet.domain.service.AggregationService
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import java.math.BigDecimal
 
 class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRenderData.AccountHero> {
@@ -12,9 +13,20 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
         val accountId = input.scopeAccountId ?: error("AccountHeroCard requires a scopeAccountId")
         val account = input.accounts.find { it.id == accountId } ?: error("Account not found: $accountId")
         
-        // Simplified net balance for hero card (usually just current balance if no timeline filter)
-        // In some contexts, it might be filtered by timeline.
-        val netBalance = account.balance 
+        // Ensure filter targets this specific account
+        val effectiveFilter = config.filter.copy(accountIds = listOf(accountId))
+        val filteredTx = TransactionFilterService.filter(input.transactions, effectiveFilter)
+        
+        // Calculate net balance for the filtered period
+        val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
+            transactions = filteredTx,
+            exchangeRates = input.exchangeRates,
+            baseCurrency = input.baseCurrency
+        )
+        
+        // The net balance in account currency for the period
+        // For hero card, we often want to show how much was made/spent in this period
+        val netBalance = breakdown.netFlow
 
         return CardRenderData.AccountHero(
             config = config,

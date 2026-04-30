@@ -11,8 +11,7 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
     override val supportedType = CardType.ACCOUNTS
 
     override fun compute(input: CardInput, config: AccountsCardConfig): CardRenderData.Accounts {
-        val filter = TransactionFilter(timelineRange = config.timelineRange)
-        val filteredTx = TransactionFilterService.filter(input.transactions, filter)
+        val filteredTx = TransactionFilterService.filter(input.transactions, config.filter)
         
         val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,

@@ -12,10 +12,7 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        // Use either config's timelineRange or input's global timelineRange
-        val timelineRange = config.timelineRange
-        val filter = TransactionFilter(timelineRange = timelineRange)
-        val filteredTx = TransactionFilterService.filter(input.transactions, filter)
+        val filteredTx = TransactionFilterService.filter(input.transactions, config.filter)
         
         val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,

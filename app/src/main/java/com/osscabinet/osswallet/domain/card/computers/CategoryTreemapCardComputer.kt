@@ -8,8 +8,9 @@ class CategoryTreemapCardComputer : CardDataComputer<CategoryExpenseTreemapCardC
     override val supportedType = CardType.CATEGORY_EXPENSE_TREEMAP
 
     override fun compute(input: CardInput, config: CategoryExpenseTreemapCardConfig): CardRenderData.CategoryTreemap {
+        val filteredTx = com.osscabinet.ossWallet.domain.service.TransactionFilterService.filter(input.transactions, config.filter)
         val tree = AggregationService.buildCategoryTree(
-            transactions = input.transactions,
+            transactions = filteredTx,
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
             baseCurrency = input.baseCurrency,

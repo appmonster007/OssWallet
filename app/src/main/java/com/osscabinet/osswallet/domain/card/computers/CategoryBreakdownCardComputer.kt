@@ -8,8 +8,9 @@ class CategoryBreakdownCardComputer : CardDataComputer<CategoryBreakdownCardConf
     override val supportedType = CardType.CATEGORY_BREAKDOWN
 
     override fun compute(input: CardInput, config: CategoryBreakdownCardConfig): CardRenderData.CategoryBreakdown {
+        val filteredTx = com.osscabinet.ossWallet.domain.service.TransactionFilterService.filter(input.transactions, config.filter)
         val tree = AggregationService.buildCategoryTree(
-            transactions = input.transactions,
+            transactions = filteredTx,
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
             baseCurrency = input.baseCurrency,

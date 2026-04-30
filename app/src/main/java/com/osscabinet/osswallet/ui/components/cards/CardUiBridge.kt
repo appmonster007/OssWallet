@@ -42,9 +42,9 @@ fun rememberCardWithCallbacks(
             config is NetWorthCardConfig && renderData is CardRenderData.NetWorth -> {
                 CardWithCallbacks.NetWorth(
                     renderData = renderData,
-                    callbacks = CardCallbacks.WithFontSizeAndTimeline(
+                    callbacks = CardCallbacks.NetWorth(
                         onFontSizeChange = { id, size -> updateHandler.updateCardNetWorthFontSize(id, size) },
-                        onTimelineRangeChange = { id, range -> updateHandler.updateCardNetWorthTimelineRange(id, range) },
+                        onFilterChange = { id, filter -> updateHandler.updateCardNetWorthFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
                     )
                 )
@@ -55,7 +55,7 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.CurrencyBalances(
                         onLayoutChange = { id, layout -> updateHandler.updateCardCurrencyBalancesLayout(id, layout) },
                         onShowBaseConversionChange = { id, show -> updateHandler.updateCardCurrencyBalancesShowBaseConversion(id, show) },
-                        onTimelineRangeChange = { id, range -> updateHandler.updateCardCurrencyBalancesTimelineRange(id, range) },
+                        onFilterChange = { id, filter -> updateHandler.updateCardCurrencyBalancesFilter(id, filter) },
                         onCurrencyClick = { currency, range ->
                             val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(range)
                             onRecordsClick(RecordsFilterContext.Custom(currencies = listOf(currency), startDate = start, endDate = end))
@@ -69,7 +69,7 @@ fun rememberCardWithCallbacks(
                     renderData = renderData,
                     callbacks = CardCallbacks.CashFlow(
                         onShowBaseConversionChange = { id, show -> updateHandler.updateCardCashFlowShowBaseConversion(id, show) },
-                        onTimelineRangeChange = { id, range -> updateHandler.updateCardCashFlowTimelineRange(id, range) },
+                        onFilterChange = { id, filter -> updateHandler.updateCardCashFlowFilter(id, filter) },
                         onClickIncome = { range ->
                             val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(range)
                             onRecordsClick(RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
@@ -88,7 +88,7 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.Accounts(
                         onGridColumnsChange = { id, cols -> updateHandler.updateCardAccountsGridColumns(id, cols) },
                         onLayoutChange = { id, layout -> updateHandler.updateCardAccountsLayout(id, layout) },
-                        onTimelineRangeChange = { id, range -> updateHandler.updateCardAccountsTimelineRange(id, range) },
+                        onFilterChange = { id, filter -> updateHandler.updateCardAccountsFilter(id, filter) },
                         onShowAddAccountCardChange = { id, show -> updateHandler.updateCardAccountsShowAddAccountCard(id, show) },
                         onManageClick = onManageAccountsClick,
                         onHeaderClick = onAccountsViewClick,
@@ -102,7 +102,11 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.CategoryBreakdown(
                     renderData = renderData,
                     callbacks = CardCallbacks.Analytics(
-                        onUpdate = { },
+                        onUpdate = { newConfig -> 
+                            if (newConfig is CategoryBreakdownCardConfig) {
+                                updateHandler.updateCardCategoryBreakdownConfig(config.cardId, newConfig)
+                            }
+                        },
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
                     )
@@ -112,7 +116,11 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.CategoryTreemap(
                     renderData = renderData,
                     callbacks = CardCallbacks.Analytics(
-                        onUpdate = { },
+                        onUpdate = { newConfig -> 
+                            if (newConfig is CategoryExpenseTreemapCardConfig) {
+                                updateHandler.updateCardCategoryExpenseTreemapConfig(config.cardId, newConfig)
+                            }
+                        },
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
                     )
@@ -123,6 +131,7 @@ fun rememberCardWithCallbacks(
                     renderData = renderData,
                     callbacks = CardCallbacks.AccountHero(
                         onShowCurrencyBadgesChange = { id, show -> updateHandler.updateCardHeroShowCurrencyBadges(id, show) },
+                        onFilterChange = { id, filter -> updateHandler.updateCardHeroFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
                     )
                 )

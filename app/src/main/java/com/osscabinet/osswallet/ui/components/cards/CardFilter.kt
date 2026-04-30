@@ -7,30 +7,43 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 /**
  * Centralized filtering logic for card data.
  * Extension functions on CardConfig types to filter accounts and transactions
- * based on card configuration properties (accountId, selectedAccountIds).
+ * based on card configuration properties (accountId, accountIds).
  * 
  * This centralizes filtering logic and makes it easier to maintain.
  */
 
 /**
  * Filter accounts based on card configuration.
- * - NetWorthCardConfig: filters by selectedAccountIds if specified
- * - CurrencyBalancesCardConfig: filters by accountId if specified
+ * - NetWorthCardConfig: filters by filter.accountIds if specified
+ * - CurrencyBalancesCardConfig: filters by filter.accountIds if specified
  * - Other configs: returns all accounts (no filtering)
  */
 fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
     return when (this) {
         is NetWorthCardConfig -> {
-            if (selectedAccountIds != null && selectedAccountIds.isNotEmpty()) {
-                accounts.filter { it.id in selectedAccountIds }
+            if (filter.accountIds.isNotEmpty()) {
+                accounts.filter { it.id in filter.accountIds }
             } else {
                 accounts
             }
         }
         is CurrencyBalancesCardConfig -> {
-            val accountId = filter.accountIds.firstOrNull()
-            if (accountId != null && filter.accountIds.size == 1) {
-                accounts.filter { it.id == accountId }
+            if (filter.accountIds.isNotEmpty()) {
+                accounts.filter { it.id in filter.accountIds }
+            } else {
+                accounts
+            }
+        }
+        is CashFlowCardConfig -> {
+            if (filter.accountIds.isNotEmpty()) {
+                accounts.filter { it.id in filter.accountIds }
+            } else {
+                accounts
+            }
+        }
+        is AccountsCardConfig -> {
+            if (filter.accountIds.isNotEmpty()) {
+                accounts.filter { it.id in filter.accountIds }
             } else {
                 accounts
             }
@@ -41,32 +54,33 @@ fun CardConfig.filterAccounts(accounts: List<Account>): List<Account> {
 
 /**
  * Filter transactions based on card configuration.
- * - NetWorthCardConfig: filters by selectedAccountIds if specified
- * - CurrencyBalancesCardConfig: filters by accountId if specified
- * - CashFlowCardConfig: filters by accountId if specified
- * - Other configs: returns all transactions (no filtering)
  */
 fun CardConfig.filterTransactions(transactions: List<Transaction>): List<Transaction> {
     return when (this) {
         is NetWorthCardConfig -> {
-            if (selectedAccountIds != null && selectedAccountIds.isNotEmpty()) {
-                transactions.filter { it.accountId in selectedAccountIds }
+            if (filter.accountIds.isNotEmpty()) {
+                transactions.filter { it.accountId in filter.accountIds }
             } else {
                 transactions
             }
         }
         is CurrencyBalancesCardConfig -> {
-            val accountId = filter.accountIds.firstOrNull()
-            if (accountId != null && filter.accountIds.size == 1) {
-                transactions.filter { it.accountId == accountId }
+            if (filter.accountIds.isNotEmpty()) {
+                transactions.filter { it.accountId in filter.accountIds }
             } else {
                 transactions
             }
         }
         is CashFlowCardConfig -> {
-            val accountId = filter.accountIds.firstOrNull()
-            if (accountId != null && filter.accountIds.size == 1) {
-                transactions.filter { it.accountId == accountId }
+            if (filter.accountIds.isNotEmpty()) {
+                transactions.filter { it.accountId in filter.accountIds }
+            } else {
+                transactions
+            }
+        }
+        is AccountsCardConfig -> {
+            if (filter.accountIds.isNotEmpty()) {
+                transactions.filter { it.accountId in filter.accountIds }
             } else {
                 transactions
             }

@@ -29,6 +29,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterFields(
@@ -40,7 +42,8 @@ fun FilterFields(
     // Unfiltered data for dropdowns
     allAvailableCurrencies: List<String> = emptyList(),
     // Callback for immediate apply with custom debounce time
-    onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null
+    onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null,
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT
 ) {
     var showWarrantyStartPicker by remember { mutableStateOf(false) }
     var showWarrantyEndPicker by remember { mutableStateOf(false) }
@@ -150,110 +153,180 @@ fun FilterFields(
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Search (Note/Payee)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            CompactTextField(
-                value = filter.queryNote ?: "",
-                onValueChange = {
-                    val newFilter = filter.copy(queryNote = it.ifBlank { null })
-                    onFilterChange(newFilter)
-                    onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
-                },
-                placeholder = "Note...",
-                modifier = Modifier.weight(1f),
-                leadingIcon = Icons.Default.Search
-            )
-            CompactTextField(
-                value = filter.queryPayee ?: "",
-                onValueChange = {
-                    val newFilter = filter.copy(queryPayee = it.ifBlank { null })
-                    onFilterChange(newFilter)
-                    onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
-                },
-                placeholder = "Payee...",
-                modifier = Modifier.weight(1f),
-                leadingIcon = Icons.Default.Search
-            )
+        if (filterRules.allowSearch) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                CompactTextField(
+                    value = filter.queryNote ?: "",
+                    onValueChange = {
+                        val newFilter = filter.copy(queryNote = it.ifBlank { null })
+                        onFilterChange(newFilter)
+                        onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                    },
+                    placeholder = "Note...",
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Search
+                )
+                CompactTextField(
+                    value = filter.queryPayee ?: "",
+                    onValueChange = {
+                        val newFilter = filter.copy(queryPayee = it.ifBlank { null })
+                        onFilterChange(newFilter)
+                        onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                    },
+                    placeholder = "Payee...",
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Search
+                )
+            }
         }
 
         // Transaction Type
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "TYPE",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                val options = listOf("All", "Income", "Expense")
-                options.forEachIndexed { index, label ->
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                        onClick = {
-                            onFilterChange(
-                                filter.copy(
-                                    transactionType = when (index) {
-                                        1 -> "income"
-                                        2 -> "expense"
-                                        else -> null
-                                    }
-                                )
-                            )
-                        },
-                        selected = when (index) {
-                            1 -> filter.transactionType == "income"
-                            2 -> filter.transactionType == "expense"
-                            else -> filter.transactionType == null
-                        },
-                        icon = {
-                            when (index) {
-                                0 -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                                1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
-                                2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
-                            }
+        val forcedType = filterRules.forcedTransactionType
+        val allowedTypes = filterRules.allowedTransactionTypes
+        
+        if (allowedTypes != null || forcedType != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "TYPE",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val allOptions = listOf("All", "Income", "Expense")
+                    val visibleOptions = allOptions.filter { opt ->
+                        when (opt) {
+                            "All" -> allowedTypes == null && forcedType == null
+                            "Income" -> (allowedTypes == null || "income" in allowedTypes) || forcedType == "income"
+                            "Expense" -> (allowedTypes == null || "expense" in allowedTypes) || forcedType == "expense"
+                            else -> true
                         }
-                    ) {
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    visibleOptions.forEachIndexed { index, label ->
+                        val isSelected = when (label) {
+                            "Income" -> filter.transactionType == "income"
+                            "Expense" -> filter.transactionType == "expense"
+                            else -> filter.transactionType == null
+                        }
+                        
+                        val isEnabled = forcedType == null || label.lowercase() == forcedType
+
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = visibleOptions.size),
+                            onClick = {
+                                if (isEnabled) {
+                                    onFilterChange(
+                                        filter.copy(
+                                            transactionType = when (label) {
+                                                "Income" -> "income"
+                                                "Expense" -> "expense"
+                                                else -> null
+                                            }
+                                        )
+                                    )
+                                }
+                            },
+                            selected = isSelected,
+                            enabled = isEnabled,
+                            icon = {
+                                when (label) {
+                                    "All" -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                    "Income" -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
+                                    "Expense" -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
+                                }
+                            }
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Original behavior if no restrictions specified in allowedTypes/forcedType
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "TYPE",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val options = listOf("All", "Income", "Expense")
+                    options.forEachIndexed { index, label ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            onClick = {
+                                onFilterChange(
+                                    filter.copy(
+                                        transactionType = when (index) {
+                                            1 -> "income"
+                                            2 -> "expense"
+                                            else -> null
+                                        }
+                                    )
+                                )
+                            },
+                            selected = when (index) {
+                                1 -> filter.transactionType == "income"
+                                2 -> filter.transactionType == "expense"
+                                else -> filter.transactionType == null
+                            },
+                            icon = {
+                                when (index) {
+                                    0 -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                    1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
+                                    2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
+                                }
+                            }
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
         }
 
         // Status
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "STATUS",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                val statusOptions = com.osscabinet.ossWallet.domain.model.TransactionStatus.values()
-                statusOptions.forEachIndexed { index, status ->
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = statusOptions.size),
-                        checked = status in filter.statuses,
-                        onCheckedChange = {
-                            val newStatuses = if (it) {
-                                filter.statuses + status
-                            } else {
-                                filter.statuses - status
+        if (filterRules.allowStatusSelection) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "STATUS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val statusOptions = com.osscabinet.ossWallet.domain.model.TransactionStatus.values()
+                    statusOptions.forEachIndexed { index, status ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = statusOptions.size),
+                            checked = status in filter.statuses,
+                            onCheckedChange = {
+                                val newStatuses = if (it) {
+                                    filter.statuses + status
+                                } else {
+                                    filter.statuses - status
+                                }
+                                onFilterChange(filter.copy(statuses = newStatuses))
+                            },
+                            icon = {
+                                if (status in filter.statuses) {
+                                    Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                                } else null
                             }
-                            onFilterChange(filter.copy(statuses = newStatuses))
-                        },
-                        icon = {
-                            if (status in filter.statuses) {
-                                Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                            } else null
+                        ) {
+                            Text(status.displayName, style = MaterialTheme.typography.bodyMedium)
                         }
-                    ) {
-                        Text(status.displayName, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -270,111 +343,93 @@ fun FilterFields(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
             MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                val totalButtons = if (showAccountFilter) 4 else 3
-                var currentIndex = 0
+                val filterOptions = listOfNotNull(
+                    if (filterRules.allowAccountSelection && showAccountFilter) "Accounts" else null,
+                    if (filterRules.allowCategorySelection) "Categories" else null,
+                    if (filterRules.allowCurrencySelection) "Currencies" else null,
+                    if (filterRules.allowPaymentMethodSelection) "PaymentMethods" else null
+                )
+                
+                filterOptions.forEachIndexed { index, option ->
+                    val isChecked = when (option) {
+                        "Accounts" -> filter.accountIds.isNotEmpty()
+                        "Categories" -> filter.categoryIds.isNotEmpty()
+                        "Currencies" -> filter.currencies.isNotEmpty()
+                        "PaymentMethods" -> filter.paymentMethods.isNotEmpty()
+                        else -> false
+                    }
+                    
+                    val icon = when (option) {
+                        "Accounts" -> Icons.Default.AccountBalance
+                        "Categories" -> Icons.Default.Category
+                        "Currencies" -> Icons.Default.MonetizationOn
+                        "PaymentMethods" -> Icons.Default.Payments
+                        else -> Icons.Default.FilterList
+                    }
+                    
+                    val count = when (option) {
+                        "Accounts" -> filter.accountIds.size
+                        "Categories" -> filter.categoryIds.size
+                        "Currencies" -> filter.currencies.size
+                        "PaymentMethods" -> filter.paymentMethods.size
+                        else -> 0
+                    }
 
-                if (showAccountFilter) {
                     SegmentedButton(
-                        checked = filter.accountIds.isNotEmpty(),
-                        onCheckedChange = { activeDialog = "Accounts" },
-                        shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
+                        checked = isChecked,
+                        onCheckedChange = { activeDialog = option },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filterOptions.size),
                         icon = {},
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AccountBalance, null, modifier = Modifier.size(18.dp))
-                                if (filter.accountIds.isNotEmpty()) {
+                                Icon(icon, null, modifier = Modifier.size(18.dp))
+                                if (count > 0) {
                                     Spacer(Modifier.width(4.dp))
-                                    Text("${filter.accountIds.size}", style = MaterialTheme.typography.labelSmall)
+                                    Text("$count", style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                         }
                     )
                 }
-
-                SegmentedButton(
-                    checked = filter.categoryIds.isNotEmpty(),
-                    onCheckedChange = { activeDialog = "Categories" },
-                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
-                    icon = {},
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Category, null, modifier = Modifier.size(18.dp))
-                            if (filter.categoryIds.isNotEmpty()) {
-                                Spacer(Modifier.width(4.dp))
-                                Text("${filter.categoryIds.size}", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                )
-
-                SegmentedButton(
-                    checked = filter.currencies.isNotEmpty(),
-                    onCheckedChange = { activeDialog = "Currencies" },
-                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
-                    icon = {},
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.MonetizationOn, null, modifier = Modifier.size(18.dp))
-                            if (filter.currencies.isNotEmpty()) {
-                                Spacer(Modifier.width(4.dp))
-                                Text("${filter.currencies.size}", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                )
-
-                SegmentedButton(
-                    checked = filter.paymentMethods.isNotEmpty(),
-                    onCheckedChange = { activeDialog = "PaymentMethods" },
-                    shape = SegmentedButtonDefaults.itemShape(index = currentIndex++, count = totalButtons),
-                    icon = {},
-                    label = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Payments, null, modifier = Modifier.size(18.dp))
-                            if (filter.paymentMethods.isNotEmpty()) {
-                                Spacer(Modifier.width(4.dp))
-                                Text("${filter.paymentMethods.size}", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                )
             }
         }
 
         // Amount Range
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "AMOUNT RANGE",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CompactTextField(
-                    value = filter.minAmount?.toString() ?: "",
-                    onValueChange = { onFilterChange(filter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
-                    placeholder = "Min",
-                    modifier = Modifier.weight(1f),
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                )
+        if (filterRules.allowAmountRange) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "-",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.bodyMedium
+                    "AMOUNT RANGE",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
-                CompactTextField(
-                    value = filter.maxAmount?.toString() ?: "",
-                    onValueChange = { onFilterChange(filter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
-                    placeholder = "Max",
-                    modifier = Modifier.weight(1f),
-                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CompactTextField(
+                        value = filter.minAmount?.toString() ?: "",
+                        onValueChange = { onFilterChange(filter.copy(minAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                        placeholder = "Min",
+                        modifier = Modifier.weight(1f),
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    )
+                    Text(
+                        "-",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    CompactTextField(
+                        value = filter.maxAmount?.toString() ?: "",
+                        onValueChange = { onFilterChange(filter.copy(maxAmount = it.ifBlank { null }?.toBigDecimalOrNull())) },
+                        placeholder = "Max",
+                        modifier = Modifier.weight(1f),
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    )
+                }
             }
         }
 

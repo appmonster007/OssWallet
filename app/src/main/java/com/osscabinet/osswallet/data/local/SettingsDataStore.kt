@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import com.osscabinet.ossWallet.ui.dashboard.components.AccountsSectionSettings
-import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowSettings
-import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountsSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowSettings
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesSettings
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

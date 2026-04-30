@@ -27,7 +27,7 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
  * Metadata section containing note, payee, linked transactions, tags, and other details.
  */
 @Composable
-fun TransactionMetadataSection(
+fun TransactionTagSection(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit
 ) {

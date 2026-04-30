@@ -70,7 +70,7 @@ import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardLayoutViewModel
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.AccountBox
@@ -142,7 +142,7 @@ fun DashboardScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: TemplateViewModel,
     dashboardViewModel: DashboardViewModel,
-    cardManagerViewModel: CardManagerViewModel,
+    cardLayoutViewModel: CardLayoutViewModel,
     cardComputerRegistry: CardComputerRegistry,
     viewContext: String? = null
 ) {
@@ -192,7 +192,7 @@ fun DashboardScreen(
     val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val cardsConfig by cardManagerViewModel.cardsConfig.collectAsStateWithLifecycle()
+    val cardsConfig by cardLayoutViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -312,7 +312,7 @@ fun DashboardScreen(
                                 onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
                                 transactionViewModel = transactionViewModel,
                                 dashboardViewModel = dashboardViewModel,
-                                cardManagerViewModel = cardManagerViewModel,
+                                cardLayoutViewModel = cardLayoutViewModel,
                                 cardComputerRegistry = cardComputerRegistry,
                                 cardsConfig = cardsConfig,
                                 showAddCardDialog = showAddCardDialog,
@@ -356,7 +356,7 @@ fun DashboardContent(
     onCloneTransactionClick: (Long) -> Unit = {},
     transactionViewModel: TransactionViewModel,
     dashboardViewModel: DashboardViewModel,
-    cardManagerViewModel: CardManagerViewModel,
+    cardLayoutViewModel: CardLayoutViewModel,
     cardComputerRegistry: CardComputerRegistry,
     cardsConfig: DashboardCardsConfig,
     showAddCardDialog: Boolean,
@@ -405,7 +405,7 @@ fun DashboardContent(
                         items = cardsConfig.cards.sortedBy { it.order },
                         key = { it.cardId },
                         onReorder = { reorderedCards ->
-                            cardManagerViewModel.reorderDashboardCards(reorderedCards)
+                            cardLayoutViewModel.reorderDashboardCards(reorderedCards)
                         },
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
@@ -426,7 +426,7 @@ fun DashboardContent(
                             input = input,
                             registry = cardComputerRegistry,
                             updateHandler = dashboardViewModel,
-                            onDelete = { cardManagerViewModel.removeCard(it) },
+                            onDelete = { cardLayoutViewModel.removeCard(it) },
                             onRecordsClick = onRecordsClick,
                             onManageAccountsClick = onManageAccountsClick,
                             onAccountsViewClick = onAccountsViewClick,
@@ -488,7 +488,7 @@ fun DashboardContent(
             onAddCard = { cardType ->
                 val unifiedType = CardType.entries.find { it.serialName == cardType }
                 if (unifiedType != null) {
-                    cardManagerViewModel.addDashboardCard(unifiedType)
+                    cardLayoutViewModel.addDashboardCard(unifiedType)
                 }
                 onShowAddCardDialogChange(false)
             }

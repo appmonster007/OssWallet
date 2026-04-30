@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
+package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,7 +17,7 @@ import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountSelectionSheet(
+fun TransactionAccountPicker(
     accounts: List<Account>,
     selectedAccountId: String?,
     onAccountSelected: (Account?) -> Unit,

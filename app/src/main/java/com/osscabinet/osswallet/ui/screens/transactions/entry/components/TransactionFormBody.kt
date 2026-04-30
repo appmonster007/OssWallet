@@ -8,13 +8,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionTagSection
 
 /**
  * Main content layout for transaction entry screen.
  * Composed of focused, single-responsibility sub-components.
  */
 @Composable
-fun TransactionEntryContent(
+fun TransactionFormBody(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit,
     modifier: Modifier = Modifier
@@ -40,7 +41,7 @@ fun TransactionEntryContent(
             )
 
             // Metadata: Note, Payee, Linked transactions, etc.
-            TransactionMetadataSection(
+            TransactionTagSection(
                 state = state,
                 onEvent = onEvent
             )

@@ -62,7 +62,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
-import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.CardLayoutViewModel
 import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -105,7 +105,7 @@ fun AccountsViewScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
     accountsViewViewModel: AccountsViewViewModel,
-    cardManagerViewModel: CardManagerViewModel,
+    cardLayoutViewModel: CardLayoutViewModel,
     cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
     filterContext: String? = null
 ) {
@@ -153,7 +153,7 @@ fun AccountsViewScreen(
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsStateWithLifecycle()
     val sectionOrder by accountsViewViewModel.sectionOrder.collectAsStateWithLifecycle()
-    val accountsViewCardsConfig by cardManagerViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
+    val accountsViewCardsConfig by cardLayoutViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
     val accountFilter by accountsViewViewModel.accountFilter.collectAsStateWithLifecycle()
     val initialFilterContext by accountsViewViewModel.initialFilterContext.collectAsStateWithLifecycle()
     var showAddCardDialog by remember { mutableStateOf(false) }
@@ -313,7 +313,7 @@ fun AccountsViewScreen(
                             CardReorderableList(
                                 items = accountsViewCardsConfig.cards.sortedBy { it.order },
                                 key = { it.cardId },
-                                onReorder = { cardManagerViewModel.reorderAccountsViewCards(it) },
+                                onReorder = { cardLayoutViewModel.reorderAccountsViewCards(it) },
                                 modifier = Modifier.fillMaxWidth(),
                                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -333,7 +333,7 @@ fun AccountsViewScreen(
                                     input = input,
                                     registry = cardComputerRegistry,
                                     updateHandler = accountsViewViewModel,
-                                    onDelete = { cardManagerViewModel.removeAccountsViewCard(it) },
+                                    onDelete = { cardLayoutViewModel.removeAccountsViewCard(it) },
                                     onRecordsClick = onRecordsClick,
                                     onManageAccountsClick = onManageAccountsClick,
                                     onAccountClick = onAccountClick,
@@ -569,7 +569,7 @@ fun AccountsViewScreen(
         AccountsViewCardTypeSelectionDialog(
             onDismiss = { showAddCardDialog = false },
             onCardTypeSelected = { cardType ->
-                cardManagerViewModel.addAccountsViewCard(cardType)
+                cardLayoutViewModel.addAccountsViewCard(cardType)
                 showAddCardDialog = false
             }
         )

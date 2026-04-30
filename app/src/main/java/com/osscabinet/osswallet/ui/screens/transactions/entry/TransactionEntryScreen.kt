@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionEntryContent
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
 
 /**
  * Main entry point for transaction entry screen.
@@ -100,7 +100,7 @@ fun TransactionEntryScreen(
             )
         }
     ) { innerPadding ->
-        TransactionEntryContent(
+        TransactionFormBody(
             state = state,
             onEvent = viewModel::onEvent,
             modifier = Modifier.padding(innerPadding)

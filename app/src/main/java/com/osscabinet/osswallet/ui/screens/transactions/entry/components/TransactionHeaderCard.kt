@@ -89,21 +89,25 @@ fun TransactionHeaderCard(
                 // Transfer-specific: Show converted amount and exchange rate
                 if (state.isTransfer && state.targetAccount != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Icon(
-                        Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
 
-                    // Exchange rate label
-                    Text(
-                        text = "1:${state.exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1
-                    )
+                    // Arrow with exchange rate to the right
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = "1:${state.exchangeRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Converted amount row with target currency selector on left

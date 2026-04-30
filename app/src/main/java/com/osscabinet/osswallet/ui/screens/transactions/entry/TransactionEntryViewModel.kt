@@ -250,8 +250,13 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.AddLinkedTransaction -> update {
                 it.copy(linkedTransactionIds = it.linkedTransactionIds + event.id)
             }
-            is TransactionEntryEvent.RemoveLinkedTransaction -> update {
-                it.copy(linkedTransactionIds = it.linkedTransactionIds - event.id)
+            is TransactionEntryEvent.RemoveLinkedTransaction -> {
+                // Remove from local state for new transactions
+                update { it.copy(linkedTransactionIds = it.linkedTransactionIds - event.linkedTransactionId) }
+                // For edit mode, also remove from database
+                viewModelScope.launch {
+                    transactionUseCases.removeTransactionLink(event.transactionId, event.linkedTransactionId)
+                }
             }
             is TransactionEntryEvent.SetLinkedTransactionIds -> update {
                 it.copy(linkedTransactionIds = event.ids)

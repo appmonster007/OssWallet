@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
@@ -19,12 +20,12 @@ fun TransactionEntrySheets(
 ) {
     val scope = rememberCoroutineScope()
 
-    // Date Picker
+    // Date/Time Picker (AeonDateTimePicker with custom UI)
     if (state.showDatePicker) {
-        DatePickerSheet(
-            initialMillis = state.selectedDateMillis,
-            onDateSelected = { millis ->
-                millis?.let { onEvent(TransactionEntryEvent.SetDate(it)) }
+        AeonDateTimePicker(
+            initialDateTime = state.selectedDateMillis,
+            onDateTimeSelected = { millis ->
+                onEvent(TransactionEntryEvent.SetDate(millis))
                 onEvent(TransactionEntryEvent.ShowDatePicker(false))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowDatePicker(false)) }
@@ -137,16 +138,15 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Warranty Date Picker
+    // Warranty Date/Time Picker (AeonDateTimePicker with custom UI)
     if (state.showWarrantyDatePicker) {
-        DatePickerSheet(
-            initialMillis = state.warrantyExpirationMillis,
-            onDateSelected = { millis ->
-                millis?.let { onEvent(TransactionEntryEvent.SetWarrantyExpiration(it)) }
+        AeonDateTimePicker(
+            initialDateTime = state.warrantyExpirationMillis,
+            onDateTimeSelected = { millis ->
+                onEvent(TransactionEntryEvent.SetWarrantyExpiration(millis))
                 onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false))
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false)) },
-            title = "Warranty Expiration"
+            onDismiss = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false)) }
         )
     }
 

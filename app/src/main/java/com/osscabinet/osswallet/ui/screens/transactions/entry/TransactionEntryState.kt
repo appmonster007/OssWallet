@@ -122,7 +122,7 @@ sealed class TransactionEntryEvent {
     data class SetWarrantyExpiration(val millis: Long) : TransactionEntryEvent()
     data class SetLocation(val coords: Pair<Double, Double>?) : TransactionEntryEvent()
     data class AddLinkedTransaction(val id: Long) : TransactionEntryEvent()
-    data class RemoveLinkedTransaction(val id: Long) : TransactionEntryEvent()
+    data class RemoveLinkedTransaction(val transactionId: Long, val linkedTransactionId: Long) : TransactionEntryEvent()
     data class SetLinkedTransactionIds(val ids: List<Long>) : TransactionEntryEvent()
     data class SetAccount(val account: Account?) : TransactionEntryEvent()
     data class SetCurrency(val currency: String) : TransactionEntryEvent()

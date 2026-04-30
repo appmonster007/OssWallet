@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,12 +16,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
+
+private fun formatDateTime(millis: Long): String {
+    val sdf = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+    return sdf.format(Date(millis))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,90 +75,60 @@ fun LinkedTransactionSheet(
                 ) { tx ->
                     val isSelected = tx.id in selectedIds
                     val account = accounts.find { it.id == tx.accountId }
-                    val category = categories.find { it.id == tx.categoryId }
-                    val icon = Icons.Rounded.Category // Would be resolved from categoryIcons map
+                    val category = categories.find { it.name == tx.category }
+                    val icon = categoryIcons[category?.iconName] ?: categoryIcons[tx.category] ?: Icons.Rounded.Category
+                    val iconBg = category?.colorHex?.let { Color(it) }
 
                     Box {
-                        Surface(
+                        AeonTransactionItem(
+                            category = tx.category,
+                            account = account?.name ?: "Unknown",
+                            amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                            balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),
+                            balanceAfter = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
+                            type = if (tx.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                            timestamp = formatDateTime(tx.timestamp),
+                            note = tx.note,
+                            tags = tx.tags,
+                            icon = icon,
+                            iconBg = iconBg,
+                            precision = 2,
+                            showOpeningBalance = false,
+                            showClosingBalance = false,
+                            status = tx.status,
                             onClick = {
                                 selectedIds = if (isSelected) {
                                     selectedIds - tx.id
                                 } else {
                                     selectedIds + tx.id
                                 }
-                            },
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier.fillMaxWidth()
+                            }
+                        )
+
+                        // Checkbox overlay with animation
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            border = BorderStroke(
+                                2.dp,
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                            )
                         ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier.size(24.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                // Checkbox overlay
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        2.dp,
-                                        if (isSelected) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.outlineVariant
-                                        }
-                                    ),
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        if (isSelected) {
-                                            Icon(
-                                                Icons.Rounded.Check,
-                                                contentDescription = "Selected",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                // Transaction info
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = tx.category,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
                                     )
-                                    Text(
-                                        text = account?.name ?: "Unknown",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    if (tx.note.isNotBlank()) {
-                                        Text(
-                                            text = tx.note,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1
-                                        )
-                                    }
                                 }
-
-                                // Amount
-                                Text(
-                                    text = formatCurrencyRight(
-                                        tx.amount,
-                                        tx.currency,
-                                        precision = 2
-                                    ),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (tx.amount.signum() >= 0) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.error
-                                    }
-                                )
                             }
                         }
                     }

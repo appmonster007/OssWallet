@@ -1,8 +1,15 @@
 package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
+import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
@@ -59,7 +66,19 @@ class CardRepositoryImpl(
     }
 
     override suspend fun reorderDashboardCards(cards: List<CardConfig>) {
-        val updated = DashboardCardsConfig(cards = cards)
+        // Update order property to match new positions for each card type
+        val reorderedWithUpdatedOrder = cards.mapIndexed { index, card ->
+            when (card) {
+                is NetWorthCardConfig -> card.copy(order = index)
+                is CurrencyBalancesCardConfig -> card.copy(order = index)
+                is CashFlowCardConfig -> card.copy(order = index)
+                is AccountsCardConfig -> card.copy(order = index)
+                is CategoryBreakdownCardConfig -> card.copy(order = index)
+                is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                is AccountHeroCardConfig -> card.copy(order = index)
+            }
+        }
+        val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)
         settingsDataStore.saveDashboardCardsConfig(json.encodeToString(updated))
     }
 
@@ -76,7 +95,19 @@ class CardRepositoryImpl(
     }
 
     override suspend fun reorderAccountDetailCards(cards: List<CardConfig>) {
-        val updated = DashboardCardsConfig(cards = cards)
+        // Update order property to match new positions for each card type
+        val reorderedWithUpdatedOrder = cards.mapIndexed { index, card ->
+            when (card) {
+                is NetWorthCardConfig -> card.copy(order = index)
+                is CurrencyBalancesCardConfig -> card.copy(order = index)
+                is CashFlowCardConfig -> card.copy(order = index)
+                is AccountsCardConfig -> card.copy(order = index)
+                is CategoryBreakdownCardConfig -> card.copy(order = index)
+                is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                is AccountHeroCardConfig -> card.copy(order = index)
+            }
+        }
+        val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)
         settingsDataStore.saveAccountDetailCardsConfig(json.encodeToString(updated))
     }
 
@@ -93,7 +124,19 @@ class CardRepositoryImpl(
     }
 
     override suspend fun reorderAccountsViewCards(cards: List<CardConfig>) {
-        val updated = DashboardCardsConfig(cards = cards)
+        // Update order property to match new positions for each card type
+        val reorderedWithUpdatedOrder = cards.mapIndexed { index, card ->
+            when (card) {
+                is NetWorthCardConfig -> card.copy(order = index)
+                is CurrencyBalancesCardConfig -> card.copy(order = index)
+                is CashFlowCardConfig -> card.copy(order = index)
+                is AccountsCardConfig -> card.copy(order = index)
+                is CategoryBreakdownCardConfig -> card.copy(order = index)
+                is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                is AccountHeroCardConfig -> card.copy(order = index)
+            }
+        }
+        val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)
         settingsDataStore.saveAccountsViewCardsConfig(json.encodeToString(updated))
     }
 }

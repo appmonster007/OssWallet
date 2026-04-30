@@ -71,7 +71,14 @@ import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.CardManagerViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.DashboardCardType
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
@@ -665,7 +672,10 @@ fun DashboardContent(
         AddCardDialog(
             onDismiss = { onShowAddCardDialogChange(false) },
             onAddCard = { cardType ->
-                cardManagerViewModel.addDashboardCard(DashboardCardType.fromSerialName(cardType) ?: return@AddCardDialog)
+                val unifiedType = UnifiedCardType.fromSerialName(cardType, ScreenContext.DASHBOARD)
+                if (unifiedType != null) {
+                    cardManagerViewModel.addDashboardCard(unifiedType)
+                }
                 onShowAddCardDialogChange(false)
             }
         )
@@ -679,32 +689,22 @@ fun AddCardDialog(
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
-        cardOptions = listOf(
+        cardOptions = UnifiedCardType.getAvailableForScreen(ScreenContext.DASHBOARD).map { type ->
             CardTypeOptionData(
-                title = "Net Worth",
-                description = "Track your total net worth over time",
-                icon = Icons.Default.AccountBalance,
-                onClick = { onAddCard("net_worth") }
-            ),
-            CardTypeOptionData(
-                title = "Currency Balances",
-                description = "View balances across different currencies",
-                icon = Icons.Default.AttachMoney,
-                onClick = { onAddCard("currency_balances") }
-            ),
-            CardTypeOptionData(
-                title = "Cash Flow",
-                description = "Track income and expenses",
-                icon = Icons.AutoMirrored.Filled.TrendingUp,
-                onClick = { onAddCard("cash_flow") }
-            ),
-            CardTypeOptionData(
-                title = "Accounts",
-                description = "View your account summaries",
-                icon = Icons.Default.AccountBox,
-                onClick = { onAddCard("accounts") }
+                title = type.displayName,
+                description = type.description,
+                icon = when (type) {
+                    UnifiedCardType.DASHBOARD_NET_WORTH -> Icons.Default.AccountBalance
+                    UnifiedCardType.DASHBOARD_CURRENCY_BALANCES -> Icons.Default.AttachMoney
+                    UnifiedCardType.DASHBOARD_CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
+                    UnifiedCardType.DASHBOARD_ACCOUNTS -> Icons.Default.AccountBox
+                    UnifiedCardType.DASHBOARD_CATEGORY_BREAKDOWN -> Icons.Default.PieChart
+                    UnifiedCardType.DASHBOARD_CATEGORY_EXPENSE_TREEMAP -> Icons.Default.GridView
+                    else -> null
+                },
+                onClick = { onAddCard(type.serialName) }
             )
-        )
+        }
     )
 }
 

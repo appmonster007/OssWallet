@@ -3,43 +3,10 @@ package com.osscabinet.ossWallet.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import java.util.*
-
-/**
- * Enum representing available dashboard card types.
- * Provides type-safe card type selection and metadata.
- */
-enum class DashboardCardType(val displayName: String, val serialName: String) {
-    NET_WORTH("Net Worth", "net_worth"),
-    CURRENCY_BALANCES("Currency Balances", "currency_balances"),
-    CASH_FLOW("Cash Flow", "cash_flow"),
-    ACCOUNTS("Accounts", "accounts"),
-    CATEGORY_BREAKDOWN("Category Breakdown", "category_breakdown"),
-    CATEGORY_EXPENSE_TREEMAP("Category Treemap", "category_expense_treemap");
-
-    companion object {
-        fun fromSerialName(name: String): DashboardCardType? = 
-            entries.find { it.serialName == name }
-    }
-}
-
-enum class AccountsViewCardType {
-    NET_WORTH,
-    CURRENCY_BALANCES,
-    CASH_FLOW,
-    ACCOUNTS_LIST
-}
-
-enum class AccountDetailCardType {
-    ACCOUNT_HERO,
-    CASH_FLOW,
-    CURRENCY_BALANCES
-}
 
 class CardManagerViewModel(
     private val settingsRepository: SettingsRepository,
@@ -58,20 +25,20 @@ class CardManagerViewModel(
     private val _accountsViewCardsConfig = MutableStateFlow(DashboardCardsConfig())
     val accountsViewCardsConfig: StateFlow<DashboardCardsConfig> = _accountsViewCardsConfig.asStateFlow()
 
-    val availableDashboardCardTypes: StateFlow<List<DashboardCardType>> = cardsConfig.map { config ->
+    val availableDashboardCardTypes: StateFlow<List<UnifiedCardType>> = cardsConfig.map { config ->
         val usedTypes = config.cards.mapNotNull { card ->
             when (card) {
-                is NetWorthCardConfig -> DashboardCardType.NET_WORTH
-                is CurrencyBalancesCardConfig -> DashboardCardType.CURRENCY_BALANCES
-                is CashFlowCardConfig -> DashboardCardType.CASH_FLOW
-                is AccountsCardConfig -> DashboardCardType.ACCOUNTS
-                is CategoryBreakdownCardConfig -> DashboardCardType.CATEGORY_BREAKDOWN
-                is CategoryExpenseTreemapCardConfig -> DashboardCardType.CATEGORY_EXPENSE_TREEMAP
+                is NetWorthCardConfig -> UnifiedCardType.DASHBOARD_NET_WORTH
+                is CurrencyBalancesCardConfig -> UnifiedCardType.DASHBOARD_CURRENCY_BALANCES
+                is CashFlowCardConfig -> UnifiedCardType.DASHBOARD_CASH_FLOW
+                is AccountsCardConfig -> UnifiedCardType.DASHBOARD_ACCOUNTS
+                is CategoryBreakdownCardConfig -> UnifiedCardType.DASHBOARD_CATEGORY_BREAKDOWN
+                is CategoryExpenseTreemapCardConfig -> UnifiedCardType.DASHBOARD_CATEGORY_EXPENSE_TREEMAP
                 else -> null
             }
         }.toSet()
-        DashboardCardType.entries.filter { it !in usedTypes }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardType.entries)
+        UnifiedCardType.getAvailableForScreen(ScreenContext.DASHBOARD).filter { it !in usedTypes }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UnifiedCardType.getAvailableForScreen(ScreenContext.DASHBOARD))
 
     init {
         viewModelScope.launch {
@@ -93,15 +60,16 @@ class CardManagerViewModel(
         }
     }
 
-    fun addDashboardCard(type: DashboardCardType) {
+    fun addDashboardCard(type: UnifiedCardType) {
         viewModelScope.launch {
             val card = when (type) {
-                DashboardCardType.NET_WORTH -> NetWorthCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.CASH_FLOW -> CashFlowCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.ACCOUNTS -> AccountsCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = UUID.randomUUID().toString())
-                DashboardCardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_NET_WORTH -> NetWorthCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_CASH_FLOW -> CashFlowCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_ACCOUNTS -> AccountsCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = UUID.randomUUID().toString())
+                UnifiedCardType.DASHBOARD_CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = UUID.randomUUID().toString())
+                else -> throw IllegalArgumentException("Unsupported dashboard card type: $type")
             }
             cardRepository.addDashboardCard(card)
         }
@@ -126,23 +94,24 @@ class CardManagerViewModel(
     }
 
     // Account Detail Cards Management
-    fun addAccountDetailCard(type: AccountDetailCardType, accountId: String) {
+    fun addAccountDetailCard(type: UnifiedCardType, accountId: String) {
         viewModelScope.launch {
             val card = when (type) {
-                AccountDetailCardType.ACCOUNT_HERO -> AccountHeroCardConfig(
+                UnifiedCardType.ACCOUNT_DETAIL_HERO -> AccountHeroCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNT_DETAIL
                 )
-                AccountDetailCardType.CASH_FLOW -> CashFlowCardConfig(
+                UnifiedCardType.ACCOUNT_DETAIL_CASH_FLOW -> CashFlowCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNT_DETAIL,
                     filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))
                 )
-                AccountDetailCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
+                UnifiedCardType.ACCOUNT_DETAIL_CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNT_DETAIL,
                     filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(accountIds = listOf(accountId))
                 )
+                else -> throw IllegalArgumentException("Unsupported account detail card type: $type")
             }
             cardRepository.addAccountDetailCard(card)
         }
@@ -167,25 +136,26 @@ class CardManagerViewModel(
     }
 
     // Accounts View Cards Management
-    fun addAccountsViewCard(type: AccountsViewCardType) {
+    fun addAccountsViewCard(type: UnifiedCardType) {
         viewModelScope.launch {
             val card = when (type) {
-                AccountsViewCardType.NET_WORTH -> NetWorthCardConfig(
+                UnifiedCardType.ACCOUNTS_VIEW_NET_WORTH -> NetWorthCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNTS_VIEW
                 )
-                AccountsViewCardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
+                UnifiedCardType.ACCOUNTS_VIEW_CURRENCY_BALANCES -> CurrencyBalancesCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNTS_VIEW
                 )
-                AccountsViewCardType.CASH_FLOW -> CashFlowCardConfig(
+                UnifiedCardType.ACCOUNTS_VIEW_CASH_FLOW -> CashFlowCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNTS_VIEW
                 )
-                AccountsViewCardType.ACCOUNTS_LIST -> AccountsCardConfig(
+                UnifiedCardType.ACCOUNTS_VIEW_ACCOUNTS_LIST -> AccountsCardConfig(
                     cardId = UUID.randomUUID().toString(),
                     screenContext = ScreenContext.ACCOUNTS_VIEW
                 )
+                else -> throw IllegalArgumentException("Unsupported accounts view card type: $type")
             }
             cardRepository.addAccountsViewCard(card)
         }

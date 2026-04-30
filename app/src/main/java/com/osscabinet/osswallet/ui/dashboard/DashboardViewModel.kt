@@ -11,18 +11,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.service.FilterService
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.AggregationService
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
-import com.osscabinet.ossWallet.domain.service.CardComputationEngine
-import com.osscabinet.ossWallet.domain.service.TimelineService
-import com.osscabinet.ossWallet.domain.service.CurrencyService
-import com.osscabinet.ossWallet.domain.service.TimeBucket
-import com.osscabinet.ossWallet.domain.service.FinancialMetrics
-import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
-import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import java.math.BigDecimal
@@ -45,7 +34,7 @@ class DashboardViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val cardRepository: CardRepository,
-    private val categoryDao: CategoryDao
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
@@ -277,7 +266,7 @@ class DashboardViewModel(
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
-                categoryDao.getAllCategories(),
+                categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
@@ -289,7 +278,7 @@ class DashboardViewModel(
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
                 @Suppress("UNCHECKED_CAST")
-                val categories = (args[2] as List<com.osscabinet.ossWallet.data.local.entity.CategoryEntity>).map { it.toDomain() }
+                val categories = args[2] as List<Category>
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
@@ -471,7 +460,7 @@ class DashboardViewModel(
     }
 
     suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
-        val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+        val categories = categoryRepository.getAllCategoriesSync()
         val data = engine.computeCard(
             config = cardConfig,
             accounts = emptyList(),
@@ -498,7 +487,7 @@ class DashboardViewModel(
     }
 
     suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
-        val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+        val categories = categoryRepository.getAllCategoriesSync()
         val data = engine.computeCard(
             config = cardConfig,
             accounts = emptyList(),

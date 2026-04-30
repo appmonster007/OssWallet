@@ -9,16 +9,7 @@ import com.osscabinet.ossWallet.domain.service.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.service.FilterService
-import com.osscabinet.ossWallet.data.local.dao.CategoryDao
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.AggregationService
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
-import com.osscabinet.ossWallet.domain.service.TimeBucket
-import com.osscabinet.ossWallet.data.mapper.toDomain
-import com.osscabinet.ossWallet.domain.service.CardComputationEngine
-import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
-import com.osscabinet.ossWallet.domain.service.TrajectoryPoint
+import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.util.CardDataCache
 import com.osscabinet.ossWallet.domain.util.CachedCardData
@@ -44,7 +35,7 @@ class AnalyticsViewModel(
     private val currencyRepository: CurrencyRepository,
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
-    private val categoryDao: CategoryDao,
+    private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository
 ) : ViewModel() {
 
@@ -164,7 +155,7 @@ class AnalyticsViewModel(
     suspend fun computeCategoryBreakdownCard(config: CategoryBreakdownCardConfig): List<CategoryBreakdownData> {
         val cacheKey = "category_breakdown_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
-            val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+            val categories = categoryRepository.getAllCategoriesSync()
             val data = engine.computeCard(
                 config = config,
                 accounts = emptyList(),
@@ -193,7 +184,7 @@ class AnalyticsViewModel(
     suspend fun computeCategoryExpenseTreemapCard(config: CategoryExpenseTreemapCardConfig): List<CategoryExpenseTreemapData> {
         val cacheKey = "category_treemap_${config.cardId}_${config.filter.hashCode()}"
         return cardDataCache.getOrCompute(cacheKey) {
-            val categories = categoryDao.getAllCategoriesSync().map { it.toDomain() }
+            val categories = categoryRepository.getAllCategoriesSync()
             val data = engine.computeCard(
                 config = config,
                 accounts = emptyList(),

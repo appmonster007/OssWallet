@@ -36,7 +36,7 @@ fun OssWalletNavGraph(
                 appContainer.currencyRepository,
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
-                appContainer.db.categoryDao(),
+                appContainer.categoryRepository,
                 appContainer.accountRepository
             )
         }
@@ -97,7 +97,7 @@ fun OssWalletNavGraph(
                 appContainer.settingsRepository,
                 appContainer.computationRepository,
                 appContainer.cardRepository,
-                appContainer.db.categoryDao()
+                appContainer.categoryRepository
             )
         }
     )

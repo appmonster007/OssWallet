@@ -752,32 +752,22 @@ private fun getAccountContextDisplayName(context: AccountsFilterContext, account
 @Composable
 fun AccountsViewCardTypeSelectionDialog(
     onDismiss: () -> Unit,
-    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType) -> Unit
+    onCardTypeSelected: (com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType) -> Unit
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
         cardOptions = listOf(
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNTS_VIEW_NET_WORTH,
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNTS_VIEW_CURRENCY_BALANCES,
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNTS_VIEW_CASH_FLOW,
+            com.osscabinet.ossWallet.ui.viewmodel.UnifiedCardType.ACCOUNTS_VIEW_ACCOUNTS_LIST
+        ).map { type ->
             CardTypeOptionData(
-                title = "Net Worth",
-                description = "Display your net worth over time",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.NET_WORTH) }
-            ),
-            CardTypeOptionData(
-                title = "Currency Balances",
-                description = "Show currency breakdown",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CURRENCY_BALANCES) }
-            ),
-            CardTypeOptionData(
-                title = "Cash Flow",
-                description = "Track income and expenses",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.CASH_FLOW) }
-            ),
-            CardTypeOptionData(
-                title = "Accounts List",
-                description = "Display your accounts",
-                onClick = { onCardTypeSelected(com.osscabinet.ossWallet.ui.viewmodel.AccountsViewCardType.ACCOUNTS_LIST) }
+                title = type.displayName,
+                description = type.description,
+                onClick = { onCardTypeSelected(type) }
             )
-        )
+        }
     )
 }
 

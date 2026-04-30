@@ -66,7 +66,8 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
-            title = "Select Target Account"
+            title = "Select Target Account",
+            allowOutsideWallet = true
         )
     }
 

@@ -90,8 +90,9 @@ class TransactionManager(
         request: TransactionRequest,
         profileId: Int
     ): Long {
-        val targetAccountId = request.targetAccountId ?: throw IllegalArgumentException("Target account required for transfers")
-        
+        val targetAccountId = request.targetAccountId
+
+        // Build source transaction (outgoing)
         val sourceTransaction = (existingTransaction ?: Transaction(
             title = "",
             amount = BigDecimal.ZERO,
@@ -118,6 +119,20 @@ class TransactionManager(
             status = request.status
         )
 
+        // If no target account, this is an "Outside of wallet" transfer
+        // Only create the source transaction, no counterpart
+        if (targetAccountId == null) {
+            return if (existingTransaction != null) {
+                // Clear any existing links since this is now outside-wallet
+                transactionUseCases.clearTransactionLinks(existingTransaction.id)
+                transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
+                existingTransaction.id
+            } else {
+                transactionUseCases.insertTransaction(sourceTransaction, profileId)
+            }
+        }
+
+        // Internal transfer: create counterpart transaction
         val targetTransaction = Transaction(
             title = request.title.ifBlank { "Transfer" },
             amount = request.amount.multiply(request.transferRate),
@@ -138,13 +153,9 @@ class TransactionManager(
 
         if (existingTransaction != null && existingTransaction.category == "Transfer") {
             // Already a transfer, update both
-            // Note: This simplified logic assumes we only have one link. 
-            // In a more robust system, we'd find the linked transaction ID.
             transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
-            // For now, if it was already a transfer, we might need more logic to find and update the counterpart.
-            // But let's follow the pattern in TransactionEntryScreen which seems to use saveTransfer for new pairs.
         }
-        
+
         val pair = transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
         return pair.first // Source ID
     }

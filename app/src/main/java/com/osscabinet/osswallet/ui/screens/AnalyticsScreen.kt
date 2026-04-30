@@ -147,8 +147,7 @@ fun AnalyticsScreen(
 
                         cardWithCallbacks?.let {
                             UnifiedCardRenderer(
-                                renderData = it.renderData,
-                                callbacks = it.callbacks,
+                                cardWithCallbacks = it,
                                 headerModifier = dragModifier,
                                 accounts = nonArchivedAccounts,
                                 allCategories = allCategories,

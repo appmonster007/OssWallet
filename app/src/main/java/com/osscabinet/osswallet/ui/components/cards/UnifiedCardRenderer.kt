@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -17,31 +14,19 @@ import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
-import java.math.RoundingMode
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
  *
- * ⚠️ TYPE SAFETY: This renderer validates that the [callbacks] type matches the
- * [renderData] type at runtime. Passing an incompatible callback type will throw
- * an [IllegalArgumentException] immediately rather than silently failing.
- *
- * Expected pairings:
- * - NetWorth → WithFontSizeAndTimeline
- * - CurrencyBalances → CurrencyBalances
- * - CashFlow → CashFlow
- * - CategoryBreakdown → Analytics
- * - CategoryTreemap → Analytics
- * - AccountHero → AccountHero
- * - Accounts → Accounts
+ * ⚠️ TYPE SAFETY: This renderer uses the [CardWithCallbacks] sealed class to ensure
+ * that the callbacks and render data are always correctly paired. This eliminates
+ * the need for runtime casts and makes the renderer more robust.
  */
 @Composable
 fun UnifiedCardRenderer(
-    renderData: CardRenderData,
-    callbacks: CardCallbacks,
+    cardWithCallbacks: CardWithCallbacks,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = false,
@@ -50,12 +35,10 @@ fun UnifiedCardRenderer(
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList()
 ) {
-    when (renderData) {
-        is CardRenderData.NetWorth -> {
-            val cb = callbacks as? CardCallbacks.WithFontSizeAndTimeline
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.WithFontSizeAndTimeline for NetWorth card, got ${callbacks::class.simpleName}"
-                )
+    when (cardWithCallbacks) {
+        is CardWithCallbacks.NetWorth -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             NetWorthCard(
                 netWorth = renderData.value,
@@ -76,11 +59,9 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.CurrencyBalances -> {
-            val cb = callbacks as? CardCallbacks.CurrencyBalances
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.CurrencyBalances for CurrencyBalances card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.CurrencyBalances -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             CurrencyBalancesCard(
                 currencyTotals = renderData.items,
@@ -100,11 +81,9 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.CashFlow -> {
-            val cb = callbacks as? CardCallbacks.CashFlow
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.CashFlow for CashFlow card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.CashFlow -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             CashFlowCard(
                 cashFlowResult = renderData.result,
@@ -125,11 +104,9 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.CategoryBreakdown -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.Analytics for CategoryBreakdown card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.CategoryBreakdown -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             val uiData = renderData.items.map { metric ->
                 CategoryBreakdownData(
@@ -159,11 +136,9 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.CategoryTreemap -> {
-            val cb = callbacks as? CardCallbacks.Analytics
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.Analytics for CategoryTreemap card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.CategoryTreemap -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             val uiData = renderData.items.map { metric ->
                 CategoryExpenseTreemapData(
@@ -191,11 +166,9 @@ fun UnifiedCardRenderer(
             )
         }
 
-        is CardRenderData.AccountHero -> {
-            val cb = callbacks as? CardCallbacks.AccountHero
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.AccountHero for AccountHero card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.AccountHero -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             AccountHeroCard(
                 account = renderData.account,
@@ -212,18 +185,16 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardRenderData.Accounts -> {
-            val cb = callbacks as? CardCallbacks.Accounts
-                ?: throw IllegalArgumentException(
-                    "Expected CardCallbacks.Accounts for Accounts card, got ${callbacks::class.simpleName}"
-                )
+        is CardWithCallbacks.Accounts -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
             
             AccountsCard(
                 onManageClick = cb.onManageClick,
                 onHeaderClick = cb.onHeaderClick,
                 onAccountClick = cb.onAccountClick,
                 onRecordsClick = { cb.onRecordsClick(it) },
-                onGridColumnsChange = { _, _ -> cb.onGridColumnsChange(renderData.config.cardId, renderData.config.gridColumns) },
+                onGridColumnsChange = { id, cols -> cb.onGridColumnsChange(id, cols) },
                 accounts = renderData.updatedAccounts,
                 accountStats = renderData.accountStats,
                 baseCurrency = renderData.baseCurrency,
@@ -232,11 +203,11 @@ fun UnifiedCardRenderer(
                 gridColumns = renderData.config.gridColumns,
                 precision = renderData.precision,
                 layout = renderData.config.layout,
-                onLayoutChange = { _, _ -> cb.onLayoutChange(renderData.config.cardId, renderData.config.layout) },
+                onLayoutChange = { id, layout -> cb.onLayoutChange(id, layout) },
                 timelineRange = renderData.config.timelineRange,
-                onTimelineRangeChange = { _, _ -> cb.onTimelineRangeChange(renderData.config.cardId, renderData.config.timelineRange) },
+                onTimelineRangeChange = { id, range -> cb.onTimelineRangeChange(id, range) },
                 showAddAccountCard = renderData.config.showAddAccountCard,
-                onShowAddAccountCardChange = { _, _ -> cb.onShowAddAccountCardChange(renderData.config.cardId, renderData.config.showAddAccountCard) },
+                onShowAddAccountCardChange = { id, show -> cb.onShowAddAccountCardChange(id, show) },
                 cardId = renderData.config.cardId,
                 headerModifier = headerModifier.fillMaxWidth(),
                 settingsTitle = "Settings",

@@ -142,7 +142,8 @@ fun AnalyticsScreen(
                                     categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.selectedCurrency,
-                                    precision = state.decimalPrecision
+                                    precision = state.decimalPrecision,
+                                    filter = cardConfig.filter
                                 )
 
                                 val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(

@@ -10,36 +10,41 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
     override val supportedType = CardType.ACCOUNT_HERO
 
     override fun compute(input: CardInput, config: AccountHeroCardConfig): CardRenderData.AccountHero {
-        val accountId = input.scopeAccountId ?: error("AccountHeroCard requires a scopeAccountId")
-        val account = input.accounts.find { it.id == accountId } ?: error("Account not found: $accountId")
+        // For AccountHero, the scope should already be the account.
+        // If not, we extract it from input.filter (if it has exactly one account) 
+        // or from input.scopeAccountId if we had kept it.
+        // Since we removed scopeAccountId, we expect input.filter to contain the account restriction.
         
-        // Ensure filter targets this specific account
-        val effectiveFilter = config.filter.copy(accountIds = listOf(accountId))
-        val filteredTx = TransactionFilterService.filter(input.transactions, effectiveFilter)
+        val targetAccountId = input.filter.accountIds.firstOrNull() 
+            ?: config.filter.accountIds.firstOrNull() 
+            ?: error("AccountHeroCard requires an account scope")
+            
+        val account = input.accounts.find { it.id == targetAccountId } ?: error("Account not found: $targetAccountId")
         
-        // Calculate total balance from ALL transactions for this account using exchange rates
+        // Apply base scope
+        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+        
+        // Apply user filter (period)
+        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
+        
+        // Calculate total balance from BASE transactions (Scope Lifetime)
         val totalBalance = AggregationService.calculateAccountBalance(
-            accountId = accountId,
-            allTransactions = input.transactions,
+            accountId = targetAccountId,
+            allTransactions = baseTx,
             accountCurrency = account.currencyCode,
             exchangeRates = input.exchangeRates
         )
         
-        // Calculate income/expense breakdown for the filtered period in account currency
+        // Calculate income/expense breakdown for the filtered period
         val breakdown = AggregationService.calculateIncomeExpenseBreakdown(
             transactions = filteredTx,
             exchangeRates = input.exchangeRates,
             baseCurrency = account.currencyCode
         )
         
-        // Calculate currency balances for this account (based on filtered transactions or all?)
-        // Usually currency balances on a card like this should reflect the overall state, 
-        // but since we have a filter, let's see. 
-        // If it's like a "hero" card, maybe it should show overall currency balances?
-        // Let's stick to filtered transactions for now as it's a "card" which often has a timeframe.
-        // Actually, the user said "it should always be calculated from transactions".
+        // Currency balances within base scope
         val currencyBalances = AggregationService.calculateTotalByCurrency(
-            input.transactions.filter { it.accountId == accountId }
+            baseTx.filter { it.accountId == targetAccountId }
         )
 
         return CardRenderData.AccountHero(

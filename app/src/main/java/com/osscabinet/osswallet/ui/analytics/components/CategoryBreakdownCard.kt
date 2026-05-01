@@ -42,7 +42,8 @@ fun CategoryBreakdownCard(
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    savedFilters: List<Filter> = emptyList(),
+    baseFilter: TransactionFilter = TransactionFilter()
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -201,7 +202,8 @@ fun CategoryBreakdownCard(
             accounts = accounts,
             allCategories = allCategories,
             savedFilters = savedFilters,
-            filterRules = config.filterRules
+            filterRules = config.filterRules,
+            baseFilter = baseFilter
         )
     }
 }

@@ -23,7 +23,7 @@ fun rememberCardWithCallbacks(
     onAccountClick: (String) -> Unit = {},
     currentTheme: String = "light"
 ): CardWithCallbacks? {
-    return remember(config, input) {
+    return remember(config, input, registry, updateHandler, onDelete, onRecordsClick, onManageAccountsClick, onAccountsViewClick, onAccountClick, currentTheme) {
         val renderData = try {
             when (config) {
                 is NetWorthCardConfig -> registry.compute(CardType.NET_WORTH, input, config)
@@ -47,7 +47,8 @@ fun rememberCardWithCallbacks(
                         onFilterChange = { id, filter -> updateHandler.updateCardNetWorthFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is CurrencyBalancesCardConfig && renderData is CardRenderData.CurrencyBalances -> {
@@ -63,7 +64,8 @@ fun rememberCardWithCallbacks(
                         },
                         onDelete = { onDelete(config.cardId) }
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is CashFlowCardConfig && renderData is CardRenderData.CashFlow -> {
@@ -82,7 +84,8 @@ fun rememberCardWithCallbacks(
                         },
                         onDelete = { onDelete(config.cardId) }
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is AccountsCardConfig && renderData is CardRenderData.Accounts -> {
@@ -99,7 +102,8 @@ fun rememberCardWithCallbacks(
                         onRecordsClick = onRecordsClick,
                         onDelete = { onDelete(config.cardId) }
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is CategoryBreakdownCardConfig && renderData is CardRenderData.CategoryBreakdown -> {
@@ -114,7 +118,8 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is CategoryExpenseTreemapCardConfig && renderData is CardRenderData.CategoryTreemap -> {
@@ -129,7 +134,8 @@ fun rememberCardWithCallbacks(
                         onDelete = { onDelete(config.cardId) },
                         onRecordsClick = onRecordsClick
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             config is AccountHeroCardConfig && renderData is CardRenderData.AccountHero -> {
@@ -140,7 +146,8 @@ fun rememberCardWithCallbacks(
                         onFilterChange = { id, filter -> updateHandler.updateCardHeroFilter(id, filter) },
                         onDelete = { onDelete(config.cardId) }
                     ),
-                    filterRules = config.filterRules
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
                 )
             }
             else -> null

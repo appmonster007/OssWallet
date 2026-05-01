@@ -39,12 +39,15 @@ fun AdvancedFilterSection(
     allCategories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
     modifier: Modifier = Modifier,
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter()
 ) {
     var expandedFilters by remember { mutableStateOf(false) }
     var presetsExpanded by remember { mutableStateOf(false) }
     val categoryMap = remember(allCategories) { allCategories.associateBy { it.id } }
     val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
+
+    val hasBaseFilters = countActiveFilters(baseFilter) > 0
 
     Column(
         modifier = modifier
@@ -52,6 +55,53 @@ fun AdvancedFilterSection(
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Base Filter Indicator (if any)
+        if (hasBaseFilters) {
+            Text(
+                "BASE SCOPE",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+            )
+            
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Render base filters as DISABLED (non-removable) chips
+                items(baseFilter.categoryIds) { id ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(categoryMap[id]?.name ?: "Cat: $id") }
+                    )
+                }
+                items(baseFilter.accountIds) { id ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { },
+                        enabled = false,
+                        label = { Text(accountNames[id] ?: id) }
+                    )
+                }
+                baseFilter.transactionType?.let { type ->
+                    item {
+                        FilterChip(
+                            selected = true,
+                            onClick = { },
+                            enabled = false,
+                            label = { Text(type.replaceFirstChar { it.uppercase() }) }
+                        )
+                    }
+                }
+            }
+            
+            Spacer(Modifier.height(4.dp))
+        }
+
         // Timeline Section
         if (filterRules.allowTimelineSelection) {
             Text(
@@ -231,7 +281,8 @@ fun AdvancedFilterSectionPreview() {
                 filter = TransactionFilter(),
                 onFilterChange = {},
                 accounts = emptyList(),
-                allCategories = emptyList()
+                allCategories = emptyList(),
+                baseFilter = TransactionFilter(accountIds = listOf("1"))
             )
         }
     }

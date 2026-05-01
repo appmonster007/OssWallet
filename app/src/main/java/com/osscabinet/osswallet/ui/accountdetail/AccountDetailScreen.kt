@@ -76,7 +76,7 @@ fun AccountDetailScreen(
     analyticsViewModel: AnalyticsViewModel,
     accountDetailViewModel: AccountDetailViewModel,
     cardLayoutViewModel: CardLayoutViewModel,
-    cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
+    cardComputerRegistry: CardComputerRegistry,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
@@ -93,7 +93,7 @@ fun AccountDetailScreen(
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-    val categoryMap = remember(categories) { categories.associateBy { it.id } }
+    remember(categories) { categories.associateBy { it.id } }
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -356,7 +356,7 @@ fun DynamicAccountDetailCards(
     cardsConfig: com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig,
     cardLayoutViewModel: CardLayoutViewModel,
     accountDetailViewModel: AccountDetailViewModel,
-    cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
+    cardComputerRegistry: CardComputerRegistry,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     accountId: String,
     currentTheme: String,
@@ -389,14 +389,14 @@ fun DynamicAccountDetailCards(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             animateCards = cardAnimationEnabled
         ) { cardConfig, isDragging, dragModifier ->
-            val input = com.osscabinet.ossWallet.domain.card.CardInput(
+            val input = CardInput(
                 transactions = state.allAccountTransactions,
                 accounts = listOf(state.account),
                 categories = state.allCategories,
                 exchangeRates = state.exchangeRates,
                 baseCurrency = if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) state.account.currencyCode else state.baseCurrency,
                 precision = state.decimalPrecision,
-                scopeAccountId = accountId
+                filter = TransactionFilter(accountIds = listOf(accountId))
             )
 
             val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
@@ -452,14 +452,14 @@ fun DynamicAccountDetailCards(
 @Composable
 fun AccountDetailCardTypeSelectionDialog(
     onDismiss: () -> Unit,
-    onCardTypeSelected: (com.osscabinet.ossWallet.domain.card.CardType) -> Unit
+    onCardTypeSelected: (CardType) -> Unit
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
         cardOptions = listOf(
-            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNT_HERO,
-            com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW,
-            com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES
+            CardType.ACCOUNT_HERO,
+            CardType.CASH_FLOW,
+            CardType.CURRENCY_BALANCES
         ).map { type ->
             CardTypeOptionData(
                 title = type.displayName,

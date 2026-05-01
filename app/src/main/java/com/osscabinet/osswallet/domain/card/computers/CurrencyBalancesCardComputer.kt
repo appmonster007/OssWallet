@@ -4,21 +4,21 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.service.AggregationService
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 
 class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig, CardRenderData.CurrencyBalances> {
     override val supportedType = CardType.CURRENCY_BALANCES
 
     override fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-        // "Currency Balances" should usually reflect the current total holdings.
-        // If accounts are filtered in the card config, we only sum those accounts, 
-        // but we use ALL their transactions to get the correct current balance.
+        // Apply base scope
+        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+        
+        // Further filter by config accountIds if specified (ignoring timeline for balance)
         val targetAccountIds = config.filter.accountIds
         val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            input.transactions
+            baseTx
         } else {
-            input.transactions.filter { targetAccountIds.contains(it.accountId) }
+            baseTx.filter { targetAccountIds.contains(it.accountId) }
         }
 
         val items = AggregationService.calculateCurrencyBalances(

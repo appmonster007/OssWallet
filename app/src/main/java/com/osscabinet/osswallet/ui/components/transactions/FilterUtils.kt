@@ -3,6 +3,11 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 
+/**
+ * Counts active filter criteria in a TransactionFilter.
+ * Note: timelineRange is usually not counted as an "adjustable filter chip" 
+ * in the same way categories or accounts are.
+ */
 fun countActiveFilters(filter: TransactionFilter): Int {
     var count = 0
     count += filter.accountIds.size

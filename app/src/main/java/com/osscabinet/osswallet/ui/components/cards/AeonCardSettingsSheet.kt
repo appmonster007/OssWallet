@@ -35,6 +35,7 @@ fun AeonCardSettingsSheet(
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter(),
     settingsContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     ModalBottomSheet(
@@ -86,7 +87,8 @@ fun AeonCardSettingsSheet(
                         accounts = accounts,
                         allCategories = allCategories,
                         savedFilters = savedFilters,
-                        filterRules = filterRules
+                        filterRules = filterRules,
+                        baseFilter = baseFilter
                     )
                 }
             }

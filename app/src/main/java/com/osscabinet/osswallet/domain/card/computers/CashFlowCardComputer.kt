@@ -4,13 +4,14 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.service.*
-import java.math.RoundingMode
 
 class CashFlowCardComputer : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
     override val supportedType = CardType.CASH_FLOW
 
     override fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
-        val filtered = TransactionFilterService.filter(input.transactions, config.filter)
+        // Two-step filtering
+        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+        val filtered = TransactionFilterService.filter(baseTx, config.filter)
         
         val result = AggregationService.calculateCashFlowResult(
             transactions = filtered,

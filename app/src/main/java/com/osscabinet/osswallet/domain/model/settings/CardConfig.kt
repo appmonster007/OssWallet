@@ -59,6 +59,12 @@ sealed class CardConfig : BaseCardConfig {
     abstract override val screenContext: ScreenContext
 
     /**
+     * Transaction filter for this card instance.
+     * Each card type has its own default filter.
+     */
+    abstract val filter: TransactionFilter
+
+    /**
      * Rules that define constraints for this card's filter.
      * These are hardcoded per card type and used to restrict the filter UI.
      */
@@ -77,7 +83,7 @@ data class NetWorthCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
-    val filter: TransactionFilter = TransactionFilter(),
+    override val filter: TransactionFilter = TransactionFilter(),
     val profileId: Int? = null
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
@@ -96,7 +102,7 @@ data class CurrencyBalancesCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "scroll",
     val showBaseConversion: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
@@ -113,7 +119,7 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
@@ -132,7 +138,7 @@ data class AccountsCardConfig(
     val layout: String = "grid",
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
@@ -150,7 +156,7 @@ data class CategoryBreakdownCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
@@ -168,7 +174,7 @@ data class CategoryExpenseTreemapCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.EXPENSE_ONLY
 }
@@ -185,7 +191,7 @@ data class AccountHeroCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true,
-    val filter: TransactionFilter = TransactionFilter()
+    override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }

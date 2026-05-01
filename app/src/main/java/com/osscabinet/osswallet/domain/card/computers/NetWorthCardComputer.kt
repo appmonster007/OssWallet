@@ -6,22 +6,24 @@ import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.service.*
 import java.math.BigDecimal
-import java.math.RoundingMode
 
 class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        // Filter transactions for the period (used for Flow/Delta calculation)
-        val filteredTx = TransactionFilterService.filter(input.transactions, config.filter)
+        // Step 1: Apply BASE scope filter (e.g. fixed to an account or profile)
+        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
         
-        // Calculate LIFETIME net worth for the relevant accounts
-        // We filter accounts based on the card config, but use ALL their transactions for the total
+        // Step 2: Apply CARD user filter (e.g. timeline, categories)
+        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
+        
+        // Calculate LIFETIME net worth for the relevant accounts within the BASE scope
+        // We further filter by config accountIds if specified, but ignore config timeline
         val targetAccountIds = config.filter.accountIds
         val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            input.transactions
+            baseTx
         } else {
-            input.transactions.filter { targetAccountIds.contains(it.accountId) }
+            baseTx.filter { targetAccountIds.contains(it.accountId) }
         }
 
         val totalsByCurrency = AggregationService.calculateTotalByCurrency(balanceTransactions)

@@ -306,6 +306,9 @@ class DashboardViewModel(
                     return@combine DashboardUiState.Loading
                 }
 
+                // Invalidate registry cache when data changes to ensure cards refresh
+                registry.clearCache()
+
                 // Construct base CardInput
                 val baseInput = CardInput(
                     transactions = allTransactions,

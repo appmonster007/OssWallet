@@ -15,13 +15,26 @@ import java.text.SimpleDateFormat
 fun AeonDateTimePicker(
     initialDateTime: Long,
     onDateTimeSelected: (Long) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    disableFutureDates: Boolean = false
 ) {
     var showDatePicker by remember { mutableStateOf(true) }
     var selectedDateMillis by remember { mutableStateOf(initialDateTime) }
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
+        val todayMillis = System.currentTimeMillis()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDateMillis,
+            selectableDates = if (disableFutureDates) {
+                object : androidx.compose.material3.SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        return utcTimeMillis <= todayMillis
+                    }
+                }
+            } else {
+                androidx.compose.material3.DatePickerDefaults.AllDates
+            }
+        )
         DatePickerDialog(
             onDismissRequest = onDismiss,
             confirmButton = {

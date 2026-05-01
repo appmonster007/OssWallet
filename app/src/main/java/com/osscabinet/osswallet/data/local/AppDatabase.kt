@@ -10,6 +10,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.data.local.entity.*
+import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.data.local.entity.LoanEntity
+import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
+import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentEntity
+import com.osscabinet.ossWallet.data.local.entity.PlannedPaymentOccurrenceEntity
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
@@ -22,9 +27,14 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         TagEntity::class,
         ProfileEntity::class,
         TemplateEntity::class,
-        FilterEntity::class
+        FilterEntity::class,
+        PlannedPaymentEntity::class,
+        PlannedPaymentOccurrenceEntity::class,
+        BudgetEntity::class,
+        LoanEntity::class,
+        LoanPaymentEntity::class
     ],
-    version = 11,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -38,6 +48,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
     abstract fun templateDao(): TemplateDao
     abstract fun filterDao(): FilterDao
+    abstract fun plannedPaymentDao(): PlannedPaymentDao
+    abstract fun plannedPaymentOccurrenceDao(): PlannedPaymentOccurrenceDao
+    abstract fun budgetDao(): BudgetDao
+    abstract fun loanDao(): LoanDao
+    abstract fun loanPaymentDao(): LoanPaymentDao
 
     companion object {
         init {
@@ -216,6 +231,80 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_11 = object : Migration(9, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Remove balance column from accounts (not derived from transactions)
+                database.execSQL("""
+                    CREATE TABLE accounts_v11 (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        currencyCode TEXT NOT NULL,
+                        structureType TEXT NOT NULL,
+                        colorHex TEXT NOT NULL,
+                        icon TEXT NOT NULL,
+                        allowedCurrencies TEXT NOT NULL,
+                        profileId INTEGER NOT NULL DEFAULT 1,
+                        isArchived INTEGER NOT NULL DEFAULT 0,
+                        displayOrder INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+                database.execSQL("""
+                    INSERT INTO accounts_v11 (id, name, currencyCode, structureType, colorHex, icon, allowedCurrencies, profileId, isArchived, displayOrder)
+                    SELECT id, name, currencyCode, structureType, colorHex, icon, allowedCurrencies, profileId, isArchived, displayOrder
+                    FROM accounts
+                """.trimIndent())
+                database.execSQL("DROP TABLE accounts")
+                database.execSQL("ALTER TABLE accounts_v11 RENAME TO accounts")
+                database.execSQL("CREATE INDEX index_accounts_profileId ON accounts (profileId)")
+
+                // Add timelineRange to saved filters
+                database.execSQL("ALTER TABLE transaction_filters ADD COLUMN timelineRange TEXT NOT NULL DEFAULT ''")
+
+                // Add profiles table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS profiles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        baseCurrency TEXT NOT NULL DEFAULT 'USD',
+                        type TEXT NOT NULL DEFAULT 'PERSONAL'
+                    )
+                """.trimIndent())
+
+                // Add templates table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS templates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        amount TEXT NOT NULL,
+                        transactionType INTEGER NOT NULL,
+                        icon TEXT,
+                        colorHex TEXT,
+                        accountId TEXT,
+                        note TEXT,
+                        payee TEXT,
+                        location TEXT,
+                        paymentMethod TEXT,
+                        currency TEXT,
+                        tags TEXT NOT NULL DEFAULT '',
+                        isStarred INTEGER NOT NULL DEFAULT 0,
+                        displayOrder INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+
+                // Add currency_rates table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS currency_rates (
+                        currencyCode TEXT NOT NULL PRIMARY KEY,
+                        baseCurrency TEXT NOT NULL,
+                        rate REAL NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        nextUpdate INTEGER NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Create junction table for transaction links
@@ -294,6 +383,122 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("CREATE INDEX index_transactions_status ON transactions (status)")
             }
         }
+
+                val MIGRATION_11_12 = object : Migration(11, 12) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        database.execSQL("""
+                            CREATE TABLE planned_payments (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL,
+                                amount TEXT NOT NULL,
+                                currency TEXT NOT NULL,
+                                transactionType TEXT NOT NULL,
+                                accountId TEXT NOT NULL,
+                                targetAccountId TEXT,
+                                categoryId INTEGER,
+                                paymentMethod TEXT NOT NULL DEFAULT 'Cash',
+                                tags TEXT NOT NULL DEFAULT '',
+                                note TEXT NOT NULL DEFAULT '',
+                                payee TEXT NOT NULL DEFAULT '',
+                                recurrenceType TEXT NOT NULL,
+                                recurrenceInterval INTEGER NOT NULL DEFAULT 1,
+                                recurrenceDayOfWeek INTEGER,
+                                recurrenceDayOfMonth INTEGER,
+                                startDate INTEGER NOT NULL,
+                                endDate INTEGER,
+                                nextDueDate INTEGER NOT NULL,
+                                lastTriggeredDate INTEGER,
+                                autoConfirm INTEGER NOT NULL DEFAULT 0,
+                                status TEXT NOT NULL DEFAULT 'ACTIVE',
+                                profileId INTEGER NOT NULL,
+                                FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE
+                            )
+                        """.trimIndent())
+                        database.execSQL("CREATE INDEX index_planned_payments_profileId ON planned_payments (profileId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_accountId ON planned_payments (accountId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_nextDueDate ON planned_payments (nextDueDate)")
+                        database.execSQL("CREATE INDEX index_planned_payments_status ON planned_payments (status)")
+
+                        database.execSQL("""
+                            CREATE TABLE planned_payment_occurrences (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                plannedPaymentId INTEGER NOT NULL,
+                                scheduledDate INTEGER NOT NULL,
+                                generatedTransactionId INTEGER,
+                                status TEXT NOT NULL DEFAULT 'PENDING',
+                                FOREIGN KEY(plannedPaymentId) REFERENCES planned_payments(id) ON DELETE CASCADE
+                            )
+                        """.trimIndent())
+                        database.execSQL("CREATE INDEX index_ppo_plannedPaymentId ON planned_payment_occurrences (plannedPaymentId)")
+                        database.execSQL("CREATE INDEX index_ppo_scheduledDate ON planned_payment_occurrences (scheduledDate)")
+                        database.execSQL("CREATE INDEX index_ppo_status ON planned_payment_occurrences (status)")
+                    }
+                }
+
+                val MIGRATION_12_13 = object : Migration(12, 13) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        database.execSQL("""
+                            CREATE TABLE budgets (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                name TEXT NOT NULL,
+                                currency TEXT NOT NULL,
+                                limitAmount TEXT NOT NULL,
+                                period TEXT NOT NULL,
+                                categoryIds TEXT NOT NULL DEFAULT '',
+                                accountIds TEXT NOT NULL DEFAULT '',
+                                alertThreshold REAL NOT NULL DEFAULT 0.8,
+                                rollover INTEGER NOT NULL DEFAULT 0,
+                                trackType TEXT NOT NULL DEFAULT 'EXPENSE',
+                                isArchived INTEGER NOT NULL DEFAULT 0,
+                                profileId INTEGER NOT NULL,
+                                customStartDate INTEGER,
+                                customEndDate INTEGER
+                            )
+                        """.trimIndent())
+                        database.execSQL("CREATE INDEX index_budgets_profileId ON budgets (profileId)")
+                        database.execSQL("CREATE INDEX index_budgets_isArchived ON budgets (isArchived)")
+                    }
+                }
+
+                val MIGRATION_13_14 = object : Migration(13, 14) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        database.execSQL("""
+                            CREATE TABLE loans (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                name TEXT NOT NULL,
+                                principalAmount TEXT NOT NULL,
+                                currency TEXT NOT NULL,
+                                interestRate REAL,
+                                startDate INTEGER NOT NULL,
+                                lenderOrBorrowerName TEXT NOT NULL,
+                                loanType TEXT NOT NULL,
+                                linkedAccountId TEXT NOT NULL,
+                                expectedSettlementDate INTEGER,
+                                status TEXT NOT NULL DEFAULT 'ACTIVE',
+                                profileId INTEGER NOT NULL,
+                                note TEXT NOT NULL DEFAULT '',
+                                FOREIGN KEY(linkedAccountId) REFERENCES accounts(id) ON DELETE SET NULL
+                            )
+                        """.trimIndent())
+                        database.execSQL("CREATE INDEX index_loans_profileId ON loans (profileId)")
+                        database.execSQL("CREATE INDEX index_loans_status ON loans (status)")
+                        database.execSQL("CREATE INDEX index_loans_linkedAccountId ON loans (linkedAccountId)")
+
+                        database.execSQL("""
+                            CREATE TABLE loan_payments (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                loanId INTEGER NOT NULL,
+                                transactionId INTEGER,
+                                amount TEXT NOT NULL,
+                                date INTEGER NOT NULL,
+                                note TEXT NOT NULL DEFAULT '',
+                                FOREIGN KEY(loanId) REFERENCES loans(id) ON DELETE CASCADE
+                            )
+                        """.trimIndent())
+                        database.execSQL("CREATE INDEX index_loan_payments_loanId ON loan_payments (loanId)")
+                        database.execSQL("CREATE INDEX index_loan_payments_transactionId ON loan_payments (transactionId)")
+                    }
+                }
 
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
@@ -399,8 +604,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Real Estate', 'Domain', -16711707, 1, 12)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                     .build()
                 INSTANCE = instance
                 instance

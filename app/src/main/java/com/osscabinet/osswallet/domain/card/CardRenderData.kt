@@ -1,6 +1,10 @@
 package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.LoanSummary
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.service.*
@@ -51,6 +55,22 @@ sealed class CardRenderData {
     data class CategoryTreemap(
         val config: CategoryExpenseTreemapCardConfig,
         val items: List<CategoryTreeMetrics>
+    ) : CardRenderData()
+
+    data class PlannedPayments(
+        val config: PlannedPaymentsCardConfig,
+        val upcoming: List<UpcomingPaymentItem>,
+        val overdue: List<PlannedPayment>
+    ) : CardRenderData()
+
+    data class Budgets(
+        val config: com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig,
+        val items: List<BudgetProgress>
+    ) : CardRenderData()
+
+    data class Loans(
+        val config: com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig,
+        val items: List<LoanSummary>
     ) : CardRenderData()
 
     data class AccountHero(

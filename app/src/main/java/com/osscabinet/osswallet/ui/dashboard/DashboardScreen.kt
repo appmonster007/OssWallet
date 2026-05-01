@@ -421,7 +421,9 @@ fun DashboardContent(
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
                             precision = state.decimalPrecision,
-                            filter = cardConfig.filter
+                            filter = cardConfig.filter,
+                            plannedPayments = state.plannedPayments,
+                            budgets = state.budgets
                         )
 
                         val cardWithCallbacks = rememberCardWithCallbacks(

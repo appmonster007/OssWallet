@@ -1,0 +1,42 @@
+package com.osscabinet.ossWallet.data.mapper
+
+import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.BudgetPeriod
+import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
+
+fun BudgetEntity.toDomain(): Budget = Budget(
+    id = id,
+    name = name,
+    currency = currency,
+    limitAmount = limitAmount,
+    period = BudgetPeriod.valueOf(period),
+    categoryIds = categoryIds.splitByComma().mapNotNull { it.toLongOrNull() },
+    accountIds = accountIds.splitByComma(),
+    alertThreshold = alertThreshold,
+    rollover = rollover,
+    trackType = BudgetTrackType.valueOf(trackType),
+    isArchived = isArchived,
+    profileId = profileId,
+    customStartDate = customStartDate,
+    customEndDate = customEndDate
+)
+
+fun Budget.toEntity(): BudgetEntity = BudgetEntity(
+    id = id,
+    name = name,
+    currency = currency,
+    limitAmount = limitAmount,
+    period = period.name,
+    categoryIds = categoryIds.map { it.toString() }.joinByComma(),
+    accountIds = accountIds.joinByComma(),
+    alertThreshold = alertThreshold,
+    rollover = rollover,
+    trackType = trackType.name,
+    isArchived = isArchived,
+    profileId = profileId,
+    customStartDate = customStartDate,
+    customEndDate = customEndDate
+)

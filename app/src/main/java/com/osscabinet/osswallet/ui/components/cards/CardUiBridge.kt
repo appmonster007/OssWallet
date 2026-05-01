@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
+// PlannedPaymentsCardConfig is included via domain.model.settings.* wildcard import
+
 /**
  * Bridge that maps CardConfig to CardWithCallbacks.
  * This decouples screens from specific card implementations.
@@ -33,6 +35,9 @@ fun rememberCardWithCallbacks(
                 is CategoryBreakdownCardConfig -> registry.compute(CardType.CATEGORY_BREAKDOWN, input, config)
                 is CategoryExpenseTreemapCardConfig -> registry.compute(CardType.CATEGORY_EXPENSE_TREEMAP, input, config)
                 is AccountHeroCardConfig -> registry.compute(CardType.ACCOUNT_HERO, input, config)
+                is PlannedPaymentsCardConfig -> registry.compute(CardType.PLANNED_PAYMENTS, input, config)
+                is BudgetsCardConfig -> registry.compute(CardType.BUDGETS, input, config)
+                is LoansCardConfig -> registry.compute(CardType.LOANS, input, config)
             }
         } catch (e: Exception) {
             null
@@ -144,6 +149,42 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.AccountHero(
                         onShowCurrencyBadgesChange = { id, show -> updateHandler.updateCardHeroShowCurrencyBadges(id, show) },
                         onFilterChange = { id, filter -> updateHandler.updateCardHeroFilter(id, filter) },
+                        onDelete = { onDelete(config.cardId) }
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+            config is PlannedPaymentsCardConfig && renderData is CardRenderData.PlannedPayments -> {
+                CardWithCallbacks.PlannedPayments(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.PlannedPayments(
+                        onUpdate = { newConfig -> updateHandler.updateCardPlannedPaymentsConfig(config.cardId, newConfig) },
+                        onItemClick = {},
+                        onDelete = { onDelete(config.cardId) }
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+            config is BudgetsCardConfig && renderData is CardRenderData.Budgets -> {
+                CardWithCallbacks.Budgets(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.Budgets(
+                        onUpdate = { newConfig -> updateHandler.updateCardBudgetsConfig(config.cardId, newConfig) },
+                        onBudgetClick = {},
+                        onDelete = { onDelete(config.cardId) }
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+            config is LoansCardConfig && renderData is CardRenderData.Loans -> {
+                CardWithCallbacks.Loans(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.Loans(
+                        onUpdate = { newConfig -> updateHandler.updateCardLoansConfig(config.cardId, newConfig) },
+                        onLoanClick = {},
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,

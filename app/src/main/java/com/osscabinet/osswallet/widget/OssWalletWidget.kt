@@ -16,6 +16,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.data.local.AppDatabase
+import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.domain.card.*
@@ -32,7 +33,7 @@ class OssWalletWidget : GlanceAppWidget() {
         val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
 
-        val db = AppDatabase.getDatabase(context, byteArrayOf())
+        val db = AppDatabase.getDatabase(context, SecurePassphraseManager(context).getOrGeneratePassphrase())
         val accounts = db.accountDao().getAllAccountsSync(profileId).map { it.toDomain() }
         val transactions = db.transactionDao().getAllTransactionsSync(profileId).map { it.toDomain() }
         val categories = db.categoryDao().getAllCategoriesSync().map { it.toDomain() }

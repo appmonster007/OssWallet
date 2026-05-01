@@ -168,6 +168,9 @@ class AnalyticsViewModel(
                     is CategoryBreakdownCardConfig -> card.copy(order = index)
                     is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
                     is AccountHeroCardConfig -> card.copy(order = index)
+                    is PlannedPaymentsCardConfig -> card.copy(order = index)
+                    is BudgetsCardConfig -> card.copy(order = index)
+                    is LoansCardConfig -> card.copy(order = index)
                 }
             }
             _analyticsCardsConfig.value = AnalyticsCardsConfig(reorderedWithUpdatedOrder)

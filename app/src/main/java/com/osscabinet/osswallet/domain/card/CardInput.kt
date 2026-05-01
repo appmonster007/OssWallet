@@ -3,6 +3,10 @@ package com.osscabinet.ossWallet.domain.card
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import java.math.BigDecimal
 
@@ -20,5 +24,9 @@ data class CardInput(
     val exchangeRates: Map<String, BigDecimal>,
     val baseCurrency: String,
     val precision: Int,
-    val filter: TransactionFilter = TransactionFilter()
+    val filter: TransactionFilter = TransactionFilter(),
+    val plannedPayments: List<PlannedPayment> = emptyList(),
+    val budgets: List<Budget> = emptyList(),
+    val loans: List<Loan> = emptyList(),
+    val loanPayments: Map<Long, List<LoanPayment>> = emptyMap()
 )

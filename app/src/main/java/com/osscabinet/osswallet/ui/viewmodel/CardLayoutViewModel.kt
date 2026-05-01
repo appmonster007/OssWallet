@@ -34,10 +34,13 @@ class CardLayoutViewModel(
                 is AccountsCardConfig -> CardType.ACCOUNTS
                 is CategoryBreakdownCardConfig -> CardType.CATEGORY_BREAKDOWN
                 is CategoryExpenseTreemapCardConfig -> CardType.CATEGORY_EXPENSE_TREEMAP
+                is PlannedPaymentsCardConfig -> CardType.PLANNED_PAYMENTS
+                is BudgetsCardConfig -> CardType.BUDGETS
+                is LoansCardConfig -> CardType.LOANS
                 else -> null
             }
         }.toSet()
-        CardType.entries.filter { it !in usedTypes && it != CardType.ACCOUNT_HERO && it != CardType.BUDGETS }
+        CardType.entries.filter { it !in usedTypes && it != CardType.ACCOUNT_HERO }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addDashboardCard(type: CardType) {
@@ -49,6 +52,9 @@ class CardLayoutViewModel(
                 CardType.ACCOUNTS -> AccountsCardConfig(cardId = UUID.randomUUID().toString())
                 CardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = UUID.randomUUID().toString())
                 CardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = UUID.randomUUID().toString())
+                CardType.PLANNED_PAYMENTS -> PlannedPaymentsCardConfig(cardId = UUID.randomUUID().toString())
+                CardType.BUDGETS -> BudgetsCardConfig(cardId = UUID.randomUUID().toString())
+                CardType.LOANS -> LoansCardConfig(cardId = UUID.randomUUID().toString())
                 else -> throw IllegalArgumentException("Unsupported dashboard card type: $type")
             }
             cardRepository.addDashboardCard(card)

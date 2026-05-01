@@ -13,6 +13,10 @@ import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.card.*
@@ -38,7 +42,10 @@ class DashboardViewModel(
     private val computationRepository: ComputationRepository,
     private val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
-    private val registry: CardComputerRegistry
+    private val registry: CardComputerRegistry,
+    private val plannedPaymentRepository: PlannedPaymentRepository? = null,
+    private val budgetRepository: BudgetRepository? = null,
+    private val loanRepository: LoanRepository? = null
 ) : ViewModel(), CardUpdateHandler {
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
@@ -273,12 +280,36 @@ class DashboardViewModel(
         }
     }
 
+    override fun updateCardPlannedPaymentsConfig(cardId: String, config: PlannedPaymentsCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateDashboardCard(cardId) { config }
+        }
+    }
+
+    override fun updateCardBudgetsConfig(cardId: String, config: BudgetsCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateDashboardCard(cardId) { config }
+        }
+    }
+
+    override fun updateCardLoansConfig(cardId: String, config: LoansCardConfig) {
+        viewModelScope.launch {
+            cardRepository.updateDashboardCard(cardId) { config }
+        }
+    }
+
     // Registry-based engine handles all computations
     // Use the injected registry instead of a local reference
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
+            val plannedPaymentsFlow: Flow<List<PlannedPayment>> =
+                plannedPaymentRepository?.getActivePlannedPayments(profileId) ?: flowOf(emptyList())
+            val budgetsFlow: Flow<List<Budget>> =
+                budgetRepository?.getActiveBudgets(profileId) ?: flowOf(emptyList())
+            val loansFlow: Flow<List<Loan>> =
+                loanRepository?.getActiveLoans(profileId) ?: flowOf(emptyList())
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
@@ -287,7 +318,10 @@ class DashboardViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
-                settingsRepository.dashboardSettings
+                settingsRepository.dashboardSettings,
+                plannedPaymentsFlow,
+                budgetsFlow,
+                loansFlow
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
@@ -301,6 +335,12 @@ class DashboardViewModel(
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 val dashboardSettings = args[7] as com.osscabinet.ossWallet.data.local.DashboardSettings
+                @Suppress("UNCHECKED_CAST")
+                val plannedPayments = args[8] as List<PlannedPayment>
+                @Suppress("UNCHECKED_CAST")
+                val budgets = args[9] as List<Budget>
+                @Suppress("UNCHECKED_CAST")
+                val loans = args[10] as List<Loan>
 
                 if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
@@ -316,7 +356,10 @@ class DashboardViewModel(
                     categories = categories,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
-                    precision = precision
+                    precision = precision,
+                    plannedPayments = plannedPayments,
+                    budgets = budgets,
+                    loans = loans
                 )
 
                 val currencyTotals = (registry.compute(
@@ -421,7 +464,10 @@ class DashboardViewModel(
                     netExpense = netWorthCashFlow.totalExpensesInBase,
                     netWorthFontSize = dashboardSettings.netWorthSection.fontSize,
                     netWorthTimelineRange = dashboardSettings.netWorthSection.timelineRange,
-                    cashFlowResult = cashFlowResult
+                    cashFlowResult = cashFlowResult,
+                    plannedPayments = plannedPayments,
+                    budgets = budgets,
+                    loans = loans
                 )
             }.flowOn(Dispatchers.Default)
         }
@@ -594,7 +640,10 @@ sealed class DashboardUiState {
         val netExpense: BigDecimal,
         val netWorthFontSize: String,
         val netWorthTimelineRange: TimelineRange,
-        val cashFlowResult: CashFlowResult?
+        val cashFlowResult: CashFlowResult?,
+        val plannedPayments: List<PlannedPayment> = emptyList(),
+        val budgets: List<Budget> = emptyList(),
+        val loans: List<Loan> = emptyList()
     ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }

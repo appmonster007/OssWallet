@@ -54,4 +54,23 @@ sealed class Screen(val route: String) {
     object EditFilter : Screen("edit_filter?filterId={filterId}") {
         fun createRoute(filterId: Long? = null) = if (filterId != null) "edit_filter?filterId=$filterId" else "edit_filter"
     }
+
+    object PlannedPayments : Screen("planned_payments")
+    object BudgetList : Screen("budgets")
+    object BudgetEntry : Screen("budget_entry?budgetId={budgetId}") {
+        fun createRoute(budgetId: Long? = null) =
+            if (budgetId != null) "budget_entry?budgetId=$budgetId" else "budget_entry"
+    }
+    object PlannedPaymentEntry : Screen("planned_payment_entry?plannedPaymentId={plannedPaymentId}") {
+        fun createRoute(plannedPaymentId: Long? = null) =
+            if (plannedPaymentId != null) "planned_payment_entry?plannedPaymentId=$plannedPaymentId" else "planned_payment_entry"
+    }
+    object LoanList : Screen("loans")
+    object LoanEntry : Screen("loan_entry?loanId={loanId}") {
+        fun createRoute(loanId: Long? = null) =
+            if (loanId != null) "loan_entry?loanId=$loanId" else "loan_entry"
+    }
+    object LoanDetail : Screen("loan_detail/{loanId}") {
+        fun createRoute(loanId: Long) = "loan_detail/$loanId"
+    }
 }

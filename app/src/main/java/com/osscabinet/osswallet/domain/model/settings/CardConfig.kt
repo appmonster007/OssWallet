@@ -196,6 +196,61 @@ data class AccountHeroCardConfig(
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
+/**
+ * Configuration for Planned Payments card instances
+ */
+@Serializable
+@SerialName("planned_payments")
+data class PlannedPaymentsCardConfig(
+    override val cardId: String,
+    override val title: String = "PLANNED PAYMENTS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val daysAhead: Int = 30,
+    val maxItems: Int = 5,
+    val showOverdue: Boolean = true,
+    override val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
+/**
+ * Configuration for Budgets card instances
+ */
+@Serializable
+@SerialName("budgets")
+data class BudgetsCardConfig(
+    override val cardId: String,
+    override val title: String = "BUDGETS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val showArchived: Boolean = false,
+    val maxItems: Int = 5,
+    override val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
+/**
+ * Configuration for Loans card instances
+ */
+@Serializable
+@SerialName("loans")
+data class LoansCardConfig(
+    override val cardId: String,
+    override val title: String = "LOANS",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val showType: String = "ALL",
+    val maxItems: Int = 5,
+    override val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()

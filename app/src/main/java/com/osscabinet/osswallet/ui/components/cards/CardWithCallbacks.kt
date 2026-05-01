@@ -60,4 +60,25 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
+
+    data class PlannedPayments(
+        val renderData: CardRenderData.PlannedPayments,
+        val callbacks: CardCallbacks.PlannedPayments,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    ) : CardWithCallbacks()
+
+    data class Budgets(
+        val renderData: CardRenderData.Budgets,
+        val callbacks: CardCallbacks.Budgets,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    ) : CardWithCallbacks()
+
+    data class Loans(
+        val renderData: CardRenderData.Loans,
+        val callbacks: CardCallbacks.Loans,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    ) : CardWithCallbacks()
 }

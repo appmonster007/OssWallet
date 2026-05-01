@@ -10,6 +10,9 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCard
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
@@ -76,6 +79,9 @@ class CardRepositoryImpl(
                 is CategoryBreakdownCardConfig -> card.copy(order = index)
                 is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
                 is AccountHeroCardConfig -> card.copy(order = index)
+                is PlannedPaymentsCardConfig -> card.copy(order = index)
+                is BudgetsCardConfig -> card.copy(order = index)
+                is LoansCardConfig -> card.copy(order = index)
             }
         }
         val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)
@@ -105,6 +111,9 @@ class CardRepositoryImpl(
                 is CategoryBreakdownCardConfig -> card.copy(order = index)
                 is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
                 is AccountHeroCardConfig -> card.copy(order = index)
+                is PlannedPaymentsCardConfig -> card.copy(order = index)
+                is BudgetsCardConfig -> card.copy(order = index)
+                is LoansCardConfig -> card.copy(order = index)
             }
         }
         val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)
@@ -134,6 +143,9 @@ class CardRepositoryImpl(
                 is CategoryBreakdownCardConfig -> card.copy(order = index)
                 is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
                 is AccountHeroCardConfig -> card.copy(order = index)
+                is PlannedPaymentsCardConfig -> card.copy(order = index)
+                is BudgetsCardConfig -> card.copy(order = index)
+                is LoansCardConfig -> card.copy(order = index)
             }
         }
         val updated = DashboardCardsConfig(cards = reorderedWithUpdatedOrder)

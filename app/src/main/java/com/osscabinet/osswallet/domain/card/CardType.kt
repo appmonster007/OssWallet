@@ -44,8 +44,18 @@ enum class CardType(
         "Hierarchical view of category expenses."
     ),
     ACCOUNT_HERO(
-        "account_hero", 
-        "Account Hero", 
+        "account_hero",
+        "Account Hero",
         "Prominent display of account balance and details."
+    ),
+    PLANNED_PAYMENTS(
+        "planned_payments",
+        "Planned Payments",
+        "Upcoming and overdue scheduled payments."
+    ),
+    LOANS(
+        "loans",
+        "Loans",
+        "Track money you lent or borrowed."
     )
 }

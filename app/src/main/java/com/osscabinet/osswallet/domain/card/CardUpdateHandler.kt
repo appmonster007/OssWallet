@@ -34,4 +34,13 @@ interface CardUpdateHandler {
     // Analytics
     fun updateCardCategoryBreakdownConfig(cardId: String, config: com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig) {}
     fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig) {}
+
+    // Planned Payments
+    fun updateCardPlannedPaymentsConfig(cardId: String, config: com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig) {}
+
+    // Budgets
+    fun updateCardBudgetsConfig(cardId: String, config: com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig) {}
+
+    // Loans
+    fun updateCardLoansConfig(cardId: String, config: com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig) {}
 }

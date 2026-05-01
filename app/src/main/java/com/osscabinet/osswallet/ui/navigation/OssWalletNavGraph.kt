@@ -103,7 +103,10 @@ fun OssWalletNavGraph(
                 appContainer.computationRepository,
                 appContainer.cardRepository,
                 appContainer.categoryRepository,
-                appContainer.cardComputerRegistry
+                appContainer.cardComputerRegistry,
+                appContainer.plannedPaymentRepository,
+                appContainer.budgetRepository,
+                appContainer.loanRepository
             )
         }
     )
@@ -518,6 +521,147 @@ fun OssWalletNavGraph(
                         settingsViewModel.saveFilter(entity)
                         navController.popBackStack()
                     },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.PlannedPayments.route) {
+                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                            appContainer.plannedPaymentRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.PlannedPaymentsScreen(
+                    viewModel = plannedPaymentViewModel,
+                    onAddClick = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
+                    onEditClick = { id -> navController.navigate(Screen.PlannedPaymentEntry.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.BudgetList.route) {
+                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                            appContainer.budgetRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.BudgetListScreen(
+                    viewModel = budgetViewModel,
+                    onAddClick = { navController.navigate(Screen.BudgetEntry.createRoute()) },
+                    onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.BudgetEntry.route,
+                arguments = listOf(navArgument("budgetId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                })
+            ) { backStackEntry ->
+                val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: -1L
+                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                            appContainer.budgetRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.BudgetEntryScreen(
+                    budgetId = if (budgetId == -1L) null else budgetId,
+                    viewModel = budgetViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.PlannedPaymentEntry.route,
+                arguments = listOf(navArgument("plannedPaymentId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                })
+            ) { backStackEntry ->
+                val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: -1L
+                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                            appContainer.plannedPaymentRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.PlannedPaymentEntryScreen(
+                    plannedPaymentId = if (plannedPaymentId == -1L) null else plannedPaymentId,
+                    viewModel = plannedPaymentViewModel,
+                    accountViewModel = accountViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.LoanList.route) {
+                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                            appContainer.loanRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.LoansScreen(
+                    viewModel = loanViewModel,
+                    onAddClick = { navController.navigate(Screen.LoanEntry.createRoute()) },
+                    onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.LoanEntry.route,
+                arguments = listOf(navArgument("loanId") {
+                    type = NavType.LongType; defaultValue = -1L
+                })
+            ) { backStackEntry ->
+                val loanId = backStackEntry.arguments?.getLong("loanId") ?: -1L
+                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                            appContainer.loanRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.LoanEntryScreen(
+                    loanId = if (loanId == -1L) null else loanId,
+                    viewModel = loanViewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.LoanDetail.route,
+                arguments = listOf(navArgument("loanId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val loanId = backStackEntry.arguments?.getLong("loanId") ?: return@composable
+                val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
+                            appContainer.loanRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                com.osscabinet.ossWallet.ui.screens.LoanDetailScreen(
+                    loanId = loanId,
+                    viewModel = loanViewModel,
+                    onEditClick = { navController.navigate(Screen.LoanEntry.createRoute(loanId)) },
                     onBackClick = { navController.popBackStack() }
                 )
             }

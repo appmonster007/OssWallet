@@ -15,6 +15,9 @@ import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
+import com.osscabinet.ossWallet.ui.dashboard.components.PlannedPaymentsCard
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
@@ -214,7 +217,7 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.Accounts -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
-            
+
             AccountsCard(
                 onManageClick = cb.onManageClick,
                 onHeaderClick = cb.onHeaderClick,
@@ -241,6 +244,49 @@ fun UnifiedCardRenderer(
                 baseFilter = cardWithCallbacks.baseFilter,
                 allCategories = allCategories,
                 savedFilters = savedFilters
+            )
+        }
+
+        is CardWithCallbacks.PlannedPayments -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            PlannedPaymentsCard(
+                upcoming = renderData.upcoming,
+                overdue = renderData.overdue,
+                config = renderData.config,
+                onUpdate = cb.onUpdate,
+                onItemClick = cb.onItemClick,
+                onDelete = { cb.onDelete() },
+                modifier = modifier.fillMaxWidth()
+            )
+        }
+
+        is CardWithCallbacks.Budgets -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            BudgetsCard(
+                items = renderData.items,
+                config = renderData.config,
+                onUpdate = cb.onUpdate,
+                onBudgetClick = cb.onBudgetClick,
+                onDelete = { cb.onDelete() },
+                modifier = modifier.fillMaxWidth()
+            )
+        }
+
+        is CardWithCallbacks.Loans -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            LoansCard(
+                items = renderData.items,
+                config = renderData.config,
+                onUpdate = cb.onUpdate,
+                onLoanClick = cb.onLoanClick,
+                onDelete = { cb.onDelete() },
+                modifier = modifier.fillMaxWidth()
             )
         }
     }

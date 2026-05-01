@@ -85,6 +85,33 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
 
     /**
+     * Callbacks for planned payments card
+     */
+    data class PlannedPayments(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig) -> Unit = {},
+        val onItemClick: (Long) -> Unit = {},
+        val onDelete: () -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
+     * Callbacks for budgets card
+     */
+    data class Budgets(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig) -> Unit = {},
+        val onBudgetClick: (Long) -> Unit = {},
+        val onDelete: () -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
+     * Callbacks for loans card
+     */
+    data class Loans(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig) -> Unit = {},
+        val onLoanClick: (Long) -> Unit = {},
+        val onDelete: () -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
      * Legacy/Deprecated
      */
     data class WithFontSizeAndTimeline(

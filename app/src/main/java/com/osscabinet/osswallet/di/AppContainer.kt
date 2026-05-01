@@ -8,6 +8,9 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
 import com.osscabinet.ossWallet.data.repository.*
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
 import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
@@ -86,6 +89,18 @@ class AppContainer(private val context: Context) {
 
     val tagRepository: TagRepository by lazy {
         TagRepositoryImpl(db.tagDao(), db.transactionDao())
+    }
+
+    val plannedPaymentRepository: PlannedPaymentRepository by lazy {
+        PlannedPaymentRepositoryImpl(db.plannedPaymentDao(), db.plannedPaymentOccurrenceDao())
+    }
+
+    val budgetRepository: BudgetRepository by lazy {
+        BudgetRepositoryImpl(db.budgetDao())
+    }
+
+    val loanRepository: LoanRepository by lazy {
+        LoanRepositoryImpl(db.loanDao(), db.loanPaymentDao())
     }
 
     // Consolidated Use Cases

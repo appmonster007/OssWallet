@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.card.computers.*
+import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.BudgetsCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.LoansCardComputer
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 
 /**
@@ -39,7 +42,10 @@ class CardComputerRegistry(computers: List<CardDataComputer<*, *>>) {
                 AccountsCardComputer(),
                 CategoryBreakdownCardComputer(),
                 CategoryTreemapCardComputer(),
-                AccountHeroCardComputer()
+                AccountHeroCardComputer(),
+                PlannedPaymentsCardComputer(),
+                BudgetsCardComputer(),
+                LoansCardComputer()
             )
         )
     }

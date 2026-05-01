@@ -480,7 +480,7 @@ fun AddCardDialog(
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
-        cardOptions = CardType.entries.filter { it != CardType.ACCOUNT_HERO && it != CardType.BUDGETS }.map { type ->
+        cardOptions = CardType.entries.filter { it.isUserAddableOn(ScreenContext.DASHBOARD) && it != CardType.BUDGETS }.map { type ->
             CardTypeOptionData(
                 title = type.displayName,
                 description = "", // TODO: Add descriptions to CardType

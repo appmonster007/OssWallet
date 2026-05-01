@@ -30,8 +30,7 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetDate(millis))
                 onEvent(TransactionEntryEvent.ShowDatePicker(false))
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowDatePicker(false)) },
-            disableFutureDates = true
+            onDismiss = { onEvent(TransactionEntryEvent.ShowDatePicker(false)) }
         )
     }
 

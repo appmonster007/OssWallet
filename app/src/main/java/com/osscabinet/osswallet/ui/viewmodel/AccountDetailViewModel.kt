@@ -5,18 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import java.math.RoundingMode
+import com.osscabinet.ossWallet.domain.service.CurrencyService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -31,7 +29,7 @@ class AccountDetailViewModel(
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
-    private val registry: CardComputerRegistry
+    @Suppress("UnusedPrivateMember") private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -52,6 +50,8 @@ class AccountDetailViewModel(
         }
     }
 
+    // cardsConfig is observed separately by the screen — removing it from this combine prevents
+    // a full account data rebuild on every card filter change.
     val uiState: StateFlow<AccountDetailUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -62,8 +62,7 @@ class AccountDetailViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
-                settingsRepository.accountDetailSettings,
-                cardsConfig
+                settingsRepository.accountDetailSettings
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
@@ -77,18 +76,13 @@ class AccountDetailViewModel(
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
-                // By including cardConfig in combine, we ensure re-computation when card filters change
-                @Suppress("UNUSED_VARIABLE")
-                val cardConfig = args[8] as DashboardCardsConfig
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
                 }
 
-                // Invalidate registry cache when data changes
-                registry.clearCache()
-                
-                val account = accounts.find { it.id == accountId } ?: return@combine AccountDetailUiState.Error("Account not found")
+                val account = accounts.find { it.id == accountId }
+                    ?: return@combine AccountDetailUiState.Error("Account not found")
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
 
@@ -97,9 +91,16 @@ class AccountDetailViewModel(
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
+                val transactionsWithBalance = computeRunningBalance(
+                    transactions = accountTransactions,
+                    accountCurrency = account.currencyCode,
+                    exchangeRates = rates
+                )
+
                 AccountDetailUiState.Success(
                     account = account,
                     allAccountTransactions = accountTransactions,
+                    transactionsWithBalance = transactionsWithBalance,
                     allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -114,6 +115,25 @@ class AccountDetailViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AccountDetailUiState.Loading
         )
+
+    private fun computeRunningBalance(
+        transactions: List<Transaction>,
+        accountCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): List<TransactionWithBalance> {
+        val sorted = transactions.sortedByDescending { it.timestamp }
+        val totalBalance = sorted.fold(BigDecimal.ZERO) { acc, tx ->
+            acc + CurrencyService.convertAmount(tx.amount, tx.currency, accountCurrency, exchangeRates, 10)
+        }
+        var currentBalance = totalBalance
+        return sorted.map { tx ->
+            val converted = CurrencyService.convertAmount(tx.amount, tx.currency, accountCurrency, exchangeRates, 10)
+            val balanceAfter = currentBalance
+            val balanceBefore = currentBalance - converted
+            currentBalance = balanceBefore
+            TransactionWithBalance(tx, balanceBefore, balanceAfter)
+        }
+    }
 }
 
 sealed class AccountDetailUiState {
@@ -121,6 +141,7 @@ sealed class AccountDetailUiState {
     data class Success(
         val account: Account,
         val allAccountTransactions: List<Transaction>,
+        val transactionsWithBalance: List<TransactionWithBalance> = emptyList(),
         val allCategories: List<Category> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

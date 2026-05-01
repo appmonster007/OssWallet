@@ -25,7 +25,12 @@ object FilterService {
     ): List<Transaction> {
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
 
+        val now = System.currentTimeMillis()
+
         return transactions.filter { tx ->
+            // 0. Future exclusion (checked first for performance)
+            if (filter.excludeFuture && tx.timestamp > now) return@filter false
+
             // 1. Timeline check (TimelineRange OR explicit dates)
             val effectiveStart = filter.startDate ?: startTime
             val effectiveEnd = filter.endDate ?: endTime

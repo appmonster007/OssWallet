@@ -26,5 +26,6 @@ data class TransactionFilter(
     val transactionType: String? = null, // null = all, "income" = income only, "expense" = expense only
     val currencies: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val statuses: List<TransactionStatus> = emptyList()
+    val statuses: List<TransactionStatus> = emptyList(),
+    val excludeFuture: Boolean = true
 )

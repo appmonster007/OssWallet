@@ -1,7 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.*
@@ -46,15 +50,12 @@ fun AeonCardList(
         verticalArrangement = verticalArrangement,
         animateCards = animateCards
     ) { cardConfig, isDragging, dragModifier ->
-        
-        // Pass the card-specific input
-        val input = remember(cardInput, cardConfig.filter) {
-            cardInput.copy(filter = cardConfig.filter)
-        }
 
+        // cardInput.filter is the screen's base scope. Card computers apply config.filter on top
+        // of that in their own two-step logic — do NOT overwrite input.filter here.
         val cardWithCallbacks = rememberCardWithCallbacks(
             config = cardConfig,
-            input = input,
+            input = cardInput,
             registry = cardComputerRegistry,
             updateHandler = cardUpdateHandler,
             onDelete = onDelete,
@@ -65,26 +66,29 @@ fun AeonCardList(
             currentTheme = currentTheme
         )
 
-        cardWithCallbacks?.let {
-            // Apply screen-specific restrictions (e.g. Account Detail screen)
-            val effectiveCard = if (forceDisableAccountSelection) {
-                it.copyWithRules(
-                    rules = it.filterRules.copy(allowAccountSelection = false),
-                    baseFilter = baseFilter
-                )
-            } else it
+        when (val card = cardWithCallbacks) {
+            is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
+            null -> Box(modifier = Modifier.size(0.dp))
+            else -> {
+                val effectiveCard = if (forceDisableAccountSelection) {
+                    card.copyWithRules(
+                        rules = card.filterRules.copy(allowAccountSelection = false),
+                        baseFilter = baseFilter
+                    )
+                } else card
 
-            UnifiedCardRenderer(
-                cardWithCallbacks = effectiveCard,
-                modifier = Modifier.fillMaxWidth(),
-                headerModifier = dragModifier,
-                showTitle = true,
-                currentTheme = currentTheme,
-                accounts = accounts,
-                allCategories = allCategories,
-                savedFilters = savedFilters
-            )
-        } ?: Box(modifier = Modifier.size(0.dp))
+                UnifiedCardRenderer(
+                    cardWithCallbacks = effectiveCard,
+                    modifier = Modifier.fillMaxWidth(),
+                    headerModifier = dragModifier,
+                    showTitle = true,
+                    currentTheme = currentTheme,
+                    accounts = accounts,
+                    allCategories = allCategories,
+                    savedFilters = savedFilters
+                )
+            }
+        }
     }
 }
 
@@ -105,4 +109,32 @@ private fun CardWithCallbacks.copyWithRules(
     is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.Budgets -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.Loans -> copy(filterRules = rules, baseFilter = baseFilter)
+    is CardWithCallbacks.ComputeError -> this
+}
+
+@Composable
+private fun CardErrorState(message: String?) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                text = message ?: "Failed to load card",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
 }

@@ -4,35 +4,43 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Card 1: Back (Pastel Green) -->
-    <path
-        android:fillColor="#81C995"
-        android:pathData="M42,32h24c2,0 3,1 3,3v18h-30v-18c0,-2 1,-3 3,-3z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateY="-3">
 
-    <!-- Card 2: Middle (Pastel Red) -->
-    <path
-        android:fillColor="#F28B82"
-        android:pathData="M38,38h32c2,0 3,1 3,3v13h-38v-13c0,-2 1,-3 3,-3z" />
+        <!-- Card 1: Back (Pastel Green) -->
+        <path
+            android:fillColor="#81C995"
+            android:pathData="M42,32h24c2,0 3,1 3,3v18h-30v-18c0,-2 1,-3 3,-3z" />
 
-    <!-- Card 3: Front (Pastel Blue) -->
-    <path
-        android:fillColor="#8AB4F8"
-        android:pathData="M32,44h44c2,0 3,1 3,3v9h-50v-9c0,-2 1,-3 3,-3z" />
+        <!-- Card 2: Middle (Pastel Red) -->
+        <path
+            android:fillColor="#F28B82"
+            android:pathData="M38,38h32c2,0 3,1 3,3v13h-38v-13c0,-2 1,-3 3,-3z" />
 
-    <!-- Wallet Front Body (White) -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M26,52h56c4,0 7,3 7,7v16c0,4 -3,7 -7,7h-56c-4,0 -7,-3 -7,-7v-16c0,-4 3,-7 7,-7z" />
+        <!-- Card 3: Front (Pastel Blue) -->
+        <path
+            android:fillColor="#8AB4F8"
+            android:pathData="M32,44h44c2,0 3,1 3,3v9h-50v-9c0,-2 1,-3 3,-3z" />
 
-    <!-- Infinite Symbol (Material Accent Blue) -->
-    <path
-        android:fillColor="#8AB4F8"
-        android:pathData="M50.5,63c-1.9,0 -3.5,1.6 -3.5,3.5s1.6,3.5 3.5,3.5c1.4,0 2.6,-0.8 3.1,-2c0.5,1.2 1.7,2 3.1,2c1.9,0 3.5,-1.6 3.5,-3.5s-1.6,-3.5 -3.5,-3.5c-1.4,0 -2.6,0.8 -3.1,2c-0.5,-1.2 -1.7,-2 -3.1,-2z M50.5,68.5c-0.8,0 -1.5,-0.7 -1.5,-1.5s0.7,-1.5 1.5,-1.5s1.5,0.7 1.5,1.5s-0.7,1.5 -1.5,1.5z M57.2,68.5c-0.8,0 -1.5,-0.7 -1.5,-1.5s0.7,-1.5 1.5,-1.5s1.5,0.7 1.5,1.5s-0.7,1.5 -1.5,1.5z" />
+        <!-- Wallet Front Body (White) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M26,52h56c4,0 7,3 7,7v16c0,4 -3,7 -7,7h-56c-4,0 -7,-3 -7,-7v-16c0,-4 3,-7 7,-7z" />
 
-    <!-- Edge Shadow -->
-    <path
-        android:fillColor="#000000"
-        android:fillAlpha="0.04"
-        android:pathData="M26,52h56v1h-56z" />
+        <!-- Infinite Symbol (Material Accent Blue) -->
+        <path
+            android:fillColor="#8AB4F8"
+            android:pathData="M50.5,63c-1.9,0 -3.5,1.6 -3.5,3.5s1.6,3.5 3.5,3.5c1.4,0 2.6,-0.8 3.1,-2c0.5,1.2 1.7,2 3.1,2c1.9,0 3.5,-1.6 3.5,-3.5s-1.6,-3.5 -3.5,-3.5c-1.4,0 -2.6,0.8 -3.1,2c-0.5,-1.2 -1.7,-2 -3.1,-2z M50.5,68.5c-0.8,0 -1.5,-0.7 -1.5,-1.5s0.7,-1.5 1.5,-1.5s1.5,0.7 1.5,1.5s-0.7,1.5 -1.5,1.5z M57.2,68.5c-0.8,0 -1.5,-0.7 -1.5,-1.5s0.7,-1.5 1.5,-1.5s1.5,0.7 1.5,1.5s-0.7,1.5 -1.5,1.5z" />
+
+        <!-- Edge Shadow -->
+        <path
+            android:fillColor="#000000"
+            android:fillAlpha="0.04"
+            android:pathData="M26,52h56v1h-56z" />
+    </group>
 
 </vector>

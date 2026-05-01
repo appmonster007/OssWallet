@@ -72,7 +72,17 @@ class CardRepositoryImpl(
     }
 
     private suspend fun saveConfig(context: ScreenContext, config: DashboardCardsConfig) {
-        val encoded = json.encodeToString(config)
+        val configToSave = when (context) {
+            // For ACCOUNT_DETAIL: strip AccountHeroCardConfig (always-present, not user-managed)
+            // and clear all card filters (filters are session-only on this screen).
+            ScreenContext.ACCOUNT_DETAIL -> config.copy(
+                cards = config.cards
+                    .filter { it !is AccountHeroCardConfig }
+                    .map { it.withClearedFilter() }
+            )
+            else -> config
+        }
+        val encoded = json.encodeToString(configToSave)
         when (context) {
             ScreenContext.DASHBOARD -> settingsDataStore.saveDashboardCardsConfig(encoded)
             ScreenContext.ACCOUNT_DETAIL -> settingsDataStore.saveAccountDetailCardsConfig(encoded)
@@ -87,7 +97,9 @@ class CardRepositoryImpl(
     }
 
     override val accountDetailCardsConfig: Flow<DashboardCardsConfig> = settingsDataStore.accountDetailCardsConfig.map {
-        if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+        val decoded: DashboardCardsConfig = if (it.isEmpty()) DashboardCardsConfig() else json.decodeFromString(it)
+        // AccountHeroCard is always-present; strip it from the managed list so legacy data is cleaned.
+        decoded.copy(cards = decoded.cards.filter { card -> card !is AccountHeroCardConfig })
     }
 
     override val accountsViewCardsConfig: Flow<DashboardCardsConfig> = settingsDataStore.accountsViewCardsConfig.map {

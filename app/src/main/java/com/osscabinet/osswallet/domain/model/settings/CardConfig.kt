@@ -279,3 +279,20 @@ data class DashboardCardsConfig(
 data class AnalyticsCardsConfig(
     val cards: List<CardConfig> = emptyList()
 )
+
+/**
+ * Returns a copy of this config with its filter reset to the empty default.
+ * Used when saving ACCOUNT_DETAIL configs so per-visit filter changes never persist.
+ */
+fun CardConfig.withClearedFilter(): CardConfig = when (this) {
+    is NetWorthCardConfig -> copy(filter = TransactionFilter())
+    is CurrencyBalancesCardConfig -> copy(filter = TransactionFilter())
+    is CashFlowCardConfig -> copy(filter = TransactionFilter())
+    is AccountsCardConfig -> copy(filter = TransactionFilter())
+    is CategoryBreakdownCardConfig -> copy(filter = TransactionFilter())
+    is CategoryExpenseTreemapCardConfig -> copy(filter = TransactionFilter())
+    is AccountHeroCardConfig -> copy(filter = TransactionFilter())
+    is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter())
+    is BudgetsCardConfig -> copy(filter = TransactionFilter())
+    is LoansCardConfig -> copy(filter = TransactionFilter())
+}

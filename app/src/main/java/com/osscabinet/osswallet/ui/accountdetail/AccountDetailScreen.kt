@@ -41,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -327,24 +328,6 @@ fun AccountDetailScreen(
         )
         }
 
-        if (showAddCardDialog && uiState is AccountDetailUiState.Success) {
-            AccountDetailCardTypeSelectionDialog(
-                onDismiss = { showAddCardDialog = false },
-                onCardTypeSelected = { cardType ->
-                    accountDetailViewModel.addCard(
-                        CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL).let { config ->
-                            when (config) {
-                                is CashFlowCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                                is CurrencyBalancesCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                                is AccountHeroCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                                else -> config
-                            }
-                        }
-                    )
-                    showAddCardDialog = false
-                }
-            )
-        }
     }
 }
 
@@ -365,21 +348,57 @@ fun DynamicAccountDetailCards(
     cardAnimationEnabled: Boolean
 ) {
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
-    
+
+    val accountScopeFilter = remember(accountId) { TransactionFilter(accountIds = listOf(accountId)) }
+    val sharedCardInput = remember(state) {
+        CardInput(
+            transactions = state.allAccountTransactions,
+            accounts = listOf(state.account),
+            categories = state.allCategories,
+            exchangeRates = state.exchangeRates,
+            baseCurrency = state.baseCurrency,
+            precision = state.decimalPrecision,
+            filter = accountScopeFilter
+        )
+    }
+
+    // Always-present hero card — not in the reorderable list, cannot be deleted.
+    val heroConfig = remember(accountId) {
+        AccountHeroCardConfig(
+            cardId = "hero_$accountId",
+            filter = accountScopeFilter
+        )
+    }
+    val heroCard = rememberCardWithCallbacks(
+        config = heroConfig,
+        input = sharedCardInput,
+        registry = cardComputerRegistry,
+        updateHandler = accountDetailViewModel,
+        onDelete = {},
+        onRecordsClick = onRecordsClick,
+        currentTheme = currentTheme
+    )
+
     Column(
         modifier = modifier
     ) {
-        AeonCardList(
-            cards = cardsConfig.cards,
-            cardInput = CardInput(
-                transactions = state.allAccountTransactions,
+        if (heroCard != null && heroCard !is com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks.ComputeError) {
+            UnifiedCardRenderer(
+                cardWithCallbacks = heroCard,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = screenPadding.calculateTopPadding() + 16.dp, bottom = 4.dp),
+                showTitle = false,
+                currentTheme = currentTheme,
                 accounts = listOf(state.account),
-                categories = state.allCategories,
-                exchangeRates = state.exchangeRates,
-                baseCurrency = state.baseCurrency,
-                precision = state.decimalPrecision,
-                filter = TransactionFilter(accountIds = listOf(accountId))
-            ),
+                allCategories = state.allCategories,
+                savedFilters = savedFilters
+            )
+        }
+
+        AeonCardList(
+            cards = cardsConfig.cards.filter { it !is AccountHeroCardConfig },
+            cardInput = sharedCardInput,
             cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,
             onReorder = { accountDetailViewModel.reorderCards(it) },
@@ -389,7 +408,7 @@ fun DynamicAccountDetailCards(
             contentPadding = PaddingValues(
                 start = 0.dp,
                 end = 0.dp,
-                top = screenPadding.calculateTopPadding() + 24.dp,
+                top = 8.dp,
                 bottom = calculateScrollBottomPadding()
             ),
             animateCards = cardAnimationEnabled,
@@ -397,7 +416,7 @@ fun DynamicAccountDetailCards(
             accounts = listOf(state.account),
             allCategories = state.allCategories,
             savedFilters = savedFilters,
-            baseFilter = TransactionFilter(accountIds = listOf(accountId)),
+            baseFilter = accountScopeFilter,
             forceDisableAccountSelection = true
         )
     }
@@ -407,14 +426,7 @@ fun DynamicAccountDetailCards(
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
                 accountDetailViewModel.addCard(
-                    CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL).let { config ->
-                        when (config) {
-                            is CashFlowCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                            is CurrencyBalancesCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                            is AccountHeroCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
-                            else -> config
-                        }
-                    }
+                    CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL)
                 )
                 onShowAddCardDialogChange(false)
             }
@@ -442,17 +454,15 @@ fun AccountDetailCardTypeSelectionDialog(
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
-        cardOptions = listOf(
-            CardType.ACCOUNT_HERO,
-            CardType.CASH_FLOW,
-            CardType.CURRENCY_BALANCES
-        ).map { type ->
-            CardTypeOptionData(
-                title = type.displayName,
-                description = type.description,
-                onClick = { onCardTypeSelected(type) }
-            )
-        }
+        cardOptions = CardType.entries
+            .filter { it.isUserAddableOn(ScreenContext.ACCOUNT_DETAIL) }
+            .map { type ->
+                CardTypeOptionData(
+                    title = type.displayName,
+                    description = type.description,
+                    onClick = { onCardTypeSelected(type) }
+                )
+            }
     )
 }
 

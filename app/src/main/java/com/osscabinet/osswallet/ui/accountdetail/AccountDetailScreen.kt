@@ -268,19 +268,7 @@ fun AccountDetailScreen(
                             val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-                            // Calculate running balance for all account transactions
-                            val transactionsWithBalanceList = remember(state.allAccountTransactions) {
-                                // Calculate running balance from transactions
-                                // Start from the total sum and work backwards
-                                val totalBalance = state.allAccountTransactions.sumOf { it.amount }
-                                var currentBalance = totalBalance
-                                state.allAccountTransactions.sortedByDescending { it.timestamp }.map { tx ->
-                                    val balanceAfter = currentBalance
-                                    val balanceBefore = currentBalance.subtract(tx.amount) // tx.amount is already signed
-                                    currentBalance = balanceBefore
-                                    TransactionWithBalance(tx, balanceBefore, balanceAfter)
-                                }
-                            }
+                            val transactionsWithBalanceList = state.transactionsWithBalance
 
                             if (transactionsWithBalanceList.isEmpty()) {
                                 Box(
@@ -389,7 +377,8 @@ fun DynamicAccountDetailCards(
                 categories = state.allCategories,
                 exchangeRates = state.exchangeRates,
                 baseCurrency = state.baseCurrency,
-                precision = state.decimalPrecision
+                precision = state.decimalPrecision,
+                filter = TransactionFilter(accountIds = listOf(accountId))
             ),
             cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,

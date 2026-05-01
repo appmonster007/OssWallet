@@ -40,8 +40,9 @@ fun rememberCardWithCallbacks(
                 is LoansCardConfig -> registry.compute(CardType.LOANS, input, config)
             }
         } catch (e: Exception) {
-            null
-        } ?: return@remember null
+            android.util.Log.e("CardUiBridge", "Card compute failed [${config.cardId}]", e)
+            return@remember CardWithCallbacks.ComputeError(cardId = config.cardId, message = e.localizedMessage)
+        }
 
         when {
             config is NetWorthCardConfig && renderData is CardRenderData.NetWorth -> {

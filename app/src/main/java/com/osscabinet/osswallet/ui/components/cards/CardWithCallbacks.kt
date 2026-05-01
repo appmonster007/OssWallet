@@ -81,4 +81,11 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
+
+    data class ComputeError(
+        val cardId: String,
+        val message: String?,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
+    ) : CardWithCallbacks()
 }

@@ -138,7 +138,7 @@ fun AdvancedFilterSection(
             
             if (countActiveFilters(filter) > 0) {
                 TextButton(
-                    onClick = { onFilterChange(TransactionFilter()) },
+                    onClick = { onFilterChange(baseFilter) },
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Text("Clear All", style = MaterialTheme.typography.labelSmall)

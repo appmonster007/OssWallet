@@ -289,5 +289,10 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth()
             )
         }
+
+        is CardWithCallbacks.ComputeError -> {
+            // ComputeError is rendered by AeonCardList before reaching UnifiedCardRenderer.
+            // This branch is a compile-required safety net.
+        }
     }
 }

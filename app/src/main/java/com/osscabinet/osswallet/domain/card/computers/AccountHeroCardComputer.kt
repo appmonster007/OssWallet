@@ -15,17 +15,19 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
         // or from input.scopeAccountId if we had kept it.
         // Since we removed scopeAccountId, we expect input.filter to contain the account restriction.
         
-        val targetAccountId = input.filter.accountIds.firstOrNull() 
-            ?: config.filter.accountIds.firstOrNull() 
+        val targetAccountId = input.filter.accountIds.firstOrNull()
+            ?: config.filter.accountIds.firstOrNull()
             ?: error("AccountHeroCard requires an account scope")
-            
+
         val account = input.accounts.find { it.id == targetAccountId } ?: error("Account not found: $targetAccountId")
-        
-        // Apply base scope
-        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-        
-        // Apply user filter (period)
-        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
+
+        // Base scope: always exclude future transactions — AccountHero shows lifetime-to-now
+        val baseFilter = input.filter.copy(excludeFuture = true)
+        val baseTx = TransactionFilterService.filter(input.transactions, baseFilter)
+
+        // User period filter: also enforce no future, so even "AllTime" stays historical
+        val periodFilter = config.filter.copy(excludeFuture = true)
+        val filteredTx = TransactionFilterService.filter(baseTx, periodFilter)
         
         // Calculate total balance from BASE transactions (Scope Lifetime)
         val totalBalance = AggregationService.calculateAccountBalance(

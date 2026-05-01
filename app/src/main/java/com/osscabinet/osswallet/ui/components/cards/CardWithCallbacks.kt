@@ -10,46 +10,54 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
  */
 sealed class CardWithCallbacks {
     abstract val filterRules: CardFilterRules
+    abstract val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter
     
     data class NetWorth(
         val renderData: CardRenderData.NetWorth,
         val callbacks: CardCallbacks.NetWorth,
-        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class CurrencyBalances(
         val renderData: CardRenderData.CurrencyBalances,
         val callbacks: CardCallbacks.CurrencyBalances,
-        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class CashFlow(
         val renderData: CardRenderData.CashFlow,
         val callbacks: CardCallbacks.CashFlow,
-        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class Accounts(
         val renderData: CardRenderData.Accounts,
         val callbacks: CardCallbacks.Accounts,
-        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class CategoryBreakdown(
         val renderData: CardRenderData.CategoryBreakdown,
         val callbacks: CardCallbacks.Analytics,
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY
+        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class CategoryTreemap(
         val renderData: CardRenderData.CategoryTreemap,
         val callbacks: CardCallbacks.Analytics,
-        override val filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY
+        override val filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
     data class AccountHero(
         val renderData: CardRenderData.AccountHero,
         val callbacks: CardCallbacks.AccountHero,
-        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 }

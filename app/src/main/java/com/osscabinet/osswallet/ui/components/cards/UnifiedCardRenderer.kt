@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.Account
@@ -30,10 +29,10 @@ fun UnifiedCardRenderer(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = false,
-    currentTheme: String = "light",
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "light",
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    savedFilters: List<Filter> = emptyList(),
 ) {
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
@@ -56,7 +55,11 @@ fun UnifiedCardRenderer(
                 onClickExpense = {},
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
-                filterRules = renderData.config.filterRules
+                filterRules = renderData.config.filterRules,
+                baseFilter = cardWithCallbacks.baseFilter,
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -79,7 +82,11 @@ fun UnifiedCardRenderer(
                 onFilterChange = cb.onFilterChange,
                 onDelete = { cb.onDelete() },
                 onCurrencyClick = cb.onCurrencyClick ?: { _, _ -> },
-                filterRules = renderData.config.filterRules
+                filterRules = renderData.config.filterRules,
+                baseFilter = cardWithCallbacks.baseFilter,
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -103,7 +110,11 @@ fun UnifiedCardRenderer(
                 onDelete = { cb.onDelete() },
                 onClickIncome = cb.onClickIncome,
                 onClickExpense = cb.onClickExpense,
-                filterRules = renderData.config.filterRules
+                filterRules = renderData.config.filterRules,
+                baseFilter = cardWithCallbacks.baseFilter,
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
         
@@ -135,7 +146,8 @@ fun UnifiedCardRenderer(
                 onRecordsClick = { cb.onRecordsClick(it) },
                 accounts = accounts,
                 allCategories = allCategories,
-                savedFilters = savedFilters
+                savedFilters = savedFilters,
+                baseFilter = cardWithCallbacks.baseFilter
             )
         }
         
@@ -165,7 +177,8 @@ fun UnifiedCardRenderer(
                 onRecordsClick = { cb.onRecordsClick(it) },
                 accounts = accounts,
                 allCategories = allCategories,
-                savedFilters = savedFilters
+                savedFilters = savedFilters,
+                baseFilter = cardWithCallbacks.baseFilter
             )
         }
 
@@ -189,7 +202,12 @@ fun UnifiedCardRenderer(
                 onFilterChange = { filter -> cb.onFilterChange(renderData.config.cardId, filter) },
                 onClick = cb.onClick,
                 onDelete = { cb.onDelete() },
-                filterRules = renderData.config.filterRules
+                filterRules = renderData.config.filterRules,
+                baseFilter = cardWithCallbacks.baseFilter,
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters,
+                currentTheme = currentTheme
             )
         }
         
@@ -219,7 +237,10 @@ fun UnifiedCardRenderer(
                 cardId = renderData.config.cardId,
                 headerModifier = headerModifier.fillMaxWidth(),
                 onDelete = { cb.onDelete() },
-                filterRules = renderData.config.filterRules
+                filterRules = renderData.config.filterRules,
+                baseFilter = cardWithCallbacks.baseFilter,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
     }

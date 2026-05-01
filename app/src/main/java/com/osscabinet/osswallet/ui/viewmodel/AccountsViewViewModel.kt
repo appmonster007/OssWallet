@@ -5,12 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.util.CardDataCache
-import com.osscabinet.ossWallet.domain.util.CachedCardData
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toEnum
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -19,18 +16,10 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
-import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.AggregationService
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
-import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import java.math.RoundingMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -54,8 +43,6 @@ class AccountsViewViewModel(
     private val computationRepository: ComputationRepository,
     private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
-
-    private val cardDataCache = CardDataCache()
 
     private val _sectionOrder = MutableStateFlow(listOf(AccountsViewSection.NET_WORTH, AccountsViewSection.CURRENCY_BALANCES, AccountsViewSection.CASHFLOW, AccountsViewSection.ACCOUNTS_LIST))
     val sectionOrder: StateFlow<List<AccountsViewSection>> = _sectionOrder.asStateFlow()
@@ -237,12 +224,12 @@ class AccountsViewViewModel(
                 val precision = args[6] as Int
                 val accountsViewSettings = args[7] as com.osscabinet.ossWallet.data.local.AccountsViewSettings
 
-                // Invalidate cache when transactions change
-                cardDataCache.invalidateAll()
-                
                 if (!hasLoadedRates) {
                     return@combine AccountsViewUiState.Loading
                 }
+
+                // Invalidate registry cache when data changes
+                registry.clearCache()
 
                 val gridColumns = accountsViewSettings.accountsSection.gridColumns
                 val accountsLayout = accountsViewSettings.accountsSection.layout
@@ -256,18 +243,24 @@ class AccountsViewViewModel(
                 val netWorthFontSize = accountsViewSettings.netWorthSection.fontSize
                 val netWorthTimelineRange = accountsViewSettings.netWorthSection.timelineRange
 
-                val input = CardInput(
+                val currentContext = _initialFilterContext.value
+                val baseInput = CardInput(
                     transactions = allTransactions,
                     accounts = accounts,
                     categories = categories,
                     exchangeRates = rates,
                     baseCurrency = baseCurrency,
-                    precision = precision
+                    precision = precision,
+                    filter = TransactionFilter(
+                        accountIds = if (currentContext is AccountsFilterContext.ByType || currentContext is AccountsFilterContext.ByCurrency) {
+                            accounts.map { it.id }
+                        } else emptyList()
+                    )
                 )
 
                 val globalCurrencyTotals = (registry.compute(
                     CardType.CURRENCY_BALANCES,
-                    input,
+                    baseInput,
                     CurrencyBalancesCardConfig(
                         cardId = "currency_balances_main",
                         filter = TransactionFilter(timelineRange = currencyBalancesTimelineRange)
@@ -276,7 +269,7 @@ class AccountsViewViewModel(
 
                 val accountsData = registry.compute(
                     CardType.ACCOUNTS,
-                    input,
+                    baseInput,
                     AccountsCardConfig(
                         cardId = "accounts_main",
                         filter = TransactionFilter(timelineRange = accountsTimelineRange)
@@ -287,7 +280,7 @@ class AccountsViewViewModel(
 
                 val netWorthData = registry.compute(
                     CardType.NET_WORTH,
-                    input,
+                    baseInput,
                     NetWorthCardConfig(
                         cardId = "net_worth_main",
                         filter = TransactionFilter(timelineRange = netWorthTimelineRange)
@@ -298,7 +291,7 @@ class AccountsViewViewModel(
 
                 val cashFlowResult = (registry.compute(
                     CardType.CASH_FLOW,
-                    input,
+                    baseInput,
                     CashFlowCardConfig(
                         cardId = "cash_flow_main",
                         filter = TransactionFilter(timelineRange = cashFlowTimelineRange)
@@ -347,7 +340,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(fontSize = fontSize)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -358,7 +350,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(filter = filter)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -369,7 +360,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -380,7 +370,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -391,7 +380,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(filter = filter)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -402,7 +390,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(showBaseConversion = show)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -413,7 +400,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(filter = filter)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -424,7 +410,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(layout = layout)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -435,7 +420,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(gridColumns = columns)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -446,7 +430,6 @@ class AccountsViewViewModel(
                     cardConfig.copy(showAddAccountCard = show)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -457,21 +440,18 @@ class AccountsViewViewModel(
                     cardConfig.copy(filter = filter)
                 } else cardConfig
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
     override fun updateCardCategoryBreakdownConfig(cardId: String, config: CategoryBreakdownCardConfig) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { config }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
     override fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: CategoryExpenseTreemapCardConfig) {
         viewModelScope.launch {
             cardRepository.updateAccountsViewCard(cardId) { config }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 }

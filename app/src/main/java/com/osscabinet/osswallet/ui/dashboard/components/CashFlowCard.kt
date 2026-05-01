@@ -23,7 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
@@ -54,7 +57,11 @@ fun CashFlowCard(
     onDelete: () -> Unit = {},
     onClickIncome: (TimelineRange) -> Unit = {},
     onClickExpense: (TimelineRange) -> Unit = {},
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter(),
+    accounts: List<Account> = emptyList(),
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList()
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -200,7 +207,11 @@ fun CashFlowCard(
             onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
             onDismiss = { showFilterSettings = false },
             onDelete = onDelete,
-            filterRules = filterRules
+            filterRules = filterRules,
+            baseFilter = baseFilter,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
         )
     }
 }

@@ -13,13 +13,6 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.util.CardDataCache
-import com.osscabinet.ossWallet.domain.util.CachedCardData
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.AggregationService
-import com.osscabinet.ossWallet.domain.service.CurrencyConversionService
-import com.osscabinet.ossWallet.domain.service.FinancialSummary
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -40,8 +33,6 @@ class AccountDetailViewModel(
     private val computationRepository: ComputationRepository,
     private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
-
-    private val cardDataCache = CardDataCache()
 
     fun updateCurrencyBalancesLayout(layout: String) {
         viewModelScope.launch {
@@ -93,7 +84,6 @@ class AccountDetailViewModel(
                     config.copy(showCurrencyBadges = show)
                 } else config
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -104,7 +94,6 @@ class AccountDetailViewModel(
                     config.copy(filter = filter)
                 } else config
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -115,7 +104,6 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -127,7 +115,6 @@ class AccountDetailViewModel(
                     config.copy(layout = layout)
                 } else config
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
@@ -138,16 +125,13 @@ class AccountDetailViewModel(
                     config.copy(showBaseConversion = show)
                 } else config
             }
-            cardDataCache.invalidateCard(cardId)
         }
     }
 
 
     fun removeAccountDetailCard(cardId: String) {
         viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { it } // Mock update to trigger re-flow if needed, but repository should have a remove method
-            // cardRepository.removeAccountDetailCard(cardId) // Assuming this exists or using update to remove
-            cardDataCache.invalidateCard(cardId)
+            cardRepository.removeAccountDetailCard(cardId)
         }
     }
 
@@ -176,14 +160,14 @@ class AccountDetailViewModel(
                 val precision = args[6] as Int
                 val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
 
-                // Invalidate cache when transactions change
-                cardDataCache.invalidateAll()
-                
-                val account = accounts.find { it.id == accountId } ?: return@combine AccountDetailUiState.Error("Account not found")
-
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
                 }
+
+                // Invalidate registry cache when data changes
+                registry.clearCache()
+                
+                val account = accounts.find { it.id == accountId } ?: return@combine AccountDetailUiState.Error("Account not found")
 
                 var accountTransactions = allTransactions.filter { it.accountId == accountId }
 
@@ -192,63 +176,15 @@ class AccountDetailViewModel(
                     accountTransactions = accountTransactions.filter { it.timestamp <= now }
                 }
 
-                val input = CardInput(
-                    transactions = accountTransactions,
-                    accounts = listOf(account),
-                    categories = categories,
-                    exchangeRates = rates,
-                    baseCurrency = baseCurrency,
-                    precision = precision,
-                    scopeAccountId = accountId
-                )
-
-                // Compute currency totals directly
-                val currencyTotals = (registry.compute(
-                    CardType.CURRENCY_BALANCES,
-                    input,
-                    CurrencyBalancesCardConfig(
-                        cardId = "currency_balances_detail",
-                        filter = TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
-                    )
-                ) as CardRenderData.CurrencyBalances).items
-
-                // Compute cash flow directly
-                val cashFlowResult = (registry.compute(
-                    CardType.CASH_FLOW,
-                    input,
-                    CashFlowCardConfig(
-                        cardId = "cash_flow_detail",
-                        filter = TransactionFilter(timelineRange = settings.cashFlowSection.timelineRange)
-                    )
-                ) as CardRenderData.CashFlow).result
-
-                // Compute account stats directly
-                val accountsData = registry.compute(
-                    CardType.ACCOUNTS,
-                    input,
-                    AccountsCardConfig(
-                        cardId = "accounts_detail",
-                        filter = TransactionFilter(timelineRange = settings.currencyBalancesSection.timelineRange)
-                    )
-                ) as CardRenderData.Accounts
-                val updatedAccount = accountsData.updatedAccounts.firstOrNull() ?: account
-
                 AccountDetailUiState.Success(
-                    account = updatedAccount,
+                    account = account,
                     allAccountTransactions = accountTransactions,
                     allCategories = categories,
-                    currencyTotals = currencyTotals,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     decimalPrecision = precision,
-                    currencyBalancesLayout = settings.currencyBalancesSection.layout,
-                    showBaseConversion = settings.currencyBalancesSection.showBaseConversion,
-                    currencyBalancesTimelineRange = settings.currencyBalancesSection.timelineRange,
-                    cashFlowShowBaseConversion = settings.cashFlowSection.showBaseConversion,
-                    cashFlowTimelineRange = settings.cashFlowSection.timelineRange,
                     showPlannedPayments = settings.transactionsSection.showPlannedPayments,
-                    useNoteAsHeader = settings.transactionsSection.useNoteAsHeader,
-                    cashFlowResult = cashFlowResult
+                    useNoteAsHeader = settings.transactionsSection.useNoteAsHeader
                 )
             }
         }
@@ -265,18 +201,11 @@ sealed class AccountDetailUiState {
         val account: Account,
         val allAccountTransactions: List<Transaction>,
         val allCategories: List<Category> = emptyList(),
-        val currencyTotals: List<CurrencyAggregationItem> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val decimalPrecision: Int,
-        val currencyBalancesLayout: String,
-        val showBaseConversion: Boolean,
-        val currencyBalancesTimelineRange: TimelineRange,
-        val cashFlowShowBaseConversion: Boolean,
-        val cashFlowTimelineRange: TimelineRange,
         val showPlannedPayments: Boolean = false,
-        val useNoteAsHeader: Boolean = false,
-        val cashFlowResult: CashFlowResult? = null
+        val useNoteAsHeader: Boolean = false
     ) : AccountDetailUiState()
     data class Error(val message: String) : AccountDetailUiState()
 }

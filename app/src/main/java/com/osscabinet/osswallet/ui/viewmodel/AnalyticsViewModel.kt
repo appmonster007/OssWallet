@@ -9,15 +9,12 @@ import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.domain.util.CardDataCache
-import com.osscabinet.ossWallet.ui.analytics.components.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.util.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,10 +23,9 @@ class AnalyticsViewModel(
     private val settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     private val categoryRepository: CategoryRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
-
-    private val cardDataCache = CardDataCache()
 
     // Analytics cards config
     private val _analyticsCardsConfig = MutableStateFlow(defaultAnalyticsCardsConfig())
@@ -79,8 +75,8 @@ class AnalyticsViewModel(
                     return@combine AnalyticsUiState.Loading
                 }
 
-                // Invalidate cache when transactions change
-                cardDataCache.invalidateAll()
+                // Invalidate registry cache when data changes to ensure cards refresh
+                registry.clearCache()
 
                 AnalyticsUiState.Success(
                     allTransactions = transactions,

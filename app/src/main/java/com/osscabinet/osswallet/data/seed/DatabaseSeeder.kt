@@ -387,11 +387,15 @@ class DatabaseSeeder @Inject constructor(
         val status: String = "cleared"
     ) {
         fun toTransactionEntity(): TransactionEntity {
+            val adjustedTimestamp = timestamp?.let { ts ->
+                if (ts > System.currentTimeMillis()) System.currentTimeMillis() else ts
+            } ?: System.currentTimeMillis()
+            
             return TransactionEntity(
                 title = title,
                 amount = amount,
                 category = category,
-                timestamp = timestamp ?: System.currentTimeMillis(),
+                timestamp = adjustedTimestamp,
                 currency = currency,
                 transactionType = transactionType,
                 accountId = accountId,

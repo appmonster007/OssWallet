@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
@@ -50,7 +53,11 @@ fun NetWorthCard(
     onClickExpense: (TimelineRange) -> Unit = {},
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter(),
+    accounts: List<Account> = emptyList(),
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList()
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -185,7 +192,11 @@ fun NetWorthCard(
             onFilterChange = { newFilter -> onFilterChange(cardId, newFilter) },
             onDismiss = { showFilterSettings = false },
             onDelete = onDelete,
-            filterRules = filterRules
+            filterRules = filterRules,
+            baseFilter = baseFilter,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters
         )
     }
 }

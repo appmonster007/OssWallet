@@ -35,10 +35,16 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.util.toContainerColor
 import com.osscabinet.ossWallet.ui.util.toOnContainerColor
 import java.math.BigDecimal
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.IconButton
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 
 @Composable
 fun AccountHeroCard(
@@ -57,10 +63,19 @@ fun AccountHeroCard(
     onFilterChange: (TransactionFilter) -> Unit = {},
     onClick: (() -> Unit)? = null,
     onDelete: () -> Unit = {},
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    baseFilter: TransactionFilter = TransactionFilter(),
+    accounts: List<Account> = emptyList(),
+    allCategories: List<Category> = emptyList(),
+    savedFilters: List<Filter> = emptyList(),
+    currentTheme: String = "System"
 ) {
-    val isDark = isSystemInDarkTheme()
-    val isAmoled = false
+    val isDark = when (currentTheme) {
+        "Dark" -> true
+        "Light" -> false
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = false // Could be passed from settings if needed
 
     val accountColor = try {
         Color(android.graphics.Color.parseColor(account.colorHex))
@@ -85,6 +100,8 @@ fun AccountHeroCard(
 
     // Calculate net flow
     val netFlow = income.subtract(expense)
+    
+    var showSettingsSheet by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -108,6 +125,23 @@ fun AccountHeroCard(
                     .alpha(0.12f),
                 tint = contentColor
             )
+
+            // Header Actions
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(onClick = { showSettingsSheet = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.Settings,
+                        contentDescription = "Settings",
+                        tint = contentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
             Column(
                 modifier = Modifier
@@ -330,5 +364,37 @@ fun AccountHeroCard(
                 }
             }
         }
+    }
+
+    if (showSettingsSheet) {
+        AeonCardSettingsSheet(
+            title = "Account Hero Settings",
+            filter = filter,
+            onFilterChange = {
+                onFilterChange(it)
+            },
+            onDismiss = { showSettingsSheet = false },
+            onDelete = onDelete,
+            accounts = accounts,
+            allCategories = allCategories,
+            savedFilters = savedFilters,
+            filterRules = filterRules,
+            baseFilter = baseFilter,
+            settingsContent = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Show Multi-Currency", style = MaterialTheme.typography.bodyLarge)
+                    androidx.compose.material3.Switch(
+                        checked = showCurrencyBadges,
+                        onCheckedChange = { 
+                            onShowCurrencyBadgesChange(it)
+                        }
+                    )
+                }
+            }
+        )
     }
 }

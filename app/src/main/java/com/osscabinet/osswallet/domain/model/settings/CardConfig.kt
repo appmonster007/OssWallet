@@ -69,6 +69,25 @@ sealed class CardConfig : BaseCardConfig {
      * These are hardcoded per card type and used to restrict the filter UI.
      */
     abstract val filterRules: CardFilterRules
+
+    companion object {
+        fun createDefault(
+            type: com.osscabinet.ossWallet.domain.card.CardType,
+            context: ScreenContext,
+            cardId: String = java.util.UUID.randomUUID().toString()
+        ): CardConfig = when (type) {
+            com.osscabinet.ossWallet.domain.card.CardType.NET_WORTH -> NetWorthCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW -> CashFlowCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS -> AccountsCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.PLANNED_PAYMENTS -> PlannedPaymentsCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.BUDGETS -> BudgetsCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNT_HERO -> AccountHeroCardConfig(cardId = cardId, screenContext = context)
+        }
+    }
 }
 
 /**

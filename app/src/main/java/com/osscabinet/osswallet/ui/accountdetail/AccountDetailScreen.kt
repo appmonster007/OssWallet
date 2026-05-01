@@ -35,14 +35,15 @@ import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.CardLayoutViewModel
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.domain.card.*
+import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
@@ -75,7 +76,6 @@ fun AccountDetailScreen(
     settingsViewModel: SettingsViewModel,
     analyticsViewModel: AnalyticsViewModel,
     accountDetailViewModel: AccountDetailViewModel,
-    cardLayoutViewModel: CardLayoutViewModel,
     cardComputerRegistry: CardComputerRegistry,
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
@@ -130,7 +130,7 @@ fun AccountDetailScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddCardDialog by remember { mutableStateOf(false) }
 
-    val accountDetailCardsConfig by cardLayoutViewModel.accountDetailCardsConfig.collectAsStateWithLifecycle()
+    val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -214,9 +214,11 @@ fun AccountDetailScreen(
         Box(modifier = Modifier.fillMaxSize()) {
         when (val state = uiState) {
             is AccountDetailUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                com.osscabinet.ossWallet.ui.components.AeonShimmer(
+                    innerPadding = screenPadding,
+                    showCashflow = false,
+                    showAccounts = false
+                )
             }
             is AccountDetailUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -241,7 +243,6 @@ fun AccountDetailScreen(
                                 DynamicAccountDetailCards(
                                     state = state,
                                     cardsConfig = accountDetailCardsConfig,
-                                    cardLayoutViewModel = cardLayoutViewModel,
                                     accountDetailViewModel = accountDetailViewModel,
                                     cardComputerRegistry = cardComputerRegistry,
                                     onRecordsClick = onRecordsClick,
@@ -342,7 +343,16 @@ fun AccountDetailScreen(
             AccountDetailCardTypeSelectionDialog(
                 onDismiss = { showAddCardDialog = false },
                 onCardTypeSelected = { cardType ->
-                    cardLayoutViewModel.addAccountDetailCard(cardType, accountId)
+                    accountDetailViewModel.addCard(
+                        CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL).let { config ->
+                            when (config) {
+                                is CashFlowCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                                is CurrencyBalancesCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                                is AccountHeroCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                                else -> config
+                            }
+                        }
+                    )
                     showAddCardDialog = false
                 }
             )
@@ -354,7 +364,6 @@ fun AccountDetailScreen(
 fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
     cardsConfig: com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig,
-    cardLayoutViewModel: CardLayoutViewModel,
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
@@ -372,13 +381,21 @@ fun DynamicAccountDetailCards(
     Column(
         modifier = modifier
     ) {
-        CardReorderableList(
-            items = cardsConfig.cards.sortedBy { it.order },
-            key = { it.cardId },
-            onReorder = { reorderedCards ->
-                // Update order property based on new position and save atomically
-                cardLayoutViewModel.reorderAccountDetailCards(reorderedCards)
-            },
+        AeonCardList(
+            cards = cardsConfig.cards,
+            cardInput = CardInput(
+                transactions = state.allAccountTransactions,
+                accounts = listOf(state.account),
+                categories = state.allCategories,
+                exchangeRates = state.exchangeRates,
+                baseCurrency = state.baseCurrency,
+                precision = state.decimalPrecision
+            ),
+            cardComputerRegistry = cardComputerRegistry,
+            cardUpdateHandler = accountDetailViewModel,
+            onReorder = { accountDetailViewModel.reorderCards(it) },
+            onDelete = { accountDetailViewModel.removeCard(it) },
+            onRecordsClick = onRecordsClick,
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(
                 start = 0.dp,
@@ -386,50 +403,30 @@ fun DynamicAccountDetailCards(
                 top = screenPadding.calculateTopPadding() + 24.dp,
                 bottom = calculateScrollBottomPadding()
             ),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            animateCards = cardAnimationEnabled
-        ) { cardConfig, isDragging, dragModifier ->
-            val input = CardInput(
-                transactions = state.allAccountTransactions,
-                accounts = listOf(state.account),
-                categories = state.allCategories,
-                exchangeRates = state.exchangeRates,
-                baseCurrency = if (cardConfig is com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig) state.account.currencyCode else state.baseCurrency,
-                precision = state.decimalPrecision,
-                filter = TransactionFilter(accountIds = listOf(accountId))
-            )
-
-            val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
-                config = cardConfig,
-                input = input,
-                registry = cardComputerRegistry,
-                updateHandler = accountDetailViewModel,
-                onDelete = { accountDetailViewModel.removeAccountDetailCard(it) },
-                onRecordsClick = onRecordsClick,
-                onAccountClick = { /* No-op in detail */ },
-                currentTheme = currentTheme
-            )
-            
-            cardWithCallbacks?.let {
-                UnifiedCardRenderer(
-                    cardWithCallbacks = it,
-                    modifier = Modifier.fillMaxWidth(),
-                    headerModifier = dragModifier,
-                    showTitle = true,
-                    currentTheme = currentTheme,
-                    accounts = listOf(state.account),
-                    allCategories = state.allCategories,
-                    savedFilters = savedFilters
-                )
-            } ?: Box(modifier = Modifier.size(0.dp))
-        }
+            animateCards = cardAnimationEnabled,
+            currentTheme = currentTheme,
+            accounts = listOf(state.account),
+            allCategories = state.allCategories,
+            savedFilters = savedFilters,
+            baseFilter = TransactionFilter(accountIds = listOf(accountId)),
+            forceDisableAccountSelection = true
+        )
     }
 
     if (showAddCardDialog) {
         AccountDetailCardTypeSelectionDialog(
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
-                cardLayoutViewModel.addAccountDetailCard(cardType, accountId)
+                accountDetailViewModel.addCard(
+                    CardConfig.createDefault(cardType, ScreenContext.ACCOUNT_DETAIL).let { config ->
+                        when (config) {
+                            is CashFlowCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                            is CurrencyBalancesCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                            is AccountHeroCardConfig -> config.copy(filter = config.filter.copy(accountIds = listOf(accountId)))
+                            else -> config
+                        }
+                    }
+                )
                 onShowAddCardDialogChange(false)
             }
         )
@@ -441,7 +438,7 @@ fun DynamicAccountDetailCards(
             onDismiss = { showDeleteCardsDialog = false },
             onDeleteCards = { cardIds ->
                 cardIds.forEach { cardId ->
-                    accountDetailViewModel.removeAccountDetailCard(cardId)
+                    accountDetailViewModel.removeCard(cardId)
                 }
                 showDeleteCardsDialog = false
             }

@@ -55,6 +55,7 @@ import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
@@ -62,7 +63,6 @@ import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewUiState
 import com.osscabinet.ossWallet.ui.viewmodel.AccountsViewSection
-import com.osscabinet.ossWallet.ui.viewmodel.CardLayoutViewModel
 import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -105,8 +105,7 @@ fun AccountsViewScreen(
     analyticsViewModel: AnalyticsViewModel,
     templateViewModel: com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel,
     accountsViewViewModel: AccountsViewViewModel,
-    cardLayoutViewModel: CardLayoutViewModel,
-    cardComputerRegistry: com.osscabinet.ossWallet.domain.card.CardComputerRegistry,
+    cardComputerRegistry: CardComputerRegistry,
     filterContext: String? = null
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -152,9 +151,7 @@ fun AccountsViewScreen(
 
     
     val accountsUiState by accountsViewViewModel.uiState.collectAsStateWithLifecycle()
-    val sectionOrder by accountsViewViewModel.sectionOrder.collectAsStateWithLifecycle()
-    val accountsViewCardsConfig by cardLayoutViewModel.accountsViewCardsConfig.collectAsStateWithLifecycle()
-    val accountFilter by accountsViewViewModel.accountFilter.collectAsStateWithLifecycle()
+    val accountsViewCardsConfig by accountsViewViewModel.cardsConfig.collectAsStateWithLifecycle()
     val initialFilterContext by accountsViewViewModel.initialFilterContext.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     var showAddCardDialog by remember { mutableStateOf(false) }
@@ -169,40 +166,6 @@ fun AccountsViewScreen(
 
     val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
-    
-    val templates = remember(dbTemplates, starredTemplates) {
-        val displayTemplates = if (starredTemplates.isNotEmpty()) {
-            starredTemplates
-        } else if (dbTemplates.isNotEmpty()) {
-            dbTemplates.take(5)
-        } else {
-            emptyList()
-        }
-
-        if (displayTemplates.isEmpty()) {
-            listOf(
-                Triple("Grocery Run", Icons.Rounded.ShoppingCart, 0),
-                Triple("Salary Deposit", Icons.Rounded.Payments, 1),
-                Triple("Rent Payment", Icons.Rounded.Home, 0),
-                Triple("Coffee", Icons.Rounded.CoffeeMaker, 0)
-            )
-        } else {
-            displayTemplates.map {
-                Triple(it.name, when(it.transactionType) {
-                    1 -> Icons.Rounded.Payments
-                    2 -> Icons.Rounded.SwapHoriz
-                    else -> Icons.Rounded.ShoppingCart
-                }, it.transactionType)
-            }
-        }
-    }
-
-    var isFabExpanded by remember { mutableStateOf(false) }
-
-    // val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-    // LaunchedEffect(settingsCurrency) {
-    //     analyticsViewModel.onCurrencySelected(settingsCurrency)
-    // }
 
     Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
@@ -264,26 +227,6 @@ fun AccountsViewScreen(
                         )
                     }
                     is AccountsViewUiState.Success -> {
-                        val netWorthUiState = remember(
-                            state.netWorth,
-                            state.netIncome,
-                            state.netExpense,
-                            state.baseCurrency,
-                            state.decimalPrecision,
-                            state.netWorthFontSize,
-                            state.netWorthTimelineRange
-                        ) {
-                            NetWorthUiState.Success(
-                                netWorth = state.netWorth,
-                                netIncome = state.netIncome,
-                                netExpense = state.netExpense,
-                                baseCurrency = state.baseCurrency,
-                                precision = state.decimalPrecision,
-                                fontSize = state.netWorthFontSize,
-                                timelineRange = state.netWorthTimelineRange
-                            )
-                        }
-
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -310,49 +253,31 @@ fun AccountsViewScreen(
                                 }
                             }
 
-                            CardReorderableList(
-                                items = accountsViewCardsConfig.cards.sortedBy { it.order },
-                                key = { it.cardId },
-                                onReorder = { cardLayoutViewModel.reorderAccountsViewCards(it) },
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                animateCards = cardAnimationEnabled
-                            ) { cardConfig, isDragging, dragModifier ->
-                                val input = com.osscabinet.ossWallet.domain.card.CardInput(
+                            AeonCardList(
+                                cards = accountsViewCardsConfig.cards,
+                                cardInput = CardInput(
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,
                                     categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.baseCurrency,
                                     precision = state.decimalPrecision
-                                )
-
-                                val cardWithCallbacks = rememberCardWithCallbacks(
-                                    config = cardConfig,
-                                    input = input,
-                                    registry = cardComputerRegistry,
-                                    updateHandler = accountsViewViewModel,
-                                    onDelete = { cardLayoutViewModel.removeAccountsViewCard(it) },
-                                    onRecordsClick = onRecordsClick,
-                                    onManageAccountsClick = onManageAccountsClick,
-                                    onAccountClick = onAccountClick,
-                                    currentTheme = currentTheme
-                                )
-                                
-                                cardWithCallbacks?.let {
-                                    UnifiedCardRenderer(
-                                        cardWithCallbacks = it,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        headerModifier = dragModifier,
-                                        showTitle = true,
-                                        currentTheme = currentTheme,
-                                        accounts = state.accounts,
-                                        allCategories = state.allCategories,
-                                        savedFilters = savedFilters
-                                    )
-                                } ?: Box(modifier = Modifier.size(0.dp))
-                            }
+                                ),
+                                cardComputerRegistry = cardComputerRegistry,
+                                cardUpdateHandler = accountsViewViewModel,
+                                onReorder = { accountsViewViewModel.reorderCards(it) },
+                                onDelete = { accountsViewViewModel.removeCard(it) },
+                                onRecordsClick = onRecordsClick,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
+                                animateCards = cardAnimationEnabled,
+                                currentTheme = currentTheme,
+                                accounts = state.accounts,
+                                allCategories = state.allCategories,
+                                savedFilters = savedFilters,
+                                onManageAccountsClick = onManageAccountsClick,
+                                onAccountClick = onAccountClick
+                            )
                         }
                     }
                     is AccountsViewUiState.Error -> {
@@ -364,212 +289,19 @@ fun AccountsViewScreen(
             }
         }
 
-        // Background dimming
-        AnimatedVisibility(
-            visible = isFabExpanded,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.fillMaxSize().zIndex(1f)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { isFabExpanded = false }
-            )
-        }
-
-        // Expandable FAB Menu
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .zIndex(2f),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(bottom = 72.dp, end = 4.dp)
-            ) {
-                templates.forEach { (name, icon, type) ->
-                    AnimatedVisibility(
-                        visible = isFabExpanded,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(8.dp),
-                                shadowElevation = 4.dp,
-                                onClick = { 
-                                    isFabExpanded = false
-                                    navigate { onAddClick(type, name) }
-                                }
-                            ) {
-                                Text(
-                                    "Template: $name",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-                            AeonFloatingActionButton(
-                                onClick = { 
-                                    isFabExpanded = false
-                                    navigate { onAddClick(type, name) }
-                                },
-                                modifier = Modifier.size(40.dp),
-                                icon = icon,
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
-                }
-
-                // Add Account
-                AnimatedVisibility(
-                    visible = isFabExpanded,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 4.dp,
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate(onAddAccountClick)
-                            }
-                        ) {
-                            Text(
-                                "Add Account",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        AeonFloatingActionButton(
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate(onAddAccountClick)
-                            },
-                            modifier = Modifier.size(40.dp),
-                            icon = Icons.Default.AccountBalance,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-
-                // Transfer
-                AnimatedVisibility(
-                    visible = isFabExpanded,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 4.dp,
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate { onAddClick(2, null) }
-                            }
-                        ) {
-                            Text(
-                                "Transfer",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        AeonFloatingActionButton(
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate { onAddClick(2, null) }
-                            },
-                            modifier = Modifier.size(40.dp),
-                            icon = Icons.Default.SyncAlt,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-
-                // New Transaction
-                AnimatedVisibility(
-                    visible = isFabExpanded,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(8.dp),
-                            shadowElevation = 4.dp,
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate { onAddClick(0, null) }
-                            }
-                        ) {
-                            Text(
-                                "New Transaction",
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                        AeonFloatingActionButton(
-                            onClick = { 
-                                isFabExpanded = false
-                                navigate { onAddClick(0, null) }
-                            },
-                            modifier = Modifier.size(40.dp),
-                            icon = Icons.Default.Add,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-            }
-
-            val rotation by animateFloatAsState(
-                targetValue = if (isFabExpanded) 45f else 0f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-            )
-
-            AeonFloatingActionButton(
-                onClick = { isFabExpanded = !isFabExpanded },
-                modifier = Modifier
-                    .zIndex(3f)
-                    .graphicsLayer { rotationZ = rotation },
-                icon = Icons.Default.Add,
-                contentDescription = if (isFabExpanded) "Close" else "Add"
-            )
-        }
+        AeonExpandableFab(
+            onAddClick = { type, name -> navigate { onAddClick(type ?: 0, name) } },
+            templates = dbTemplates,
+            onAddAccountClick = { navigate(onAddAccountClick) },
+            fabPaddingBottom = 16.dp
+        )
     }
 
     if (showAddCardDialog) {
         AccountsViewCardTypeSelectionDialog(
             onDismiss = { showAddCardDialog = false },
             onCardTypeSelected = { cardType ->
-                cardLayoutViewModel.addAccountsViewCard(cardType)
+                accountsViewViewModel.addCard(cardType)
                 showAddCardDialog = false
             }
         )
@@ -632,15 +364,15 @@ private fun getAccountContextDisplayName(context: AccountsFilterContext, account
 @Composable
 fun AccountsViewCardTypeSelectionDialog(
     onDismiss: () -> Unit,
-    onCardTypeSelected: (com.osscabinet.ossWallet.domain.card.CardType) -> Unit
+    onCardTypeSelected: (CardType) -> Unit
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
         cardOptions = listOf(
-            com.osscabinet.ossWallet.domain.card.CardType.NET_WORTH,
-            com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES,
-            com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW,
-            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS
+            CardType.NET_WORTH,
+            CardType.CURRENCY_BALANCES,
+            CardType.CASH_FLOW,
+            CardType.ACCOUNTS
         ).map { type ->
             CardTypeOptionData(
                 title = type.displayName,

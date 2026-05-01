@@ -39,7 +39,8 @@ fun OssWalletNavGraph(
                 appContainer.computationRepository,
                 appContainer.categoryRepository,
                 appContainer.accountRepository,
-                appContainer.cardComputerRegistry
+                appContainer.cardComputerRegistry,
+                appContainer.cardRepository
             )
         }
     )
@@ -79,18 +80,6 @@ fun OssWalletNavGraph(
     val currencyViewModel: CurrencyViewModel = viewModel(
         factory = GenericViewModelFactory {
             CurrencyViewModel(appContainer.currencyRepository, appContainer.settingsRepository)
-        }
-    )
-
-    val cardLayoutViewModel: CardLayoutViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            CardLayoutViewModel(appContainer.cardRepository)
-        }
-    )
-
-    val cardConfigViewModel: CardConfigViewModel = viewModel(
-        factory = GenericViewModelFactory {
-            CardConfigViewModel(appContainer.cardRepository)
         }
     )
 
@@ -187,7 +176,6 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     templateViewModel = templateViewModel,
                     dashboardViewModel = dashboardViewModel,
-                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     viewContext = viewContext
                 )
@@ -221,7 +209,6 @@ fun OssWalletNavGraph(
                     analyticsViewModel = analyticsViewModel,
                     templateViewModel = templateViewModel,
                     accountsViewViewModel = accountsViewViewModel,
-                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     filterContext = filterContext
                 )
@@ -319,7 +306,7 @@ fun OssWalletNavGraph(
                     onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
-                    onAddClick = { type, template -> 
+                    onAddClick = { type, template ->
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                     },
                     cardComputerRegistry = appContainer.cardComputerRegistry
@@ -438,7 +425,6 @@ fun OssWalletNavGraph(
                     settingsViewModel = settingsViewModel,
                     analyticsViewModel = analyticsViewModel,
                     accountDetailViewModel = accountDetailViewModel,
-                    cardLayoutViewModel = cardLayoutViewModel,
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     templateViewModel = templateViewModel,
                     onBackClick = { navController.popBackStack() },

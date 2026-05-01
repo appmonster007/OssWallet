@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.rounded.CoffeeMaker
@@ -31,7 +32,8 @@ fun AeonExpandableFab(
     onAddClick: (Int?, String?) -> Unit,
     templates: List<Template>,
     modifier: Modifier = Modifier,
-    fabPaddingBottom: androidx.compose.ui.unit.Dp = 16.dp
+    fabPaddingBottom: androidx.compose.ui.unit.Dp = 16.dp,
+    onAddAccountClick: (() -> Unit)? = null
 ) {
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -118,6 +120,40 @@ fun AeonExpandableFab(
                                 },
                                 icon = icon,
                                 modifier = Modifier.size(40.dp),
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+
+                // Add Account (optional)
+                if (onAddAccountClick != null) {
+                    AnimatedVisibility(
+                        visible = isFabExpanded,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(16.dp),
+                                shadowElevation = 4.dp,
+                                onClick = { isFabExpanded = false; onAddAccountClick() }
+                            ) {
+                                Text(
+                                    "Add Account",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                            AeonFloatingActionButton(
+                                onClick = { isFabExpanded = false; onAddAccountClick() },
+                                modifier = Modifier.size(40.dp),
+                                icon = Icons.Default.AccountBalance,
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                             )

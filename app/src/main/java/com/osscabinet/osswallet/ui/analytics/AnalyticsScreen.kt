@@ -2,32 +2,22 @@ package com.osscabinet.ossWallet.ui.analytics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
+import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.viewmodel.*
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,13 +39,15 @@ fun AnalyticsScreen(
     cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val cardsConfig by viewModel.analyticsCardsConfig.collectAsStateWithLifecycle()
+    val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -93,9 +85,7 @@ fun AnalyticsScreen(
                         }
                     },
                     actions = {
-                        IconButton(
-                            onClick = { showAddCardDialog = true }
-                        ) {
+                        IconButton(onClick = { showAddCardDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Add card",
@@ -109,12 +99,14 @@ fun AnalyticsScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 when (val state = uiState) {
                     is AnalyticsUiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
+                        AeonShimmer(
+                            innerPadding = innerPadding,
+                            showCashflow = false,
+                            showAccounts = false
+                        )
                     }
                     is AnalyticsUiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                             Text(state.message)
                         }
                     }
@@ -125,48 +117,30 @@ fun AnalyticsScreen(
                                 .padding(innerPadding)
                                 .background(MaterialTheme.colorScheme.background)
                         ) {
-                            // Analytics Cards from config
-                            CardReorderableList(
-                                items = cardsConfig.cards.sortedBy { it.order },
-                                key = { it.cardId },
-                                onReorder = { reorderedCards ->
-                                    viewModel.reorderCards(reorderedCards)
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-                                verticalArrangement = Arrangement.spacedBy(32.dp)
-                            ) { cardConfig, isDragging, dragModifier ->
-                                val input = CardInput(
+                            AeonCardList(
+                                cards = cardsConfig.cards,
+                                cardInput = CardInput(
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,
                                     categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.selectedCurrency,
-                                    precision = state.decimalPrecision,
-                                    filter = cardConfig.filter
-                                )
-
-                                val cardWithCallbacks = com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks(
-                                    config = cardConfig,
-                                    input = input,
-                                    registry = cardComputerRegistry,
-                                    updateHandler = viewModel,
-                                    onDelete = { viewModel.removeCard(it) },
-                                    onRecordsClick = onRecordsClick,
-                                    onAccountClick = onAccountClick,
-                                    currentTheme = "light" // Or observe from settings
-                                )
-
-                                cardWithCallbacks?.let {
-                                    UnifiedCardRenderer(
-                                        cardWithCallbacks = it,
-                                        headerModifier = dragModifier,
-                                        accounts = nonArchivedAccounts,
-                                        allCategories = state.allCategories,
-                                        savedFilters = savedFilters
-                                    )
-                                }
-                            }
+                                    precision = state.decimalPrecision
+                                ),
+                                cardComputerRegistry = cardComputerRegistry,
+                                cardUpdateHandler = viewModel,
+                                onReorder = { viewModel.reorderCards(it) },
+                                onDelete = { viewModel.removeCard(it) },
+                                onRecordsClick = onRecordsClick,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                animateCards = cardAnimationEnabled,
+                                currentTheme = currentTheme,
+                                accounts = state.accounts,
+                                allCategories = state.allCategories,
+                                savedFilters = savedFilters,
+                                onAccountClick = onAccountClick
+                            )
                         }
                     }
                 }
@@ -187,18 +161,16 @@ fun AnalyticsScreen(
                 description = "View spending by category",
                 icon = Icons.Default.PieChart,
                 onClick = {
-                    coroutineScope.launch {
-                        viewModel.addCard(
-                            CategoryBreakdownCardConfig(
-                                cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
-                                order = cardsConfig.cards.size,
-                                title = "CATEGORY BREAKDOWN",
-                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
-                                showLabels = true,
-                                showLegend = true
-                            )
+                    viewModel.addCard(
+                        CategoryBreakdownCardConfig(
+                            cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
+                            order = cardsConfig.cards.size,
+                            title = "CATEGORY BREAKDOWN",
+                            filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
+                            showLabels = true,
+                            showLegend = true
                         )
-                    }
+                    )
                     showAddCardDialog = false
                 }
             ),
@@ -207,22 +179,20 @@ fun AnalyticsScreen(
                 description = "Expense distribution treemap",
                 icon = Icons.Default.BarChart,
                 onClick = {
-                    coroutineScope.launch {
-                        viewModel.addCard(
-                            CategoryExpenseTreemapCardConfig(
-                                cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
-                                order = cardsConfig.cards.size,
-                                title = "CATEGORY EXPENSES",
-                                filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
-                                showLabels = true
-                            )
+                    viewModel.addCard(
+                        CategoryExpenseTreemapCardConfig(
+                            cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
+                            order = cardsConfig.cards.size,
+                            title = "CATEGORY EXPENSES",
+                            filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
+                            showLabels = true
                         )
-                    }
+                    )
                     showAddCardDialog = false
                 }
             )
         )
-        
+
         GenericAddCardDialog(
             onDismiss = { showAddCardDialog = false },
             cardOptions = analyticsCardOptions

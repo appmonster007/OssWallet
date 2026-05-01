@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
+import com.osscabinet.ossWallet.widget.WidgetRefreshWorker
 
 class OssWalletApp : Application() {
     lateinit var container: AppContainer
@@ -15,6 +16,7 @@ class OssWalletApp : Application() {
         container = AppContainer(this)
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
+        WidgetRefreshWorker.schedule(this)
     }
 
     private fun createNotificationChannels() {

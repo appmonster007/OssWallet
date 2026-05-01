@@ -28,41 +28,17 @@ class AccountDetailViewModel(
     private val accountRepository: AccountRepository,
     private val transactionUseCases: TransactionUseCases,
     private val settingsRepository: SettingsRepository,
-    private val cardRepository: CardRepository,
+    override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     private val registry: CardComputerRegistry
 ) : ViewModel(), CardUpdateHandler {
 
-    fun updateCurrencyBalancesLayout(layout: String) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(layout = layout)) }
-        }
-    }
+    override val cardUpdateScope = viewModelScope
+    override val cardScreenContext = ScreenContext.ACCOUNT_DETAIL
 
-    fun updateShowBaseConversion(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(showBaseConversion = show)) }
-        }
-    }
-
-    fun updateCurrencyBalancesTimelineRange(range: TimelineRange) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(currencyBalancesSection = it.currencyBalancesSection.copy(timelineRange = range)) }
-        }
-    }
-
-    fun updateCashFlowShowBaseConversion(show: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(showBaseConversion = show)) }
-        }
-    }
-
-    fun updateCashFlowTimelineRange(range: TimelineRange) {
-        viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(cashFlowSection = it.cashFlowSection.copy(timelineRange = range)) }
-        }
-    }
+    val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     fun updateShowPlannedPayments(show: Boolean) {
         viewModelScope.launch {
@@ -76,65 +52,6 @@ class AccountDetailViewModel(
         }
     }
 
-    // Card-specific update methods
-    override fun updateCardHeroShowCurrencyBadges(cardId: String, show: Boolean) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { config ->
-                if (config is AccountHeroCardConfig) {
-                    config.copy(showCurrencyBadges = show)
-                } else config
-            }
-        }
-    }
-
-    override fun updateCardHeroFilter(cardId: String, filter: TransactionFilter) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { config ->
-                if (config is AccountHeroCardConfig) {
-                    config.copy(filter = filter)
-                } else config
-            }
-        }
-    }
-
-    override fun updateCardCashFlowShowBaseConversion(cardId: String, show: Boolean) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { config ->
-                if (config is CashFlowCardConfig) {
-                    config.copy(showBaseConversion = show)
-                } else config
-            }
-        }
-    }
-
-
-    override fun updateCardCurrencyBalancesLayout(cardId: String, layout: String) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { config ->
-                if (config is CurrencyBalancesCardConfig) {
-                    config.copy(layout = layout)
-                } else config
-            }
-        }
-    }
-
-    override fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
-        viewModelScope.launch {
-            cardRepository.updateAccountDetailCard(cardId) { config ->
-                if (config is CurrencyBalancesCardConfig) {
-                    config.copy(showBaseConversion = show)
-                } else config
-            }
-        }
-    }
-
-
-    fun removeAccountDetailCard(cardId: String) {
-        viewModelScope.launch {
-            cardRepository.removeAccountDetailCard(cardId)
-        }
-    }
-
     val uiState: StateFlow<AccountDetailUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -145,7 +62,8 @@ class AccountDetailViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
-                settingsRepository.accountDetailSettings
+                settingsRepository.accountDetailSettings,
+                cardsConfig
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
@@ -159,6 +77,9 @@ class AccountDetailViewModel(
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
+                // By including cardConfig in combine, we ensure re-computation when card filters change
+                @Suppress("UNUSED_VARIABLE")
+                val cardConfig = args[8] as DashboardCardsConfig
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading

@@ -1,9 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material3.*
@@ -12,25 +9,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.categoryIcons
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.foundation.ExperimentalFoundationApi
 
 /**
  * Helper function to filter transactions to recent ones (last N or last X days, whichever is more)
- * This is the same logic used in TransactionUseCases.getRecentTransactions
  */
 private fun filterToRecentTransactions(
     allTransactions: List<TransactionWithBalance>,
@@ -46,32 +38,32 @@ private fun filterToRecentTransactions(
     return if (transactionsFromLastDays.size > lastLimitTransactions.size) transactionsFromLastDays else lastLimitTransactions
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecentActivitiesCard(
     allTransactions: List<TransactionWithBalance>,
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, Category>,
-    decimalPrecision: Int,
+    @Suppress("UNUSED_PARAMETER") decimalPrecision: Int,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
-    baseCurrency: String = "USD",
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    accountCurrencyMap: Map<String, String> = emptyMap(),
-    contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
+    @Suppress("UNUSED_PARAMETER") baseCurrency: String = "USD",
+    @Suppress("UNUSED_PARAMETER") exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    @Suppress("UNUSED_PARAMETER") accountCurrencyMap: Map<String, String> = emptyMap(),
+    @Suppress("UNUSED_PARAMETER") contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
     modifier: Modifier = Modifier,
-    revealedCardIds: List<Long> = emptyList(),
-    onItemExpanded: (Long) -> Unit = {},
-    onItemCollapsed: (Long) -> Unit = {},
-    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
-    onClone: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
-    onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") revealedCardIds: List<Long> = emptyList(),
+    @Suppress("UNUSED_PARAMETER") onItemExpanded: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onItemCollapsed: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    @Suppress("UNUSED_PARAMETER") onClone: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onDelete: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onSplit: (Long) -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onFullSwipeRight: (Long) -> Unit = {},
     limit: Int = 20,
     days: Int = 7,
     applyFilter: Boolean = true,
-    excludeFuture: Boolean = true
+    excludeFuture: Boolean = true,
+    precision: Int = 2
 ) {
     val now = System.currentTimeMillis()
     val base = if (excludeFuture) allTransactions.filter { it.transaction.timestamp <= now } else allTransactions
@@ -86,131 +78,94 @@ fun RecentActivitiesCard(
         "$year-$month-$day"
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        contentPadding = contentPadding
-    ) {
-        item {
-            AeonFlowSectionHeader(
-                title = "RECENT ACTIVITIES",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                trailing = {
-                    TextButton(onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) }) {
-                        Text(
-                            "View all",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
-                }
-            )
-        }
-
-        groupedByDay.forEach { (dayKey, dayTransactions) ->
-            val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dayTransactions.first().transaction.timestamp))
-            val isToday = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
-            val displayDate = if (isToday) "Today" else date
-
-            // Calculate currency breakdown for the day (using signed amounts)
-            val incomeByCurrency = dayTransactions.filter { it.transaction.amount.signum() >= 0 }
-                .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val dayIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, decimalPrecision)
-
-            val expenseByCurrency = dayTransactions.filter { it.transaction.amount.signum() < 0 }
-                .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val dayExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, decimalPrecision)
-
-            val dayNetBase = dayIncomeBase.add(dayExpenseBase)
-
-            // Calculate closing balance at end of day
-            val dayEndTimestamp = dayTransactions.maxOf { it.transaction.timestamp }
-            val closingBalancesByCurrency = recentTransactions
-                .filter { it.transaction.timestamp <= dayEndTimestamp }
-                .groupBy { it.transaction.accountId }
-                .mapValues { (_, accountTxs) -> accountTxs.maxBy { it.transaction.timestamp } }
-                .values
-                .groupBy { it.transaction.currency }
-                .mapValues { (_, latestTxs) ->
-                    latestTxs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) }
-                }
-
-            val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
-                closingBalancesByCurrency,
-                baseCurrency,
-                exchangeRates,
-                decimalPrecision
-            )
-
-            val allDayCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys)
-                .distinct()
-                .sorted()
-
-            stickyHeader {
-                TransactionHeader(
-                    title = displayDate,
-                    subtitle = "${dayTransactions.size} transaction${if (dayTransactions.size > 1) "s" else ""}",
-                    incomeByCurrency = incomeByCurrency,
-                    expenseByCurrency = expenseByCurrency,
-                    closingBalancesByCurrency = closingBalancesByCurrency,
-                    allCurrencies = allDayCurrencies,
-                    incomeBase = dayIncomeBase,
-                    expenseBase = dayExpenseBase,
-                    netBase = dayNetBase,
-                    totalClosingBalanceBase = totalClosingBalanceBase,
-                    baseCurrency = baseCurrency,
-                    precision = decimalPrecision
+    AeonExpressiveCard(
+        title = "RECENT ACTIVITIES",
+        modifier = modifier,
+        headerTrailing = {
+            TextButton(
+                onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                modifier = Modifier.height(28.dp)
+            ) {
+                Text(
+                    "VIEW ALL",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp,
+                        fontSize = 10.sp
+                    )
                 )
             }
-
-            items(dayTransactions, key = { it.transaction.id }) { item ->
-                val transaction = item.transaction
-                val category = transaction.categoryId?.let { categoryMap[it] }
-                val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
-
-                SwipeableTransactionItem(
-                    transaction = transaction,
-                    isRevealed = revealedCardIds.contains(transaction.id),
-                    onExpandLeft = { onItemExpanded(transaction.id) },
-                    onExpandRight = { onItemExpanded(transaction.id) },
-                    onCollapse = { onItemCollapsed(transaction.id) },
-                    onFullSwipeRight = { onFullSwipeRight(transaction.id) },
-                    onStatusChange = { onStatusChange(transaction.id, it) },
-                    onClone = { onClone(transaction.id) },
-                    onDelete = { onDelete(transaction.id) },
-                    onSplit = { onSplit(transaction.id) }
+        }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (recentTransactions.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    AeonTransactionItem(
-                        category = transaction.category,
-                        account = accountNamesMap[transaction.accountId] ?: "Unknown",
-                        amount = formatCurrencyRight(transaction.amount, transaction.currency, decimalPrecision),
-                        balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, decimalPrecision),
-                        balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, decimalPrecision),
-                        type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                        timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
-                        note = transaction.note,
-                        tags = transaction.tags,
-                        icon = category?.let { categoryIcons[it.iconName] } ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,
-                        iconBg = category?.let { Color(it.colorHex) },
-                        precision = decimalPrecision,
-                        status = transaction.status,
-                        onClick = { onTransactionClick(transaction.id) }
+                    Text(
+                        "No recent activities",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-        }
+            } else {
+                groupedByDay.forEach { (_, dayTransactions) ->
+                    val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dayTransactions.first().transaction.timestamp))
+                    val isToday = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
+                    val displayDate = if (isToday) "Today" else date
 
-        item {
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-            )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                displayDate.uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    letterSpacing = 0.5.sp
+                                )
+                            )
+                            Text(
+                                "${dayTransactions.size} txs",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                                )
+                            )
+                        }
+
+                        dayTransactions.forEach { item ->
+                            val transaction = item.transaction
+                            val category = transaction.categoryId?.let { categoryMap[it] }
+                            val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
+
+                            AeonTransactionItem(
+                                category = transaction.category,
+                                account = accountNamesMap[transaction.accountId] ?: "Unknown",
+                                amount = formatCurrencyRight(transaction.amount, transaction.currency, precision),
+                                balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, precision),
+                                balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, precision),
+                                type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                                timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                                note = transaction.note,
+                                tags = transaction.tags,
+                                icon = category?.let { categoryIcons[it.iconName] } ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,
+                                iconBg = category?.let { Color(it.colorHex) },
+                                precision = precision,
+                                status = transaction.status,
+                                onClick = { onTransactionClick(transaction.id) }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

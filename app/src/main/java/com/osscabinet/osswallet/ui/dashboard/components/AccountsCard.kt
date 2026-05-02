@@ -37,6 +37,8 @@ import java.time.format.DateTimeFormatter
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsCard(
@@ -50,7 +52,7 @@ fun AccountsCard(
     currentTheme: String,
     cardId: String,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     gridColumns: Int = 2,
     layout: String = "grid",
     precision: Int = 2,
@@ -82,133 +84,119 @@ fun AccountsCard(
         }
     }
 
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+    AeonExpressiveCard(
+        title = "ACCOUNTS",
+        modifier = if (onHeaderClick != null) modifier.clickable(onClick = onHeaderClick) else modifier,
+        filter = filter,
+        headerTrailing = {
+            Text(
+                text = timelineLabel.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+            IconButton(
+                onClick = { showFilterSettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = { showDisplaySettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = "Display Settings",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AeonFlowSectionHeader(
-                title = "ACCOUNTS",
-                modifier = if (onHeaderClick != null) headerModifier.clickable(onClick = onHeaderClick) else headerModifier,
-                filter = filter,
-                trailing = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = timelineLabel.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                                fontSize = 10.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                        )
-                        IconButton(
-                            onClick = { showFilterSettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showDisplaySettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Tune,
-                                contentDescription = "Display Settings",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+        if (accounts.isEmpty()) {
+            AeonAddAccountCard(
+                baseCurrency = baseCurrency,
+                currentTheme = currentTheme,
+                onClick = onManageClick,
+                gridColumns = if (layout == "grid") gridColumns else 2,
+                precision = precision,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else if (layout == "grid") {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = gridColumns
+            ) {
+                accounts.forEach { account ->
+                    AccountItemWrapper(
+                        account = account,
+                        accountStats = accountStats,
+                        baseCurrency = baseCurrency,
+                        currentTheme = currentTheme,
+                        gridColumns = gridColumns,
+                        onAccountClick = onAccountClick,
+                        onRecordsClick = onRecordsClick,
+                        timelineRange = filter.timelineRange,
+                        precision = precision,
+                        modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                    )
+                }
+
+                if (showAddAccountCard) {
+                    AeonAddAccountCard(
+                        baseCurrency = baseCurrency,
+                        currentTheme = currentTheme,
+                        onClick = onManageClick,
+                        gridColumns = gridColumns,
+                        precision = precision,
+                        modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                    )
+                } else if (gridColumns > 1 && accounts.size % gridColumns != 0) {
+                    repeat(gridColumns - (accounts.size % gridColumns)) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-            )
-
-            if (accounts.isEmpty()) {
-                AeonAddAccountCard(
-                    baseCurrency = baseCurrency,
-                    currentTheme = currentTheme,
-                    onClick = onManageClick,
-                    gridColumns = if (layout == "grid") gridColumns else 2,
-                    precision = precision,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else if (layout == "grid") {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    maxItemsInEachRow = gridColumns
-                ) {
-                    accounts.forEach { account ->
-                        AccountItemWrapper(
-                            account = account,
-                            accountStats = accountStats,
-                            baseCurrency = baseCurrency,
-                            currentTheme = currentTheme,
-                            gridColumns = gridColumns,
-                            onAccountClick = onAccountClick,
-                            onRecordsClick = onRecordsClick,
-                            timelineRange = filter.timelineRange,
-                            precision = precision,
-                            modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
-                        )
-                    }
-
-                    if (showAddAccountCard) {
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 4.dp)
+            ) {
+                items(accounts) { account ->
+                    AccountItemWrapper(
+                        account = account,
+                        accountStats = accountStats,
+                        baseCurrency = baseCurrency,
+                        currentTheme = currentTheme,
+                        gridColumns = 2,
+                        onAccountClick = onAccountClick,
+                        onRecordsClick = onRecordsClick,
+                        timelineRange = filter.timelineRange,
+                        precision = precision,
+                        modifier = Modifier.width(180.dp)
+                    )
+                }
+                if (showAddAccountCard) {
+                    item {
                         AeonAddAccountCard(
                             baseCurrency = baseCurrency,
                             currentTheme = currentTheme,
                             onClick = onManageClick,
-                            gridColumns = gridColumns,
-                            precision = precision,
-                            modifier = if (gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(1f)
-                        )
-                    } else if (gridColumns > 1 && accounts.size % gridColumns != 0) {
-                        repeat(gridColumns - (accounts.size % gridColumns)) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp)
-                ) {
-                    items(accounts) { account ->
-                        AccountItemWrapper(
-                            account = account,
-                            accountStats = accountStats,
-                            baseCurrency = baseCurrency,
-                            currentTheme = currentTheme,
                             gridColumns = 2,
-                            onAccountClick = onAccountClick,
-                            onRecordsClick = onRecordsClick,
-                            timelineRange = filter.timelineRange,
                             precision = precision,
-                            modifier = Modifier.width(160.dp)
+                            modifier = Modifier.width(180.dp)
                         )
-                    }
-                    if (showAddAccountCard) {
-                        item {
-                            AeonAddAccountCard(
-                                baseCurrency = baseCurrency,
-                                currentTheme = currentTheme,
-                                onClick = onManageClick,
-                                gridColumns = 2,
-                                precision = precision,
-                                modifier = Modifier.width(160.dp)
-                            )
-                        }
                     }
                 }
             }

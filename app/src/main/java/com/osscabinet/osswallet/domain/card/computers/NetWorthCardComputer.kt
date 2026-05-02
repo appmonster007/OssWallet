@@ -21,7 +21,7 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
             currencyTotals = totalsByCurrency,
             targetCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
-            precision = 10
+            precision = input.precision
         )
         val cashFlowResult = AggregationService.calculateCashFlowResult(
             transactions = filteredTx,

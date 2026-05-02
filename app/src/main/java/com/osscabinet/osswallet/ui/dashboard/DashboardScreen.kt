@@ -440,6 +440,7 @@ fun DashboardContent(
                     accountNamesMap = accountMap,
                     categoryMap = categoryMap,
                     decimalPrecision = state.decimalPrecision,
+                    precision = state.decimalPrecision,
                     onRecordsClick = onRecordsClick,
                     onTransactionClick = onEditTransactionClick,
                     baseCurrency = state.baseCurrency,

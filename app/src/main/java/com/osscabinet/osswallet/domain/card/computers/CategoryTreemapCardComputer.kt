@@ -21,9 +21,10 @@ class CategoryTreemapCardComputer : CardDataComputer<CategoryExpenseTreemapCardC
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
             baseCurrency = input.baseCurrency,
-            onlyExpenses = true
+            onlyExpenses = true,
+            precision = input.precision
         )
 
-        return CardRenderData.CategoryTreemap(config, tree)
+        return CardRenderData.CategoryTreemap(config, tree, input.precision)
     }
 }

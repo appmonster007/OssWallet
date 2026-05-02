@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.service.*
+import java.math.RoundingMode
 
 class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData.Accounts> {
     override val supportedType = CardType.ACCOUNTS
@@ -36,16 +37,18 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
                 currencyTotals = AggregationService.calculateTotalByCurrency(accountFilteredTxs),
                 targetCurrency = input.baseCurrency,
                 exchangeRates = input.exchangeRates,
-                precision = 10
+                precision = input.precision
             )
 
             acc.id to AccountSummaryItem(
                 account = acc,
-                currencyBalances = summary?.currencyBreakdown?.mapValues { it.value.totalAmount } ?: emptyMap(),
-                balance = balanceInAccountCurrency,
+                currencyBalances = summary?.currencyBreakdown?.mapValues { 
+                    it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP) 
+                } ?: emptyMap(),
+                balance = balanceInAccountCurrency.setScale(input.precision, RoundingMode.HALF_UP),
                 balanceInBase = balanceInBase,
-                incomeInAccountCurrency = currSummary.income,
-                expenseInAccountCurrency = currSummary.expense
+                incomeInAccountCurrency = currSummary.income.setScale(input.precision, RoundingMode.HALF_UP),
+                expenseInAccountCurrency = currSummary.expense.setScale(input.precision, RoundingMode.HALF_UP)
             )
         }
 

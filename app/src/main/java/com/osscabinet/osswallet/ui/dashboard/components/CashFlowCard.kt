@@ -40,6 +40,8 @@ import java.time.format.DateTimeFormatter
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+
 @Composable
 fun CashFlowCard(
     cashFlowResult: CashFlowResult?,
@@ -47,8 +49,8 @@ fun CashFlowCard(
     currentTheme: String,
     cardId: String,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    showTitle: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") showTitle: Boolean = true,
     precision: Int = 2,
     showBaseConversion: Boolean = true,
     filter: TransactionFilter = TransactionFilter(),
@@ -81,108 +83,92 @@ fun CashFlowCard(
     val totalIncomeInBase = cashFlowResult?.totalIncomeInBase ?: BigDecimal.ZERO
     val totalExpenseInBase = cashFlowResult?.totalExpensesInBase ?: BigDecimal.ZERO
 
-    Card(
+    AeonExpressiveCard(
+        title = "CASH FLOW SUMMARY",
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (showTitle) {
-                AeonFlowSectionHeader(
-                    title = "CASH FLOW SUMMARY",
-                    modifier = headerModifier,
-                    filter = filter,
-                    trailing = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = timelineLabel.uppercase(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp,
-                                    fontSize = 10.sp
-                                ),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            )
-                            IconButton(
-                                onClick = { showFilterSettings = true },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.FilterList,
-                                    contentDescription = "Filter",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = { showDisplaySettings = true },
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Tune,
-                                    contentDescription = "Display Settings",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
+        filter = filter,
+        headerTrailing = {
+            Text(
+                text = timelineLabel.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+            IconButton(
+                onClick = { showFilterSettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            IconButton(
+                onClick = { showDisplaySettings = true },
+                modifier = Modifier.size(28.dp)
             ) {
-                AeonFlowCard(
-                    label = "Income",
-                    totalInBase = totalIncomeInBase,
-                    baseCurrency = baseCurrency,
-                    type = CashFlowType.INCOME,
-                    currentTheme = currentTheme,
-                    precision = precision,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.timelineRange) }
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        cashFlowResult?.breakdown?.forEach { item ->
-                            AeonFlowBreakdownItem(
-                                curr = item.currency,
-                                amount = item.income,
-                                inBase = item.incomeInBase,
-                                baseCurrency = baseCurrency,
-                                precision = precision,
-                                showBaseConversion = showBaseConversion
-                            )
-                        }
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = "Display Settings",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AeonFlowCard(
+                label = "Income",
+                totalInBase = totalIncomeInBase,
+                baseCurrency = baseCurrency,
+                type = CashFlowType.INCOME,
+                currentTheme = currentTheme,
+                precision = precision,
+                modifier = Modifier.weight(1f),
+                onClick = { onClickIncome(filter.timelineRange) }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    cashFlowResult?.breakdown?.forEach { item ->
+                        AeonFlowBreakdownItem(
+                            curr = item.currency,
+                            amount = item.income,
+                            inBase = item.incomeInBase,
+                            baseCurrency = baseCurrency,
+                            precision = precision,
+                            showBaseConversion = showBaseConversion
+                        )
                     }
                 }
+            }
 
-                AeonFlowCard(
-                    label = "Expense",
-                    totalInBase = totalExpenseInBase,
-                    baseCurrency = baseCurrency,
-                    type = CashFlowType.EXPENSE,
-                    currentTheme = currentTheme,
-                    precision = precision,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.timelineRange) }
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        cashFlowResult?.breakdown?.forEach { item ->
-                            AeonFlowBreakdownItem(
-                                curr = item.currency,
-                                amount = item.expense,
-                                inBase = item.expenseInBase,
-                                baseCurrency = baseCurrency,
-                                precision = precision,
-                                showBaseConversion = showBaseConversion
-                            )
-                        }
+            AeonFlowCard(
+                label = "Expense",
+                totalInBase = totalExpenseInBase,
+                baseCurrency = baseCurrency,
+                type = CashFlowType.EXPENSE,
+                currentTheme = currentTheme,
+                precision = precision,
+                modifier = Modifier.weight(1f),
+                onClick = { onClickExpense(filter.timelineRange) }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    cashFlowResult?.breakdown?.forEach { item ->
+                        AeonFlowBreakdownItem(
+                            curr = item.currency,
+                            amount = item.expense,
+                            inBase = item.expenseInBase,
+                            baseCurrency = baseCurrency,
+                            precision = precision,
+                            showBaseConversion = showBaseConversion
+                        )
                     }
                 }
             }

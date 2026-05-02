@@ -21,9 +21,10 @@ class CategoryBreakdownCardComputer : CardDataComputer<CategoryBreakdownCardConf
             allCategories = input.categories,
             exchangeRates = input.exchangeRates,
             baseCurrency = input.baseCurrency,
-            onlyExpenses = false
+            onlyExpenses = false,
+            precision = input.precision
         )
 
-        return CardRenderData.CategoryBreakdown(config, tree)
+        return CardRenderData.CategoryBreakdown(config, tree, input.precision)
     }
 }

@@ -34,13 +34,15 @@ import java.time.format.DateTimeFormatter
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+
 @Composable
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
     cardId: String,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     title: String = "CURRENCY BALANCES",
     precision: Int = 2,
     layout: String = "scroll", // "scroll" or "grid"
@@ -72,111 +74,97 @@ fun CurrencyBalancesCard(
         }
     }
 
-    Card(
+    AeonExpressiveCard(
+        title = title,
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AeonFlowSectionHeader(
-                title = title,
-                modifier = headerModifier,
-                filter = filter,
-                trailing = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = timelineLabel.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                                fontSize = 10.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                        )
-                        IconButton(
-                            onClick = { showFilterSettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showDisplaySettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Tune,
-                                contentDescription = "Display Settings",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
+        filter = filter,
+        headerTrailing = {
+            Text(
+                text = timelineLabel.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
             )
-
-            if (currencyTotals.isEmpty()) {
-                Text(
-                    text = "No data for selected filter",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
+            IconButton(
+                onClick = { showFilterSettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
-            } else if (layout == "grid") {
-                val chunks = currencyTotals.chunked(3)
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    chunks.forEach { rowItems ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowItems.forEach { item ->
-                                CurrencyBalanceItem(
-                                    curr = item.currency,
-                                    amount = item.amount,
-                                    inBase = item.amountInBase,
-                                    baseCurrency = baseCurrency,
-                                    precision = precision,
-                                    showBaseConversion = showBaseConversion,
-                                    onClick = { onCurrencyClick(item.currency, filter.timelineRange) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            if (rowItems.size < 3) {
-                                repeat(3 - rowItems.size) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
+            }
+            IconButton(
+                onClick = { showDisplaySettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = "Display Settings",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    ) {
+        if (currencyTotals.isEmpty()) {
+            Text(
+                text = "No data for selected filter",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        } else if (layout == "grid") {
+            val chunks = currencyTotals.chunked(3)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                chunks.forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rowItems.forEach { item ->
+                            CurrencyBalanceItem(
+                                curr = item.currency,
+                                amount = item.amount,
+                                inBase = item.amountInBase,
+                                baseCurrency = baseCurrency,
+                                precision = precision,
+                                showBaseConversion = showBaseConversion,
+                                onClick = { onCurrencyClick(item.currency, filter.timelineRange) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowItems.size < 3) {
+                            repeat(3 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
                 }
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp)
-                ) {
-                    items(currencyTotals) { item ->
-                        CurrencyBalanceItem(
-                            curr = item.currency,
-                            amount = item.amount,
-                            inBase = item.amountInBase,
-                            baseCurrency = baseCurrency,
-                            precision = precision,
-                            showBaseConversion = showBaseConversion,
-                            onClick = { onCurrencyClick(item.currency, filter.timelineRange) }
-                        )
-                    }
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 4.dp)
+            ) {
+                items(currencyTotals) { item ->
+                    CurrencyBalanceItem(
+                        curr = item.currency,
+                        amount = item.amount,
+                        inBase = item.amountInBase,
+                        baseCurrency = baseCurrency,
+                        precision = precision,
+                        showBaseConversion = showBaseConversion,
+                        onClick = { onCurrencyClick(item.currency, filter.timelineRange) }
+                    )
                 }
             }
         }
@@ -285,53 +273,49 @@ fun CurrencyBalanceItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 curr,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 0.5.sp
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
             
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
-            ) {
+            Text(
+                formatCurrencyRight(amount, curr, precision),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFeatureSettings = "tnum",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 15.sp
+                ),
+                maxLines = 1
+            )
+            
+            if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    formatCurrencyRight(amount, curr, precision),
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontFeatureSettings = "tnum",
-                        fontWeight = FontWeight.Bold
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
                     ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1
                 )
-                
-                if (showBaseConversion && curr != baseCurrency) {
-                    Text(
-                        "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        maxLines = 1
-                    )
-                } else if (showBaseConversion) {
-                    Text(
-                        "",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.height(14.dp)
-                    )
-                }
+            } else if (showBaseConversion) {
+                Spacer(modifier = Modifier.height(14.dp))
             }
         }
     }

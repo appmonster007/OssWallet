@@ -45,6 +45,6 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             BudgetService.buildProgress(budget, spent, rollover)
         }
 
-        return CardRenderData.Budgets(config = config, items = items)
+        return CardRenderData.Budgets(config = config, items = items, precision = input.precision)
     }
 }

@@ -49,28 +49,33 @@ sealed class CardRenderData {
 
     data class CategoryBreakdown(
         val config: CategoryBreakdownCardConfig,
-        val items: List<CategoryTreeMetrics>
+        val items: List<CategoryTreeMetrics>,
+        val precision: Int
     ) : CardRenderData()
 
     data class CategoryTreemap(
         val config: CategoryExpenseTreemapCardConfig,
-        val items: List<CategoryTreeMetrics>
+        val items: List<CategoryTreeMetrics>,
+        val precision: Int
     ) : CardRenderData()
 
     data class PlannedPayments(
         val config: PlannedPaymentsCardConfig,
         val upcoming: List<UpcomingPaymentItem>,
-        val overdue: List<PlannedPayment>
+        val overdue: List<PlannedPayment>,
+        val precision: Int
     ) : CardRenderData()
 
     data class Budgets(
         val config: com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig,
-        val items: List<BudgetProgress>
+        val items: List<BudgetProgress>,
+        val precision: Int
     ) : CardRenderData()
 
     data class Loans(
         val config: com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig,
-        val items: List<LoanSummary>
+        val items: List<LoanSummary>,
+        val precision: Int
     ) : CardRenderData()
 
     data class AccountHero(

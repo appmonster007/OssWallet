@@ -190,10 +190,11 @@ fun AeonFlowSectionHeader(
                 Text(
                     title.uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 11.sp
                     ),
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                 )
 
                 if (activeFilterCount > 0) {

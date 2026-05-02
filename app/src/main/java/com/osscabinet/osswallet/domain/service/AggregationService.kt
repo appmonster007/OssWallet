@@ -80,10 +80,12 @@ object AggregationService {
                 val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
                 CashFlowBreakdownItem(
                     currency = curr,
-                    income = inc.totalAmount,
-                    incomeInBase = CurrencyService.convertAmount(inc.totalAmount, curr, baseCurrency, exchangeRates, 10),
-                    expense = exp.totalAmount,
+                    income = inc.totalAmount.setScale(precision, RoundingMode.HALF_UP),
+                    incomeInBase = CurrencyService.convertAmount(inc.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                        .setScale(precision, RoundingMode.HALF_UP),
+                    expense = exp.totalAmount.setScale(precision, RoundingMode.HALF_UP),
                     expenseInBase = CurrencyService.convertAmount(exp.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                        .setScale(precision, RoundingMode.HALF_UP)
                 )
             }
             
@@ -102,14 +104,16 @@ object AggregationService {
     fun calculateCurrencyBalances(
         transactions: List<Transaction>,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int = 2
     ): List<CurrencyAggregationItem> {
         val summaries = calculateSummaryByCurrency(transactions)
         return summaries.map { (curr, summary) ->
             CurrencyAggregationItem(
                 currency = curr,
-                amount = summary.totalAmount,
+                amount = summary.totalAmount.setScale(precision, RoundingMode.HALF_UP),
                 amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, baseCurrency, exchangeRates, 10)
+                    .setScale(precision, RoundingMode.HALF_UP)
             )
         }.sortedByDescending { it.amountInBase.abs() }
     }
@@ -1071,7 +1075,8 @@ object AggregationService {
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null,
-        onlyExpenses: Boolean = false
+        onlyExpenses: Boolean = false,
+        precision: Int = 2
     ): List<CategoryTreeMetrics> {
         val filteredTx = if (onlyExpenses) {
             TransactionFilterService.filterExpense(transactions)
@@ -1112,9 +1117,9 @@ object AggregationService {
             return CategoryTreeMetrics(
                 category = entity.name,
                 categoryId = entity.id,
-                netBalance = totalNet,
-                income = totalIncome,
-                expense = totalExpense,
+                netBalance = totalNet.setScale(precision, RoundingMode.HALF_UP),
+                income = totalIncome.setScale(precision, RoundingMode.HALF_UP),
+                expense = totalExpense.setScale(precision, RoundingMode.HALF_UP),
                 colorHex = entity.colorHex,
                 percentage = if (globalTotal.signum() != 0) {
                     (currentMetric.divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat()

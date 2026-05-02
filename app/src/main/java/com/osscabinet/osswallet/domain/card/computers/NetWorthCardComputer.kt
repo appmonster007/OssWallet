@@ -17,13 +17,14 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
         // Step 2: Apply CARD user filter (e.g. timeline, categories)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
         
-        // Calculate LIFETIME net worth for the relevant accounts within the BASE scope
-        // We further filter by config accountIds if specified, but ignore config timeline
+        // Calculate LIFETIME net worth for the relevant accounts within the BASE scope.
+        // Explicitly exclude futures here since input.filter no longer does so.
+        val now = System.currentTimeMillis()
         val targetAccountIds = config.filter.accountIds
         val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            baseTx
+            baseTx.filter { it.timestamp <= now }
         } else {
-            baseTx.filter { targetAccountIds.contains(it.accountId) }
+            baseTx.filter { it.timestamp <= now && targetAccountIds.contains(it.accountId) }
         }
 
         val totalsByCurrency = AggregationService.calculateTotalByCurrency(balanceTransactions)

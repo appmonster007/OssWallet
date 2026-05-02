@@ -13,12 +13,14 @@ class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig
         // Apply base scope
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
         
-        // Further filter by config accountIds if specified (ignoring timeline for balance)
+        // Further filter by config accountIds if specified (ignoring timeline for balance).
+        // Explicitly exclude futures since input.filter no longer does so.
+        val now = System.currentTimeMillis()
         val targetAccountIds = config.filter.accountIds
         val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            baseTx
+            baseTx.filter { it.timestamp <= now }
         } else {
-            baseTx.filter { targetAccountIds.contains(it.accountId) }
+            baseTx.filter { it.timestamp <= now && targetAccountIds.contains(it.accountId) }
         }
 
         val items = AggregationService.calculateCurrencyBalances(

@@ -11,29 +11,34 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
     override fun compute(input: CardInput, config: AccountsCardConfig): CardRenderData.Accounts {
         // Base scope
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-        
+
         // Final filter for period-specific stats
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
-        
+
+        // Current-balance calculations must exclude future transactions explicitly since
+        // input.filter.excludeFuture is false (screen scope only).
+        val now = System.currentTimeMillis()
+        val currentBaseTx = baseTx.filter { it.timestamp <= now }
+
         val accountBreakdownsForPeriod = AggregationService.breakdownByAccount(
             transactions = filteredTx,
             accounts = input.accounts
         )
-        
+
         val accountStats = input.accounts.associate { acc ->
             val periodSummary = accountBreakdownsForPeriod.find { it.key == acc.id }
             val accCurrSummary = periodSummary?.currencyBreakdown?.get(acc.currencyCode) ?: FinancialSummary.EMPTY
-            
+
             // Current total balance (Lifetime within scope)
             val totalInAccountCurrency = AggregationService.calculateAccountBalance(
                 accountId = acc.id,
-                allTransactions = baseTx,
+                allTransactions = currentBaseTx,
                 accountCurrency = acc.currencyCode,
                 exchangeRates = input.exchangeRates
             )
 
             // Current total balance in base currency
-            val accountTransactions = baseTx.filter { it.accountId == acc.id }
+            val accountTransactions = currentBaseTx.filter { it.accountId == acc.id }
             val balanceTotalsByCurrency = AggregationService.calculateTotalByCurrency(accountTransactions)
             val totalInBaseCurrency = CurrencyService.calculateTotalInCurrency(
                 currencyTotals = balanceTotalsByCurrency,

@@ -387,7 +387,7 @@ fun CategoryExpenseTreemapCardPreview() {
         CategoryExpenseTreemapCard(
             config = CategoryExpenseTreemapCardConfig(
                 cardId = "preview",
-                title = "Category Expenses",
+                title = "Category Treemap",
                 showLabels = true,
                 showLegend = true
             ),

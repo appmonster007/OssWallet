@@ -395,7 +395,7 @@ fun CategoryBreakdownCardPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CategoryBreakdownCard(
-                config = CategoryBreakdownCardConfig(cardId = "rich", title = "Category Breakdown"),
+                config = CategoryBreakdownCardConfig(cardId = "rich", title = "Category Pie Chart"),
                 data = richData
             )
         }

@@ -169,7 +169,7 @@ data class AccountsCardConfig(
 @SerialName("category_breakdown")
 data class CategoryBreakdownCardConfig(
     override val cardId: String,
-    override val title: String = "CATEGORY BREAKDOWN",
+    override val title: String = "CATEGORY PIE CHART",
     override val isEnabled: Boolean = true,
     override val order: Int = 5,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
@@ -187,7 +187,7 @@ data class CategoryBreakdownCardConfig(
 @SerialName("category_expense_treemap")
 data class CategoryExpenseTreemapCardConfig(
     override val cardId: String,
-    override val title: String = "CATEGORY EXPENSES",
+    override val title: String = "CATEGORY TREEMAP",
     override val isEnabled: Boolean = true,
     override val order: Int = 7,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,

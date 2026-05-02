@@ -157,7 +157,7 @@ fun AnalyticsScreen(
     if (showAddCardDialog) {
         val analyticsCardOptions = listOf(
             CardTypeOptionData(
-                title = "Category Breakdown",
+                title = "Category Pie Chart",
                 description = "View spending by category",
                 icon = Icons.Default.PieChart,
                 onClick = {
@@ -165,7 +165,7 @@ fun AnalyticsScreen(
                         CategoryBreakdownCardConfig(
                             cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
-                            title = "CATEGORY BREAKDOWN",
+                            title = "CATEGORY PIE CHART",
                             filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
                             showLabels = true,
                             showLegend = true
@@ -175,7 +175,7 @@ fun AnalyticsScreen(
                 }
             ),
             CardTypeOptionData(
-                title = "Category Expenses",
+                title = "Category Treemap",
                 description = "Expense distribution treemap",
                 icon = Icons.Default.BarChart,
                 onClick = {
@@ -183,7 +183,7 @@ fun AnalyticsScreen(
                         CategoryExpenseTreemapCardConfig(
                             cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
-                            title = "CATEGORY EXPENSES",
+                            title = "CATEGORY TREEMAP",
                             filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
                             showLabels = true
                         )

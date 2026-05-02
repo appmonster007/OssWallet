@@ -56,7 +56,7 @@ fun AeonAccountCardSmall(
         shape = RoundedCornerShape(16.dp),
         color = containerColor,
         contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.1f))
     ) {
         Box {
             Icon(
@@ -129,7 +129,7 @@ fun AeonAccountCardMedium(
         shape = RoundedCornerShape(24.dp),
         color = containerColor,
         contentColor = contentColor,
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.2f)) else null
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.1f))
     ) {
         Box {
             Icon(
@@ -218,7 +218,8 @@ fun AeonAccountCardLarge(
             .onSizeChanged { cardSize = it },
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(32.dp),
-        border = if (isAmoled) BorderStroke(1.dp, contentColor.copy(alpha = 0.3f)) else null
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.1f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             // Background Icon

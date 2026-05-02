@@ -282,10 +282,12 @@ fun AeonFlowBadge(
     expenseColor: Color = NegativeAmountColor,
     precision: Int = 2
 ) {
+    val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
     Surface(
-        color = (if (type == CashFlowType.INCOME) incomeColor else expenseColor).copy(alpha = 0.15f),
-        contentColor = if (type == CashFlowType.INCOME) incomeColor else expenseColor,
+        color = color.copy(alpha = 0.1f),
+        contentColor = color,
         shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, color.copy(alpha = 0.2f)),
         modifier = modifier
     ) {
         Text(

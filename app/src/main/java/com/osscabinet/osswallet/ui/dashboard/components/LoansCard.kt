@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,18 +36,19 @@ fun LoansCard(
 
     AeonExpressiveCard(
         title = config.title,
+        icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         headerTrailing = {
             Box {
                 IconButton(
                     onClick = { showMenu = true },
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         Icons.Default.MoreVert,
                         contentDescription = "Options",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
@@ -81,7 +84,7 @@ fun LoansCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items.forEach { summary ->
                     LoanSummaryRow(
                         summary = summary,
@@ -108,48 +111,82 @@ private fun LoanSummaryRow(
 
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(16.dp)
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = summary.loan.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
                     )
                 )
                 Text(
                     text = "$typeLabel ${summary.loan.lenderOrBorrowerName}".uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
                         letterSpacing = 0.5.sp,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "${formatAmount(summary.remainingBalance, precision)} ${summary.loan.currency}",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Black,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
                         color = accentColor
                     )
                 )
                 Text(
                     text = "REMAINING",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 8.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.outline
+                        letterSpacing = 0.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 )
             }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun LoansCardPreview() {
+    val loan = com.osscabinet.ossWallet.domain.model.Loan(
+        id = 1L, name = "Car Loan", principalAmount = java.math.BigDecimal("15000.00"), currency = "USD",
+        startDate = System.currentTimeMillis(), lenderOrBorrowerName = "Bank",
+        loanType = com.osscabinet.ossWallet.domain.model.LoanType.BORROWED, linkedAccountId = "1", profileId = 1
+    )
+    val loans = listOf(
+        com.osscabinet.ossWallet.domain.model.LoanSummary(
+            loan = loan,
+            remainingBalance = java.math.BigDecimal("12000.00"),
+            totalPaid = java.math.BigDecimal("3000.00"),
+            interestAccrued = java.math.BigDecimal("150.00")
+        )
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            LoansCard(
+                items = loans,
+                config = com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig(cardId = "preview", title = "Loans"),
+                onUpdate = {},
+                onLoanClick = {},
+                onDelete = {}
+            )
         }
     }
 }

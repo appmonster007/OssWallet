@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -85,39 +86,32 @@ fun AccountsCard(
     }
 
     AeonExpressiveCard(
-        title = "ACCOUNTS",
+        title = "Accounts",
+        subtitle = timelineLabel,
+        icon = Icons.Rounded.AccountBalanceWallet,
         modifier = if (onHeaderClick != null) modifier.clickable(onClick = onHeaderClick) else modifier,
         filter = filter,
         headerTrailing = {
-            Text(
-                text = timelineLabel.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                    fontSize = 10.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
             IconButton(
                 onClick = { showFilterSettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.FilterList,
                     contentDescription = "Filter",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             IconButton(
                 onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -538,5 +532,35 @@ private fun AeonAddAccountCardContent(
             modifier = modifier,
             precision = precision
         )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AccountsCardPreview() {
+    val accounts = listOf(
+        Account("1", "Main Savings", "USD", "Savings", "#004D40", "AccountBalance", emptyList()),
+        Account("2", "Travel Fund", "EUR", "Savings", "#B3261E", "Travel", emptyList())
+    )
+    val stats = mapOf(
+        "1" to AccountSummaryItem(accounts[0], mapOf("USD" to BigDecimal("5000.00")), BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("1000.00"), BigDecimal("200.00")),
+        "2" to AccountSummaryItem(accounts[1], mapOf("EUR" to BigDecimal("1200.00")), BigDecimal("1200.00"), BigDecimal("1320.00"), BigDecimal("500.00"), BigDecimal("100.00"))
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AccountsCard(
+                onManageClick = {},
+                onAccountClick = {},
+                onGridColumnsChange = { _, _ -> },
+                accounts = accounts,
+                accountStats = stats,
+                baseCurrency = "USD",
+                currentTheme = "System",
+                cardId = "preview",
+                gridColumns = 2,
+                layout = "grid"
+            )
+        }
     }
 }

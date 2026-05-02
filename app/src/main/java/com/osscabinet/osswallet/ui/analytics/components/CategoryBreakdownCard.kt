@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -65,14 +67,15 @@ fun CategoryBreakdownCard(
 
     AeonExpressiveCard(
         title = config.title,
+        icon = Icons.Rounded.PieChart,
         modifier = modifier,
         filter = config.filter,
         headerTrailing = {
-            IconButton(onClick = { showFilterSettings = true }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            IconButton(onClick = { showFilterSettings = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
-            IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
     ) {
@@ -154,7 +157,7 @@ fun CategoryBreakdownCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(280.dp)
         ) {
             if (groupedData.isNotEmpty()) {
                 val slices = groupedData.map { item ->
@@ -304,21 +307,28 @@ fun CategoryLegend(data: List<CategoryBreakdownData>, precision: Int = 2) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(10.dp),
                     shape = RoundedCornerShape(2.dp),
-                    color = Color(item.colorHex)
+                    color = Color(item.colorHex),
+                    border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.05f))
                 ) {}
                 
                 Text(
                     text = item.category,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
+                    ),
                     modifier = Modifier.weight(1f)
                 )
                 
                 Text(
                     text = formatCurrency(item.netBalance, precision),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (item.netBalance < BigDecimal.ZERO) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    ),
+                    color = if (item.netBalance < BigDecimal.ZERO) Color(0xFFB3261E) else Color(0xFF004D40)
                 )
             }
         }
@@ -326,9 +336,12 @@ fun CategoryLegend(data: List<CategoryBreakdownData>, precision: Int = 2) {
         if (data.size > 5) {
             Text(
                 text = "+${data.size - 5} more categories",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.padding(start = 24.dp)
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.padding(start = 22.dp)
             )
         }
     }
@@ -377,9 +390,8 @@ fun CategoryBreakdownCardPreview() {
             modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Rich Data (Drill-down enabled)", style = MaterialTheme.typography.titleSmall)
             CategoryBreakdownCard(
-                config = CategoryBreakdownCardConfig(cardId = "rich", title = "CATEGORY BREAKDOWN"),
+                config = CategoryBreakdownCardConfig(cardId = "rich", title = "Category Breakdown"),
                 data = richData
             )
         }

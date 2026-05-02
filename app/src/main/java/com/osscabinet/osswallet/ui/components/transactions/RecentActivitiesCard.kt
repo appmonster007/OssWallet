@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -79,18 +80,19 @@ fun RecentActivitiesCard(
     }
 
     AeonExpressiveCard(
-        title = "RECENT ACTIVITIES",
+        title = "Recent Activities",
+        icon = Icons.Rounded.History,
         modifier = modifier,
         headerTrailing = {
             TextButton(
                 onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                modifier = Modifier.height(28.dp)
+                modifier = Modifier.height(32.dp)
             ) {
                 Text(
                     "VIEW ALL",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                         fontSize = 10.sp
                     )
@@ -104,68 +106,155 @@ fun RecentActivitiesCard(
         ) {
             if (recentTransactions.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         "No recent activities",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
             } else {
                 groupedByDay.forEach { (_, dayTransactions) ->
-                    val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dayTransactions.first().transaction.timestamp))
-                    val isToday = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
+                    val date = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(dayTransactions.first().transaction.timestamp))
+                    val isToday = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
                     val displayDate = if (isToday) "Today" else date
 
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                displayDate.uppercase(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.outline,
-                                    letterSpacing = 0.5.sp
-                                )
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = displayDate.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                letterSpacing = 0.5.sp,
+                                fontSize = 9.sp
                             )
-                            Text(
-                                "${dayTransactions.size} txs",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
-                                )
-                            )
-                        }
+                        )
 
                         dayTransactions.forEach { item ->
                             val transaction = item.transaction
                             val category = transaction.categoryId?.let { categoryMap[it] }
-                            val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
-
-                            AeonTransactionItem(
+                            AeonCardTransactionItem(
                                 category = transaction.category,
                                 account = accountNamesMap[transaction.accountId] ?: "Unknown",
                                 amount = formatCurrencyRight(transaction.amount, transaction.currency, precision),
-                                balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, precision),
-                                balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, precision),
                                 type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
                                 timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
-                                note = transaction.note,
-                                tags = transaction.tags,
                                 icon = category?.let { categoryIcons[it.iconName] } ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,
-                                iconBg = category?.let { Color(it.colorHex) },
-                                precision = precision,
-                                status = transaction.status,
+                                iconBg = category?.let { Color(it.colorHex) } ?: MaterialTheme.colorScheme.primary,
                                 onClick = { onTransactionClick(transaction.id) }
                             )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AeonCardTransactionItem(
+    category: String,
+    account: String,
+    amount: String,
+    type: CashFlowType,
+    timestamp: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconBg: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = iconBg.copy(alpha = 0.15f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = iconBg
+                    )
+                }
+            }
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    ),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "$account • $timestamp",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+            
+            Text(
+                text = amount,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = if (type == CashFlowType.INCOME) Color(0xFF004D40) else Color(0xFFB3261E)
+                )
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun RecentActivitiesCardPreview() {
+    val tx1 = com.osscabinet.ossWallet.domain.model.Transaction(
+        id = 1L, title = "Lunch", amount = java.math.BigDecimal("-50.00"), currency = "USD",
+        category = "Food", timestamp = System.currentTimeMillis(), accountId = "1", transactionType = "expense"
+    )
+    val tx2 = com.osscabinet.ossWallet.domain.model.Transaction(
+        id = 2L, title = "Salary", amount = java.math.BigDecimal("2000.00"), currency = "USD",
+        category = "Salary", timestamp = System.currentTimeMillis() - 86400000L, accountId = "1", transactionType = "income"
+    )
+    val transactions = listOf(
+        TransactionWithBalance(
+            transaction = tx1,
+            balanceBefore = java.math.BigDecimal("5000.00"),
+            balanceAfter = java.math.BigDecimal("4950.00")
+        ),
+        TransactionWithBalance(
+            transaction = tx2,
+            balanceBefore = java.math.BigDecimal("3000.00"),
+            balanceAfter = java.math.BigDecimal("5000.00")
+        )
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            RecentActivitiesCard(
+                allTransactions = transactions,
+                accountNamesMap = mapOf("1" to "Main Account"),
+                categoryMap = emptyMap(),
+                decimalPrecision = 2,
+                onRecordsClick = {}
+            )
         }
     }
 }

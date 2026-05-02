@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +25,6 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -37,6 +37,9 @@ import java.time.format.DateTimeFormatter
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun NetWorthCard(
@@ -64,13 +67,6 @@ fun NetWorthCard(
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
 
-    val textStyle = when (fontSize) {
-        "Small" -> MaterialTheme.typography.displaySmall
-        "Large" -> MaterialTheme.typography.displayLarge
-        "X-Large" -> MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp)
-        else -> MaterialTheme.typography.displayMedium
-    }
-
     val timelineLabel = when (val tr = filter.timelineRange) {
         is TimelineRange.AllTime -> "All Time"
         is TimelineRange.ThisPeriod -> tr.period.label
@@ -84,57 +80,57 @@ fun NetWorthCard(
     }
 
     AeonExpressiveCard(
-        title = "NET WORTH",
+        title = "Net Worth",
+        subtitle = timelineLabel,
+        icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         filter = filter,
         headerTrailing = {
-            Text(
-                text = timelineLabel.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                    fontSize = 10.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
             IconButton(
                 onClick = { showFilterSettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.FilterList,
                     contentDescription = "Filter",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             IconButton(
                 onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Primary Figure: Manrope, Bold, 20px (or larger as per font setting)
+            val baseFontSize = when (fontSize) {
+                "Small" -> 18.sp
+                "Large" -> 24.sp
+                "X-Large" -> 32.sp
+                else -> 20.sp
+            }
+            
             Text(
                 text = formatCurrencyRight(netWorth, baseCurrency, precision),
-                style = textStyle.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-1).sp
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = baseFontSize,
+                    letterSpacing = (-0.5).sp
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -203,38 +199,39 @@ private fun FlowBadge(
 ) {
     Surface(
         modifier = modifier.clickable(onClick = onClick),
-        color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
+        color = color.copy(alpha = 0.08f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.1f))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
                     if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                     contentDescription = null,
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(14.dp),
                     tint = color
                 )
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         letterSpacing = 0.5.sp
                     ),
-                    color = color
+                    color = color.copy(alpha = 0.8f)
                 )
             }
             Text(
                 text = formatCurrencyRight(amount, currency, precision),
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
                 ),
                 color = color
             )
@@ -332,4 +329,25 @@ private fun NetWorthDisplaySettingsDialog(
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NetWorthCardPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            NetWorthCard(
+                netWorth = BigDecimal("125000.50"),
+                netIncome = BigDecimal("5000.00"),
+                netExpense = BigDecimal("3200.00"),
+                baseCurrency = "USD",
+                precision = 2,
+                cardId = "preview",
+                fontSize = "Medium",
+                filter = TransactionFilter(),
+                onFontSizeChange = { _, _ -> },
+                onFilterChange = { _, _ -> }
+            )
+        }
+    }
 }

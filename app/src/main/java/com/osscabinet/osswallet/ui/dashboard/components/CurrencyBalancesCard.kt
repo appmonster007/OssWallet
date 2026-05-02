@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -26,6 +28,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 import java.time.Instant
@@ -43,7 +46,7 @@ fun CurrencyBalancesCard(
     cardId: String,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    title: String = "CURRENCY BALANCES",
+    title: String = "Currency Balances",
     precision: Int = 2,
     layout: String = "scroll", // "scroll" or "grid"
     showBaseConversion: Boolean = true,
@@ -76,38 +79,31 @@ fun CurrencyBalancesCard(
 
     AeonExpressiveCard(
         title = title,
+        subtitle = timelineLabel,
+        icon = Icons.Rounded.Payments,
         modifier = modifier,
         filter = filter,
         headerTrailing = {
-            Text(
-                text = timelineLabel.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                    fontSize = 10.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
             IconButton(
                 onClick = { showFilterSettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.FilterList,
                     contentDescription = "Filter",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             IconButton(
                 onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -273,16 +269,16 @@ fun CurrencyBalanceItem(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.4f),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 curr,
@@ -298,7 +294,7 @@ fun CurrencyBalanceItem(
                 formatCurrencyRight(amount, curr, precision),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFeatureSettings = "tnum",
-                    fontWeight = FontWeight.Black,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 maxLines = 1
@@ -311,12 +307,32 @@ fun CurrencyBalanceItem(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     maxLines = 1
                 )
             } else if (showBaseConversion) {
                 Spacer(modifier = Modifier.height(14.dp))
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CurrencyBalancesCardPreview() {
+    val items = listOf(
+        CurrencyAggregationItem("USD", BigDecimal("1500.00"), BigDecimal("1500.00")),
+        CurrencyAggregationItem("EUR", BigDecimal("1200.00"), BigDecimal("1300.50")),
+        CurrencyAggregationItem("GBP", BigDecimal("500.00"), BigDecimal("650.00"))
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CurrencyBalancesCard(
+                currencyTotals = items,
+                baseCurrency = "USD",
+                cardId = "preview",
+                layout = "scroll"
+            )
         }
     }
 }

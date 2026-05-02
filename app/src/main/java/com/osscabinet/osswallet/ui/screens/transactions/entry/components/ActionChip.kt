@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,11 +10,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.unit.sp
 
 /**
  * Compact action chip for metadata actions.
+ * Following the "Architect Slate" design specification.
  */
 @Composable
 fun ActionChip(
@@ -26,46 +29,37 @@ fun ActionChip(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant
-        ),
-        modifier = modifier.height(40.dp)
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        modifier = modifier.height(48.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Icon container with optional background
-            if (iconContainerColor != null) {
-                Surface(
-                    shape = CircleShape,
-                    color = iconContainerColor,
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = iconTint ?: LocalContentColor.current
-                        )
-                    }
+            Surface(
+                shape = CircleShape,
+                color = iconContainerColor ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                modifier = Modifier.size(28.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = iconTint ?: MaterialTheme.colorScheme.primary
+                    )
                 }
-            } else {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = iconTint ?: LocalContentColor.current
-                )
             }
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

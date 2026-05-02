@@ -7,20 +7,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
@@ -84,39 +80,32 @@ fun CashFlowCard(
     val totalExpenseInBase = cashFlowResult?.totalExpensesInBase ?: BigDecimal.ZERO
 
     AeonExpressiveCard(
-        title = "CASH FLOW SUMMARY",
+        title = "Cash Flow",
+        subtitle = timelineLabel,
+        icon = Icons.Rounded.Analytics,
         modifier = modifier,
         filter = filter,
         headerTrailing = {
-            Text(
-                text = timelineLabel.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                    fontSize = 10.sp
-                ),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
             IconButton(
                 onClick = { showFilterSettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.FilterList,
                     contentDescription = "Filter",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             IconButton(
                 onClick = { showDisplaySettings = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     Icons.Default.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -135,7 +124,7 @@ fun CashFlowCard(
                 modifier = Modifier.weight(1f),
                 onClick = { onClickIncome(filter.timelineRange) }
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
                         AeonFlowBreakdownItem(
                             curr = item.currency,
@@ -159,7 +148,7 @@ fun CashFlowCard(
                 modifier = Modifier.weight(1f),
                 onClick = { onClickExpense(filter.timelineRange) }
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
                         AeonFlowBreakdownItem(
                             curr = item.currency,
@@ -275,23 +264,26 @@ internal fun AeonFlowBreakdownItem(
             curr,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 10.sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Bold
             ),
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 formatCurrencyRight(amount, curr, precision),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black)
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
                     "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             }
         }
@@ -305,64 +297,70 @@ fun AeonFlowCard(
     baseCurrency: String,
     type: CashFlowType,
     modifier: Modifier = Modifier,
-    currentTheme: String = "System",
-    incomeColor: Color = Color(0xFF4CAF50),
-    expenseColor: Color = Color(0xFFF44336),
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
+    incomeColor: Color = Color(0xFF004D40), // Teal (#004D40) for positive/healthy
+    expenseColor: Color = Color(0xFFB3261E), // Red (#B3261E) for warnings
     precision: Int = 2,
     onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
-    val icon = if (type == CashFlowType.INCOME) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward
     
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
-
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
-        modifier = modifier
-            .onSizeChanged { cardSize = it }
-            .clickable { onClick() }
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.1f)),
+        modifier = modifier.clickable { onClick() }
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            val iconHeight = with(density) { (cardSize.height * 0.6f).toDp() }
-            
-            if (cardSize.height > 0) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(iconHeight)
-                        .alpha(0.1f),
-                    tint = color
-                )
-            }
-
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = color
-                    )
-                    AeonFlowBadge(totalInBase, type, baseCurrency, precision = precision)
-                }
-
-                content()
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = color
+                )
+                AeonFlowBadge(totalInBase, type, baseCurrency, precision = precision, incomeColor = color, expenseColor = color)
             }
+
+            content()
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun CashFlowCardPreview() {
+    val sampleBreakdown = listOf(
+        com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem("USD", BigDecimal("5000.00"), BigDecimal("5000.00"), BigDecimal("3500.00"), BigDecimal("3500.00")),
+        com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem("EUR", BigDecimal("1000.00"), BigDecimal("1100.00"), BigDecimal("800.00"), BigDecimal("880.00"))
+    )
+    val result = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult(
+        totalIncomeInBase = BigDecimal("6100.00"),
+        totalExpensesInBase = BigDecimal("4380.00"),
+        netInBase = BigDecimal("1720.00"),
+        breakdown = sampleBreakdown,
+        filteredTransactions = emptyList()
+    )
+
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            CashFlowCard(
+                cashFlowResult = result,
+                baseCurrency = "USD",
+                currentTheme = "System",
+                cardId = "preview"
+            )
         }
     }
 }

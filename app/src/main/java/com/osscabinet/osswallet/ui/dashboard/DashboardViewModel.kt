@@ -161,23 +161,6 @@ class DashboardViewModel(
                     return@combine DashboardUiState.Loading
                 }
 
-                // Invalidate registry cache when data changes to ensure cards refresh
-                registry.clearCache()
-
-                // Construct base CardInput
-                @Suppress("UNUSED_VARIABLE")
-                val baseInput = CardInput(
-                    transactions = allTransactions,
-                    accounts = accounts,
-                    categories = categories,
-                    exchangeRates = rates,
-                    baseCurrency = baseCurrency,
-                    precision = precision,
-                    plannedPayments = plannedPayments,
-                    budgets = budgets,
-                    loans = loans
-                )
-
                 val now = System.currentTimeMillis()
                 val transactionsWithBalance = allTransactions
                     .filter { it.timestamp <= now }

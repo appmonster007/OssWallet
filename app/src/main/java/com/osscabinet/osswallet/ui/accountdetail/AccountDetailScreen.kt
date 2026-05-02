@@ -345,8 +345,8 @@ fun DynamicAccountDetailCards(
 ) {
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
 
-    val accountScopeFilter = remember(accountId) { TransactionFilter(accountIds = listOf(accountId)) }
-    val sharedCardInput = remember(state, cardsConfig) {
+    val accountScopeFilter = remember(accountId) { TransactionFilter(accountIds = listOf(accountId), excludeFuture = false) }
+    val sharedCardInput = remember(state) {
         CardInput(
             transactions = state.allAccountTransactions,
             accounts = listOf(state.account),

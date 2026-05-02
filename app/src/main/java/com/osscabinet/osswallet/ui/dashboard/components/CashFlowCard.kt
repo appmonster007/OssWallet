@@ -84,6 +84,7 @@ fun CashFlowCard(
         subtitle = timelineLabel,
         icon = Icons.Rounded.Analytics,
         modifier = modifier,
+        headerModifier = headerModifier,
         filter = filter,
         baseFilter = baseFilter,
         filterRules = filterRules,

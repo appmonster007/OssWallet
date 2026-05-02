@@ -30,6 +30,7 @@ fun LoansCard(
     onLoanClick: (Long) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -38,6 +39,7 @@ fun LoansCard(
         title = config.title,
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
+        headerModifier = headerModifier,
         headerTrailing = { _ ->
             Box {
                 IconButton(

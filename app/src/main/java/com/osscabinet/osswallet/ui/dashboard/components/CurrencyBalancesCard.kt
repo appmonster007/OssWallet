@@ -82,7 +82,10 @@ fun CurrencyBalancesCard(
         subtitle = timelineLabel,
         icon = Icons.Rounded.Payments,
         modifier = modifier,
+        headerModifier = headerModifier,
         filter = filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

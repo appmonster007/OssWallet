@@ -83,6 +83,7 @@ fun NetWorthCard(
         subtitle = timelineLabel,
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
+        headerModifier = headerModifier,
         filter = filter,
         baseFilter = baseFilter,
         filterRules = filterRules,

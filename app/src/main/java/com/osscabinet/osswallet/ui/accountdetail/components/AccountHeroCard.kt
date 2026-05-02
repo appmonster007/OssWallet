@@ -42,6 +42,7 @@ fun AccountHeroCard(
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
     precision: Int = 2,
     showCurrencyBadges: Boolean = true,
@@ -82,6 +83,7 @@ fun AccountHeroCard(
         iconColor = accountColor,
         accentColor = accountColor,
         modifier = modifier.clickable { onClick?.invoke() },
+        headerModifier = headerModifier,
         filter = filter,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(

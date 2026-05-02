@@ -42,6 +42,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 fun AeonExpressiveCard(
     title: String,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     subtitle: String? = null,
     icon: ImageVector? = null,
     iconColor: Color = MaterialTheme.colorScheme.primary,
@@ -94,7 +95,9 @@ fun AeonExpressiveCard(
         ) {
             // Header Composition (Icon + Title + Subtitle)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(headerModifier),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {

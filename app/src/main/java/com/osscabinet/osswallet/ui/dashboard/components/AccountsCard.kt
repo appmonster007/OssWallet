@@ -90,6 +90,7 @@ fun AccountsCard(
         subtitle = timelineLabel,
         icon = Icons.Rounded.AccountBalanceWallet,
         modifier = if (onHeaderClick != null) modifier.clickable(onClick = onHeaderClick) else modifier,
+        headerModifier = headerModifier,
         filter = filter,
         baseFilter = baseFilter,
         filterRules = filterRules,

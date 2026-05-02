@@ -10,18 +10,19 @@ class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig
     override val supportedType = CardType.CURRENCY_BALANCES
 
     override fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-        // Step 1: Filter
+        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+
+        // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
-        // Step 2: Compute
+        // Step 3: Compute all values from filteredTx
         val items = AggregationService.calculateCurrencyBalances(
             transactions = filteredTx,
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates
         )
 
-        // Step 3: Build render data
         return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)
     }
 }

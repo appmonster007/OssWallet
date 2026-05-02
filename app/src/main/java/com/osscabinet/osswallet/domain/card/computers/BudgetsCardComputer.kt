@@ -14,17 +14,21 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
     override fun compute(input: CardInput, config: BudgetsCardConfig): CardRenderData.Budgets {
         val now = System.currentTimeMillis()
 
-        // Step 1: Filter — scope transactions to screen context (e.g. account detail)
-        val scopedTransactions = TransactionFilterService.filter(input.transactions, input.filter)
+        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
+        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
 
-        // Step 2: Compute — budgets have their own period/category/account logic internally
+        // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
+        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
+
+        // Step 3: Compute all values from filteredTx
+        // BudgetService applies its own period/category/account rules on top of filteredTx.
         val budgets = if (config.showArchived) input.budgets
                       else input.budgets.filter { !it.isArchived }
 
         val items = budgets.take(config.maxItems).map { budget ->
             val rollover = BudgetService.calculateRollover(
                 budget = budget,
-                transactions = scopedTransactions,
+                transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.baseCurrency,
                 precision = input.precision,
@@ -32,7 +36,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             )
             val spent = BudgetService.calculateSpent(
                 budget = budget,
-                transactions = scopedTransactions,
+                transactions = filteredTx,
                 exchangeRates = input.exchangeRates,
                 baseCurrency = input.baseCurrency,
                 precision = input.precision,
@@ -41,7 +45,6 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             BudgetService.buildProgress(budget, spent, rollover)
         }
 
-        // Step 3: Build render data
         return CardRenderData.Budgets(config = config, items = items)
     }
 }

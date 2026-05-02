@@ -9,11 +9,13 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        // Step 1: Filter
+        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+
+        // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
-        // Step 2: Compute
+        // Step 3: Compute all values from filteredTx
         val totalsByCurrency = AggregationService.calculateTotalByCurrency(filteredTx)
         val netWorth = CurrencyService.calculateTotalInCurrency(
             currencyTotals = totalsByCurrency,
@@ -28,7 +30,6 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
             precision = input.precision
         )
 
-        // Step 3: Build render data
         return CardRenderData.NetWorth(config, netWorth, cashFlowResult, input.baseCurrency, input.precision)
     }
 }

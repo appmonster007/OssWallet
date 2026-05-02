@@ -9,11 +9,13 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
     override val supportedType = CardType.ACCOUNTS
 
     override fun compute(input: CardInput, config: AccountsCardConfig): CardRenderData.Accounts {
-        // Step 1: Filter
+        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
+
+        // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
-        // Step 2: Compute
+        // Step 3: Compute all values from filteredTx
         val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,
             accounts = input.accounts
@@ -29,9 +31,9 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
                 accountCurrency = acc.currencyCode,
                 exchangeRates = input.exchangeRates
             )
-            val accountTxs = filteredTx.filter { it.accountId == acc.id }
+            val accountFilteredTxs = filteredTx.filter { it.accountId == acc.id }
             val balanceInBase = CurrencyService.calculateTotalInCurrency(
-                currencyTotals = AggregationService.calculateTotalByCurrency(accountTxs),
+                currencyTotals = AggregationService.calculateTotalByCurrency(accountFilteredTxs),
                 targetCurrency = input.baseCurrency,
                 exchangeRates = input.exchangeRates,
                 precision = 10
@@ -47,7 +49,6 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
             )
         }
 
-        // Step 3: Build render data
         return CardRenderData.Accounts(config, input.accounts, accountStats, input.baseCurrency, "light", input.precision)
     }
 }

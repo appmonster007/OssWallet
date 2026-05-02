@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
@@ -406,7 +407,8 @@ fun DashboardContent(
                             precision = state.decimalPrecision,
                             plannedPayments = state.plannedPayments,
                             budgets = state.budgets,
-                            loans = state.loans
+                            loans = state.loans,
+                            filter = TransactionFilter(excludeFuture = false)
                         ),
                         cardComputerRegistry = cardComputerRegistry,
                         cardUpdateHandler = dashboardViewModel,

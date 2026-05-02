@@ -380,20 +380,6 @@ fun DynamicAccountDetailCards(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
     ) {
-        if (heroCard != null && heroCard !is com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks.ComputeError) {
-            UnifiedCardRenderer(
-                cardWithCallbacks = heroCard,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = screenPadding.calculateTopPadding() + 16.dp, bottom = 4.dp),
-                showTitle = false,
-                currentTheme = currentTheme,
-                accounts = listOf(state.account),
-                allCategories = state.allCategories,
-                savedFilters = savedFilters
-            )
-        }
-
         AeonCardList(
             cards = cardsConfig.cards.filter { it !is AccountHeroCardConfig },
             cardInput = sharedCardInput,
@@ -415,7 +401,22 @@ fun DynamicAccountDetailCards(
             allCategories = state.allCategories,
             savedFilters = savedFilters,
             baseFilter = accountScopeFilter,
-            forceDisableAccountSelection = true
+            forceDisableAccountSelection = true,
+            header = {
+                if (heroCard != null && heroCard !is com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks.ComputeError) {
+                    UnifiedCardRenderer(
+                        cardWithCallbacks = heroCard,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = screenPadding.calculateTopPadding() + 16.dp, bottom = 4.dp),
+                        showTitle = false,
+                        currentTheme = currentTheme,
+                        accounts = listOf(state.account),
+                        allCategories = state.allCategories,
+                        savedFilters = savedFilters
+                    )
+                }
+            }
         )
     }
 

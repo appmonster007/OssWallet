@@ -162,7 +162,7 @@ fun AnalyticsScreen(
                 icon = Icons.Default.PieChart,
                 onClick = {
                     viewModel.addCard(
-                        CategoryBreakdownCardConfig(
+                        CategoryPieChartCardConfig(
                             cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY PIE CHART",
@@ -180,7 +180,7 @@ fun AnalyticsScreen(
                 icon = Icons.Default.BarChart,
                 onClick = {
                     viewModel.addCard(
-                        CategoryExpenseTreemapCardConfig(
+                        CategoryTreemapCardConfig(
                             cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY TREEMAP",

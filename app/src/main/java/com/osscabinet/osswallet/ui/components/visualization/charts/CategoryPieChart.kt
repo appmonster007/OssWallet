@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -42,13 +42,13 @@ import kotlin.math.sqrt
  */
 @Composable
 fun CategoryBreakdownPieChart(
-    data: List<CategoryBreakdownData>,
+    data: List<CategoryPieChartData>,
     modifier: Modifier = Modifier,
-    onSegmentClick: (CategoryBreakdownData) -> Unit = {},
-    onSegmentDoubleClick: (CategoryBreakdownData) -> Unit = {},
+    onSegmentClick: (CategoryPieChartData) -> Unit = {},
+    onSegmentDoubleClick: (CategoryPieChartData) -> Unit = {},
     showLabels: Boolean = true
 ) {
-    var selectedSegment by remember { mutableStateOf<CategoryBreakdownData?>(null) }
+    var selectedSegment by remember { mutableStateOf<CategoryPieChartData?>(null) }
     var showSubcategories by remember { mutableStateOf(false) }
     var currentData by remember { mutableStateOf(data) }
     val backgroundColor = MaterialTheme.colorScheme.background

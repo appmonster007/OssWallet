@@ -98,8 +98,8 @@ import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
@@ -492,8 +492,8 @@ fun AddCardDialog(
                     CardType.CURRENCY_BALANCES -> Icons.Default.AttachMoney
                     CardType.CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
                     CardType.ACCOUNTS -> Icons.Default.AccountBox
-                    CardType.CATEGORY_BREAKDOWN -> Icons.Default.PieChart
-                    CardType.CATEGORY_EXPENSE_TREEMAP -> Icons.Default.GridView
+                    CardType.CATEGORY_PIE_CHART -> Icons.Default.PieChart
+                    CardType.CATEGORY_TREEMAP -> Icons.Default.GridView
                     else -> null
                 },
                 onClick = { onAddCard(type.serialName) }

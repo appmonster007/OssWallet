@@ -80,8 +80,8 @@ sealed class CardConfig : BaseCardConfig {
             com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = cardId, screenContext = context)
             com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW -> CashFlowCardConfig(cardId = cardId, screenContext = context)
             com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS -> AccountsCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_BREAKDOWN -> CategoryBreakdownCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_EXPENSE_TREEMAP -> CategoryExpenseTreemapCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_PIE_CHART -> CategoryPieChartCardConfig(cardId = cardId, screenContext = context)
+            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_TREEMAP -> CategoryTreemapCardConfig(cardId = cardId, screenContext = context)
             com.osscabinet.ossWallet.domain.card.CardType.PLANNED_PAYMENTS -> PlannedPaymentsCardConfig(cardId = cardId, screenContext = context)
             com.osscabinet.ossWallet.domain.card.CardType.BUDGETS -> BudgetsCardConfig(cardId = cardId, screenContext = context)
             com.osscabinet.ossWallet.domain.card.CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
@@ -167,7 +167,7 @@ data class AccountsCardConfig(
  */
 @Serializable
 @SerialName("category_breakdown")
-data class CategoryBreakdownCardConfig(
+data class CategoryPieChartCardConfig(
     override val cardId: String,
     override val title: String = "CATEGORY PIE CHART",
     override val isEnabled: Boolean = true,
@@ -185,7 +185,7 @@ data class CategoryBreakdownCardConfig(
  */
 @Serializable
 @SerialName("category_expense_treemap")
-data class CategoryExpenseTreemapCardConfig(
+data class CategoryTreemapCardConfig(
     override val cardId: String,
     override val title: String = "CATEGORY TREEMAP",
     override val isEnabled: Boolean = true,
@@ -289,8 +289,8 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is CurrencyBalancesCardConfig -> copy(filter = TransactionFilter())
     is CashFlowCardConfig -> copy(filter = TransactionFilter())
     is AccountsCardConfig -> copy(filter = TransactionFilter())
-    is CategoryBreakdownCardConfig -> copy(filter = TransactionFilter())
-    is CategoryExpenseTreemapCardConfig -> copy(filter = TransactionFilter())
+    is CategoryPieChartCardConfig -> copy(filter = TransactionFilter())
+    is CategoryTreemapCardConfig -> copy(filter = TransactionFilter())
     is AccountHeroCardConfig -> copy(filter = TransactionFilter())
     is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter())
     is BudgetsCardConfig -> copy(filter = TransactionFilter())

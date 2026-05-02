@@ -103,7 +103,7 @@ private fun CardWithCallbacks.copyWithRules(
     is CardWithCallbacks.CurrencyBalances -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.CashFlow -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.Accounts -> copy(filterRules = rules, baseFilter = baseFilter)
-    is CardWithCallbacks.CategoryBreakdown -> copy(filterRules = rules, baseFilter = baseFilter)
+    is CardWithCallbacks.CategoryPieChart -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.CategoryTreemap -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.AccountHero -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter)

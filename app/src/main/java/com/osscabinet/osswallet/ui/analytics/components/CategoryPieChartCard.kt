@@ -20,7 +20,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.settings.CategoryBreakdownCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
@@ -40,12 +40,12 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 @Composable
-fun CategoryBreakdownCard(
-    config: CategoryBreakdownCardConfig,
-    data: List<CategoryBreakdownData>,
+fun CategoryPieChartCard(
+    config: CategoryPieChartCardConfig,
+    data: List<CategoryPieChartData>,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    onUpdate: (CategoryBreakdownCardConfig) -> Unit = {},
+    onUpdate: (CategoryPieChartCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
@@ -58,7 +58,7 @@ fun CategoryBreakdownCard(
     var showFilterSettings by remember { mutableStateOf(false) }
     
     // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryBreakdownData>>(data)) }
+    var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }
     val currentData = navigationStack.last()
     
     // Sync with external data changes
@@ -141,7 +141,7 @@ fun CategoryBreakdownCard(
                 val otherSum = others.sumOf { it.netBalance }
                 val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
                 
-                top + CategoryBreakdownData(
+                top + CategoryPieChartData(
                     category = "Other",
                     categoryId = -1L, // Special ID for "Other"
                     netBalance = otherSum,
@@ -169,8 +169,8 @@ fun CategoryBreakdownCard(
                         value = item.netBalance.abs(),
                         label = item.category,
                         color = Color(item.colorHex),
-                        hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
-                        subcategoryCount = item.subcategoryData?.size ?: 0,
+                        hasSubcategories = item.hasSubcategories,
+                        subcategoryCount = item.subcategoryCount,
                         percentageOfTotal = if (totalGlobal.signum() != 0) 
                             item.netBalance.abs().divide(totalGlobal, 4, RoundingMode.HALF_UP).toFloat() 
                             else 0f,
@@ -217,7 +217,7 @@ fun CategoryBreakdownCard(
     }
 
     if (showDisplaySettings) {
-        CategoryBreakdownDisplaySettingsDialog(
+        CategoryPieChartDisplaySettingsDialog(
             config = config,
             onUpdate = onUpdate,
             onDismiss = { showDisplaySettings = false },
@@ -242,9 +242,9 @@ fun CategoryBreakdownCard(
 }
 
 @Composable
-private fun CategoryBreakdownDisplaySettingsDialog(
-    config: CategoryBreakdownCardConfig,
-    onUpdate: (CategoryBreakdownCardConfig) -> Unit,
+private fun CategoryPieChartDisplaySettingsDialog(
+    config: CategoryPieChartCardConfig,
+    onUpdate: (CategoryPieChartCardConfig) -> Unit,
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -300,7 +300,7 @@ private fun CategoryBreakdownDisplaySettingsDialog(
 }
 
 @Composable
-fun CategoryLegend(data: List<CategoryBreakdownData>, precision: Int = 2) {
+fun CategoryLegend(data: List<CategoryPieChartData>, precision: Int = 2) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -362,31 +362,31 @@ private fun formatCurrency(amount: BigDecimal, precision: Int = 2): String {
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
-fun CategoryBreakdownCardPreview() {
+fun CategoryPieChartCardPreview() {
     val subData = listOf(
-        CategoryBreakdownData("Coffee", null, BigDecimal("50.00"), BigDecimal.ZERO, BigDecimal("50.00"), 0xFF795548.toInt(), 0.1f),
-        CategoryBreakdownData("Dinner", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFFFF9800.toInt(), 0.3f)
+        CategoryPieChartData("Coffee", null, BigDecimal("50.00"), BigDecimal.ZERO, BigDecimal("50.00"), 0xFF795548.toInt(), 0.1f),
+        CategoryPieChartData("Dinner", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFFFF9800.toInt(), 0.3f)
     )
     
     val richData = listOf(
-        CategoryBreakdownData("Housing", null, BigDecimal("1200.00"), BigDecimal.ZERO, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
-        CategoryBreakdownData(
+        CategoryPieChartData("Housing", null, BigDecimal("1200.00"), BigDecimal.ZERO, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
+        CategoryPieChartData(
             "Food & Dining", null, BigDecimal("450.00"), BigDecimal.ZERO, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.225f,
             hasSubcategories = true,
             subcategoryData = subData
         ),
-        CategoryBreakdownData("Transport", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.075f),
-        CategoryBreakdownData("Entertainment", null, BigDecimal("200.00"), BigDecimal.ZERO, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
-        CategoryBreakdownData("Misc 1", null, BigDecimal("10.00"), BigDecimal.ZERO, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 2", null, BigDecimal("9.00"), BigDecimal.ZERO, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 3", null, BigDecimal("8.00"), BigDecimal.ZERO, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 4", null, BigDecimal("7.00"), BigDecimal.ZERO, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 5", null, BigDecimal("6.00"), BigDecimal.ZERO, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 6", null, BigDecimal("5.00"), BigDecimal.ZERO, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 7", null, BigDecimal("4.00"), BigDecimal.ZERO, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 8", null, BigDecimal("3.00"), BigDecimal.ZERO, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 9", null, BigDecimal("2.00"), BigDecimal.ZERO, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryBreakdownData("Misc 10", null, BigDecimal("1.00"), BigDecimal.ZERO, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
+        CategoryPieChartData("Transport", null, BigDecimal("150.00"), BigDecimal.ZERO, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.075f),
+        CategoryPieChartData("Entertainment", null, BigDecimal("200.00"), BigDecimal.ZERO, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
+        CategoryPieChartData("Misc 1", null, BigDecimal("10.00"), BigDecimal.ZERO, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 2", null, BigDecimal("9.00"), BigDecimal.ZERO, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 3", null, BigDecimal("8.00"), BigDecimal.ZERO, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 4", null, BigDecimal("7.00"), BigDecimal.ZERO, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 5", null, BigDecimal("6.00"), BigDecimal.ZERO, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 6", null, BigDecimal("5.00"), BigDecimal.ZERO, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 7", null, BigDecimal("4.00"), BigDecimal.ZERO, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 8", null, BigDecimal("3.00"), BigDecimal.ZERO, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 9", null, BigDecimal("2.00"), BigDecimal.ZERO, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryPieChartData("Misc 10", null, BigDecimal("1.00"), BigDecimal.ZERO, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
     )
 
     OssWalletTheme {
@@ -394,8 +394,8 @@ fun CategoryBreakdownCardPreview() {
             modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CategoryBreakdownCard(
-                config = CategoryBreakdownCardConfig(cardId = "rich", title = "Category Pie Chart"),
+            CategoryPieChartCard(
+                config = CategoryPieChartCardConfig(cardId = "rich", title = "Category Pie Chart"),
                 data = richData
             )
         }
@@ -403,11 +403,11 @@ fun CategoryBreakdownCardPreview() {
 }
 
 /**
- * Category breakdown data for pie chart card.
+ * Category data for pie chart card.
  * Represents the net balance (income - expense) for each category.
  */
 @Serializable
-data class CategoryBreakdownData(
+data class CategoryPieChartData(
     val category: String,
     val categoryId: Long?,
     @Contextual val netBalance: BigDecimal,
@@ -416,7 +416,8 @@ data class CategoryBreakdownData(
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
-    val subcategoryData: List<CategoryBreakdownData>? = null
+    val subcategoryCount: Int = 0,
+    val subcategoryData: List<CategoryPieChartData>? = null
 ) {
     fun allCategoryIds(): List<String> {
         val ids = mutableListOf<String>()

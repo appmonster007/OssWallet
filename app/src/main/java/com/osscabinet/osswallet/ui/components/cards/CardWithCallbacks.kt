@@ -40,8 +40,8 @@ sealed class CardWithCallbacks {
         override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 
-    data class CategoryBreakdown(
-        val renderData: CardRenderData.CategoryBreakdown,
+    data class CategoryPieChart(
+        val renderData: CardRenderData.CategoryPieChart,
         val callbacks: CardCallbacks.Analytics,
         override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
         override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()

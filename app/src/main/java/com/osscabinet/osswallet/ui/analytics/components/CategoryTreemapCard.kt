@@ -21,7 +21,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
@@ -43,12 +43,12 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 @Composable
-fun CategoryExpenseTreemapCard(
-    config: CategoryExpenseTreemapCardConfig,
-    data: List<CategoryExpenseTreemapData>,
+fun CategoryTreemapCard(
+    config: CategoryTreemapCardConfig,
+    data: List<CategoryTreemapData>,
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
-    onUpdate: (CategoryExpenseTreemapCardConfig) -> Unit = {},
+    onUpdate: (CategoryTreemapCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
@@ -61,7 +61,7 @@ fun CategoryExpenseTreemapCard(
     var showFilterSettings by remember { mutableStateOf(false) }
     
     // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryExpenseTreemapData>>(data)) }
+    var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }
     val currentData = navigationStack.last()
     
     // Grouping logic for "Other" category
@@ -73,7 +73,7 @@ fun CategoryExpenseTreemapCard(
             val otherSum = others.sumOf { it.expense }
             val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
             
-            top + CategoryExpenseTreemapData(
+            top + CategoryTreemapData(
                 category = "Other",
                 categoryId = -1L,
                 expense = otherSum,
@@ -181,8 +181,8 @@ fun CategoryExpenseTreemapCard(
                         color = displayColor,
                         percentageOfTotal = item.percentage,
                         id = item.categoryId,
-                        hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
-                        subcategoryCount = item.subcategoryData?.size ?: 0
+                        hasSubcategories = item.hasSubcategories,
+                        subcategoryCount = item.subcategoryCount
                     )
                 }
                 
@@ -253,8 +253,8 @@ fun CategoryExpenseTreemapCard(
 
 @Composable
 private fun CategoryTreemapDisplaySettingsDialog(
-    config: CategoryExpenseTreemapCardConfig,
-    onUpdate: (CategoryExpenseTreemapCardConfig) -> Unit,
+    config: CategoryTreemapCardConfig,
+    onUpdate: (CategoryTreemapCardConfig) -> Unit,
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -312,7 +312,7 @@ private fun CategoryTreemapDisplaySettingsDialog(
 }
 
 @Composable
-fun TreemapLegend(data: List<CategoryExpenseTreemapData>, precision: Int = 2) {
+fun TreemapLegend(data: List<CategoryTreemapData>, precision: Int = 2) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -365,27 +365,27 @@ fun TreemapLegend(data: List<CategoryExpenseTreemapData>, precision: Int = 2) {
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
-fun CategoryExpenseTreemapCardPreview() {
+fun CategoryTreemapCardPreview() {
     val sampleData = listOf(
-        CategoryExpenseTreemapData("Housing", null, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
-        CategoryExpenseTreemapData("Food", null, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.2f),
-        CategoryExpenseTreemapData("Transport", null, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.1f),
-        CategoryExpenseTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
-        CategoryExpenseTreemapData("Misc 1", null, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 2", null, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 3", null, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 4", null, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 5", null, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 6", null, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 7", null, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 8", null, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 9", null, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryExpenseTreemapData("Misc 10", null, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
+        CategoryTreemapData("Housing", null, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
+        CategoryTreemapData("Food", null, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.2f),
+        CategoryTreemapData("Transport", null, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.1f),
+        CategoryTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
+        CategoryTreemapData("Misc 1", null, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 2", null, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 3", null, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 4", null, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 5", null, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 6", null, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 7", null, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 8", null, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 9", null, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
+        CategoryTreemapData("Misc 10", null, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
     )
 
      OssWalletTheme {
-        CategoryExpenseTreemapCard(
-            config = CategoryExpenseTreemapCardConfig(
+        CategoryTreemapCard(
+            config = CategoryTreemapCardConfig(
                 cardId = "preview",
                 title = "Category Treemap",
                 showLabels = true,
@@ -397,18 +397,19 @@ fun CategoryExpenseTreemapCardPreview() {
 }
 
 /**
- * Category expense data for treemap card.
+ * Category data for treemap card.
  * Represents expense distribution across categories for visualization.
  */
 @Serializable
-data class CategoryExpenseTreemapData(
+data class CategoryTreemapData(
     val category: String,
     val categoryId: Long?,
     @Contextual val expense: BigDecimal,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
-    val subcategoryData: List<CategoryExpenseTreemapData>? = null
+    val subcategoryCount: Int = 0,
+    val subcategoryData: List<CategoryTreemapData>? = null
 ) {
     fun allCategoryIds(): List<String> {
         val ids = mutableListOf<String>()

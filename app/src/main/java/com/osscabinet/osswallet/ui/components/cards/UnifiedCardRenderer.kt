@@ -6,15 +6,15 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownCard
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapCard
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartCard
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapCard
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.dashboard.components.PlannedPaymentsCard
@@ -121,12 +121,12 @@ fun UnifiedCardRenderer(
             )
         }
         
-        is CardWithCallbacks.CategoryBreakdown -> {
+        is CardWithCallbacks.CategoryPieChart -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
             
             val uiData = renderData.items.map { metric ->
-                CategoryBreakdownData(
+                CategoryPieChartData(
                     category = metric.category,
                     categoryId = metric.categoryId,
                     netBalance = metric.netBalance,
@@ -135,11 +135,12 @@ fun UnifiedCardRenderer(
                     colorHex = metric.colorHex,
                     percentage = metric.percentage,
                     hasSubcategories = metric.hasSubcategories,
+                    subcategoryCount = metric.subcategoryData.size,
                     subcategoryData = emptyList() // Simplified mapping
                 )
             }
 
-            CategoryBreakdownCard(
+            CategoryPieChartCard(
                 config = renderData.config,
                 data = uiData,
                 modifier = modifier.fillMaxWidth(),
@@ -160,18 +161,19 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
             
             val uiData = renderData.items.map { metric ->
-                CategoryExpenseTreemapData(
+                CategoryTreemapData(
                     category = metric.category,
                     categoryId = metric.categoryId,
                     expense = metric.expense.abs(),
                     colorHex = metric.colorHex,
                     percentage = metric.percentage,
                     hasSubcategories = metric.hasSubcategories,
+                    subcategoryCount = metric.subcategoryData.size,
                     subcategoryData = emptyList() // Simplified mapping
                 )
             }
 
-            CategoryExpenseTreemapCard(
+            CategoryTreemapCard(
                 config = renderData.config,
                 data = uiData,
                 modifier = modifier.fillMaxWidth(),

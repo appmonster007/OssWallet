@@ -40,7 +40,7 @@ class CardComputerRegistry(computers: List<CardDataComputer<*, *>>) {
                 CashFlowCardComputer(),
                 CurrencyBalancesCardComputer(),
                 AccountsCardComputer(),
-                CategoryBreakdownCardComputer(),
+                CategoryPieChartCardComputer(),
                 CategoryTreemapCardComputer(),
                 AccountHeroCardComputer(),
                 PlannedPaymentsCardComputer(),

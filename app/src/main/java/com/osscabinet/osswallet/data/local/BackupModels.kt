@@ -24,7 +24,16 @@ data class OssWalletBackup(
     val transactionLinks: List<TransactionLinkBackup> = emptyList(),
     val categories: List<CategoryBackup>,
     val tags: List<TagBackup>,
-    val templates: List<TemplateBackup> = emptyList()
+    val templates: List<TemplateBackup> = emptyList(),
+    val cardConfigs: CardConfigsBackup? = null
+)
+
+@Serializable
+data class CardConfigsBackup(
+    val dashboard: String = "",
+    val accountDetail: String = "",
+    val accountsView: String = "",
+    val analytics: String = ""
 )
 
 @Serializable

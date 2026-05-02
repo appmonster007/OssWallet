@@ -212,7 +212,7 @@ data class AccountHeroCardConfig(
     val showCurrencyBadges: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
-    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+    override val filterRules: CardFilterRules get() = CardFilterRules(allowFutureTransactionsToggle = false)
 }
 
 /**

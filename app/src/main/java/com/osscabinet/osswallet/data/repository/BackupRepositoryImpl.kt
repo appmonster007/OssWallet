@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.data.local.dao.*
 import com.osscabinet.ossWallet.data.local.entity.*
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import android.content.Context
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
@@ -21,7 +22,8 @@ class BackupRepositoryImpl(
     private val tagDao: TagDao,
     private val templateDao: TemplateDao,
     private val transactionLinkDao: TransactionLinkDao,
-    private val context: Context
+    private val context: Context,
+    private val settingsDataStore: SettingsDataStore
 ) : BackupRepository {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -90,7 +92,13 @@ class BackupRepositoryImpl(
                     isStarred = it.isStarred,
                     displayOrder = it.displayOrder
                 )
-            }
+            },
+            cardConfigs = CardConfigsBackup(
+                dashboard = settingsDataStore.dashboardCardsConfig.first(),
+                accountDetail = settingsDataStore.accountDetailCardsConfig.first(),
+                accountsView = settingsDataStore.accountsViewCardsConfig.first(),
+                analytics = settingsDataStore.analyticsCardsConfig.first()
+            )
         )
 
         val jsonString = json.encodeToString(backup)
@@ -187,6 +195,12 @@ class BackupRepositoryImpl(
                     linkedTransactionId = it.linkedTransactionId
                 )
             )
+        }
+        backup.cardConfigs?.let { configs ->
+            if (configs.dashboard.isNotEmpty()) settingsDataStore.saveDashboardCardsConfig(configs.dashboard)
+            if (configs.accountDetail.isNotEmpty()) settingsDataStore.saveAccountDetailCardsConfig(configs.accountDetail)
+            if (configs.accountsView.isNotEmpty()) settingsDataStore.saveAccountsViewCardsConfig(configs.accountsView)
+            if (configs.analytics.isNotEmpty()) settingsDataStore.saveAnalyticsCardsConfig(configs.analytics)
         }
     }
 }

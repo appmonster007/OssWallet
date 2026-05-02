@@ -9,39 +9,29 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
     override val supportedType = CardType.ACCOUNTS
 
     override fun compute(input: CardInput, config: AccountsCardConfig): CardRenderData.Accounts {
-        // Base scope
+        // Step 1: Filter
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-
-        // Final filter for period-specific stats
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
-        // Current-balance calculations must exclude future transactions explicitly since
-        // input.filter.excludeFuture is false (screen scope only).
-        val now = System.currentTimeMillis()
-        val currentBaseTx = baseTx.filter { it.timestamp <= now }
-
-        val accountBreakdownsForPeriod = AggregationService.breakdownByAccount(
+        // Step 2: Compute
+        val accountBreakdowns = AggregationService.breakdownByAccount(
             transactions = filteredTx,
             accounts = input.accounts
         )
 
         val accountStats = input.accounts.associate { acc ->
-            val periodSummary = accountBreakdownsForPeriod.find { it.key == acc.id }
-            val accCurrSummary = periodSummary?.currencyBreakdown?.get(acc.currencyCode) ?: FinancialSummary.EMPTY
+            val summary = accountBreakdowns.find { it.key == acc.id }
+            val currSummary = summary?.currencyBreakdown?.get(acc.currencyCode) ?: FinancialSummary.EMPTY
 
-            // Current total balance (Lifetime within scope)
-            val totalInAccountCurrency = AggregationService.calculateAccountBalance(
+            val balanceInAccountCurrency = AggregationService.calculateAccountBalance(
                 accountId = acc.id,
-                allTransactions = currentBaseTx,
+                allTransactions = filteredTx,
                 accountCurrency = acc.currencyCode,
                 exchangeRates = input.exchangeRates
             )
-
-            // Current total balance in base currency
-            val accountTransactions = currentBaseTx.filter { it.accountId == acc.id }
-            val balanceTotalsByCurrency = AggregationService.calculateTotalByCurrency(accountTransactions)
-            val totalInBaseCurrency = CurrencyService.calculateTotalInCurrency(
-                currencyTotals = balanceTotalsByCurrency,
+            val accountTxs = filteredTx.filter { it.accountId == acc.id }
+            val balanceInBase = CurrencyService.calculateTotalInCurrency(
+                currencyTotals = AggregationService.calculateTotalByCurrency(accountTxs),
                 targetCurrency = input.baseCurrency,
                 exchangeRates = input.exchangeRates,
                 precision = 10
@@ -49,14 +39,15 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
 
             acc.id to AccountSummaryItem(
                 account = acc,
-                currencyBalances = periodSummary?.currencyBreakdown?.mapValues { it.value.totalAmount } ?: emptyMap(),
-                balance = totalInAccountCurrency,
-                balanceInBase = totalInBaseCurrency,
-                incomeInAccountCurrency = accCurrSummary.income,
-                expenseInAccountCurrency = accCurrSummary.expense
+                currencyBalances = summary?.currencyBreakdown?.mapValues { it.value.totalAmount } ?: emptyMap(),
+                balance = balanceInAccountCurrency,
+                balanceInBase = balanceInBase,
+                incomeInAccountCurrency = currSummary.income,
+                expenseInAccountCurrency = currSummary.expense
             )
         }
-        
+
+        // Step 3: Build render data
         return CardRenderData.Accounts(config, input.accounts, accountStats, input.baseCurrency, "light", input.precision)
     }
 }

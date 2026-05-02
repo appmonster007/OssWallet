@@ -9,9 +9,11 @@ class CategoryTreemapCardComputer : CardDataComputer<CategoryExpenseTreemapCardC
     override val supportedType = CardType.CATEGORY_EXPENSE_TREEMAP
 
     override fun compute(input: CardInput, config: CategoryExpenseTreemapCardConfig): CardRenderData.CategoryTreemap {
+        // Step 1: Filter
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
+        // Step 2: Compute
         val tree = AggregationService.buildCategoryTree(
             transactions = filteredTx,
             allCategories = input.categories,
@@ -19,6 +21,8 @@ class CategoryTreemapCardComputer : CardDataComputer<CategoryExpenseTreemapCardC
             baseCurrency = input.baseCurrency,
             onlyExpenses = true
         )
+
+        // Step 3: Build render data
         return CardRenderData.CategoryTreemap(config, tree)
     }
 }

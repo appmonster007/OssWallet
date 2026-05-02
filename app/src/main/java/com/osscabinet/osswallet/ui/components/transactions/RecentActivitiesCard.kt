@@ -73,11 +73,9 @@ fun RecentActivitiesCard(
     applyFilter: Boolean = true,
     excludeFuture: Boolean = true
 ) {
-    val recentTransactions = if (applyFilter) {
-        filterToRecentTransactions(allTransactions, limit, days, excludeFuture)
-    } else {
-        allTransactions
-    }
+    val now = System.currentTimeMillis()
+    val base = if (excludeFuture) allTransactions.filter { it.transaction.timestamp <= now } else allTransactions
+    val recentTransactions = if (applyFilter) filterToRecentTransactions(base, limit, days, excludeFuture = false) else base
 
     val calendar = Calendar.getInstance()
     val groupedByDay = recentTransactions.groupBy {

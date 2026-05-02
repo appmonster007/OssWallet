@@ -148,8 +148,7 @@ class AccountsViewViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.decimalPrecision,
-                cardsConfig
+                settingsRepository.decimalPrecision
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
@@ -162,8 +161,6 @@ class AccountsViewViewModel(
                 val baseCurrency = args[4] as String
                 val hasLoadedRates = args[5] as Boolean
                 val precision = args[6] as Int
-                @Suppress("UNUSED_VARIABLE")
-                val cardConfig = args[7] as DashboardCardsConfig
 
                 if (!hasLoadedRates) {
                     return@combine AccountsViewUiState.Loading

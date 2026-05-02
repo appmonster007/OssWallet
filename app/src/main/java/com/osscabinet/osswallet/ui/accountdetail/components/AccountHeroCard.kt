@@ -70,26 +70,15 @@ fun AccountHeroCard(
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    currentTheme: String = "System"
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System"
 ) {
-    val isDark = when (currentTheme) {
-        "Dark" -> true
-        "Light" -> false
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = false // Could be passed from settings if needed
-
     val accountColor = try {
         Color(android.graphics.Color.parseColor(account.colorHex))
     } catch (e: Exception) {
         MaterialTheme.colorScheme.primary
     }
-    val containerColor = accountColor.toContainerColor(isDark, isAmoled).copy(alpha = 0.9f)
-    val contentColor = accountColor.toOnContainerColor(isDark, isAmoled)
+    
     val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-
-    var cardSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
 
     // Calculate balance in base currency
     val balanceInBase = CurrencyService.convertAmount(
@@ -104,20 +93,21 @@ fun AccountHeroCard(
 
     AeonExpressiveCard(
         title = account.name,
-        modifier = modifier
-            .onSizeChanged { cardSize = it }
-            .clickable { onClick?.invoke() },
+        subtitle = account.structureType,
+        icon = icon,
+        iconColor = accountColor,
+        modifier = modifier.clickable { onClick?.invoke() },
         filter = filter,
         headerTrailing = {
             IconButton(
                 onClick = { showSettingsSheet = true },
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Settings,
                     contentDescription = "Settings",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -127,68 +117,36 @@ fun AccountHeroCard(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Main Balance Section
-            Surface(
-                color = containerColor,
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Box(modifier = Modifier.padding(20.dp)) {
-                    // Large background icon
-                    val iconHeight = with(density) { (cardSize.height * 0.4f).toDp() }
-                    if (iconHeight > 0.dp) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(iconHeight)
-                                .alpha(0.12f),
-                            tint = contentColor
-                        )
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "TOTAL BALANCE",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
 
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = contentColor.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = "CURRENT BALANCE",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 0.8.sp,
-                                    fontSize = 10.sp
-                                ),
-                                color = contentColor.copy(alpha = 0.7f)
-                            )
-                        }
+                Text(
+                    text = formatCurrencyRight(balance, account.currencyCode, precision = precision),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                        Text(
-                            text = formatCurrencyRight(balance, account.currencyCode, precision = precision),
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 34.sp,
-                                letterSpacing = (-1).sp
-                            ),
-                            color = contentColor
-                        )
-
-                        if (account.currencyCode != baseCurrency) {
-                            Text(
-                                text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision = precision)}",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = contentColor.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
+                if (account.currencyCode != baseCurrency) {
+                    Text(
+                        text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision = precision)}",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
             }
 
@@ -202,42 +160,44 @@ fun AccountHeroCard(
                     type = CashFlowType.INCOME,
                     currency = account.currencyCode,
                     precision = precision,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    incomeColor = Color(0xFF004D40)
                 )
                 AeonFlowBadge(
                     amount = expense,
                     type = CashFlowType.EXPENSE,
                     currency = account.currencyCode,
                     precision = precision,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    expenseColor = Color(0xFFB3261E)
                 )
             }
 
             // Multi-Currency Section
             if (showCurrencyBadges && currencyBalances.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "MULTI-CURRENCY HOLDINGS",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.outline
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     )
                     
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -245,13 +205,15 @@ fun AccountHeroCard(
                                         curr,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Black,
+                                            fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     )
                                     Text(
                                         formatAmount(bal, precision = precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
                                         )
                                     )
                                 }
@@ -293,5 +255,23 @@ fun AccountHeroCard(
                 }
             }
         )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AccountHeroCardPreview() {
+    val account = Account("1", "Main Account", "USD", "Checking", "#004D40", "AccountBalance", emptyList())
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            AccountHeroCard(
+                account = account,
+                balance = BigDecimal("12500.50"),
+                income = BigDecimal("2000.00"),
+                expense = BigDecimal("850.00"),
+                baseCurrency = "USD",
+                exchangeRates = emptyMap()
+            )
+        }
     }
 }

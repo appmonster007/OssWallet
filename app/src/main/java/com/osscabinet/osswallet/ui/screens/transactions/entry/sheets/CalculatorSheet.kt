@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -8,8 +9,8 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 
 /**
- * Calculator bottom sheet using the full CalculatorNumpad component
- * with expression evaluation, history, and full arithmetic operations.
+ * Calculator bottom sheet using the full CalculatorNumpad component.
+ * Following the "Architect Slate" design specification.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,14 +35,16 @@ fun CalculatorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(16.dp)
-                .padding(bottom = 48.dp)
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
         ) {
             CalculatorNumpad(
                 amount = currentAmount,

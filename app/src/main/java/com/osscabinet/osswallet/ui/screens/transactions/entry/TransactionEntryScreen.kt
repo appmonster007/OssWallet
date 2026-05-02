@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
@@ -9,9 +10,14 @@ import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionFormBody
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 
 /**
  * Main entry point for transaction entry screen.
@@ -28,7 +34,7 @@ fun TransactionEntryScreen(
     viewModel: TransactionEntryViewModel,
     onBackClick: () -> Unit
 ) {
-    // Initialize ViewModel on first composition
+    // ... [existing logic remains the same]
     LaunchedEffect(Unit) {
         viewModel.initialize(
             transactionId = transactionId,
@@ -41,19 +47,16 @@ fun TransactionEntryScreen(
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // Clear prefill DTO when leaving the screen
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearPrefillDto()
         }
     }
 
-    // Reset navigation trigger when returning to this screen
     LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         viewModel.onScreenResume()
     }
 
-    // Handle navigation
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
             onBackClick()
@@ -61,10 +64,17 @@ fun TransactionEntryScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(if (state.isEditMode) "Edit Transaction" else "New Transaction")
+                    Text(
+                        text = if (state.isEditMode) "Edit Transaction" else "New Transaction",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
+                        )
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -88,15 +98,27 @@ fun TransactionEntryScreen(
                             )
                         }
                     }
-                    IconButton(
+                    Button(
                         onClick = {
                             viewModel.saveTransaction { viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) }
                         },
-                        enabled = state.canSave
+                        enabled = state.canSave,
+                        modifier = Modifier.padding(end = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        )
                     ) {
-                        Icon(Icons.Rounded.Done, contentDescription = "Save")
+                        Icon(Icons.Rounded.Done, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Save", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         }
     ) { innerPadding ->

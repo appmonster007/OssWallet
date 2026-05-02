@@ -40,7 +40,7 @@ fun BudgetsCard(
         title = config.title,
         icon = Icons.Rounded.DonutLarge,
         modifier = modifier,
-        headerTrailing = {
+        headerTrailing = { _ ->
             Box {
                 IconButton(
                     onClick = { showMenu = true },

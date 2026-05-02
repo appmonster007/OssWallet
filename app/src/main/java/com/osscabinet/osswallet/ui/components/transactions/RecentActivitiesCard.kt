@@ -83,7 +83,7 @@ fun RecentActivitiesCard(
         title = "Recent Activities",
         icon = Icons.Rounded.History,
         modifier = modifier,
-        headerTrailing = {
+        headerTrailing = { _ ->
             TextButton(
                 onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),

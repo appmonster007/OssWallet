@@ -38,7 +38,7 @@ fun LoansCard(
         title = config.title,
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
-        headerTrailing = {
+        headerTrailing = { _ ->
             Box {
                 IconButton(
                     onClick = { showMenu = true },

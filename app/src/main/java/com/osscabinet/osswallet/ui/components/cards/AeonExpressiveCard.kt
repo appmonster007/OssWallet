@@ -9,6 +9,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FilterAlt
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.components.FilterActiveIndicator
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 
 /**
@@ -43,7 +45,7 @@ fun AeonExpressiveCard(
     icon: ImageVector? = null,
     iconColor: Color = MaterialTheme.colorScheme.primary,
     filter: TransactionFilter? = null,
-    headerTrailing: @Composable (RowScope.() -> Unit)? = null,
+    headerTrailing: @Composable (RowScope.(Int) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     isWarning: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
@@ -107,20 +109,15 @@ fun AeonExpressiveCard(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp,
-                                letterSpacing = 0.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        if (activeFilterCount > 0) {
-                            FilterActiveIndicator(count = activeFilterCount)
-                        }
-                    }
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            letterSpacing = 0.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
@@ -138,7 +135,7 @@ fun AeonExpressiveCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        headerTrailing()
+                        headerTrailing(activeFilterCount)
                     }
                 }
             }
@@ -149,3 +146,57 @@ fun AeonExpressiveCard(
         }
     }
 }
+
+/**
+ * Standard filter button for expressive cards that indicates active filters.
+ */
+@Composable
+fun AeonCardFilterButton(
+    onClick: () -> Unit,
+    activeFilterCount: Int,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Rounded.FilterList,
+    activeIcon: ImageVector = Icons.Rounded.FilterAlt
+) {
+    val isActive = activeFilterCount > 0
+    
+    Surface(
+        onClick = onClick,
+        modifier = modifier.size(32.dp),
+        shape = CircleShape,
+        color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) 
+                else Color.Transparent
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            BadgedBox(
+                badge = {
+                    if (isActive) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
+                        ) {
+                            Text(
+                                text = activeFilterCount.toString(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = if (isActive) activeIcon else icon,
+                    contentDescription = "Filter",
+                    tint = if (isActive) MaterialTheme.colorScheme.primary 
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+

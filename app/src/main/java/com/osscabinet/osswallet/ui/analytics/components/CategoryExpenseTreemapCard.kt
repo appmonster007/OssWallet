@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,20 +31,28 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNo
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.generateShade
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.util.formatAmount
+import java.math.RoundingMode
 
 @Composable
 fun CategoryExpenseTreemapCard(
     config: CategoryExpenseTreemapCardConfig,
     data: List<CategoryExpenseTreemapData>,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     onUpdate: (CategoryExpenseTreemapCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    baseFilter: TransactionFilter = TransactionFilter()
+    baseFilter: TransactionFilter = TransactionFilter(),
+    precision: Int = 2
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -82,109 +89,135 @@ fun CategoryExpenseTreemapCard(
         navigationStack = listOf(data)
     }
 
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AeonFlowSectionHeader(
-                title = config.title,
-                modifier = headerModifier.fillMaxWidth(),
-                filter = config.filter,
-                breadcrumbs = if (navigationStack.size > 1) {
-                    navigationStack.drop(1).map { stack ->
-                        // Find the parent's name by looking at where this stack came from
-                        val prevIndex = navigationStack.indexOf(stack) - 1
-                        val prevStack = navigationStack[prevIndex]
-                        prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
-                    }
-                } else emptyList(),
-                onBreadcrumbClick = { index ->
-                    // index is -1 for Home, 0 for first sub, etc.
-                    navigationStack = navigationStack.take(index + 2)
-                },
-                trailing = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(onClick = { showFilterSettings = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(20.dp))
-                        }
-                        IconButton(onClick = { showDisplaySettings = true }) {
-                            Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
-            )
-            
-            Box(
+    AeonExpressiveCard(
+        title = config.title,
+        modifier = modifier,
+        filter = config.filter,
+        headerTrailing = {
+            IconButton(onClick = { showFilterSettings = true }, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    ) {
+        if (navigationStack.size > 1) {
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
+                    .padding(bottom = 12.dp)
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (groupedData.isNotEmpty()) {
-                    val rootNodes = groupedData.mapIndexed { index, item ->
-                        val baseColor = if (navigationStack.size > 1) {
-                            // Find the parent item in the previous level of navigation stack
-                            val prevStack = navigationStack[navigationStack.size - 2]
-                            val parentItem = prevStack.find { it.subcategoryData === currentData }
-                            parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
-                        } else {
-                            Color(item.colorHex)
-                        }
-                        
-                        val displayColor = if (navigationStack.size > 1) {
-                            baseColor.generateShade(index, groupedData.size)
-                        } else {
-                            baseColor
-                        }
-
-                        AeonTreemapNode(
-                            name = item.category,
-                            value = item.expense,
-                            color = displayColor,
-                            percentageOfTotal = item.percentage,
-                            id = item.categoryId,
-                            hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
-                            subcategoryCount = item.subcategoryData?.size ?: 0
+                IconButton(
+                    onClick = { navigationStack = navigationStack.take(1) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Home,
+                        contentDescription = "Home",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                navigationStack.drop(1).forEachIndexed { index, stack ->
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    
+                    val prevStack = navigationStack[index]
+                    val name = prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
+                    
+                    TextButton(
+                        onClick = { navigationStack = navigationStack.take(index + 2) },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            name.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
                         )
                     }
-                    
-                    AeonTreemap(
-                        nodes = rootNodes,
-                        modifier = Modifier.fillMaxSize(),
-                        showLabels = config.showLabels,
-                        onNodeClick = { _ ->
-                            // Interaction feedback
-                        },
-                        onDrillInClick = { node ->
-                            val clickedItem = groupedData.find { it.category == node.name }
-                            if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
-                                navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
-                            }
-                        },
-                        onNavigateToRecords = { node ->
-                            val clickedItem = groupedData.find { it.category == node.name }
-                            val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
-
-                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                categoryIds = categoryIds,
-                                accountIds = config.filter.accountIds,
-                                startDate = config.filter.startDate,
-                                endDate = config.filter.endDate,
-                                isIncome = false // All expenses
-                            ))
-                        }
-                    )
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No expense data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
                 }
             }
+        }
 
-            // Consistent Legend for Treemap
-            if (config.showLegend && groupedData.isNotEmpty()) {
-                TreemapLegend(data = groupedData)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        ) {
+            if (groupedData.isNotEmpty()) {
+                val rootNodes = groupedData.mapIndexed { index, item ->
+                    val baseColor = if (navigationStack.size > 1) {
+                        val prevStack = navigationStack[navigationStack.size - 2]
+                        val parentItem = prevStack.find { it.subcategoryData === currentData }
+                        parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
+                    } else {
+                        Color(item.colorHex)
+                    }
+                    
+                    val displayColor = if (navigationStack.size > 1) {
+                        baseColor.generateShade(index, groupedData.size)
+                    } else {
+                        baseColor
+                    }
+
+                    AeonTreemapNode(
+                        name = item.category,
+                        value = item.expense,
+                        color = displayColor,
+                        percentageOfTotal = item.percentage,
+                        id = item.categoryId,
+                        hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
+                        subcategoryCount = item.subcategoryData?.size ?: 0
+                    )
+                }
+                
+                AeonTreemap(
+                    nodes = rootNodes,
+                    modifier = Modifier.fillMaxSize(),
+                    showLabels = config.showLabels,
+                    onNodeClick = { _ ->
+                        // Interaction feedback
+                    },
+                    onDrillInClick = { node ->
+                        val clickedItem = groupedData.find { it.category == node.name }
+                        if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
+                            navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
+                        }
+                    },
+                    onNavigateToRecords = { node ->
+                        val clickedItem = groupedData.find { it.category == node.name }
+                        val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
+
+                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                            categoryIds = categoryIds,
+                            accountIds = config.filter.accountIds,
+                            startDate = config.filter.startDate,
+                            endDate = config.filter.endDate,
+                            isIncome = false // All expenses
+                        ))
+                    }
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No expense data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
+        }
+
+        // Consistent Legend for Treemap
+        if (config.showLegend && groupedData.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            TreemapLegend(data = groupedData, precision = precision)
         }
     }
 
@@ -274,7 +307,7 @@ private fun CategoryTreemapDisplaySettingsDialog(
 }
 
 @Composable
-fun TreemapLegend(data: List<CategoryExpenseTreemapData>) {
+fun TreemapLegend(data: List<CategoryExpenseTreemapData>, precision: Int = 2) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -297,7 +330,7 @@ fun TreemapLegend(data: List<CategoryExpenseTreemapData>) {
                 )
                 
                 Text(
-                    text = formatCurrency(item.expense),
+                    text = formatAmount(item.expense, precision),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -315,9 +348,6 @@ fun TreemapLegend(data: List<CategoryExpenseTreemapData>) {
     }
 }
 
-private fun formatCurrency(amount: BigDecimal): String {
-    return amount.toString()
-}
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun CategoryExpenseTreemapCardPreview() {

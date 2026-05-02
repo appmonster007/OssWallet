@@ -292,6 +292,7 @@ fun AccountDetailScreen(
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
                                     decimalPrecision = state.decimalPrecision,
+                                    precision = state.decimalPrecision,
                                     onRecordsClick = { context -> navigate { onRecordsClick(context) } },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,

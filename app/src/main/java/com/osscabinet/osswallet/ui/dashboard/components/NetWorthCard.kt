@@ -36,6 +36,8 @@ import java.time.format.DateTimeFormatter
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+
 @Composable
 fun NetWorthCard(
     netWorth: BigDecimal,
@@ -52,7 +54,7 @@ fun NetWorthCard(
     onClickIncome: (TimelineRange) -> Unit = {},
     onClickExpense: (TimelineRange) -> Unit = {},
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter(),
     accounts: List<Account> = emptyList(),
@@ -81,95 +83,82 @@ fun NetWorthCard(
         }
     }
 
-    Card(
+    AeonExpressiveCard(
+        title = "NET WORTH",
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        filter = filter,
+        headerTrailing = {
+            Text(
+                text = timelineLabel.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+            IconButton(
+                onClick = { showFilterSettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.FilterList,
+                    contentDescription = "Filter",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = { showDisplaySettings = true },
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    Icons.Default.Tune,
+                    contentDescription = "Display Settings",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AeonFlowSectionHeader(
-                title = "NET WORTH",
-                modifier = headerModifier,
-                filter = filter,
-                trailing = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = timelineLabel.uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                                fontSize = 10.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                        )
-                        IconButton(
-                            onClick = { showFilterSettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.FilterList,
-                                contentDescription = "Filter",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showDisplaySettings = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Tune,
-                                contentDescription = "Display Settings",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
+            Text(
+                text = formatCurrencyRight(netWorth, baseCurrency, precision),
+                style = textStyle.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-1).sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    FlowBadge(
-                        label = "INCOME",
-                        amount = netIncome,
-                        currency = baseCurrency,
-                        precision = precision,
-                        color = PositiveAmountColor,
-                        isIncome = true,
-                        onClick = { onClickIncome(filter.timelineRange) }
-                    )
-                    FlowBadge(
-                        label = "EXPENSE",
-                        amount = netExpense,
-                        currency = baseCurrency,
-                        precision = precision,
-                        color = NegativeAmountColor,
-                        isIncome = false,
-                        onClick = { onClickExpense(filter.timelineRange) }
-                    )
-                }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = formatCurrencyRight(netWorth, baseCurrency, precision),
-                    style = textStyle.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-1).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                FlowBadge(
+                    label = "INCOME",
+                    amount = netIncome,
+                    currency = baseCurrency,
+                    precision = precision,
+                    color = PositiveAmountColor,
+                    isIncome = true,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickIncome(filter.timelineRange) }
+                )
+                FlowBadge(
+                    label = "EXPENSE",
+                    amount = netExpense,
+                    currency = baseCurrency,
+                    precision = precision,
+                    color = NegativeAmountColor,
+                    isIncome = false,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickExpense(filter.timelineRange) }
                 )
             }
         }
@@ -209,31 +198,43 @@ private fun FlowBadge(
     precision: Int,
     color: Color,
     isIncome: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         color = color.copy(alpha = 0.1f),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                contentDescription = null,
-                modifier = Modifier.size(10.dp),
-                tint = color
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = color
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 10.sp,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = color
+                )
+            }
             Text(
-                text = "${label}: ${formatCurrencyRight(amount, currency, precision)}",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 9.sp,
-                    letterSpacing = 0.5.sp
+                text = formatCurrencyRight(amount, currency, precision),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
                 ),
                 color = color
             )

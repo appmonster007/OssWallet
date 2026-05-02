@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRenderData.AccountHero> {
     override val supportedType = CardType.ACCOUNT_HERO
@@ -47,14 +48,14 @@ class AccountHeroCardComputer : CardDataComputer<AccountHeroCardConfig, CardRend
         // Currency balances within base scope
         val currencyBalances = AggregationService.calculateTotalByCurrency(
             baseTx.filter { it.accountId == targetAccountId }
-        )
+        ).mapValues { it.value.setScale(input.precision, RoundingMode.HALF_UP) }
 
         return CardRenderData.AccountHero(
             config = config,
             account = account,
-            balance = totalBalance,
-            income = breakdown.totalIncome,
-            expense = breakdown.totalExpense,
+            balance = totalBalance.setScale(input.precision, RoundingMode.HALF_UP),
+            income = breakdown.totalIncome.setScale(input.precision, RoundingMode.HALF_UP),
+            expense = breakdown.totalExpense.setScale(input.precision, RoundingMode.HALF_UP),
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
             currencyBalances = currencyBalances,

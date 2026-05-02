@@ -20,7 +20,8 @@ class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig
         val items = AggregationService.calculateCurrencyBalances(
             transactions = filteredTx,
             baseCurrency = input.baseCurrency,
-            exchangeRates = input.exchangeRates
+            exchangeRates = input.exchangeRates,
+            precision = input.precision
         )
 
         return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)

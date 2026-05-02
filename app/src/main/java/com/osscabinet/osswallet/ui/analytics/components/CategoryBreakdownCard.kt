@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,20 +29,27 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Home
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.util.formatAmount
+import java.math.RoundingMode
 
 @Composable
 fun CategoryBreakdownCard(
     config: CategoryBreakdownCardConfig,
     data: List<CategoryBreakdownData>,
     modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     onUpdate: (CategoryBreakdownCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    baseFilter: TransactionFilter = TransactionFilter()
+    baseFilter: TransactionFilter = TransactionFilter(),
+    precision: Int = 2
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -57,122 +63,149 @@ fun CategoryBreakdownCard(
         navigationStack = listOf(data)
     }
 
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AeonFlowSectionHeader(
-                title = config.title,
-                modifier = headerModifier.fillMaxWidth(),
-                filter = config.filter,
-                breadcrumbs = if (navigationStack.size > 1) {
-                    navigationStack.drop(1).map { stack ->
-                        // Find the parent's name by looking at where this stack came from
-                        val prevIndex = navigationStack.indexOf(stack) - 1
-                        val prevStack = navigationStack[prevIndex]
-                        prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
-                    }
-                } else emptyList(),
-                onBreadcrumbClick = { index ->
-                    // index is -1 for Home, 0 for first sub, etc.
-                    navigationStack = navigationStack.take(index + 2)
-                },
-                trailing = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(onClick = { showFilterSettings = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(20.dp))
-                        }
-                        IconButton(onClick = { showDisplaySettings = true }) {
-                            Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
-            )
-            
-            val totalGlobal = remember(data) { data.sumOf { it.netBalance }.abs() }
-
-            val groupedData = remember(currentData) {
-                val sorted = currentData.sortedByDescending { it.netBalance.abs() }
-                // Group everything after top 10 into "Other"
-                if (sorted.size > 12) {
-                    val top = sorted.take(10)
-                    val others = sorted.drop(10)
-                    val otherSum = others.sumOf { it.netBalance }
-                    val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                    
-                    top + CategoryBreakdownData(
-                        category = "Other",
-                        categoryId = -1L, // Special ID for "Other"
-                        netBalance = otherSum,
-                        income = others.sumOf { it.income },
-                        expense = others.sumOf { it.expense },
-                        colorHex = 0xFF9E9E9E.toInt(), // Grey
-                        percentage = otherPercentage,
-                        hasSubcategories = true,
-                        subcategoryData = others
-                    )
-                } else {
-                    sorted
-                }
+    AeonExpressiveCard(
+        title = config.title,
+        modifier = modifier,
+        filter = config.filter,
+        headerTrailing = {
+            IconButton(onClick = { showFilterSettings = true }, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
             }
-
-            // Refined Visualization
-            Box(
+            IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    ) {
+        if (navigationStack.size > 1) {
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
+                    .padding(bottom = 12.dp)
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                if (groupedData.isNotEmpty()) {
-                    val slices = groupedData.map { item ->
-                        AeonPieChartSlice(
-                            value = item.netBalance.abs(),
-                            label = item.category,
-                            color = Color(item.colorHex),
-                            hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
-                            subcategoryCount = item.subcategoryData?.size ?: 0,
-                            percentageOfTotal = if (totalGlobal.signum() != 0) 
-                                item.netBalance.abs().divide(totalGlobal, 4, java.math.RoundingMode.HALF_UP).toFloat() 
-                                else 0f,
-                            id = item.categoryId
+                IconButton(
+                    onClick = { navigationStack = navigationStack.take(1) },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Home,
+                        contentDescription = "Home",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                navigationStack.drop(1).forEachIndexed { index, stack ->
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    
+                    val prevStack = navigationStack[index]
+                    val name = prevStack.find { it.subcategoryData === stack }?.category ?: "Sub"
+                    
+                    TextButton(
+                        onClick = { navigationStack = navigationStack.take(index + 2) },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            name.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
                         )
                     }
-                    
-                    AeonPieChart(
-                        slices = slices,
-                        modifier = Modifier.fillMaxSize(),
-                        onSliceClick = { slice ->
-                            // Interaction feedback
-                        },
-                        onDrillInClick = { slice ->
-                            val clickedItem = groupedData.find { it.category == slice.label }
-                            if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
-                                navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
-                            }
-                        },
-                        onNavigateToRecords = { slice ->
-                            val clickedItem = groupedData.find { it.category == slice.label }
-                            val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
-                            
-                            onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
-                                categoryIds = categoryIds,
-                                accountIds = config.filter.accountIds,
-                                startDate = config.filter.startDate,
-                                endDate = config.filter.endDate
-                            ))
-                        }
-                    )
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        Text("No category data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
                 }
             }
-            
-            // Optimized Legend
-            if (config.showLegend && groupedData.isNotEmpty()) {
-                CategoryLegend(data = groupedData)
+        }
+
+        val totalGlobal = remember(data) { data.sumOf { it.netBalance }.abs() }
+
+        val groupedData = remember(currentData) {
+            val sorted = currentData.sortedByDescending { it.netBalance.abs() }
+            // Group everything after top 10 into "Other"
+            if (sorted.size > 12) {
+                val top = sorted.take(10)
+                val others = sorted.drop(10)
+                val otherSum = others.sumOf { it.netBalance }
+                val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                
+                top + CategoryBreakdownData(
+                    category = "Other",
+                    categoryId = -1L, // Special ID for "Other"
+                    netBalance = otherSum,
+                    income = others.sumOf { it.income },
+                    expense = others.sumOf { it.expense },
+                    colorHex = 0xFF9E9E9E.toInt(), // Grey
+                    percentage = otherPercentage,
+                    hasSubcategories = true,
+                    subcategoryData = others
+                )
+            } else {
+                sorted
             }
+        }
+
+        // Refined Visualization
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        ) {
+            if (groupedData.isNotEmpty()) {
+                val slices = groupedData.map { item ->
+                    AeonPieChartSlice(
+                        value = item.netBalance.abs(),
+                        label = item.category,
+                        color = Color(item.colorHex),
+                        hasSubcategories = item.hasSubcategories && !item.subcategoryData.isNullOrEmpty(),
+                        subcategoryCount = item.subcategoryData?.size ?: 0,
+                        percentageOfTotal = if (totalGlobal.signum() != 0) 
+                            item.netBalance.abs().divide(totalGlobal, 4, RoundingMode.HALF_UP).toFloat() 
+                            else 0f,
+                        id = item.categoryId
+                    )
+                }
+                
+                AeonPieChart(
+                    slices = slices,
+                    modifier = Modifier.fillMaxSize(),
+                    onSliceClick = { slice ->
+                        // Interaction feedback
+                    },
+                    onDrillInClick = { slice ->
+                        val clickedItem = groupedData.find { it.category == slice.label }
+                        if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
+                            navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
+                        }
+                    },
+                    onNavigateToRecords = { slice ->
+                        val clickedItem = groupedData.find { it.category == slice.label }
+                        val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
+                        
+                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                            categoryIds = categoryIds,
+                            accountIds = config.filter.accountIds,
+                            startDate = config.filter.startDate,
+                            endDate = config.filter.endDate
+                        ))
+                    }
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text("No category data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        
+        // Optimized Legend
+        if (config.showLegend && groupedData.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            CategoryLegend(data = groupedData, precision = precision)
         }
     }
 
@@ -260,7 +293,7 @@ private fun CategoryBreakdownDisplaySettingsDialog(
 }
 
 @Composable
-fun CategoryLegend(data: List<CategoryBreakdownData>) {
+fun CategoryLegend(data: List<CategoryBreakdownData>, precision: Int = 2) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -283,7 +316,7 @@ fun CategoryLegend(data: List<CategoryBreakdownData>) {
                 )
                 
                 Text(
-                    text = formatCurrency(item.netBalance),
+                    text = formatCurrency(item.netBalance, precision),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = if (item.netBalance < BigDecimal.ZERO) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
@@ -301,11 +334,12 @@ fun CategoryLegend(data: List<CategoryBreakdownData>) {
     }
 }
 
-private fun formatCurrency(amount: BigDecimal): String {
+private fun formatCurrency(amount: BigDecimal, precision: Int = 2): String {
+    val formatted = formatAmount(amount, precision)
     return if (amount >= BigDecimal.ZERO) {
-        "+$amount"
+        "+$formatted"
     } else {
-        amount.toString()
+        formatted
     }
 }
 

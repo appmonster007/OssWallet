@@ -20,8 +20,8 @@ class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans
         }
         val items = filtered.take(config.maxItems).map { loan ->
             val payments = input.loanPayments[loan.id] ?: emptyList()
-            LoanService.buildSummary(loan, payments, now)
+            LoanService.buildSummary(loan, payments, now, input.precision)
         }
-        return CardRenderData.Loans(config = config, items = items)
+        return CardRenderData.Loans(config = config, items = items, precision = input.precision)
     }
 }

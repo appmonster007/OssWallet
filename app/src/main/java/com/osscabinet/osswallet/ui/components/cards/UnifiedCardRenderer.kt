@@ -150,7 +150,8 @@ fun UnifiedCardRenderer(
                 accounts = accounts,
                 allCategories = allCategories,
                 savedFilters = savedFilters,
-                baseFilter = cardWithCallbacks.baseFilter
+                baseFilter = cardWithCallbacks.baseFilter,
+                precision = renderData.precision
             )
         }
         
@@ -181,7 +182,8 @@ fun UnifiedCardRenderer(
                 accounts = accounts,
                 allCategories = allCategories,
                 savedFilters = savedFilters,
-                baseFilter = cardWithCallbacks.baseFilter
+                baseFilter = cardWithCallbacks.baseFilter,
+                precision = renderData.precision
             )
         }
 
@@ -258,7 +260,8 @@ fun UnifiedCardRenderer(
                 onUpdate = cb.onUpdate,
                 onItemClick = cb.onItemClick,
                 onDelete = { cb.onDelete() },
-                modifier = modifier.fillMaxWidth()
+                modifier = modifier.fillMaxWidth(),
+                precision = renderData.precision
             )
         }
 
@@ -272,7 +275,8 @@ fun UnifiedCardRenderer(
                 onUpdate = cb.onUpdate,
                 onBudgetClick = cb.onBudgetClick,
                 onDelete = { cb.onDelete() },
-                modifier = modifier.fillMaxWidth()
+                modifier = modifier.fillMaxWidth(),
+                precision = renderData.precision
             )
         }
 
@@ -286,7 +290,8 @@ fun UnifiedCardRenderer(
                 onUpdate = cb.onUpdate,
                 onLoanClick = cb.onLoanClick,
                 onDelete = { cb.onDelete() },
-                modifier = modifier.fillMaxWidth()
+                modifier = modifier.fillMaxWidth(),
+                precision = renderData.precision
             )
         }
 

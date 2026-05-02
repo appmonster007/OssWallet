@@ -22,6 +22,12 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import androidx.compose.ui.unit.sp
+
+import com.osscabinet.ossWallet.ui.util.formatAmount
+
 @Composable
 fun PlannedPaymentsCard(
     upcoming: List<UpcomingPaymentItem>,
@@ -30,82 +36,69 @@ fun PlannedPaymentsCard(
     onUpdate: (PlannedPaymentsCardConfig) -> Unit,
     onItemClick: (Long) -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    precision: Int = 2
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    ElevatedCard(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = config.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = null)
-                    }
-                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Show overdue") },
-                            trailingIcon = {
-                                Checkbox(
-                                    checked = config.showOverdue,
-                                    onCheckedChange = null
-                                )
-                            },
-                            onClick = {
-                                onUpdate(config.copy(showOverdue = !config.showOverdue))
-                                showMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete") },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                            onClick = {
-                                showMenu = false
-                                onDelete()
-                            }
-                        )
-                    }
+    AeonExpressiveCard(
+        title = config.title,
+        modifier = modifier,
+        headerTrailing = {
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Options",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Show overdue") },
+                        trailingIcon = {
+                            Checkbox(
+                                checked = config.showOverdue,
+                                onCheckedChange = null
+                            )
+                        },
+                        onClick = {
+                            onUpdate(config.copy(showOverdue = !config.showOverdue))
+                            showMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete card") },
+                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onDelete()
+                        }
+                    )
                 }
             }
-
+        }
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (config.showOverdue && overdue.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${overdue.size} overdue",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
                 overdue.take(3).forEach { payment ->
                     PlannedPaymentRow(
                         title = payment.title,
                         amount = payment.amount,
                         currency = payment.currency,
-                        dateLabel = "Overdue",
+                        dateLabel = "OVERDUE",
                         isOverdue = true,
-                        onClick = { onItemClick(payment.id) }
+                        onClick = { onItemClick(payment.id) },
+                        precision = precision
                     )
                 }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            if (upcoming.isEmpty()) {
+            if (upcoming.isEmpty() && overdue.isEmpty()) {
                 Text(
                     text = "No upcoming payments",
                     style = MaterialTheme.typography.bodySmall,
@@ -118,9 +111,10 @@ fun PlannedPaymentsCard(
                         title = item.plannedPayment.title,
                         amount = item.plannedPayment.amount,
                         currency = item.plannedPayment.currency,
-                        dateLabel = formatDate(item.scheduledDate),
+                        dateLabel = formatDate(item.scheduledDate).uppercase(),
                         isOverdue = item.isOverdue,
-                        onClick = { onItemClick(item.plannedPayment.id) }
+                        onClick = { onItemClick(item.plannedPayment.id) },
+                        precision = precision
                     )
                 }
             }
@@ -135,38 +129,46 @@ private fun PlannedPaymentRow(
     currency: String,
     dateLabel: String,
     isOverdue: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    precision: Int = 2
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        color = MaterialTheme.colorScheme.surface
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
                 )
                 Text(
                     text = dateLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isOverdue) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Black,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.5.sp,
+                        color = if (isOverdue) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.outline
+                    )
                 )
             }
             Text(
-                text = "${amount.toPlainString()} $currency",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isOverdue) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurface
+                text = "${formatAmount(amount, precision)} $currency",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    color = if (isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     }

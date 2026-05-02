@@ -60,15 +60,15 @@ object LoanService {
         return entries
     }
 
-    fun buildSummary(loan: Loan, payments: List<LoanPayment>, now: Long): LoanSummary {
+    fun buildSummary(loan: Loan, payments: List<LoanPayment>, now: Long, precision: Int = 2): LoanSummary {
         val totalPaid = payments.fold(BigDecimal.ZERO) { acc, p -> acc + p.amount }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
         val interest = calculateInterestAccrued(loan, now)
         return LoanSummary(
             loan = loan,
-            totalPaid = totalPaid,
-            remainingBalance = remaining,
-            interestAccrued = interest
+            totalPaid = totalPaid.setScale(precision, RoundingMode.HALF_UP),
+            remainingBalance = remaining.setScale(precision, RoundingMode.HALF_UP),
+            interestAccrued = interest.setScale(precision, RoundingMode.HALF_UP)
         )
     }
 

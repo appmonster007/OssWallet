@@ -12,12 +12,12 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Preview(showBackground = true)
 @Composable
-fun TransactionHeaderCardPreview() {
+fun TransactionHeaderCardLongAmountPreview() {
     OssWalletTheme {
         Surface(modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.background) {
             TransactionHeaderCard(
                 state = TransactionEntryState(
-                    amount = "1,250.00",
+                    amount = "1,250,000,000.00",
                     transactionType = 0,
                     selectedCurrency = "USD"
                 ),
@@ -29,13 +29,28 @@ fun TransactionHeaderCardPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun TransactionActionCardsPreview() {
+fun TransactionActionCardsSideBySidePreview() {
     OssWalletTheme {
         Surface(modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.background) {
             TransactionActionCards(
                 state = TransactionEntryState(
-                    category = "Groceries",
-                    selectedAccount = null
+                    isEditMode = false,
+                    selectedTemplateName = "Monthly Rent"
+                ),
+                onEvent = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TransactionActionCardsSingleRowPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.background) {
+            TransactionActionCards(
+                state = TransactionEntryState(
+                    isEditMode = true
                 ),
                 onEvent = {}
             )

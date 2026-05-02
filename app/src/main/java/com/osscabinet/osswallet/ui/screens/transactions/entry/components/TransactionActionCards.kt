@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,32 +27,45 @@ fun TransactionActionCards(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Template selector (only for new transactions)
-        if (!state.isEditMode) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // First Row: Template and Date (Side by side)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!state.isEditMode) {
+                ActionCard(
+                    icon = Icons.Rounded.Bookmark,
+                    label = "TEMPLATE",
+                    value = state.selectedTemplateName ?: "None",
+                    onClick = { onEvent(TransactionEntryEvent.ShowTemplateSheet(true)) },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
+
             ActionCard(
-                icon = Icons.Rounded.Bookmark,
-                label = "TEMPLATE",
-                value = state.selectedTemplateName ?: "None",
-                onClick = { onEvent(TransactionEntryEvent.ShowTemplateSheet(true)) },
-                iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colorScheme.primary
+                icon = Icons.Rounded.CalendarToday,
+                label = "DATE",
+                value = formatDate(state.selectedDateMillis),
+                onClick = { onEvent(TransactionEntryEvent.ShowDatePicker(true)) },
+                modifier = Modifier.weight(1f),
+                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.secondary
             )
         }
 
-        // Date selector
-        ActionCard(
-            icon = Icons.Rounded.CalendarToday,
-            label = "DATE",
-            value = formatDate(state.selectedDateMillis),
-            onClick = { onEvent(TransactionEntryEvent.ShowDatePicker(true)) },
-            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.secondary
-        )
-
-        // Account and Category/Target Account in same row
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Account selector
+        // Second Row: Account and Category/Target Account (Side by side)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             ActionCard(
                 icon = Icons.Rounded.AccountBalance,
                 label = if (state.isTransfer) "FROM" else "ACCOUNT",
@@ -64,7 +76,6 @@ fun TransactionActionCards(
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            // Target account (transfer) or Category (expense/income)
             if (state.isTransfer) {
                 val targetDisplay = when {
                     state.targetAccount != null -> state.targetAccount.name
@@ -84,7 +95,6 @@ fun TransactionActionCards(
                     state.categories.find { it.id == state.selectedCategoryId }?.name ?: state.category
                 } else state.category
 
-                // Use categoryIcons map like original, fallback to Category icon
                 val categoryIcon = categoryIcons[displayCategory] ?: Icons.Rounded.Category
 
                 ActionCard(

@@ -32,6 +32,7 @@ fun BudgetsCard(
     onBudgetClick: (Long) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     precision: Int = 2
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -40,6 +41,7 @@ fun BudgetsCard(
         title = config.title,
         icon = Icons.Rounded.DonutLarge,
         modifier = modifier,
+        headerModifier = headerModifier,
         headerTrailing = { _ ->
             Box {
                 IconButton(

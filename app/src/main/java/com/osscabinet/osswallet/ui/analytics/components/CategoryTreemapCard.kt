@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
@@ -47,13 +48,14 @@ fun CategoryTreemapCard(
     config: CategoryTreemapCardConfig,
     data: List<CategoryTreemapData>,
     modifier: Modifier = Modifier,
-    @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
+    headerModifier: Modifier = Modifier,
     onUpdate: (CategoryTreemapCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
+    filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY,
     baseFilter: TransactionFilter = TransactionFilter(),
     precision: Int = 2
 ) {
@@ -96,7 +98,10 @@ fun CategoryTreemapCard(
         title = config.title,
         icon = Icons.Rounded.Dashboard,
         modifier = modifier,
+        headerModifier = headerModifier,
         filter = config.filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

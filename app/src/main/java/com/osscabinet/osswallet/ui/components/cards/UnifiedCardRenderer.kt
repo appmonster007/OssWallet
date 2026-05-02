@@ -184,6 +184,7 @@ fun UnifiedCardRenderer(
                 accounts = accounts,
                 allCategories = allCategories,
                 savedFilters = savedFilters,
+                filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
                 precision = renderData.precision
             )
@@ -202,6 +203,7 @@ fun UnifiedCardRenderer(
                 exchangeRates = renderData.exchangeRates,
                 currencyBalances = renderData.currencyBalances,
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 precision = renderData.precision,
                 showCurrencyBadges = renderData.config.showCurrencyBadges,
                 filter = renderData.config.filter,
@@ -263,6 +265,7 @@ fun UnifiedCardRenderer(
                 onItemClick = cb.onItemClick,
                 onDelete = { cb.onDelete() },
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 precision = renderData.precision
             )
         }
@@ -278,6 +281,7 @@ fun UnifiedCardRenderer(
                 onBudgetClick = cb.onBudgetClick,
                 onDelete = { cb.onDelete() },
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 precision = renderData.precision
             )
         }
@@ -293,6 +297,7 @@ fun UnifiedCardRenderer(
                 onLoanClick = cb.onLoanClick,
                 onDelete = { cb.onDelete() },
                 modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
                 precision = renderData.precision
             )
         }

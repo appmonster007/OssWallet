@@ -1,48 +1,34 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
 import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.service.*
-import java.math.BigDecimal
 
 class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        // Step 1: Apply BASE scope filter (e.g. fixed to an account or profile)
+        // Step 1: Filter
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-        
-        // Step 2: Apply CARD user filter (e.g. timeline, categories)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
-        
-        // Calculate LIFETIME net worth for the relevant accounts within the BASE scope.
-        // Explicitly exclude futures here since input.filter no longer does so.
-        val now = System.currentTimeMillis()
-        val targetAccountIds = config.filter.accountIds
-        val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            baseTx.filter { it.timestamp <= now }
-        } else {
-            baseTx.filter { it.timestamp <= now && targetAccountIds.contains(it.accountId) }
-        }
 
-        val totalsByCurrency = AggregationService.calculateTotalByCurrency(balanceTransactions)
+        // Step 2: Compute
+        val totalsByCurrency = AggregationService.calculateTotalByCurrency(filteredTx)
         val netWorth = CurrencyService.calculateTotalInCurrency(
             currencyTotals = totalsByCurrency,
             targetCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
             precision = 10
         )
-
-        // Calculate flow for the SELECTED period only
         val cashFlowResult = AggregationService.calculateCashFlowResult(
             transactions = filteredTx,
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
             precision = input.precision
         )
-        
+
+        // Step 3: Build render data
         return CardRenderData.NetWorth(config, netWorth, cashFlowResult, input.baseCurrency, input.precision)
     }
 }

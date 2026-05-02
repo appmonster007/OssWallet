@@ -9,9 +9,11 @@ class CategoryBreakdownCardComputer : CardDataComputer<CategoryBreakdownCardConf
     override val supportedType = CardType.CATEGORY_BREAKDOWN
 
     override fun compute(input: CardInput, config: CategoryBreakdownCardConfig): CardRenderData.CategoryBreakdown {
+        // Step 1: Filter
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
+        // Step 2: Compute
         val tree = AggregationService.buildCategoryTree(
             transactions = filteredTx,
             allCategories = input.categories,
@@ -19,6 +21,8 @@ class CategoryBreakdownCardComputer : CardDataComputer<CategoryBreakdownCardConf
             baseCurrency = input.baseCurrency,
             onlyExpenses = false
         )
+
+        // Step 3: Build render data
         return CardRenderData.CategoryBreakdown(config, tree)
     }
 }

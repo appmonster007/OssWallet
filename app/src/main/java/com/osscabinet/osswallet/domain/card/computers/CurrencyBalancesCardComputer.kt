@@ -10,25 +10,18 @@ class CurrencyBalancesCardComputer : CardDataComputer<CurrencyBalancesCardConfig
     override val supportedType = CardType.CURRENCY_BALANCES
 
     override fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-        // Apply base scope
+        // Step 1: Filter
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-        
-        // Further filter by config accountIds if specified (ignoring timeline for balance).
-        // Explicitly exclude futures since input.filter no longer does so.
-        val now = System.currentTimeMillis()
-        val targetAccountIds = config.filter.accountIds
-        val balanceTransactions = if (targetAccountIds.isEmpty()) {
-            baseTx.filter { it.timestamp <= now }
-        } else {
-            baseTx.filter { it.timestamp <= now && targetAccountIds.contains(it.accountId) }
-        }
+        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
+        // Step 2: Compute
         val items = AggregationService.calculateCurrencyBalances(
-            transactions = balanceTransactions,
+            transactions = filteredTx,
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates
         )
-        
+
+        // Step 3: Build render data
         return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)
     }
 }

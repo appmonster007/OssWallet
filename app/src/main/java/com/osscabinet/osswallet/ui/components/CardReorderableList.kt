@@ -72,6 +72,7 @@ fun <T> CardReorderableList(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
     animateCards: Boolean = true,
+    header: @Composable (LazyItemScope.() -> Unit)? = null,
     itemContent: @Composable LazyItemScope.(item: T, isDragging: Boolean, dragModifier: Modifier) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -128,15 +129,16 @@ fun <T> CardReorderableList(
         // Sync Guard: Ensure layout and data are in sync before making structural changes.
         // This prevents multiple swaps before the list has finished its previous transition.
         val draggedItemInfo = visibleItems.find { it.key == draggedKeyVal }
-        if (draggedItemInfo != null && draggedItemInfo.index != currentIndex) return
+        if (draggedItemInfo != null && draggedItemInfo.index != (if (header != null) currentIndex + 1 else currentIndex)) return
         
         // Use the center point of the dragged item for directional decisions
         val draggedCenter = currentPointerY - touchOffsetOnItem + (draggedItemHeight / 2f)
 
         // Find the adjacent target based on the strict 95% travel threshold.
         val targetItem = visibleItems.find { other ->
-            val isNext = other.index == currentIndex + 1
-            val isPrev = other.index == currentIndex - 1
+            val headerOffset = if (header != null) 1 else 0
+            val isNext = other.index == (currentIndex + headerOffset + 1)
+            val isPrev = other.index == (currentIndex + headerOffset - 1)
             if (!isNext && !isPrev) return@find false
             
             val otherTop = other.offset.toFloat()
@@ -149,6 +151,8 @@ fun <T> CardReorderableList(
                 draggedCenter > (otherTop + otherHeight * 0.95f - draggedItemHeight * 0.5f)
             } else {
                 // Moving UP: Leading edge (top) must pass 95% of the previous item's height (from the bottom)
+                // PREVENT DRAGGING ABOVE HEADER
+                if (header != null && other.index == 0) return@find false
                 draggedCenter < (otherBottom - (otherHeight * 0.95f - draggedItemHeight * 0.5f))
             }
         }
@@ -156,7 +160,8 @@ fun <T> CardReorderableList(
         if (targetItem != null) {
             val newList = itemsList.toMutableList()
             val element = newList.removeAt(currentIndex)
-            newList.add(targetItem.index, element)
+            val targetListIndex = if (header != null) targetItem.index - 1 else targetItem.index
+            newList.add(targetListIndex, element)
             
             lastSwapTime = now
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -210,6 +215,9 @@ fun <T> CardReorderableList(
                             offset.y.toInt() in it.offset..(it.offset + it.size)
                         }
                         if (item != null) {
+                            // If header is present and we clicked on it (index 0), don't start drag
+                            if (header != null && item.index == 0) return@detectDragGesturesAfterLongPress
+
                             // Hit test: only start drag if the touch is within the reported handle bounds
                             val itemKey = item.key
                             val bounds = handleBounds[itemKey]
@@ -245,6 +253,12 @@ fun <T> CardReorderableList(
             userScrollEnabled = draggedKey == null,
             modifier = Modifier.fillMaxWidth()
         ) {
+            if (header != null) {
+                item(key = "header_item") {
+                    header()
+                }
+            }
+
             itemsIndexed(
                 items = items,
                 key = { _, item -> key(item) }

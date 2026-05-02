@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.*
@@ -39,7 +40,8 @@ fun AeonCardList(
     onAccountsViewClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
     baseFilter: TransactionFilter = TransactionFilter(),
-    forceDisableAccountSelection: Boolean = false
+    forceDisableAccountSelection: Boolean = false,
+    header: @Composable (LazyItemScope.() -> Unit)? = null
 ) {
     CardReorderableList(
         items = cards.sortedBy { it.order },
@@ -48,7 +50,8 @@ fun AeonCardList(
         modifier = modifier,
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
-        animateCards = animateCards
+        animateCards = animateCards,
+        header = header
     ) { cardConfig, isDragging, dragModifier ->
 
         // cardInput.filter is the screen's base scope. Card computers apply config.filter on top

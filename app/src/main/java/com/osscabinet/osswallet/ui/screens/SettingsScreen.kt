@@ -78,6 +78,12 @@ fun SettingsScreen(
         uri?.let { viewModel.importBackup(it) }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.backupMessage.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     if (showCurrencyDialog) {
         val currencies = remember { getAllCurrencies() }
         var searchQuery by remember { mutableStateOf("") }

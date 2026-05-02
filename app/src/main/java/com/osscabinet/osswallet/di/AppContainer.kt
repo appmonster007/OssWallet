@@ -84,7 +84,7 @@ class AppContainer(private val context: Context) {
     }
 
     val backupRepository: BackupRepository by lazy {
-        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), db.transactionLinkDao(), context)
+        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), db.transactionLinkDao(), context, settingsDataStore)
     }
 
     val tagRepository: TagRepository by lazy {

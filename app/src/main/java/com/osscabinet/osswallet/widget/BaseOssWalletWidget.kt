@@ -13,7 +13,7 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val configStore = WidgetConfigStore(context)
-        val config = configStore.getConfig(id.hashCode()) ?: defaultConfig
+        val config = (configStore.getConfig(id.hashCode()) ?: defaultConfig).withInstanceCardId(id.hashCode())
         val data = WidgetDataLoader.load(context)
 
         val input = CardInput(
@@ -57,4 +57,12 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
         renderData: CardRenderData?,
         config: WidgetConfig
     )
+}
+
+private fun WidgetConfig.withInstanceCardId(idHash: Int): WidgetConfig = when (this) {
+    is WidgetConfig.NetWorth -> copy(cardConfig = cardConfig.copy(cardId = "widget_net_worth_$idHash"))
+    is WidgetConfig.CashFlow -> copy(cardConfig = cardConfig.copy(cardId = "widget_cash_flow_$idHash"))
+    is WidgetConfig.AccountBalance -> copy(cardConfig = cardConfig.copy(cardId = "widget_account_$idHash"))
+    is WidgetConfig.UpcomingPayments -> copy(cardConfig = cardConfig.copy(cardId = "widget_planned_$idHash"))
+    is WidgetConfig.Budget -> copy(cardConfig = cardConfig.copy(cardId = "widget_budgets_$idHash"))
 }

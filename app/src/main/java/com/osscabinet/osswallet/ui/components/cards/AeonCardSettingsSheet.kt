@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,6 +82,23 @@ fun AeonCardSettingsSheet(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    if (filterRules.allowFutureTransactionsToggle) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Include future transactions", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                Text("Show scheduled entries in this card", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                            }
+                            Switch(
+                                checked = !filter.excludeFuture,
+                                onCheckedChange = { include -> onFilterChange(filter.copy(excludeFuture = !include)) }
+                            )
+                        }
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    }
                     AdvancedFilterSection(
                         filter = filter,
                         onFilterChange = onFilterChange,

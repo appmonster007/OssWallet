@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.ProfileType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -93,6 +94,9 @@ class SettingsViewModel(
 
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState.asStateFlow()
+
+    private val _backupMessage = Channel<String>(Channel.BUFFERED)
+    val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
 
     fun setCurrency(currencyCode: String) {
         viewModelScope.launch {
@@ -203,11 +207,19 @@ class SettingsViewModel(
     }
 
     fun exportBackup(uri: Uri) {
-        // Implementation depends on BackupRepository actual methods
+        viewModelScope.launch {
+            backupRepository.exportData(uri.toString())
+                .onSuccess { _backupMessage.send("Backup exported successfully") }
+                .onFailure { _backupMessage.send("Export failed: ${it.message}") }
+        }
     }
 
     fun importBackup(uri: Uri) {
-        // Implementation depends on BackupRepository actual methods
+        viewModelScope.launch {
+            backupRepository.importData(uri.toString())
+                .onSuccess { _backupMessage.send("Backup imported successfully") }
+                .onFailure { _backupMessage.send("Import failed: ${it.message}") }
+        }
     }
 }
 

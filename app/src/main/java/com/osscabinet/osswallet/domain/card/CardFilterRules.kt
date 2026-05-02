@@ -63,7 +63,13 @@ data class CardFilterRules(
     /**
      * Whether custom range in timeline is allowed.
      */
-    val allowTimelineCustomRange: Boolean = true
+    val allowTimelineCustomRange: Boolean = true,
+
+    /**
+     * Whether the "Include future transactions" toggle is shown.
+     * Set to false for cards whose computer enforces excludeFuture=true regardless of config.
+     */
+    val allowFutureTransactionsToggle: Boolean = true
 ) {
     companion object {
         /**

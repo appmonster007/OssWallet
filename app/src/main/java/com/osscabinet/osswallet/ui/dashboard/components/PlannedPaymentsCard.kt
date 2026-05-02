@@ -44,7 +44,7 @@ fun PlannedPaymentsCard(
         title = config.title,
         icon = Icons.Rounded.EventRepeat,
         modifier = modifier,
-        headerTrailing = {
+        headerTrailing = { _ ->
             Box {
                 IconButton(
                     onClick = { showMenu = true },

@@ -46,6 +46,7 @@ import androidx.compose.material3.IconButton
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 @Composable
@@ -98,18 +99,13 @@ fun AccountHeroCard(
         iconColor = accountColor,
         modifier = modifier.clickable { onClick?.invoke() },
         filter = filter,
-        headerTrailing = {
-            IconButton(
+        headerTrailing = { activeCount ->
+            AeonCardFilterButton(
                 onClick = { showSettingsSheet = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Settings,
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                activeFilterCount = activeCount,
+                icon = Icons.Rounded.Settings,
+                activeIcon = Icons.Rounded.Settings
+            )
         }
     ) {
         Column(

@@ -8,9 +8,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +39,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 @Composable
 fun CategoryExpenseTreemapCard(
@@ -96,12 +97,13 @@ fun CategoryExpenseTreemapCard(
         icon = Icons.Rounded.Dashboard,
         modifier = modifier,
         filter = config.filter,
-        headerTrailing = {
-            IconButton(onClick = { showFilterSettings = true }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            }
+        headerTrailing = { activeCount ->
+            AeonCardFilterButton(
+                onClick = { showFilterSettings = true },
+                activeFilterCount = activeCount
+            )
             IconButton(onClick = { showDisplaySettings = true }, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Rounded.Tune, contentDescription = "Display Settings", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             }
         }
     ) {

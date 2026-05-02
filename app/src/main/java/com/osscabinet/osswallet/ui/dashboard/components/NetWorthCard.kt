@@ -8,10 +8,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,7 +34,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
 import androidx.compose.ui.tooling.preview.Preview
@@ -85,24 +84,17 @@ fun NetWorthCard(
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         filter = filter,
-        headerTrailing = {
-            IconButton(
+        headerTrailing = { activeCount ->
+            AeonCardFilterButton(
                 onClick = { showFilterSettings = true },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Default.FilterList,
-                    contentDescription = "Filter",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                activeFilterCount = activeCount
+            )
             IconButton(
                 onClick = { showDisplaySettings = true },
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    Icons.Default.Tune,
+                    Icons.Rounded.Tune,
                     contentDescription = "Display Settings",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)

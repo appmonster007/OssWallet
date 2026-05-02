@@ -51,6 +51,7 @@ fun AeonExpressiveCard(
     headerTrailing: @Composable (RowScope.(Int) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     isWarning: Boolean = false,
+    accentColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -77,9 +78,12 @@ fun AeonExpressiveCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
         border = BorderStroke(
-            width = 0.5.dp,
-            color = if (isWarning) MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
-                   else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            width = if (accentColor != null) 1.dp else 0.5.dp,
+            color = when {
+                isWarning -> MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
+                accentColor != null -> accentColor.copy(alpha = 0.4f)
+                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {

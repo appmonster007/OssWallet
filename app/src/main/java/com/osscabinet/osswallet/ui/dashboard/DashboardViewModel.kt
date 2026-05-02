@@ -6,8 +6,8 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryBreakdownData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryExpenseTreemapData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -284,7 +284,7 @@ class DashboardViewModel(
         return computeAccountStats(accounts, transactions, timelineRange, context).first
     }
 
-    suspend fun computeCategoryBreakdownForCard(cardConfig: CategoryBreakdownCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryBreakdownData> {
+    suspend fun computeCategoryPieChartForCard(cardConfig: CategoryPieChartCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryPieChartData> {
         val categories = categoryRepository.getAllCategoriesSync()
         val input = CardInput(
             transactions = allTransactions,
@@ -295,13 +295,13 @@ class DashboardViewModel(
             precision = precision
         )
         val data = registry.compute(
-            type = CardType.CATEGORY_BREAKDOWN,
+            type = CardType.CATEGORY_PIE_CHART,
             input = input,
             config = cardConfig
-        ) as CardRenderData.CategoryBreakdown
+        ) as CardRenderData.CategoryPieChart
         
-        fun mapToUi(metric: CategoryTreeMetrics): CategoryBreakdownData {
-            return CategoryBreakdownData(
+        fun mapToUi(metric: CategoryTreeMetrics): CategoryPieChartData {
+            return CategoryPieChartData(
                 category = metric.category,
                 categoryId = metric.categoryId,
                 netBalance = metric.netBalance.setScale(precision, RoundingMode.HALF_UP),
@@ -310,6 +310,7 @@ class DashboardViewModel(
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
+                subcategoryCount = metric.subcategoryData.size,
                 subcategoryData = metric.subcategoryData.map { mapToUi(it) }
             )
         }
@@ -317,7 +318,7 @@ class DashboardViewModel(
         return data.items.map { mapToUi(it) }
     }
 
-    suspend fun computeCategoryExpenseTreemapForCard(cardConfig: CategoryExpenseTreemapCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryExpenseTreemapData> {
+    suspend fun computeCategoryTreemapForCard(cardConfig: CategoryTreemapCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryTreemapData> {
         val categories = categoryRepository.getAllCategoriesSync()
         val input = CardInput(
             transactions = allTransactions,
@@ -328,19 +329,20 @@ class DashboardViewModel(
             precision = precision
         )
         val data = registry.compute(
-            type = CardType.CATEGORY_EXPENSE_TREEMAP,
+            type = CardType.CATEGORY_TREEMAP,
             input = input,
             config = cardConfig
         ) as CardRenderData.CategoryTreemap
         
-        fun mapToUi(metric: CategoryTreeMetrics): CategoryExpenseTreemapData {
-            return CategoryExpenseTreemapData(
+        fun mapToUi(metric: CategoryTreeMetrics): CategoryTreemapData {
+            return CategoryTreemapData(
                 category = if (metric.category.isEmpty()) "Uncategorized" else metric.category,
                 categoryId = metric.categoryId,
                 expense = metric.expense.abs().setScale(precision, RoundingMode.HALF_UP),
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
+                subcategoryCount = metric.subcategoryData.size,
                 subcategoryData = metric.subcategoryData.map { mapToUi(it) }
             )
         }

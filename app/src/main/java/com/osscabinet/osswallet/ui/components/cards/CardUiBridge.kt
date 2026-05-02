@@ -32,8 +32,8 @@ fun rememberCardWithCallbacks(
                 is CurrencyBalancesCardConfig -> registry.compute(CardType.CURRENCY_BALANCES, input, config)
                 is CashFlowCardConfig -> registry.compute(CardType.CASH_FLOW, input, config)
                 is AccountsCardConfig -> registry.compute(CardType.ACCOUNTS, input, config)
-                is CategoryBreakdownCardConfig -> registry.compute(CardType.CATEGORY_BREAKDOWN, input, config)
-                is CategoryExpenseTreemapCardConfig -> registry.compute(CardType.CATEGORY_EXPENSE_TREEMAP, input, config)
+                is CategoryPieChartCardConfig -> registry.compute(CardType.CATEGORY_PIE_CHART, input, config)
+                is CategoryTreemapCardConfig -> registry.compute(CardType.CATEGORY_TREEMAP, input, config)
                 is AccountHeroCardConfig -> registry.compute(CardType.ACCOUNT_HERO, input, config)
                 is PlannedPaymentsCardConfig -> registry.compute(CardType.PLANNED_PAYMENTS, input, config)
                 is BudgetsCardConfig -> registry.compute(CardType.BUDGETS, input, config)
@@ -112,13 +112,13 @@ fun rememberCardWithCallbacks(
                     baseFilter = input.filter
                 )
             }
-            config is CategoryBreakdownCardConfig && renderData is CardRenderData.CategoryBreakdown -> {
-                CardWithCallbacks.CategoryBreakdown(
+            config is CategoryPieChartCardConfig && renderData is CardRenderData.CategoryPieChart -> {
+                CardWithCallbacks.CategoryPieChart(
                     renderData = renderData,
                     callbacks = CardCallbacks.Analytics(
                         onUpdate = { newConfig -> 
-                            if (newConfig is CategoryBreakdownCardConfig) {
-                                updateHandler.updateCardCategoryBreakdownConfig(config.cardId, newConfig)
+                            if (newConfig is CategoryPieChartCardConfig) {
+                                updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
                             }
                         },
                         onDelete = { onDelete(config.cardId) },
@@ -128,13 +128,13 @@ fun rememberCardWithCallbacks(
                     baseFilter = input.filter
                 )
             }
-            config is CategoryExpenseTreemapCardConfig && renderData is CardRenderData.CategoryTreemap -> {
+            config is CategoryTreemapCardConfig && renderData is CardRenderData.CategoryTreemap -> {
                 CardWithCallbacks.CategoryTreemap(
                     renderData = renderData,
                     callbacks = CardCallbacks.Analytics(
                         onUpdate = { newConfig -> 
-                            if (newConfig is CategoryExpenseTreemapCardConfig) {
-                                updateHandler.updateCardCategoryExpenseTreemapConfig(config.cardId, newConfig)
+                            if (newConfig is CategoryTreemapCardConfig) {
+                                updateHandler.updateCardCategoryTreemapConfig(config.cardId, newConfig)
                             }
                         },
                         onDelete = { onDelete(config.cardId) },

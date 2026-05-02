@@ -1,14 +1,14 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
 import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.settings.CategoryExpenseTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 
-class CategoryTreemapCardComputer : CardDataComputer<CategoryExpenseTreemapCardConfig, CardRenderData.CategoryTreemap> {
-    override val supportedType = CardType.CATEGORY_EXPENSE_TREEMAP
+class CategoryTreemapCardComputer : CardDataComputer<CategoryTreemapCardConfig, CardRenderData.CategoryTreemap> {
+    override val supportedType = CardType.CATEGORY_TREEMAP
 
-    override fun compute(input: CardInput, config: CategoryExpenseTreemapCardConfig): CardRenderData.CategoryTreemap {
+    override fun compute(input: CardInput, config: CategoryTreemapCardConfig): CardRenderData.CategoryTreemap {
         // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
 

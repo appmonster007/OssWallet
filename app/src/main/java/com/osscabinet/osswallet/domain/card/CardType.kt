@@ -43,12 +43,12 @@ enum class CardType(
         "Budgets",
         "Track your spending against set limits."
     ),
-    CATEGORY_BREAKDOWN(
+    CATEGORY_PIE_CHART(
         "category_breakdown",
         "Category Pie Chart",
         "Spending distribution across categories."
     ),
-    CATEGORY_EXPENSE_TREEMAP(
+    CATEGORY_TREEMAP(
         "category_expense_treemap",
         "Category Treemap",
         "Hierarchical view of category expenses."

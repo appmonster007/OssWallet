@@ -47,14 +47,14 @@ sealed class CardRenderData {
         val precision: Int
     ) : CardRenderData()
 
-    data class CategoryBreakdown(
-        val config: CategoryBreakdownCardConfig,
+    data class CategoryPieChart(
+        val config: CategoryPieChartCardConfig,
         val items: List<CategoryTreeMetrics>,
         val precision: Int
     ) : CardRenderData()
 
     data class CategoryTreemap(
-        val config: CategoryExpenseTreemapCardConfig,
+        val config: CategoryTreemapCardConfig,
         val items: List<CategoryTreeMetrics>,
         val precision: Int
     ) : CardRenderData()

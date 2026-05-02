@@ -20,7 +20,7 @@ class CardRepositoryImpl(
 
     private fun defaultAnalyticsConfig(): DashboardCardsConfig = DashboardCardsConfig(
         cards = listOf(
-            CategoryBreakdownCardConfig(
+            CategoryPieChartCardConfig(
                 cardId = "analytics_category_breakdown",
                 order = 0,
                 title = "CATEGORY PIE CHART",
@@ -28,7 +28,7 @@ class CardRepositoryImpl(
                 showLabels = true,
                 showLegend = true
             ),
-            CategoryExpenseTreemapCardConfig(
+            CategoryTreemapCardConfig(
                 cardId = "analytics_category_expense_treemap",
                 order = 1,
                 title = "CATEGORY TREEMAP",
@@ -140,8 +140,8 @@ class CardRepositoryImpl(
                 is CurrencyBalancesCardConfig -> card.copy(order = index)
                 is CashFlowCardConfig -> card.copy(order = index)
                 is AccountsCardConfig -> card.copy(order = index)
-                is CategoryBreakdownCardConfig -> card.copy(order = index)
-                is CategoryExpenseTreemapCardConfig -> card.copy(order = index)
+                is CategoryPieChartCardConfig -> card.copy(order = index)
+                is CategoryTreemapCardConfig -> card.copy(order = index)
                 is AccountHeroCardConfig -> card.copy(order = index)
                 is PlannedPaymentsCardConfig -> card.copy(order = index)
                 is BudgetsCardConfig -> card.copy(order = index)

@@ -126,13 +126,13 @@ interface CardUpdateHandler {
     }
 
     // Analytics
-    fun updateCardCategoryBreakdownConfig(cardId: String, config: CategoryBreakdownCardConfig) {
+    fun updateCardCategoryPieChartConfig(cardId: String, config: CategoryPieChartCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }
         }
     }
     
-    fun updateCardCategoryExpenseTreemapConfig(cardId: String, config: CategoryExpenseTreemapCardConfig) {
+    fun updateCardCategoryTreemapConfig(cardId: String, config: CategoryTreemapCardConfig) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config }
         }

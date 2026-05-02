@@ -84,6 +84,8 @@ fun NetWorthCard(
         icon = Icons.Rounded.AccountBalance,
         modifier = modifier,
         filter = filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

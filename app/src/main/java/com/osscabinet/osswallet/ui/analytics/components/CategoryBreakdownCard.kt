@@ -71,6 +71,8 @@ fun CategoryBreakdownCard(
         icon = Icons.Rounded.PieChart,
         modifier = modifier,
         filter = config.filter,
+        baseFilter = baseFilter,
+        filterRules = config.filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

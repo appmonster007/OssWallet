@@ -236,29 +236,23 @@ fun AccountDetailScreen(
                 ) { page ->
                     when (page) {
                         0 -> {
-                            Box(
+                            DynamicAccountDetailCards(
+                                state = state,
+                                cardsConfig = accountDetailCardsConfig,
+                                accountDetailViewModel = accountDetailViewModel,
+                                cardComputerRegistry = cardComputerRegistry,
+                                onRecordsClick = onRecordsClick,
+                                accountId = accountId,
+                                currentTheme = currentTheme,
+                                savedFilters = savedFilters,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.background)
-                            ) {
-                                DynamicAccountDetailCards(
-                                    state = state,
-                                    cardsConfig = accountDetailCardsConfig,
-                                    accountDetailViewModel = accountDetailViewModel,
-                                    cardComputerRegistry = cardComputerRegistry,
-                                    onRecordsClick = onRecordsClick,
-                                    accountId = accountId,
-                                    currentTheme = currentTheme,
-                                    savedFilters = savedFilters,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 16.dp),
-                                    screenPadding = PaddingValues(),
-                                    showAddCardDialog = showAddCardDialog,
-                                    onShowAddCardDialogChange = { showAddCardDialog = it },
-                                    cardAnimationEnabled = cardAnimationEnabled
-                                )
-                            }
+                                    .padding(horizontal = 16.dp),
+                                screenPadding = PaddingValues(),
+                                showAddCardDialog = showAddCardDialog,
+                                onShowAddCardDialogChange = { showAddCardDialog = it },
+                                cardAnimationEnabled = cardAnimationEnabled
+                            )
                         }
                         1 -> {
                             // Transactions tab content using RecentActivitiesCard
@@ -312,7 +306,9 @@ fun AccountDetailScreen(
                                     onClone = { onCloneTransactionClick(it) },
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
-                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                    applyFilter = false,
+                                    excludeFuture = !state.showPlannedPayments
                                 )
                             }
                         }
@@ -350,7 +346,7 @@ fun DynamicAccountDetailCards(
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
 
     val accountScopeFilter = remember(accountId) { TransactionFilter(accountIds = listOf(accountId)) }
-    val sharedCardInput = remember(state) {
+    val sharedCardInput = remember(state, cardsConfig) {
         CardInput(
             transactions = state.allAccountTransactions,
             accounts = listOf(state.account),
@@ -381,6 +377,7 @@ fun DynamicAccountDetailCards(
 
     Column(
         modifier = modifier
+            .background(MaterialTheme.colorScheme.background)
     ) {
         if (heroCard != null && heroCard !is com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks.ComputeError) {
             UnifiedCardRenderer(

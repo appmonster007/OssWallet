@@ -35,21 +35,15 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 private fun filterToRecentTransactions(
     allTransactions: List<TransactionWithBalance>,
     limit: Int = 20,
-    days: Int = 7
+    days: Int = 7,
+    excludeFuture: Boolean = true
 ): List<TransactionWithBalance> {
-    // Get transactions from last 7 days
-    val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-    val transactionsFromLastDays = allTransactions.filter { it.transaction.timestamp >= cutoffTime }
-
-    // Get last 20 transactions
-    val lastLimitTransactions = allTransactions.take(limit)
-
-    // Return whichever has more transactions
-    return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
-        transactionsFromLastDays
-    } else {
-        lastLimitTransactions
-    }
+    val now = System.currentTimeMillis()
+    val transactions = if (excludeFuture) allTransactions.filter { it.transaction.timestamp <= now } else allTransactions
+    val cutoffTime = now - (days * 24 * 60 * 60 * 1000L)
+    val transactionsFromLastDays = transactions.filter { it.transaction.timestamp >= cutoffTime }
+    val lastLimitTransactions = transactions.take(limit)
+    return if (transactionsFromLastDays.size > lastLimitTransactions.size) transactionsFromLastDays else lastLimitTransactions
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -76,11 +70,11 @@ fun RecentActivitiesCard(
     onFullSwipeRight: (Long) -> Unit = {},
     limit: Int = 20,
     days: Int = 7,
-    applyFilter: Boolean = true
+    applyFilter: Boolean = true,
+    excludeFuture: Boolean = true
 ) {
-    // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
-        filterToRecentTransactions(allTransactions, limit, days)
+        filterToRecentTransactions(allTransactions, limit, days, excludeFuture)
     } else {
         allTransactions
     }

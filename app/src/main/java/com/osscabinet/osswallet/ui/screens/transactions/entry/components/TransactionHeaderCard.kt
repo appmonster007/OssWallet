@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
@@ -30,7 +31,7 @@ import java.math.RoundingMode
 
 /**
  * Header card containing transaction type selector and amount input.
- * Following the "Architect Slate" design specification.
+ * Following the "Architect Slate" design specification with robust auto-resizing amount.
  */
 @Composable
 fun TransactionHeaderCard(
@@ -67,7 +68,7 @@ fun TransactionHeaderCard(
                     .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Primary amount row with currency selector on left
+                // Primary amount row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -78,26 +79,40 @@ fun TransactionHeaderCard(
                         onCurrencySelected = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
                         supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD")
                     )
+                    
                     Spacer(modifier = Modifier.width(12.dp))
+                    
+                    val amountText = if (state.amount.isEmpty()) "0.00" else state.amount
+                    var multiplier by remember(amountText) { mutableStateOf(1f) }
+                    
                     Text(
-                        text = if (state.amount.isEmpty()) "0.00" else state.amount,
+                        text = amountText,
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = (-1).sp
+                            letterSpacing = (-1).sp,
+                            fontSize = (MaterialTheme.typography.displayMedium.fontSize.value * multiplier).sp
                         ),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip,
+                        onTextLayout = { textLayoutResult ->
+                            if (textLayoutResult.didOverflowWidth && multiplier > 0.3f) {
+                                multiplier *= 0.8f
+                            }
+                        },
                         color = when {
-                            state.isExpense -> Color(0xFFB3261E) // Red (#B3261E) for warnings
-                            state.isIncome -> Color(0xFF004D40)  // Teal (#004D40) for positive
+                            state.isExpense -> Color(0xFFB3261E)
+                            state.isIncome -> Color(0xFF004D40)
                             else -> MaterialTheme.colorScheme.primary
-                        }
+                        },
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
 
-                // Transfer-specific: Show converted amount and exchange rate
+                // Transfer-specific
                 if (state.isTransfer && state.targetAccount != null) {
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Arrow with exchange rate to the right (clickable to edit)
                     Surface(
                         onClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
                         shape = RoundedCornerShape(12.dp),
@@ -125,7 +140,6 @@ fun TransactionHeaderCard(
                     
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Converted amount row with target currency selector on left
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -141,13 +155,26 @@ fun TransactionHeaderCard(
                             supportedCurrencies = state.targetAccount?.allowedCurrencies ?: listOf("USD")
                         )
                         Spacer(modifier = Modifier.width(12.dp))
+                        
+                        var convertedMultiplier by remember(convertedText) { mutableStateOf(1f) }
+                        
                         Text(
                             text = convertedText,
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.5).sp
+                                letterSpacing = (-0.5).sp,
+                                fontSize = (MaterialTheme.typography.headlineLarge.fontSize.value * convertedMultiplier).sp
                             ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Clip,
+                            onTextLayout = { textLayoutResult ->
+                                if (textLayoutResult.didOverflowWidth && convertedMultiplier > 0.3f) {
+                                    convertedMultiplier *= 0.8f
+                                }
+                            },
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     }
                 }
@@ -167,12 +194,10 @@ private fun TransactionTypeSelector(
         Icons.Rounded.SwapHoriz to "Transfer"
     )
 
-    // Using design spec colors
     val expenseColor = Color(0xFFB3261E)
     val incomeColor = Color(0xFF004D40)
     val transferColor = MaterialTheme.colorScheme.primary
 
-    // Animated indicator color
     val indicatorColor by animateColorAsState(
         targetValue = when (selectedType) {
             0 -> expenseColor
@@ -183,7 +208,6 @@ private fun TransactionTypeSelector(
         label = "indicatorColor"
     )
 
-    // Animated indicator offset (sliding effect)
     val indicatorOffset by animateDpAsState(
         targetValue = when (selectedType) {
             0 -> 0.dp
@@ -205,7 +229,6 @@ private fun TransactionTypeSelector(
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
             .padding(4.dp)
     ) {
-        // Animated sliding indicator
         Box(
             modifier = Modifier
                 .offset(x = indicatorOffset)
@@ -221,8 +244,6 @@ private fun TransactionTypeSelector(
         ) {
             types.forEachIndexed { index, (icon, label) ->
                 val isSelected = selectedType == index
-
-                // Icon scale animation when selected
                 val scale by animateFloatAsState(
                     targetValue = if (isSelected) 1.1f else 1.0f,
                     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),

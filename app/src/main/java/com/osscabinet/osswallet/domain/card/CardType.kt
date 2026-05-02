@@ -45,12 +45,12 @@ enum class CardType(
     ),
     CATEGORY_BREAKDOWN(
         "category_breakdown",
-        "Category Breakdown",
+        "Category Pie Chart",
         "Spending distribution across categories."
     ),
     CATEGORY_EXPENSE_TREEMAP(
         "category_expense_treemap",
-        "Category Expenses",
+        "Category Treemap",
         "Hierarchical view of category expenses."
     ),
     ACCOUNT_HERO(

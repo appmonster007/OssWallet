@@ -13,10 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -46,9 +44,9 @@ fun AeonChartInteractionPopup(
     onNavigateToRecords: () -> Unit = {},
 ) {
     // Boundary-Aware Tooltip Positioning
-    val tooltipWidth = 180.dp
+    val tooltipWidth = if (hasSubcategories) 240.dp else 180.dp
     // Height is dynamic based on content but we need an estimate for positioning
-    val tooltipHeightPxEstimate = (if (hasSubcategories) 180.dp else 120.dp).value * density
+    val tooltipHeightPxEstimate = 140.dp.value * density
     
     val tooltipWidthPx = tooltipWidth.value * density
 
@@ -61,15 +59,15 @@ fun AeonChartInteractionPopup(
         modifier = Modifier
             .offset { IntOffset(xPos.roundToInt(), yPos.roundToInt()) }
             .width(tooltipWidth)
-            .clip(RoundedCornerShape(16.dp)),
+            .clip(RoundedCornerShape(20.dp)),
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(8.dp),
         tonalElevation = 8.dp,
         shadowElevation = 12.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Header: Color + Name
             Row(
@@ -95,18 +93,14 @@ fun AeonChartInteractionPopup(
                 )
             }
 
-            // Divider for structure
-            HorizontalDivider(
-                modifier = Modifier.alpha(0.3f),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline
-            )
-
             // Content: Value + Global %
             Column {
                 Text(
                     text = formatCurrencyRight(value, currency, precision),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp
+                    ),
                     color = MaterialTheme.colorScheme.primary
                 )
                 Row(
@@ -115,8 +109,11 @@ fun AeonChartInteractionPopup(
                 ) {
                     Text(
                         text = "GLOBAL SHARE",
-                        style = MaterialTheme.typography.labelExtraSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        style = MaterialTheme.typography.labelExtraSmall.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
                     )
                     Text(
                         text = "${"%.1f".format(percentageOfTotal * 100)}%",
@@ -126,61 +123,52 @@ fun AeonChartInteractionPopup(
                 }
             }
 
-            // Action Buttons - Clearly visible & structured
-            if (hasSubcategories) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Action Buttons - Compact Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (hasSubcategories) {
                     Button(
                         onClick = onDrillInClick,
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f).height(32.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = color.copy(alpha = 0.9f),
-                            contentColor = if (color.luminance() > 0.5f) Color.Black else Color.White
+                            containerColor = color.copy(alpha = 0.15f),
+                            contentColor = color
                         )
                     ) {
-                        Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             "DIVE IN ($subcategoryCount)", 
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
-                    
-                    OutlinedButton(
-                        onClick = onNavigateToRecords,
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "SEE RECORDS", 
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp
+                            )
                         )
                     }
                 }
-            } else {
+                
                 Button(
                     onClick = onNavigateToRecords,
-                    modifier = Modifier.fillMaxWidth().height(36.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.weight(1f).height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        "SEE RECORDS", 
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                        "RECORDS", 
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp
+                        )
                     )
                 }
             }

@@ -85,6 +85,8 @@ fun CashFlowCard(
         icon = Icons.Rounded.Analytics,
         modifier = modifier,
         filter = filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

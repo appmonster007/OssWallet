@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
 
@@ -45,6 +46,8 @@ fun AeonExpressiveCard(
     icon: ImageVector? = null,
     iconColor: Color = MaterialTheme.colorScheme.primary,
     filter: TransactionFilter? = null,
+    baseFilter: TransactionFilter = TransactionFilter(),
+    filterRules: CardFilterRules? = null,
     headerTrailing: @Composable (RowScope.(Int) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     isWarning: Boolean = false,
@@ -54,7 +57,7 @@ fun AeonExpressiveCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
     
-    val activeFilterCount = filter?.let { countActiveFilters(it) } ?: 0
+    val activeFilterCount = filter?.let { countActiveFilters(it, baseFilter, filterRules) } ?: 0
 
     Card(
         modifier = modifier
@@ -164,37 +167,19 @@ fun AeonCardFilterButton(
         onClick = onClick,
         modifier = modifier.size(32.dp),
         shape = CircleShape,
-        color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) 
-                else Color.Transparent
+        color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) 
+                else Color.Transparent,
+        border = if (isActive) BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                 else null
     ) {
         Box(contentAlignment = Alignment.Center) {
-            BadgedBox(
-                badge = {
-                    if (isActive) {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
-                        ) {
-                            Text(
-                                text = activeFilterCount.toString(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = if (isActive) activeIcon else icon,
-                    contentDescription = "Filter",
-                    tint = if (isActive) MaterialTheme.colorScheme.primary 
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            Icon(
+                imageVector = if (isActive) activeIcon else icon,
+                contentDescription = "Filter",
+                tint = if (isActive) MaterialTheme.colorScheme.primary 
+                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

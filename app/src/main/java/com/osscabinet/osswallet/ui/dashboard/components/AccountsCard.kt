@@ -91,6 +91,8 @@ fun AccountsCard(
         icon = Icons.Rounded.AccountBalanceWallet,
         modifier = if (onHeaderClick != null) modifier.clickable(onClick = onHeaderClick) else modifier,
         filter = filter,
+        baseFilter = baseFilter,
+        filterRules = filterRules,
         headerTrailing = { activeCount ->
             AeonCardFilterButton(
                 onClick = { showFilterSettings = true },

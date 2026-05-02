@@ -47,7 +47,7 @@ class DashboardViewModel(
     override val cardScreenContext = ScreenContext.DASHBOARD
 
     val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, DashboardCardsConfig())
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
@@ -135,8 +135,7 @@ class DashboardViewModel(
                 settingsRepository.dashboardSettings,
                 plannedPaymentsFlow,
                 budgetsFlow,
-                loansFlow,
-                cardsConfig
+                loansFlow
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
@@ -157,8 +156,6 @@ class DashboardViewModel(
                 val budgets = args[9] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[10] as List<Loan>
-                @Suppress("UNUSED_VARIABLE")
-                val cardConfig = args[11] as DashboardCardsConfig
 
                 if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
@@ -181,9 +178,10 @@ class DashboardViewModel(
                     loans = loans
                 )
 
-                // Calculate all transactions with balance (without filtering)
-                // We need this for the recent activities list
-                val transactionsWithBalance = allTransactions.sortedBy { it.timestamp }
+                val now = System.currentTimeMillis()
+                val transactionsWithBalance = allTransactions
+                    .filter { it.timestamp <= now }
+                    .sortedBy { it.timestamp }
                     .groupBy { it.accountId }
                     .flatMap { (accId, accountTransactions) ->
                         val account = accounts.find { it.id == accId }

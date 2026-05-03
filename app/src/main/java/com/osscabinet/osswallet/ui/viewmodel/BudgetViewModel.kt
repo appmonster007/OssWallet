@@ -6,8 +6,10 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
@@ -21,7 +23,8 @@ class BudgetViewModel(
     private val budgetRepository: BudgetRepository,
     private val settingsRepository: SettingsRepository,
     private val transactionRepository: TransactionRepository? = null,
-    private val currencyRepository: CurrencyRepository? = null
+    private val currencyRepository: CurrencyRepository? = null,
+    private val categoryRepository: CategoryRepository? = null
 ) : ViewModel() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,6 +46,10 @@ class BudgetViewModel(
     } else {
         MutableStateFlow(emptyList())
     }
+
+    val categories: StateFlow<List<Category>> = categoryRepository?.categories
+        ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        ?: MutableStateFlow(emptyList())
 
     val availableTags: StateFlow<List<String>> = transactions
         .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
@@ -88,10 +95,18 @@ class BudgetViewModel(
     fun getBudgetProgress(budget: Budget, baseCurrency: String, precision: Int): BudgetProgress {
         val now = System.currentTimeMillis()
         val allTx = transactions.value
+        val allCats = categories.value
         val rates = _exchangeRates.value
-        val rollover = BudgetService.calculateRollover(budget, allTx, rates, baseCurrency, precision, now)
-        val spent = BudgetService.calculateSpent(budget, allTx, rates, baseCurrency, precision, now)
+        val rollover = BudgetService.calculateRollover(budget, allTx, rates, baseCurrency, precision, now, allCats)
+        val spent = BudgetService.calculateSpent(budget, allTx, rates, baseCurrency, precision, now, allCats)
         return BudgetService.buildProgress(budget, spent, rollover)
+    }
+
+    fun getBudgetTransactions(budget: Budget): List<Transaction> {
+        val now = System.currentTimeMillis()
+        val allCats = categories.value
+        return BudgetService.filterTransactionsForBudget(budget, transactions.value, now, allCats)
+            .sortedByDescending { it.timestamp }
     }
 
     fun buildDefault(profileId: Int): Budget = Budget(

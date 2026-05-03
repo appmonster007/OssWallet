@@ -2,7 +2,7 @@ package com.osscabinet.ossWallet.domain.model
 
 import java.math.BigDecimal
 
-enum class BudgetPeriod { WEEKLY, MONTHLY, QUARTERLY, YEARLY, CUSTOM }
+enum class BudgetPeriod { DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, CUSTOM }
 enum class BudgetTrackType { EXPENSE, INCOME }
 enum class BudgetAlertLevel { NONE, WARNING, EXCEEDED }
 

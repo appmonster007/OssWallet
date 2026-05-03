@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 /**
  * Helper function to filter transactions to recent ones (last N or last X days, whichever is more)
@@ -45,7 +46,7 @@ fun RecentActivitiesCard(
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, Category>,
     @Suppress("UNUSED_PARAMETER") decimalPrecision: Int,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onRecordsClick: (RecordsFilterContext) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") baseCurrency: String = "USD",
     @Suppress("UNUSED_PARAMETER") exchangeRates: Map<String, BigDecimal> = emptyMap(),
@@ -85,7 +86,7 @@ fun RecentActivitiesCard(
         modifier = modifier,
         headerTrailing = { _ ->
             TextButton(
-                onClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
+                onClick = { onRecordsClick(RecordsFilterContext.None) },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 modifier = Modifier.height(32.dp)
             ) {

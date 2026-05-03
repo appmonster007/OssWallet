@@ -33,7 +33,8 @@ fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
             queryNote = this.queryNote,
             minAmount = this.minAmount?.let { BigDecimal.valueOf(it) },
             maxAmount = this.maxAmount?.let { BigDecimal.valueOf(it) },
-            queryPayee = this.queryPayee
+            queryPayee = this.queryPayee,
+            tags = this.tags
         )
     }
 }

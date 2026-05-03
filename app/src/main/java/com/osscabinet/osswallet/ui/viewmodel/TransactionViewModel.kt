@@ -186,7 +186,8 @@ class TransactionViewModel(
             queryNote = queryNote,
             minAmount = minAmount?.let { java.math.BigDecimal(it) },
             maxAmount = maxAmount?.let { java.math.BigDecimal(it) },
-            queryPayee = queryPayee
+            queryPayee = queryPayee,
+            tags = tags
         )
     }
 

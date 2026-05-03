@@ -12,6 +12,11 @@ object BudgetService {
         val zone = ZoneId.systemDefault()
         val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
         return when (budget.period) {
+            BudgetPeriod.DAILY -> {
+                val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
+                val end = today.atTime(LocalTime.MAX).atZone(zone).toInstant().toEpochMilli()
+                Pair(start, end)
+            }
             BudgetPeriod.WEEKLY -> {
                 val start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 val end = start.plusDays(6)
@@ -48,34 +53,67 @@ object BudgetService {
         exchangeRates: Map<String, BigDecimal>,
         baseCurrency: String,
         precision: Int,
-        now: Long
+        now: Long,
+        allCategories: List<Category> = emptyList()
     ): BigDecimal {
-        val (start, end) = getCurrentPeriodRange(budget, now)
-        val targetTypes = budget.trackTypes.map { if (it == BudgetTrackType.EXPENSE) "expense" else "income" }.toSet()
+        val filteredTransactions = filterTransactionsForBudget(budget, transactions, now, allCategories)
 
-        return transactions
-            .filter { tx ->
-                tx.timestamp in start..end &&
-                tx.transactionType in targetTypes &&
-                (budget.categoryIds.isEmpty() || (tx.categoryId != null && tx.categoryId in budget.categoryIds)) &&
-                (budget.accountIds.isEmpty() || tx.accountId in budget.accountIds) &&
-                (budget.tags.isEmpty() || budget.tags.all { tag -> tag in tx.tags })
+        // Aggregation logic using currency conversion
+        return filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+            val converted = CurrencyConversionService.convertToBaseCurrency(
+                amount = tx.amount.abs(),
+                fromCurrency = tx.currency,
+                toCurrency = budget.currency,
+                exchangeRates = exchangeRates
+            )
+            acc.add(converted)
+        }.setScale(precision, RoundingMode.HALF_UP)
+    }
+
+    fun filterTransactionsForBudget(
+        budget: Budget,
+        transactions: List<Transaction>,
+        now: Long,
+        allCategories: List<Category> = emptyList()
+    ): List<Transaction> {
+        val (start, end) = getCurrentPeriodRange(budget, now)
+        
+        val expandedCategoryIds = if (budget.categoryIds.isNotEmpty()) {
+            TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories)
+        } else emptyList()
+
+        val trackTypeStrings = budget.trackTypes.map { it.name.lowercase() }
+
+        return transactions.filter { tx ->
+            // 1. Time range - "THIS X" logic
+            if (tx.timestamp !in start..end) return@filter false
+            
+            // 2. Type filter (income/expense)
+            if (tx.transactionType !in trackTypeStrings) return@filter false
+
+            // 3. Account filter
+            if (budget.accountIds.isNotEmpty() && tx.accountId !in budget.accountIds) return@filter false
+
+            // 4. Category filter
+            if (expandedCategoryIds.isNotEmpty()) {
+                if (tx.categoryId == null || tx.categoryId !in expandedCategoryIds) {
+                    val isTransferSelected = allCategories.any { it.id in expandedCategoryIds && it.name == "Transfer" }
+                    if (!(isTransferSelected && tx.category == "Transfer")) {
+                        return@filter false
+                    }
+                }
             }
-            .fold(BigDecimal.ZERO) { acc, tx ->
-                val converted = CurrencyService.convertAmount(
-                    amount = tx.amount.abs(),
-                    fromCurrency = tx.currency,
-                    toCurrency = budget.currency,
-                    exchangeRates = exchangeRates,
-                    precision = precision + 4
-                )
-                acc.add(converted)
-            }
-            .setScale(precision, RoundingMode.HALF_UP)
+
+            // 5. Label filter (was Tags)
+            if (budget.tags.isNotEmpty() && !tx.tags.any { it in budget.tags }) return@filter false
+
+            true
+        }
     }
 
     fun buildProgress(budget: Budget, spent: BigDecimal, rolloverAmount: BigDecimal = BigDecimal.ZERO): BudgetProgress {
         val effective = budget.limitAmount.add(rolloverAmount)
+        // Remaining balance = budget amount (effective) - total transactions amount after converting to base currency
         val remaining = effective.subtract(spent).max(BigDecimal.ZERO)
         val percentage = if (effective.compareTo(BigDecimal.ZERO) == 0) 0f
         else spent.divide(effective, 4, RoundingMode.HALF_UP).toFloat()
@@ -102,11 +140,12 @@ object BudgetService {
         exchangeRates: Map<String, BigDecimal>,
         baseCurrency: String,
         precision: Int,
-        now: Long
+        now: Long,
+        allCategories: List<Category> = emptyList()
     ): BigDecimal {
         if (!budget.rollover) return BigDecimal.ZERO
         val previousNow = getPreviousPeriodMidpoint(budget, now)
-        val previousSpent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, precision, previousNow)
+        val previousSpent = calculateSpent(budget, transactions, exchangeRates, baseCurrency, precision, previousNow, allCategories)
         return budget.limitAmount.subtract(previousSpent).max(BigDecimal.ZERO)
     }
 
@@ -114,6 +153,7 @@ object BudgetService {
         val zone = ZoneId.systemDefault()
         val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
         val previousDate = when (budget.period) {
+            BudgetPeriod.DAILY -> today.minusDays(1)
             BudgetPeriod.WEEKLY -> today.minusWeeks(1)
             BudgetPeriod.MONTHLY -> today.minusMonths(1)
             BudgetPeriod.QUARTERLY -> today.minusMonths(3)

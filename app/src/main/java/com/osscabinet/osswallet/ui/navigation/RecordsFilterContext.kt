@@ -56,6 +56,7 @@ sealed class RecordsFilterContext {
         val queryNote: String? = null,
         val minAmount: Double? = null,
         val maxAmount: Double? = null,
-        val queryPayee: String? = null
+        val queryPayee: String? = null,
+        val tags: List<String> = emptyList()
     ) : RecordsFilterContext()
 }

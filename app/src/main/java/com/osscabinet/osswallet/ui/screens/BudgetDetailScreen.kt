@@ -1,25 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Autorenew
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
@@ -27,21 +19,35 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.BudgetTrackType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 private val TealHealthy = Color(0xFF004D40)
 private val RedWarning = Color(0xFFB3261E)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetDetailScreen(
     budgetId: Long,
     viewModel: BudgetViewModel,
+    accountViewModel: AccountViewModel,
+    transactionViewModel: TransactionViewModel,
     baseCurrency: String,
     precision: Int,
     onEditClick: (Long) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onTransactionClick: (Long) -> Unit,
+    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budget = remember(budgetId, budgets) { budgets.find { it.id == budgetId } }
@@ -59,16 +65,40 @@ fun BudgetDetailScreen(
         BudgetAlertLevel.NONE -> TealHealthy
     }
 
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
+    val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
+    val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
+    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+
+    val budgetTransactions = remember(budget, viewModel.transactions.collectAsStateWithLifecycle().value) {
+        viewModel.getBudgetTransactions(budget).map { 
+            TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO) 
+        }
+    }
+
+    val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val tabs = listOf(
+        NavigationTab(
+            icon = Icons.Rounded.Info,
+            selectedIcon = Icons.Rounded.Info,
+            label = "Overview",
+            contentDescription = "Overview tab"
+        ),
+        NavigationTab(
+            icon = Icons.Rounded.Receipt,
+            selectedIcon = Icons.Rounded.Receipt,
+            label = "Activity",
+            contentDescription = "Activity tab"
+        )
+    )
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        budget.name,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    )
-                },
+                title = { Text(budget.name, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -78,235 +108,180 @@ fun BudgetDetailScreen(
                     IconButton(onClick = { onEditClick(budget.id) }) {
                         Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                     }
+                }
+            )
+        },
+        bottomBar = {
+            ExpressiveNavigationBar(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                tabs = tabs
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                AeonExpressiveCard(
-                    title = budget.name,
-                    subtitle = "${budget.period.name} Budget",
-                    accentColor = accentColor,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Spent / limit row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.Top
+        ) { page ->
+            when (page) {
+                0 -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            progress.spent.toPlainString(),
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = accentColor
-                        )
-                        Text(
-                            "/ ${budget.limitAmount.toPlainString()} ${budget.currency}",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    // Progress bar
-                    LinearProgressIndicator(
-                        progress = { progress.percentage.coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = accentColor,
-                        trackColor = accentColor.copy(alpha = 0.15f),
-                        strokeCap = StrokeCap.Round
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    // Remaining / over + percent row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (progress.remaining > java.math.BigDecimal.ZERO) {
-                            Text(
-                                "${progress.remaining.toPlainString()} ${budget.currency} remaining",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TealHealthy
-                            )
-                        } else {
-                            val overspent = progress.spent.subtract(progress.limit).abs()
-                            Text(
-                                "Over by ${overspent.toPlainString()} ${budget.currency}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = RedWarning
-                            )
-                        }
-                        Text(
-                            "${(progress.percentage * 100).toInt()}% used",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = accentColor
-                        )
-                    }
-
-                    // Alert level badge
-                    if (progress.alertLevel != BudgetAlertLevel.NONE) {
-                        Spacer(Modifier.height(4.dp))
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = RedWarning.copy(alpha = 0.1f),
-                            border = BorderStroke(0.5.dp, RedWarning.copy(alpha = 0.2f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        item {
+                            AeonExpressiveCard(
+                                title = budget.name,
+                                subtitle = "${budget.period.name} Budget",
+                                accentColor = accentColor,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    Icons.Rounded.Warning,
-                                    contentDescription = null,
-                                    tint = RedWarning,
-                                    modifier = Modifier.size(14.dp)
-                                )
                                 Text(
-                                    progress.alertLevel.name,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = RedWarning
+                                    "${progress.spent.toPlainString()} / ${budget.limitAmount.toPlainString()} ${budget.currency}",
+                                    style = MaterialTheme.typography.displaySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 24.sp
+                                    ),
+                                    color = accentColor
                                 )
+                                Spacer(Modifier.height(8.dp))
+                                LinearProgressIndicator(
+                                    progress = { progress.percentage.coerceIn(0f, 1f) },
+                                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                                    color = accentColor,
+                                    trackColor = accentColor.copy(alpha = 0.15f),
+                                    strokeCap = StrokeCap.Round
+                                )
+                                Spacer(Modifier.height(8.dp))
+
+                                if (progress.alertLevel != BudgetAlertLevel.NONE) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Warning,
+                                            contentDescription = null,
+                                            tint = RedWarning,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            progress.alertLevel.name,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = RedWarning
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                }
+
+                                if (progress.remaining > java.math.BigDecimal.ZERO) {
+                                    Text(
+                                        "${progress.remaining.toPlainString()} ${budget.currency} remaining",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TealHealthy
+                                    )
+                                } else {
+                                    val overspent = progress.spent.subtract(progress.limit).abs()
+                                    Text(
+                                        "Over by ${overspent.toPlainString()} ${budget.currency}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = RedWarning
+                                    )
+                                }
+
+                                Text(
+                                    "Alert threshold: ${(budget.alertThreshold * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                if (budget.rollover && progress.rolloverAmount > java.math.BigDecimal.ZERO) {
+                                    Text(
+                                        "Rollover: +${progress.rolloverAmount.toPlainString()} from last period",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TealHealthy
+                                    )
+                                }
                             }
                         }
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-                    // Alert threshold row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Notifications,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            "Alert threshold: ${(budget.alertThreshold * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    // Rollover row
-                    if (budget.rollover && progress.rolloverAmount > java.math.BigDecimal.ZERO) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Rounded.Autorenew,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = TealHealthy.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                "Rollover: +${progress.rolloverAmount.toPlainString()} from last period",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TealHealthy
-                            )
+                        
+                        item {
+                            AeonExpressiveCard(
+                                title = "SCOPE",
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    if (budget.accountIds.isEmpty()) "All Accounts" else "${budget.accountIds.size} Accounts selected",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    if (budget.categoryIds.isEmpty()) "All Categories" else "${budget.categoryIds.size} Categories selected",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    if (budget.tags.isEmpty()) "All Labels" else budget.tags.joinToString(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
                 }
-            }
-
-            item {
-                AeonExpressiveCard(
-                    title = "SCOPE",
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // CATEGORIES subsection
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Category,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "CATEGORIES",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    if (budget.categoryIds.isEmpty()) {
-                        Text(
-                            "All categories",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                    } else {
-                        androidx.compose.foundation.layout.FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            budget.categoryIds.forEach { id ->
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text("Category $id", style = MaterialTheme.typography.labelSmall) }
-                                )
+                1 -> {
+                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        if (budgetTransactions.isEmpty()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                            ) {
+                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "No activity in this period",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                }
                             }
-                        }
-                    }
+                        } else {
+                            val now = System.currentTimeMillis()
+                            val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
+                            val isIncome = if (budget.trackTypes.size == 1) {
+                                budget.trackTypes.first() == BudgetTrackType.INCOME
+                            } else null
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-                    )
-
-                    // ACCOUNTS subsection
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.AccountBalance,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "ACCOUNTS",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    if (budget.accountIds.isEmpty()) {
-                        Text(
-                            "All accounts",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                    } else {
-                        androidx.compose.foundation.layout.FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            budget.accountIds.forEach { id ->
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text(id, style = MaterialTheme.typography.labelSmall) }
-                                )
-                            }
+                            RecentActivitiesCard(
+                                allTransactions = budgetTransactions,
+                                accountNamesMap = accountNamesMap,
+                                categoryMap = categoryMap,
+                                decimalPrecision = precision,
+                                precision = precision,
+                                onRecordsClick = onRecordsClick,
+                                onTransactionClick = onTransactionClick,
+                                baseCurrency = baseCurrency,
+                                exchangeRates = emptyMap(),
+                                accountCurrencyMap = accountCurrencyMap,
+                                contentPadding = PaddingValues(0.dp),
+                                revealedCardIds = revealedCardIds,
+                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                                onClone = { },
+                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                applyFilter = false,
+                                excludeFuture = false
+                            )
                         }
                     }
                 }

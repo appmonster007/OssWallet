@@ -547,7 +547,8 @@ fun OssWalletNavGraph(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
-                            appContainer.currencyRepository
+                            appContainer.currencyRepository,
+                            appContainer.categoryRepository
                         )
                     }
                 )
@@ -578,7 +579,8 @@ fun OssWalletNavGraph(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
-                            appContainer.currencyRepository
+                            appContainer.currencyRepository,
+                            appContainer.categoryRepository
                         )
                     }
                 )
@@ -720,7 +722,8 @@ fun OssWalletNavGraph(
                             appContainer.budgetRepository,
                             appContainer.settingsRepository,
                             appContainer.transactionRepository,
-                            appContainer.currencyRepository
+                            appContainer.currencyRepository,
+                            appContainer.categoryRepository
                         )
                     }
                 )
@@ -729,10 +732,14 @@ fun OssWalletNavGraph(
                 com.osscabinet.ossWallet.ui.screens.BudgetDetailScreen(
                     budgetId = budgetId,
                     viewModel = budgetViewModel,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
                     baseCurrency = baseCurrency,
                     precision = precision,
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) }
                 )
             }
         }

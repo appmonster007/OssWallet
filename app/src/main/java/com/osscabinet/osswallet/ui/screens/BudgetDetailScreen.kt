@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -254,7 +255,6 @@ fun BudgetDetailScreen(
                             }
                         } else {
                             val now = System.currentTimeMillis()
-                            val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
                             val isIncome = if (budget.trackTypes.size == 1) {
                                 budget.trackTypes.first() == BudgetTrackType.INCOME
                             } else null
@@ -265,7 +265,19 @@ fun BudgetDetailScreen(
                                 categoryMap = categoryMap,
                                 decimalPrecision = precision,
                                 precision = precision,
-                                onRecordsClick = onRecordsClick,
+                                onRecordsClick = { _ ->
+                                    val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
+                                    onRecordsClick(
+                                        RecordsFilterContext.Custom(
+                                            accountIds = budget.accountIds,
+                                            categoryIds = budget.categoryIds.map { it.toString() },
+                                            tags = budget.tags,
+                                            startDate = start,
+                                            endDate = end,
+                                            isIncome = isIncome
+                                        )
+                                    )
+                                },
                                 onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
                                 exchangeRates = emptyMap(),

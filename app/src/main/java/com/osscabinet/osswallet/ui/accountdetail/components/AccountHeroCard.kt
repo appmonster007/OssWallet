@@ -7,14 +7,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -96,87 +99,86 @@ fun AccountHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             // Main Balance Section
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "TOTAL BALANCE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp,
-                            fontSize = 10.sp
-                        ),
-                        color = accountColor.copy(alpha = 0.8f)
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "TOTAL BALANCE",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+
+                val balanceParts = formatCurrencyRight(balance, account.currencyCode, precision = precision).split(" ")
+                val amountText = balanceParts.dropLast(1).joinToString(" ")
+                val symbolText = balanceParts.lastOrNull() ?: ""
 
                 Text(
-                    text = formatCurrencyRight(balance, account.currencyCode, precision = precision),
+                    text = buildAnnotatedString {
+                        append(amountText)
+                        append(" ")
+                        withStyle(SpanStyle(
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            fontSize = 24.sp
+                        )) {
+                            append(symbolText)
+                        }
+                    },
                     style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 36.sp,
-                        letterSpacing = (-1.5).sp
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 40.sp,
+                        letterSpacing = (-1).sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
                 if (account.currencyCode != baseCurrency) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
-                    ) {
-                        Text(
-                            text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision = precision)}",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    Text(
+                        text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision = precision)}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
-                    }
+                    )
                 }
             }
 
             // Income/Expense Flow Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                AeonFlowBadge(
+                FlowSummaryItem(
+                    label = "Income",
                     amount = income,
-                    type = CashFlowType.INCOME,
                     currency = account.currencyCode,
-                    precision = precision,
-                    modifier = Modifier.weight(1f),
-                    incomeColor = Color(0xFF004D40) // Teal
+                    icon = Icons.Rounded.TrendingUp,
+                    color = Color(0xFF00695C),
+                    modifier = Modifier.weight(1f)
                 )
-                AeonFlowBadge(
+                FlowSummaryItem(
+                    label = "Expense",
                     amount = expense,
-                    type = CashFlowType.EXPENSE,
                     currency = account.currencyCode,
-                    precision = precision,
-                    modifier = Modifier.weight(1f),
-                    expenseColor = Color(0xFFB3261E) // Red
+                    icon = Icons.Rounded.TrendingDown,
+                    color = Color(0xFFC62828),
+                    modifier = Modifier.weight(1f)
                 )
             }
 
             // Multi-Currency Section
             if (showCurrencyBadges && currencyBalances.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(
                         text = "DISTRIBUTION",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp,
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
                     )
                     
@@ -186,34 +188,26 @@ fun AccountHeroCard(
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                color = MaterialTheme.colorScheme.surfaceContainer,
                                 shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Surface(
-                                        color = accountColor.copy(alpha = 0.1f),
-                                        shape = RoundedCornerShape(6.dp)
-                                    ) {
-                                        Text(
-                                            curr,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.Black,
-                                                fontSize = 9.sp,
-                                                color = accountColor
-                                            ),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    Text(
+                                        curr,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Black,
+                                            color = accountColor
                                         )
-                                    }
+                                    )
                                     Text(
                                         formatAmount(bal, precision = precision),
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
                                             letterSpacing = (-0.2).sp
                                         )
                                     )
@@ -255,6 +249,55 @@ fun AccountHeroCard(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun FlowSummaryItem(
+    label: String,
+    amount: BigDecimal,
+    currency: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = color.copy(alpha = 0.05f),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = color.copy(alpha = 0.8f)
+                )
+            }
+            Text(
+                text = formatAmount(amount),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 

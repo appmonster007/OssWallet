@@ -372,13 +372,13 @@ private fun PlannedPaymentRow(
                     ) {
                         if (onConfirm != null) {
                             DropdownMenuItem(
-                                text = {},
+                                text = { Text("Confirm") },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Rounded.CheckCircle,
-                                        contentDescription = "Confirm payment",
+                                        contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 },
                                 onClick = {
@@ -390,13 +390,13 @@ private fun PlannedPaymentRow(
                         }
                         if (onSkip != null) {
                             DropdownMenuItem(
-                                text = {},
+                                text = { Text("Skip") },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Rounded.SkipNext,
-                                        contentDescription = "Skip occurrence",
+                                        contentDescription = null,
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 },
                                 onClick = {

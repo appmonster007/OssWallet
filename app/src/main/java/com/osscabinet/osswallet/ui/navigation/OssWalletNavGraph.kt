@@ -673,15 +673,24 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
                             appContainer.loanRepository,
-                            appContainer.settingsRepository
+                            appContainer.settingsRepository,
+                            appContainer.transactionRepository
                         )
                     }
                 )
+                val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
                 com.osscabinet.ossWallet.ui.screens.LoanDetailScreen(
                     loanId = loanId,
                     viewModel = loanViewModel,
+                    accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    baseCurrency = baseCurrency,
+                    precision = precision,
                     onEditClick = { navController.navigate(Screen.LoanEntry.createRoute(loanId)) },
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
+                    onRecordsClick = { context -> navController.navigateToRecords(context) }
                 )
             }
 

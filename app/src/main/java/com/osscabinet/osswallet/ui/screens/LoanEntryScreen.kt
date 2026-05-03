@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.ui.components.MultiSelectOption
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanActionCards
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanDetailSection
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanHeaderCard
+import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanTagSheet
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
 import java.math.BigDecimal
@@ -240,13 +241,14 @@ fun LoanEntryScreen(
         }
 
         if (showTagSheet) {
-            // Placeholder tags
-            AeonMultiSelectPicker(
-                title = "Labels",
-                description = "Filter transactions by tags",
-                options = emptyList(),
-                selectedIds = selectedTags,
+            val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
+            LoanTagSheet(
+                availableTags = availableTags,
+                selectedTags = selectedTags,
                 onSelectionChanged = { selectedTags = it },
+                onAddTag = { tag ->
+                    // Tag will be added to selection via onSelectionChanged callback
+                },
                 onDismiss = { showTagSheet = false }
             )
         }

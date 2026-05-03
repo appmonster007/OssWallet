@@ -51,6 +51,7 @@ fun BudgetDetailScreen(
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
     val budget = remember(budgetId, budgets) { budgets.find { it.id == budgetId } }
 
     if (budget == null) {
@@ -60,7 +61,7 @@ fun BudgetDetailScreen(
         return
     }
 
-    val progress = remember(budget) { viewModel.getBudgetProgress(budget, baseCurrency, precision) }
+    val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
     val accentColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> RedWarning
         BudgetAlertLevel.NONE -> TealHealthy

@@ -59,15 +59,22 @@ object BudgetService {
         val filteredTransactions = filterTransactionsForBudget(budget, transactions, now, allCategories)
 
         // Aggregation logic using currency conversion
-        return filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
+        val netAmount = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
             val converted = CurrencyConversionService.convertToBaseCurrency(
-                amount = tx.amount.abs(),
+                amount = tx.amount, // Use signed amount to correctly handle income vs expense
                 fromCurrency = tx.currency,
                 toCurrency = budget.currency,
                 exchangeRates = exchangeRates
             )
             acc.add(converted)
-        }.setScale(precision, RoundingMode.HALF_UP)
+        }
+
+        // If it's an income-only budget, we track progress towards positive target.
+        // Otherwise (expense or mixed), we track net outflow (negated sum).
+        val onlyIncome = budget.trackTypes.size == 1 && budget.trackTypes.first() == BudgetTrackType.INCOME
+        val spent = if (onlyIncome) netAmount else netAmount.negate()
+
+        return spent.setScale(precision, RoundingMode.HALF_UP)
     }
 
     fun filterTransactionsForBudget(
@@ -78,37 +85,20 @@ object BudgetService {
     ): List<Transaction> {
         val (start, end) = getCurrentPeriodRange(budget, now)
         
-        val expandedCategoryIds = if (budget.categoryIds.isNotEmpty()) {
-            TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories)
-        } else emptyList()
+        // Utilize TransactionFilter for standard-compliant filtering
+        val filter = com.osscabinet.ossWallet.domain.model.TransactionFilter(
+            startDate = start,
+            endDate = end,
+            accountIds = budget.accountIds,
+            categoryIds = TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories),
+            tags = budget.tags,
+            transactionType = if (budget.trackTypes.size == 1) {
+                budget.trackTypes.first().name.lowercase()
+            } else null,
+            excludeFuture = false // Budgets track the whole configured period
+        )
 
-        val trackTypeStrings = budget.trackTypes.map { it.name.lowercase() }
-
-        return transactions.filter { tx ->
-            // 1. Time range - "THIS X" logic
-            if (tx.timestamp !in start..end) return@filter false
-            
-            // 2. Type filter (income/expense)
-            if (tx.transactionType !in trackTypeStrings) return@filter false
-
-            // 3. Account filter
-            if (budget.accountIds.isNotEmpty() && tx.accountId !in budget.accountIds) return@filter false
-
-            // 4. Category filter
-            if (expandedCategoryIds.isNotEmpty()) {
-                if (tx.categoryId == null || tx.categoryId !in expandedCategoryIds) {
-                    val isTransferSelected = allCategories.any { it.id in expandedCategoryIds && it.name == "Transfer" }
-                    if (!(isTransferSelected && tx.category == "Transfer")) {
-                        return@filter false
-                    }
-                }
-            }
-
-            // 5. Label filter (was Tags)
-            if (budget.tags.isNotEmpty() && !tx.tags.any { it in budget.tags }) return@filter false
-
-            true
-        }
+        return TransactionFilterService.filter(transactions, filter)
     }
 
     fun buildProgress(budget: Budget, spent: BigDecimal, rolloverAmount: BigDecimal = BigDecimal.ZERO): BudgetProgress {

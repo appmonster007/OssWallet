@@ -137,6 +137,7 @@ fun BudgetEntryScreen(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val limit = limitText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                             val budget = (existing ?: viewModel.buildDefault(profileId)).copy(
+                                id = budgetId ?: 0L, // Ensure ID is preserved during edit even if 'existing' is not yet loaded
                                 name = name,
                                 limitAmount = limit,
                                 currency = currency,

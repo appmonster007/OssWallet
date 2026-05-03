@@ -57,6 +57,34 @@ class BudgetViewModel(
 
     private val _exchangeRates = MutableStateFlow<Map<String, BigDecimal>>(emptyMap())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val budgetProgress: StateFlow<Map<Long, BudgetProgress>> = combine(
+        budgets,
+        transactions,
+        settingsRepository.currency,
+        settingsRepository.decimalPrecision,
+        _exchangeRates,
+        categories
+    ) { arr ->
+        @Suppress("UNCHECKED_CAST")
+        val budgetsList = arr[0] as List<Budget>
+        @Suppress("UNCHECKED_CAST")
+        val transactionsList = arr[1] as List<Transaction>
+        val baseCurrency = arr[2] as String
+        val precision = arr[3] as Int
+        @Suppress("UNCHECKED_CAST")
+        val rates = arr[4] as Map<String, BigDecimal>
+        @Suppress("UNCHECKED_CAST")
+        val categoriesList = arr[5] as List<Category>
+        
+        val now = System.currentTimeMillis()
+        budgetsList.associate { budget ->
+            val rollover = BudgetService.calculateRollover(budget, transactionsList, rates, baseCurrency, precision, now, categoriesList)
+            val spent = BudgetService.calculateSpent(budget, transactionsList, rates, baseCurrency, precision, now, categoriesList)
+            budget.id to BudgetService.buildProgress(budget, spent, rollover)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     init {
         if (currencyRepository != null) {
             viewModelScope.launch {

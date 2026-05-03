@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import java.math.BigDecimal
 
 private val TealHealthy = Color(0xFF004D40)
 private val RedWarning = Color(0xFFB3261E)
@@ -43,6 +45,7 @@ fun BudgetListScreen(
     precision: Int = 2
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
     val active = budgets.filter { !it.isArchived }
     val archived = budgets.filter { it.isArchived }
 
@@ -124,9 +127,7 @@ fun BudgetListScreen(
                         )
                     }
                     items(active, key = { it.id }) { budget ->
-                        val progress = remember(budget) {
-                            viewModel.getBudgetProgress(budget, baseCurrency, precision)
-                        }
+                        val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
                         BudgetListItem(
                             budget = budget,
                             spentText = progress.spent.toPlainString(),
@@ -147,9 +148,7 @@ fun BudgetListScreen(
                         )
                     }
                     items(archived, key = { it.id }) { budget ->
-                        val progress = remember(budget) {
-                            viewModel.getBudgetProgress(budget, baseCurrency, precision)
-                        }
+                        val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
                         BudgetListItem(
                             budget = budget,
                             spentText = progress.spent.toPlainString(),

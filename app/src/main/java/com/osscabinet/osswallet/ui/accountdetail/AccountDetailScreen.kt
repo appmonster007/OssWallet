@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
@@ -293,7 +294,7 @@ fun AccountDetailScreen(
                                     categoryMap = categoryMap,
                                     decimalPrecision = state.decimalPrecision,
                                     precision = state.decimalPrecision,
-                                    onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                                    onRecordsClick = { _ -> navigate { onRecordsClick(RecordsFilterContext.ByAccount(accountId)) } },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
                                     exchangeRates = state.exchangeRates,

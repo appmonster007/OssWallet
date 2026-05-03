@@ -65,6 +65,8 @@ class LoanViewModel(
         loanType = LoanType.BORROWED,
         linkedAccountId = accountId,
         status = LoanStatus.ACTIVE,
-        profileId = profileId
+        profileId = profileId,
+        categoryIds = emptyList(),
+        tags = emptyList()
     )
 }

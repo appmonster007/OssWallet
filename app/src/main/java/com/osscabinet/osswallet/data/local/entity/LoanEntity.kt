@@ -35,5 +35,7 @@ data class LoanEntity(
     val expectedSettlementDate: Long? = null,
     val status: String = "ACTIVE",
     val profileId: Int,
-    val note: String = ""
+    val note: String = "",
+    val categoryIds: String = "",
+    val tags: String = ""
 )

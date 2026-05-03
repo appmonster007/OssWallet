@@ -18,7 +18,9 @@ data class Loan(
     val expectedSettlementDate: Long? = null,
     val status: LoanStatus = LoanStatus.ACTIVE,
     val profileId: Int,
-    val note: String = ""
+    val note: String = "",
+    val categoryIds: List<Long> = emptyList(),
+    val tags: List<String> = emptyList()
 )
 
 data class LoanPayment(

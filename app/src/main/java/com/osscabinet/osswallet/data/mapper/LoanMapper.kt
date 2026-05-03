@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.data.mapper
 import com.osscabinet.ossWallet.data.local.entity.LoanEntity
 import com.osscabinet.ossWallet.data.local.entity.LoanPaymentEntity
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.domain.util.joinByComma
 
 fun LoanEntity.toDomain(): Loan = Loan(
     id = id,
@@ -17,7 +19,9 @@ fun LoanEntity.toDomain(): Loan = Loan(
     expectedSettlementDate = expectedSettlementDate,
     status = LoanStatus.valueOf(status),
     profileId = profileId,
-    note = note
+    note = note,
+    categoryIds = categoryIds.splitByComma().mapNotNull { it.toLongOrNull() },
+    tags = tags.splitByComma()
 )
 
 fun Loan.toEntity(): LoanEntity = LoanEntity(
@@ -33,7 +37,9 @@ fun Loan.toEntity(): LoanEntity = LoanEntity(
     expectedSettlementDate = expectedSettlementDate,
     status = status.name,
     profileId = profileId,
-    note = note
+    note = note,
+    categoryIds = categoryIds.map { it.toString() }.joinByComma(),
+    tags = tags.joinByComma()
 )
 
 fun LoanPaymentEntity.toDomain(): LoanPayment = LoanPayment(

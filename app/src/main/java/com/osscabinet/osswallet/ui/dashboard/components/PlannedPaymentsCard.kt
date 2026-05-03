@@ -25,9 +25,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import java.math.BigDecimal
@@ -422,3 +429,84 @@ private fun formatDate(epochMilli: Long): String {
         else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
     }
 }
+//
+///**
+// * Confirms a planned payment by ID.
+// * This is a standalone helper that can be used from any ViewModel.
+// *
+// * @param paymentId The ID of the planned payment to confirm
+// * @param plannedPayments List of all planned payments to find the target payment
+// * @param plannedPaymentRepository Repository for planned payment operations
+// * @param transactionManager Manager for creating transactions
+// * @param profileId The current profile ID
+// */
+//suspend fun quickConfirmPlannedPayment(
+//    paymentId: Long,
+//    plannedPayments: List<PlannedPayment>,
+//    plannedPaymentRepository: PlannedPaymentRepository,
+//    transactionManager: TransactionManager,
+//    profileId: Int
+//) {
+//    val payment = plannedPayments.find { it.id == paymentId } ?: return
+//    val occurrence = PlannedPaymentOccurrence(
+//        id = 0,
+//        plannedPaymentId = payment.id,
+//        scheduledDate = payment.nextDueDate
+//    )
+//    val request = TransactionRequest(
+//        title = payment.title,
+//        amount = payment.amount,
+//        category = "",
+//        transactionType = payment.transactionType,
+//        accountId = payment.accountId,
+//        currency = payment.currency,
+//        categoryId = payment.categoryId,
+//        tags = payment.tags,
+//        paymentMethod = payment.paymentMethod,
+//        timestamp = occurrence.scheduledDate,
+//        payee = payment.payee,
+//        note = payment.note
+//    )
+//    val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
+//    plannedPaymentRepository.upsertOccurrence(
+//        occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId)
+//    )
+//    val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+//    if (nextDue == null) {
+//        plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+//    } else {
+//        plannedPaymentRepository.update(
+//            payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+//        )
+//    }
+//}
+//
+///**
+// * Skips a planned payment by ID.
+// * This is a standalone helper that can be used from any ViewModel.
+// *
+// * @param paymentId The ID of the planned payment to skip
+// * @param plannedPayments List of all planned payments to find the target payment
+// * @param plannedPaymentRepository Repository for planned payment operations
+// */
+//suspend fun quickSkipPlannedPayment(
+//    paymentId: Long,
+//    plannedPayments: List<PlannedPayment>,
+//    plannedPaymentRepository: PlannedPaymentRepository
+//) {
+//    val payment = plannedPayments.find { it.id == paymentId } ?: return
+//    val occurrence = PlannedPaymentOccurrence(
+//        id = 0,
+//        plannedPaymentId = payment.id,
+//        scheduledDate = payment.nextDueDate
+//    )
+//    plannedPaymentRepository.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
+//    val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+//    if (nextDue == null) {
+//        plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+//    } else {
+//        plannedPaymentRepository.update(
+//            payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+//        )
+//    }
+//}

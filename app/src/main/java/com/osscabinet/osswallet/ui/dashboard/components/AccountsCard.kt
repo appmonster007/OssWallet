@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -483,12 +484,13 @@ private fun AeonAddAccountCardContent(
         else -> isSystemInDarkTheme()
     }
     val isAmoled = currentTheme == "Amoled"
+    val seedColor = MaterialTheme.colorScheme.primary
     val placeholderAccount = Account(
         "empty",
         "GET STARTED",
         baseCurrency,
         "Default",
-        "#808080",
+        String.format("#%06X", 0xFFFFFF and seedColor.toArgb()),
         "Add",
         listOf("Add")
     )

@@ -73,12 +73,10 @@ class CardRepositoryImpl(
 
     private suspend fun saveConfig(context: ScreenContext, config: DashboardCardsConfig) {
         val configToSave = when (context) {
-            // For ACCOUNT_DETAIL: strip AccountHeroCardConfig (always-present, not user-managed)
-            // and clear all card filters (filters are session-only on this screen).
+            // For ACCOUNT_DETAIL: strip AccountHeroCardConfig (always-present, not user-managed).
             ScreenContext.ACCOUNT_DETAIL -> config.copy(
                 cards = config.cards
                     .filter { it !is AccountHeroCardConfig }
-                    .map { it.withClearedFilter() }
             )
             else -> config
         }

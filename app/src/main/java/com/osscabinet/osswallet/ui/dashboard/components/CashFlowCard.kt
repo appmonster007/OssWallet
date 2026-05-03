@@ -38,6 +38,9 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+
 @Composable
 fun CashFlowCard(
     cashFlowResult: CashFlowResult?,
@@ -116,6 +119,7 @@ fun CashFlowCard(
                 baseCurrency = baseCurrency,
                 type = CashFlowType.INCOME,
                 currentTheme = currentTheme,
+                incomeColor = PositiveAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
                 onClick = { onClickIncome(filter.timelineRange) }
@@ -140,6 +144,7 @@ fun CashFlowCard(
                 baseCurrency = baseCurrency,
                 type = CashFlowType.EXPENSE,
                 currentTheme = currentTheme,
+                expenseColor = NegativeAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
                 onClick = { onClickExpense(filter.timelineRange) }

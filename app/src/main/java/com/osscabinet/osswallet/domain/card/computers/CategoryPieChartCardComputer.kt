@@ -13,7 +13,11 @@ class CategoryPieChartCardComputer : CardDataComputer<CategoryPieChartCardConfig
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
 
         // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
-        val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
+        // EXPAND categories to include children so they aren't filtered out
+        val expandedFilter = config.filter.copy(
+            categoryIds = TransactionFilterService.expandCategoryIds(config.filter.categoryIds, input.categories)
+        )
+        val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 
         // Step 3: Compute all values from filteredTx
         val tree = AggregationService.buildCategoryTree(

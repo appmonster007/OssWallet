@@ -2,12 +2,16 @@ package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
@@ -17,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
@@ -25,23 +30,17 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.generateShade
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.util.toChartColor
 import com.osscabinet.ossWallet.ui.util.formatAmount
-import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
+import java.math.BigDecimal
 
 @Composable
 fun CategoryTreemapCard(
@@ -57,11 +56,19 @@ fun CategoryTreemapCard(
     savedFilters: List<Filter> = emptyList(),
     filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY,
     baseFilter: TransactionFilter = TransactionFilter(),
+    currentTheme: String = "System",
     precision: Int = 2
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
     
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
+
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }
     val currentData = navigationStack.last()
@@ -175,9 +182,9 @@ fun CategoryTreemapCard(
                     }
                     
                     val displayColor = if (navigationStack.size > 1) {
-                        baseColor.generateShade(index, groupedData.size)
+                        baseColor.generateShade(index, groupedData.size, isDarkTheme, isAmoled)
                     } else {
-                        baseColor
+                        baseColor.toChartColor(isDarkTheme, isAmoled)
                     }
 
                     AeonTreemapNode(
@@ -195,6 +202,7 @@ fun CategoryTreemapCard(
                     nodes = rootNodes,
                     modifier = Modifier.fillMaxSize(),
                     showLabels = config.showLabels,
+                    rounded = config.rounded,
                     onNodeClick = { _ ->
                         // Interaction feedback
                     },
@@ -227,7 +235,7 @@ fun CategoryTreemapCard(
         // Consistent Legend for Treemap
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            TreemapLegend(data = groupedData, precision = precision)
+            TreemapLegend(data = groupedData, isDarkTheme = isDarkTheme, isAmoled = isAmoled, precision = precision)
         }
     }
 
@@ -309,6 +317,12 @@ private fun CategoryTreemapDisplaySettingsDialog(
                     checked = config.showLegend,
                     onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
                 )
+                AeonSettingsToggle(
+                    label = "ROUNDED VISUALS",
+                    description = "Apply rounded corners and spacing to segments",
+                    checked = config.rounded,
+                    onCheckedChange = { onUpdate(config.copy(rounded = it)) }
+                )
             }
         },
         shape = RoundedCornerShape(32.dp),
@@ -317,7 +331,7 @@ private fun CategoryTreemapDisplaySettingsDialog(
 }
 
 @Composable
-fun TreemapLegend(data: List<CategoryTreemapData>, precision: Int = 2) {
+fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmoled: Boolean, precision: Int = 2) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -330,7 +344,7 @@ fun TreemapLegend(data: List<CategoryTreemapData>, precision: Int = 2) {
                 Surface(
                     modifier = Modifier.size(10.dp),
                     shape = RoundedCornerShape(2.dp),
-                    color = Color(item.colorHex),
+                    color = Color(item.colorHex).toChartColor(isDarkTheme, isAmoled),
                     border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.05f))
                 ) {}
                 

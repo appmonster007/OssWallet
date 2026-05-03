@@ -25,6 +25,28 @@ object TransactionFilterService {
         FilterService.filterTransactions(transactions, filter)
 
     /**
+     * Expands selected category IDs to include all their descendants.
+     */
+    fun expandCategoryIds(
+        categoryIds: List<Long>,
+        allCategories: List<com.osscabinet.ossWallet.domain.model.Category>
+    ): List<Long> {
+        if (categoryIds.isEmpty()) return emptyList()
+        val expanded = mutableSetOf<Long>()
+        val queue = categoryIds.toMutableList()
+        
+        while (queue.isNotEmpty()) {
+            val id = queue.removeAt(0)
+            if (expanded.add(id)) {
+                allCategories.filter { it.parentId == id }.forEach {
+                    queue.add(it.id)
+                }
+            }
+        }
+        return expanded.toList()
+    }
+
+    /**
      * Filters transactions to only include income transactions (positive amounts).
      *
      * @param transactions List of transactions to filter

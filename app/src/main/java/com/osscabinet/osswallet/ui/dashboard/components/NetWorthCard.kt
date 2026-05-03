@@ -61,7 +61,8 @@ fun NetWorthCard(
     baseFilter: TransactionFilter = TransactionFilter(),
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
-    savedFilters: List<Filter> = emptyList()
+    savedFilters: List<Filter> = emptyList(),
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System"
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }

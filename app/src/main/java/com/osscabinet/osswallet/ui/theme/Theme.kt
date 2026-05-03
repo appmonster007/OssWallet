@@ -43,7 +43,12 @@ private val DarkColorScheme = darkColorScheme(
     outlineVariant = OutlineVariantDark,
     inverseSurface = InverseSurfaceDark,
     inverseOnSurface = InverseOnSurfaceDark,
-    scrim = ScrimDark
+    scrim = Color.Black,
+    surfaceContainerLowest = SurfaceContainerLowestDark,
+    surfaceContainerLow = SurfaceContainerLowDark,
+    surfaceContainer = SurfaceContainerDark,
+    surfaceContainerHigh = SurfaceContainerHighDark,
+    surfaceContainerHighest = SurfaceContainerHighestDark
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -73,7 +78,12 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = OutlineVariantLight,
     inverseSurface = InverseSurfaceLight,
     inverseOnSurface = InverseOnSurfaceLight,
-    scrim = ScrimLight
+    scrim = Color.Black,
+    surfaceContainerLowest = SurfaceContainerLowestLight,
+    surfaceContainerLow = SurfaceContainerLowLight,
+    surfaceContainer = SurfaceContainerLight,
+    surfaceContainerHigh = SurfaceContainerHighLight,
+    surfaceContainerHighest = SurfaceContainerHighestLight
 )
 
 private val AmoledColorScheme = darkColorScheme(
@@ -97,13 +107,18 @@ private val AmoledColorScheme = darkColorScheme(
     onBackground = OnBackgroundDark,
     surface = Color.Black,
     onSurface = OnSurfaceDark,
-    surfaceVariant = Color(0xFF1A1D1A),
+    surfaceVariant = Color(0xFF1B2327), // Matching Dark SurfaceContainerLow
     onSurfaceVariant = OnSurfaceVariantDark,
     outline = OutlineDark,
-    outlineVariant = Color(0xFF1A1D1A),
+    outlineVariant = Color(0xFF1B2327),
     inverseSurface = InverseSurfaceDark,
     inverseOnSurface = InverseOnSurfaceDark,
-    scrim = ScrimDark
+    scrim = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color(0xFF1B2327), // Defined Carbon Slate elevation
+    surfaceContainer = Color(0xFF242C31),
+    surfaceContainerHigh = Color(0xFF2E363B),
+    surfaceContainerHighest = Color(0xFF384046)
 )
 
 @Composable

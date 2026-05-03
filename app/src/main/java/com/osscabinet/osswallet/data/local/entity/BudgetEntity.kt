@@ -20,6 +20,7 @@ data class BudgetEntity(
     val period: String,
     val categoryIds: String = "",
     val accountIds: String = "",
+    val tags: String = "",
     val alertThreshold: Float = 0.8f,
     val rollover: Boolean = false,
     val trackType: String = "EXPENSE",

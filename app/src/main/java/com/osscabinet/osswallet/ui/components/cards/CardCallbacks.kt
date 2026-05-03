@@ -90,6 +90,8 @@ sealed class CardCallbacks {
     data class PlannedPayments(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig) -> Unit = {},
         val onItemClick: (Long) -> Unit = {},
+        val onConfirm: ((Long) -> Unit)? = null,
+        val onSkip: ((Long) -> Unit)? = null,
         val onDelete: () -> Unit = {}
     ) : CardCallbacks()
 

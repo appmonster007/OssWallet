@@ -23,9 +23,11 @@ fun rememberCardWithCallbacks(
     onManageAccountsClick: () -> Unit = {},
     onAccountsViewClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
+    onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
+    onPlannedPaymentSkip: ((Long) -> Unit)? = null,
     currentTheme: String = "light"
 ): CardWithCallbacks? {
-    return remember(config, input, registry, updateHandler, onDelete, onRecordsClick, onManageAccountsClick, onAccountsViewClick, onAccountClick, currentTheme) {
+    return remember(config, input, registry, updateHandler, onDelete, onRecordsClick, onManageAccountsClick, onAccountsViewClick, onAccountClick, onPlannedPaymentConfirm, onPlannedPaymentSkip, currentTheme) {
         val renderData = try {
             when (config) {
                 is NetWorthCardConfig -> registry.compute(CardType.NET_WORTH, input, config)
@@ -162,6 +164,8 @@ fun rememberCardWithCallbacks(
                     callbacks = CardCallbacks.PlannedPayments(
                         onUpdate = { newConfig -> updateHandler.updateCardPlannedPaymentsConfig(config.cardId, newConfig) },
                         onItemClick = {},
+                        onConfirm = onPlannedPaymentConfirm,
+                        onSkip = onPlannedPaymentSkip,
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,

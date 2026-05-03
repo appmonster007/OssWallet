@@ -63,6 +63,7 @@ fun AeonPieChart(
     precision: Int = 2,
     isDonut: Boolean = true,
     animate: Boolean = true,
+    rounded: Boolean = true,
     onSliceClick: (AeonPieChartSlice) -> Unit = {},
     onDrillInClick: (AeonPieChartSlice) -> Unit = {},
     onNavigateToRecords: (AeonPieChartSlice) -> Unit = {}
@@ -188,7 +189,7 @@ fun AeonPieChart(
                     val isSelected = selectedSlice == slice
                     
                     // Modern Look: Precise radial gaps
-                    val gapAngle = if (sliceSweep < 1f) 0.1f else 1.5f
+                    val gapAngle = if (rounded) (if (sliceSweep < 1f) 0.1f else 1.5f) else 0f
                     val sweepAngle = (sliceSweep - gapAngle).coerceAtLeast(0.1f) * animationProgress.value
                     
                     val explodedRadius = if (isSelected) 14.dp.toPx() else 0f

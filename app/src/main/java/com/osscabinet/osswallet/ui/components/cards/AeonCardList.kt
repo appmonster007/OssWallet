@@ -39,6 +39,8 @@ fun AeonCardList(
     onManageAccountsClick: () -> Unit = {},
     onAccountsViewClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
+    onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
+    onPlannedPaymentSkip: ((Long) -> Unit)? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null
@@ -66,6 +68,8 @@ fun AeonCardList(
             onManageAccountsClick = onManageAccountsClick,
             onAccountsViewClick = onAccountsViewClick,
             onAccountClick = onAccountClick,
+            onPlannedPaymentConfirm = onPlannedPaymentConfirm,
+            onPlannedPaymentSkip = onPlannedPaymentSkip,
             currentTheme = currentTheme
         )
 

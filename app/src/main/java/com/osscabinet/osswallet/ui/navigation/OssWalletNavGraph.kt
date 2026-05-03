@@ -95,7 +95,8 @@ fun OssWalletNavGraph(
                 appContainer.cardComputerRegistry,
                 appContainer.plannedPaymentRepository,
                 appContainer.budgetRepository,
-                appContainer.loanRepository
+                appContainer.loanRepository,
+                appContainer.transactionManager
             )
         }
     )
@@ -170,6 +171,9 @@ fun OssWalletNavGraph(
                         transactionViewModel.setCloneTransactionId(id)
                         navController.navigate(Screen.AddTransaction.route)
                     },
+                    onPlannedPaymentsClick = { navController.navigate(Screen.PlannedPayments.route) },
+                    onBudgetsClick = { navController.navigate(Screen.BudgetList.route) },
+                    onLoansClick = { navController.navigate(Screen.LoanList.route) },
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     settingsViewModel = settingsViewModel,
@@ -200,9 +204,12 @@ fun OssWalletNavGraph(
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
-                    onAddClick = { type, template -> 
+                    onAddClick = { type, template ->
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                     },
+                    onPlannedPaymentsClick = { navController.navigate(Screen.PlannedPayments.route) },
+                    onBudgetsClick = { navController.navigate(Screen.BudgetList.route) },
+                    onLoansClick = { navController.navigate(Screen.LoanList.route) },
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
                     settingsViewModel = settingsViewModel,
@@ -309,6 +316,9 @@ fun OssWalletNavGraph(
                     onAddClick = { type, template ->
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template))
                     },
+                    onPlannedPaymentsClick = { navController.navigate(Screen.PlannedPayments.route) },
+                    onBudgetsClick = { navController.navigate(Screen.BudgetList.route) },
+                    onLoansClick = { navController.navigate(Screen.LoanList.route) },
                     cardComputerRegistry = appContainer.cardComputerRegistry
                 )
             }
@@ -522,8 +532,10 @@ fun OssWalletNavGraph(
                 )
                 com.osscabinet.ossWallet.ui.screens.PlannedPaymentsScreen(
                     viewModel = plannedPaymentViewModel,
+                    transactionManager = appContainer.transactionManager,
                     onAddClick = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.PlannedPaymentEntry.createRoute(id)) },
+                    onDetailClick = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -533,15 +545,22 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
                             appContainer.budgetRepository,
-                            appContainer.settingsRepository
+                            appContainer.settingsRepository,
+                            appContainer.transactionRepository,
+                            appContainer.currencyRepository
                         )
                     }
                 )
+                val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
                 com.osscabinet.ossWallet.ui.screens.BudgetListScreen(
                     viewModel = budgetViewModel,
                     onAddClick = { navController.navigate(Screen.BudgetEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
-                    onBackClick = { navController.popBackStack() }
+                    onDetailClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() },
+                    baseCurrency = baseCurrency,
+                    precision = precision
                 )
             }
 
@@ -557,13 +576,19 @@ fun OssWalletNavGraph(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
                             appContainer.budgetRepository,
-                            appContainer.settingsRepository
+                            appContainer.settingsRepository,
+                            appContainer.transactionRepository,
+                            appContainer.currencyRepository
                         )
                     }
                 )
+                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 com.osscabinet.ossWallet.ui.screens.BudgetEntryScreen(
                     budgetId = if (budgetId == -1L) null else budgetId,
                     viewModel = budgetViewModel,
+                    accounts = accounts,
+                    categories = categories,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -584,10 +609,14 @@ fun OssWalletNavGraph(
                         )
                     }
                 )
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
+                val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
                 com.osscabinet.ossWallet.ui.screens.PlannedPaymentEntryScreen(
                     plannedPaymentId = if (plannedPaymentId == -1L) null else plannedPaymentId,
                     viewModel = plannedPaymentViewModel,
                     accountViewModel = accountViewModel,
+                    categories = categories,
+                    availableTags = allTags,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -624,9 +653,11 @@ fun OssWalletNavGraph(
                         )
                     }
                 )
+                val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                 com.osscabinet.ossWallet.ui.screens.LoanEntryScreen(
                     loanId = if (loanId == -1L) null else loanId,
                     viewModel = loanViewModel,
+                    accounts = accounts,
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -648,6 +679,59 @@ fun OssWalletNavGraph(
                     loanId = loanId,
                     viewModel = loanViewModel,
                     onEditClick = { navController.navigate(Screen.LoanEntry.createRoute(loanId)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.PlannedPaymentDetail.route,
+                arguments = listOf(navArgument("plannedPaymentId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: return@composable
+                val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
+                            appContainer.plannedPaymentRepository,
+                            appContainer.settingsRepository
+                        )
+                    }
+                )
+                val detailAccounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+                val detailCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
+                com.osscabinet.ossWallet.ui.screens.PlannedPaymentDetailScreen(
+                    plannedPaymentId = plannedPaymentId,
+                    viewModel = plannedPaymentViewModel,
+                    transactionManager = appContainer.transactionManager,
+                    accounts = detailAccounts,
+                    categories = detailCategories,
+                    onEditClick = { id -> navController.navigate(Screen.PlannedPaymentEntry.createRoute(id)) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.BudgetDetail.route,
+                arguments = listOf(navArgument("budgetId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: return@composable
+                val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
+                    factory = GenericViewModelFactory {
+                        com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
+                            appContainer.budgetRepository,
+                            appContainer.settingsRepository,
+                            appContainer.transactionRepository,
+                            appContainer.currencyRepository
+                        )
+                    }
+                )
+                val baseCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
+                val precision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
+                com.osscabinet.ossWallet.ui.screens.BudgetDetailScreen(
+                    budgetId = budgetId,
+                    viewModel = budgetViewModel,
+                    baseCurrency = baseCurrency,
+                    precision = precision,
+                    onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
                     onBackClick = { navController.popBackStack() }
                 )
             }

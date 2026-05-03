@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,9 +17,11 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,10 +38,18 @@ import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.LoanService
 import com.osscabinet.ossWallet.ui.components.AeonDateField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
@@ -53,8 +65,14 @@ private val BorrowedColor = Color(0xFFE65100)
 fun LoanDetailScreen(
     loanId: Long,
     viewModel: LoanViewModel,
+    accountViewModel: AccountViewModel,
+    transactionViewModel: TransactionViewModel,
+    baseCurrency: String,
+    precision: Int,
     onEditClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onTransactionClick: (Long) -> Unit,
+    onRecordsClick: (RecordsFilterContext) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val loan = remember(loanId, loans) { loans.find { it.id == loanId } } ?: return
@@ -62,7 +80,7 @@ fun LoanDetailScreen(
 
     val now = System.currentTimeMillis()
     val summary = remember(loan, payments, now) {
-        LoanService.buildSummary(loan, payments, now)
+        LoanService.buildSummary(loan, payments, now, precision)
     }
 
     val progress = if (loan.principalAmount > BigDecimal.ZERO)
@@ -75,16 +93,35 @@ fun LoanDetailScreen(
     var paymentDateMillis by remember { mutableLongStateOf(now) }
     var paymentNote by remember { mutableStateOf("") }
 
-    var showAmortization by remember { mutableStateOf(false) }
-    var showAllAmortization by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val tabs = listOf(
+        NavigationTab(
+            icon = Icons.Rounded.Info,
+            selectedIcon = Icons.Rounded.Info,
+            label = "Overview",
+            contentDescription = "Overview tab"
+        ),
+        NavigationTab(
+            icon = Icons.Rounded.Receipt,
+            selectedIcon = Icons.Rounded.Receipt,
+            label = "Activity",
+            contentDescription = "Activity tab"
+        )
+    )
 
-    val amortizationSchedule = remember(loan, showAmortization) {
-        if (!showAmortization || loan.interestRate == null) emptyList()
-        else {
-            val monthlyPayment = loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
-            LoanService.getAmortizationSchedule(loan, monthlyPayment, loan.startDate)
+    // Get loan-related transactions for Activity tab
+    val loanTransactions = remember(loan, viewModel.transactions.collectAsStateWithLifecycle().value) {
+        viewModel.getLoanTransactions(loan).map {
+            TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO)
         }
     }
+
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+    val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
+    val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
+    val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
+    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -92,8 +129,7 @@ fun LoanDetailScreen(
                 title = {
                     Text(
                         loan.name,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
                 navigationIcon = {
@@ -102,189 +138,90 @@ fun LoanDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onEditClick) {
+                        Icon(Icons.Rounded.Payments, contentDescription = "Edit")
+                    }
                     if (loan.status == LoanStatus.ACTIVE) {
                         TextButton(onClick = { viewModel.settleLoan(loan); onBackClick() }) {
                             Text("Settle")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
-        floatingActionButton = {
-            if (loan.status == LoanStatus.ACTIVE) {
-                FloatingActionButton(onClick = { showAddPayment = true }) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add Payment")
-                }
-            }
+        bottomBar = {
+            ExpressiveNavigationBar(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs
+            )
         }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                AeonExpressiveCard(
-                    title = loan.name,
-                    subtitle = "${loan.loanType.name.lowercase().replaceFirstChar { it.uppercase() }} — ${loan.currency}",
+    ) { paddingValues ->
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            verticalAlignment = Alignment.Top
+        ) { page ->
+            when (page) {
+                0 -> LoanOverviewTab(
+                    loan = loan,
+                    summary = summary,
+                    progress = progress,
                     accentColor = accentColor,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Loan type badge
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = accentColor.copy(alpha = 0.1f),
-                        border = BorderStroke(0.5.dp, accentColor.copy(alpha = 0.2f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    payments = payments,
+                    onDeletePayment = { viewModel.deletePayment(it) },
+                    onAddPaymentClick = { showAddPayment = true }
+                )
+                1 -> {
+                    if (loanTransactions.isEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
                         ) {
-                            Icon(
-                                if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = accentColor
-                            )
-                            Text(
-                                if (loan.loanType == LoanType.LENT) "LENT" else "BORROWED",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = accentColor
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    // Remaining balance prominent
-                    Text(
-                        summary.remainingBalance.toPlainString(),
-                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                        color = accentColor
-                    )
-                    Text(
-                        "of ${loan.principalAmount.toPlainString()} ${loan.currency} remaining",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    // Data rows wrapped in surface
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            DataRow(
-                                label = "PRINCIPAL",
-                                value = "${loan.principalAmount.toPlainString()} ${loan.currency}"
-                            )
-                            DataRow(
-                                label = "TOTAL PAID",
-                                value = "${summary.totalPaid.toPlainString()} ${loan.currency}"
-                            )
-                            DataRow(
-                                label = "REMAINING",
-                                value = "${summary.remainingBalance.toPlainString()} ${loan.currency}",
-                                valueColor = accentColor
-                            )
-                            if (loan.interestRate != null) {
-                                DataRow(
-                                    label = "INTEREST ACCRUED",
-                                    value = "${summary.interestAccrued.setScale(2, RoundingMode.HALF_UP).toPlainString()} ${loan.currency}"
+                            Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "No related transactions",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    // Progress bar
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = accentColor,
-                        trackColor = accentColor.copy(alpha = 0.15f),
-                        strokeCap = StrokeCap.Round
-                    )
-                }
-            }
-
-            if (loan.interestRate != null) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        LoanSectionHeaderInline(
-                            title = "AMORTIZATION SCHEDULE",
-                            sectionColor = MaterialTheme.colorScheme.primary
-                        )
-                        IconButton(onClick = { showAmortization = !showAmortization }) {
-                            Icon(
-                                if (showAmortization) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                                contentDescription = if (showAmortization) "Collapse" else "Expand"
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (showAmortization && amortizationSchedule.isNotEmpty()) {
-                val displayRows = if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
-                items(displayRows, key = { it.period }) { entry ->
-                    AmortizationRow(entry = entry, currency = loan.currency)
-                }
-                if (amortizationSchedule.size > 12) {
-                    item {
-                        TextButton(
-                            onClick = { showAllAmortization = !showAllAmortization },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(if (showAllAmortization) "Show less" else "Show all (${amortizationSchedule.size} periods)")
-                        }
-                    }
-                }
-            }
-
-            item {
-                LoanSectionHeaderInline(
-                    title = "PAYMENTS",
-                    sectionColor = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            if (payments.isEmpty() && loan.status == LoanStatus.ACTIVE) {
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            "No payments recorded yet",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(16.dp),
-                            textAlign = TextAlign.Center
+                    } else {
+                        RecentActivitiesScreen(
+                            allTransactions = loanTransactions,
+                            accountNamesMap = accountNamesMap,
+                            categoryMap = categoryMap,
+                            onRecordsClick = { _ ->
+                                onRecordsClick(
+                                    RecordsFilterContext.Custom(
+                                        accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+                                        categoryIds = loan.categoryIds.map { it.toString() },
+                                        tags = loan.tags
+                                    )
+                                )
+                            },
+                            onTransactionClick = onTransactionClick,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = emptyMap(),
+                            contentPadding = PaddingValues(0.dp),
+                            revealedCardIds = revealedCardIds,
+                            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                            onClone = { },
+                            onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                            onSplit = { },
+                            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                            applyFilter = false,
+                            excludeFuture = false,
+                            precision = precision
                         )
                     }
                 }
-            }
-
-            items(payments, key = { it.id }) { payment ->
-                PaymentRow(
-                    payment = payment,
-                    currency = loan.currency,
-                    onDelete = { viewModel.deletePayment(payment.id) }
-                )
             }
         }
     }
@@ -341,6 +278,235 @@ fun LoanDetailScreen(
                 TextButton(onClick = { showAddPayment = false }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+private fun LoanOverviewTab(
+    loan: com.osscabinet.ossWallet.domain.model.Loan,
+    summary: com.osscabinet.ossWallet.domain.model.LoanSummary,
+    progress: Float,
+    accentColor: Color,
+    payments: List<LoanPayment>,
+    onDeletePayment: (Long) -> Unit,
+    onAddPaymentClick: () -> Unit
+) {
+    var showAmortization by remember { mutableStateOf(false) }
+    var showAllAmortization by remember { mutableStateOf(false) }
+
+    val amortizationSchedule = remember(loan, showAmortization) {
+        if (!showAmortization || loan.interestRate == null) emptyList()
+        else {
+            val monthlyPayment = loan.principalAmount.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
+            LoanService.getAmortizationSchedule(loan, monthlyPayment, loan.startDate)
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            AeonExpressiveCard(
+                title = loan.name,
+                subtitle = "${loan.loanType.name.lowercase().replaceFirstChar { it.uppercase() }} — ${loan.currency}",
+                accentColor = accentColor,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Loan type badge
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = accentColor.copy(alpha = 0.1f),
+                    border = BorderStroke(0.5.dp, accentColor.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = accentColor
+                        )
+                        Text(
+                            if (loan.loanType == LoanType.LENT) "LENT" else "BORROWED",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = accentColor
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                // Remaining balance prominent
+                Text(
+                    summary.remainingBalance.toPlainString(),
+                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                    color = accentColor
+                )
+                Text(
+                    "of ${loan.principalAmount.toPlainString()} ${loan.currency} remaining",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                Spacer(Modifier.height(8.dp))
+                // Data rows wrapped in surface
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        DataRow(
+                            label = "PRINCIPAL",
+                            value = "${loan.principalAmount.toPlainString()} ${loan.currency}"
+                        )
+                        DataRow(
+                            label = "TOTAL PAID",
+                            value = "${summary.totalPaid.toPlainString()} ${loan.currency}"
+                        )
+                        DataRow(
+                            label = "REMAINING",
+                            value = "${summary.remainingBalance.toPlainString()} ${loan.currency}",
+                            valueColor = accentColor
+                        )
+                        if (loan.interestRate != null) {
+                            DataRow(
+                                label = "INTEREST ACCRUED",
+                                value = "${summary.interestAccrued.toPlainString()} ${loan.currency}"
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                // Progress bar
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    color = accentColor,
+                    trackColor = accentColor.copy(alpha = 0.15f),
+                    strokeCap = StrokeCap.Round
+                )
+            }
+        }
+
+        // SCOPE Card
+        item {
+            AeonExpressiveCard(
+                title = "SCOPE",
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("LINKED ACCOUNT", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    if (loan.linkedAccountId.isBlank()) "Not linked to any account" else "Linked to account",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    if (loan.categoryIds.isEmpty()) "All Categories" else "${loan.categoryIds.size} Categories selected",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    if (loan.tags.isEmpty()) "All Labels" else loan.tags.joinToString(),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        if (loan.interestRate != null) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LoanSectionHeaderInline(
+                        title = "AMORTIZATION SCHEDULE",
+                        sectionColor = MaterialTheme.colorScheme.primary
+                    )
+                    IconButton(onClick = { showAmortization = !showAmortization }) {
+                        Icon(
+                            if (showAmortization) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = if (showAmortization) "Collapse" else "Expand"
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showAmortization && amortizationSchedule.isNotEmpty()) {
+            val displayRows = if (showAllAmortization) amortizationSchedule else amortizationSchedule.take(12)
+            items(displayRows, key = { it.period }) { entry ->
+                AmortizationRow(entry = entry, currency = loan.currency)
+            }
+            if (amortizationSchedule.size > 12) {
+                item {
+                    TextButton(
+                        onClick = { showAllAmortization = !showAllAmortization },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (showAllAmortization) "Show less" else "Show all (${amortizationSchedule.size} periods)")
+                    }
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LoanSectionHeaderInline(
+                    title = "PAYMENTS",
+                    sectionColor = MaterialTheme.colorScheme.primary
+                )
+                if (loan.status == com.osscabinet.ossWallet.domain.model.LoanStatus.ACTIVE) {
+                    FloatingActionButton(
+                        onClick = onAddPaymentClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Payment")
+                    }
+                }
+            }
+        }
+
+        if (payments.isEmpty() && loan.status == com.osscabinet.ossWallet.domain.model.LoanStatus.ACTIVE) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "No payments recorded yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        items(payments, key = { it.id }) { payment ->
+            PaymentRow(
+                payment = payment,
+                currency = loan.currency,
+                onDelete = { onDeletePayment(payment.id) }
+            )
+        }
     }
 }
 

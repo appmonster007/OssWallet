@@ -38,7 +38,7 @@ class BudgetServiceTest {
         accountIds = accountIds,
         alertThreshold = alertThreshold,
         rollover = rollover,
-        trackType = BudgetTrackType.EXPENSE,
+        trackTypes = listOf(BudgetTrackType.EXPENSE),
         isArchived = false,
         profileId = 1,
         customStartDate = customStart,

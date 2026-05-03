@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.LoanSummary
@@ -21,6 +23,9 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.ui.util.formatAmount
+import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun LoansCard(
@@ -37,7 +42,7 @@ fun LoansCard(
 
     AeonExpressiveCard(
         title = config.title,
-        icon = Icons.Rounded.AccountBalance,
+        icon = Icons.Rounded.Payments,
         modifier = modifier,
         headerModifier = headerModifier,
         headerTrailing = { _ ->
@@ -105,59 +110,105 @@ private fun LoanSummaryRow(
     onClick: () -> Unit,
     precision: Int = 2
 ) {
-    val typeLabel = if (summary.loan.loanType == LoanType.LENT) "Lent to" else "Borrowed from"
-    val accentColor = if (summary.loan.loanType == LoanType.LENT)
-        MaterialTheme.colorScheme.primary
-    else
-        MaterialTheme.colorScheme.tertiary
+    val lentColor = Color(0xFF00695C)
+    val borrowedColor = Color(0xFFE65100)
+    val accentColor = if (summary.loan.loanType == LoanType.LENT) lentColor else borrowedColor
+    
+    val progress = if (summary.loan.principalAmount > BigDecimal.ZERO)
+        (summary.totalPaid.divide(summary.loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat().coerceIn(0f, 1f)
+    else 0f
 
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = summary.loan.name,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = summary.loan.name,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.2).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                )
-                Text(
-                    text = "$typeLabel ${summary.loan.lenderOrBorrowerName}".uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp,
-                        letterSpacing = 0.5.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    Text(
+                        text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}" 
+                               else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp
+                        ),
+                        color = accentColor.copy(alpha = 0.7f)
                     )
+                }
+                
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = accentColor
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${formatAmount(summary.remainingBalance, precision)} ${summary.loan.currency}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = accentColor
-                    )
-                )
-                Text(
-                    text = "REMAINING",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(10.dp),
+                color = accentColor,
+                trackColor = accentColor.copy(alpha = 0.1f),
+                strokeCap = StrokeCap.Round
+            )
+            
+            Spacer(modifier = Modifier.height(14.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "REMAINING",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
-                )
+                    Text(
+                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.ExtraBold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Principal: ${formatAmount(summary.loan.principalAmount, precision)}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }

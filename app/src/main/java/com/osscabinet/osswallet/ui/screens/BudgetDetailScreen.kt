@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -13,16 +16,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -34,7 +41,6 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 private val TealHealthy = Color(0xFF004D40)
-private val RedWarning = Color(0xFFB3261E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +54,7 @@ fun BudgetDetailScreen(
     onEditClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onTransactionClick: (Long) -> Unit,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
+    onRecordsClick: (RecordsFilterContext) -> Unit
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
@@ -62,14 +68,9 @@ fun BudgetDetailScreen(
     }
 
     val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
-    val accentColor = when (progress.alertLevel) {
-        BudgetAlertLevel.EXCEEDED, BudgetAlertLevel.WARNING -> RedWarning
-        BudgetAlertLevel.NONE -> TealHealthy
-    }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-    val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
@@ -78,6 +79,15 @@ fun BudgetDetailScreen(
         viewModel.getBudgetTransactions(budget).map { 
             TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO) 
         }
+    }
+
+    val selectedAccounts = remember(accounts, budget.accountIds) {
+        if (budget.accountIds.isEmpty()) emptyList()
+        else accounts.filter { it.id in budget.accountIds }
+    }
+    val selectedCategories = remember(categoriesList, budget.categoryIds) {
+        if (budget.categoryIds.isEmpty()) emptyList()
+        else categoriesList.filter { it.id in budget.categoryIds }
     }
 
     val scope = rememberCoroutineScope()
@@ -133,106 +143,94 @@ fun BudgetDetailScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
                         item {
-                            AeonExpressiveCard(
-                                title = budget.name,
-                                subtitle = "${budget.period.name} Budget",
-                                accentColor = accentColor,
+                            BudgetHeroCard(
+                                budget = budget,
+                                progress = progress,
+                                precision = precision,
                                 modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    "${progress.spent.toPlainString()} / ${budget.limitAmount.toPlainString()} ${budget.currency}",
-                                    style = MaterialTheme.typography.displaySmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 24.sp
-                                    ),
-                                    color = accentColor
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                LinearProgressIndicator(
-                                    progress = { progress.percentage.coerceIn(0f, 1f) },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                                    color = accentColor,
-                                    trackColor = accentColor.copy(alpha = 0.15f),
-                                    strokeCap = StrokeCap.Round
-                                )
-                                Spacer(Modifier.height(8.dp))
-
-                                if (progress.alertLevel != BudgetAlertLevel.NONE) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Warning,
-                                            contentDescription = null,
-                                            tint = RedWarning,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            progress.alertLevel.name,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = RedWarning
-                                        )
-                                    }
-                                    Spacer(Modifier.height(4.dp))
-                                }
-
-                                if (progress.remaining > java.math.BigDecimal.ZERO) {
-                                    Text(
-                                        "${progress.remaining.toPlainString()} ${budget.currency} remaining",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TealHealthy
-                                    )
-                                } else {
-                                    val overspent = progress.spent.subtract(progress.limit).abs()
-                                    Text(
-                                        "Over by ${overspent.toPlainString()} ${budget.currency}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = RedWarning
-                                    )
-                                }
-
-                                Text(
-                                    "Alert threshold: ${(budget.alertThreshold * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                if (budget.rollover && progress.rolloverAmount > java.math.BigDecimal.ZERO) {
-                                    Text(
-                                        "Rollover: +${progress.rolloverAmount.toPlainString()} from last period",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = TealHealthy
-                                    )
-                                }
-                            }
+                            )
                         }
                         
                         item {
                             AeonExpressiveCard(
-                                title = "SCOPE",
+                                title = "SCOPE & CONTEXT",
+                                icon = Icons.Rounded.FilterAlt,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("ACCOUNTS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    if (budget.accountIds.isEmpty()) "All Accounts" else "${budget.accountIds.size} Accounts selected",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    if (budget.categoryIds.isEmpty()) "All Categories" else "${budget.categoryIds.size} Categories selected",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text("LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    if (budget.tags.isEmpty()) "All Labels" else budget.tags.joinToString(),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                                    ScopeSection(
+                                        label = "ACCOUNTS",
+                                        icon = Icons.Rounded.AccountBalance,
+                                        allText = "All Accounts",
+                                        isEmpty = budget.accountIds.isEmpty(),
+                                        items = selectedAccounts.map { account ->
+                                            {
+                                                val color = try { 
+                                                    Color(account.colorHex.toColorInt())
+                                                } catch (_: Exception) { 
+                                                    MaterialTheme.colorScheme.primary 
+                                                }
+                                                ScopeChip(text = account.name, color = color)
+                                            }
+                                        }
+                                    )
+                                    ScopeSection(
+                                        label = "CATEGORIES",
+                                        icon = Icons.Rounded.Category,
+                                        allText = "All Categories",
+                                        isEmpty = budget.categoryIds.isEmpty(),
+                                        items = selectedCategories.map { category ->
+                                            {
+                                                val color = Color(category.colorHex)
+                                                ScopeChip(text = category.name, color = color)
+                                            }
+                                        }
+                                    )
+                                    ScopeSection(
+                                        label = "LABELS",
+                                        icon = Icons.Rounded.Label,
+                                        allText = "All Labels",
+                                        isEmpty = budget.tags.isEmpty(),
+                                        items = budget.tags.map { tag ->
+                                            {
+                                                ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
+                            item {
+                                Surface(
+                                    color = TealHealthy.copy(alpha = 0.05f),
+                                    shape = RoundedCornerShape(20.dp),
+                                    border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = TealHealthy)
+                                        Column {
+                                            Text(
+                                                "Rollover Applied",
+                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                color = TealHealthy
+                                            )
+                                            Text(
+                                                "+${progress.rolloverAmount.toPlainString()} ${budget.currency} carried forward",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = TealHealthy.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -296,5 +294,95 @@ fun BudgetDetailScreen(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScopeSection(
+    label: String,
+    icon: ImageVector,
+    allText: String,
+    isEmpty: Boolean,
+    items: List<@Composable () -> Unit>
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+        }
+
+        if (isEmpty) {
+            Text(
+                allText,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 56.dp)
+            )
+        } else {
+            FlowRow(
+                modifier = Modifier.padding(start = 56.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val displayCount = if (isExpanded) items.size else 5
+                items.take(displayCount).forEach { it() }
+                
+                if (items.size > 5 && !isExpanded) {
+                    Surface(
+                        onClick = { isExpanded = true },
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    ) {
+                        Text(
+                            text = "+${items.size - 5} more",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScopeChip(
+    text: String,
+    color: Color
+) {
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = color,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }

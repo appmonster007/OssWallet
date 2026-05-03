@@ -13,26 +13,23 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowUpward
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanPayment
@@ -42,6 +39,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.LoanService
 import com.osscabinet.ossWallet.ui.components.AeonDateField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
@@ -119,6 +117,14 @@ fun LoanDetailScreen(
     val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
+    val selectedAccount = remember(accounts, loan.linkedAccountId) {
+        accounts.find { it.id == loan.linkedAccountId }
+    }
+    val selectedCategories = remember(categoriesList, loan.categoryIds) {
+        if (loan.categoryIds.isEmpty()) emptyList()
+        else categoriesList.filter { it.id in loan.categoryIds }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -164,8 +170,9 @@ fun LoanDetailScreen(
                 0 -> LoanOverviewTab(
                     loan = loan,
                     summary = summary,
-                    progress = progress,
-                    accentColor = accentColor
+                    selectedAccount = selectedAccount,
+                    selectedCategories = selectedCategories,
+                    precision = precision
                 )
                 1 -> {
                     if (loanTransactions.isEmpty()) {
@@ -224,8 +231,9 @@ fun LoanDetailScreen(
 private fun LoanOverviewTab(
     loan: com.osscabinet.ossWallet.domain.model.Loan,
     summary: com.osscabinet.ossWallet.domain.model.LoanSummary,
-    progress: Float,
-    accentColor: Color
+    selectedAccount: com.osscabinet.ossWallet.domain.model.Account?,
+    selectedCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
+    precision: Int
 ) {
     var showAmortization by remember { mutableStateOf(false) }
     var showAllAmortization by remember { mutableStateOf(false) }
@@ -244,118 +252,58 @@ private fun LoanOverviewTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            AeonExpressiveCard(
-                title = loan.name,
-                subtitle = "${loan.loanType.name.lowercase().replaceFirstChar { it.uppercase() }} — ${loan.currency}",
-                accentColor = accentColor,
+            LoanHeroCard(
+                loan = loan,
+                summary = summary,
+                precision = precision,
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                // Loan type badge
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = accentColor.copy(alpha = 0.1f),
-                    border = BorderStroke(0.5.dp, accentColor.copy(alpha = 0.2f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            if (loan.loanType == LoanType.LENT) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = accentColor
-                        )
-                        Text(
-                            if (loan.loanType == LoanType.LENT) "LENT" else "BORROWED",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
-                            ),
-                            color = accentColor
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                // Remaining balance prominent
-                Text(
-                    summary.remainingBalance.toPlainString(),
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                    color = accentColor
-                )
-                Text(
-                    "of ${loan.principalAmount.toPlainString()} ${loan.currency} remaining",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-                Spacer(Modifier.height(8.dp))
-                // Data rows wrapped in surface
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        DataRow(
-                            label = "PRINCIPAL",
-                            value = "${loan.principalAmount.toPlainString()} ${loan.currency}"
-                        )
-                        DataRow(
-                            label = "TOTAL PAID",
-                            value = "${summary.totalPaid.toPlainString()} ${loan.currency}"
-                        )
-                        DataRow(
-                            label = "REMAINING",
-                            value = "${summary.remainingBalance.toPlainString()} ${loan.currency}",
-                            valueColor = accentColor
-                        )
-                        if (loan.interestRate != null) {
-                            DataRow(
-                                label = "INTEREST ACCRUED",
-                                value = "${summary.interestAccrued.toPlainString()} ${loan.currency}"
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                // Progress bar
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                    color = accentColor,
-                    trackColor = accentColor.copy(alpha = 0.15f),
-                    strokeCap = StrokeCap.Round
-                )
-            }
+            )
         }
 
-        // SCOPE Card
+        // SCOPE & CONTEXT Card
         item {
             AeonExpressiveCard(
-                title = "SCOPE",
+                title = "SCOPE & CONTEXT",
+                icon = Icons.Rounded.FilterAlt,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("LINKED ACCOUNT", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Text(
-                    if (loan.linkedAccountId.isBlank()) "Not linked to any account" else "Linked to account",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("CATEGORIES", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Text(
-                    if (loan.categoryIds.isEmpty()) "All Categories" else "${loan.categoryIds.size} Categories selected",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("LABELS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Text(
-                    if (loan.tags.isEmpty()) "All Labels" else loan.tags.joinToString(),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    ScopeSection(
+                        label = "LINKED ACCOUNT",
+                        icon = Icons.Rounded.AccountBalance,
+                        allText = "No linked account",
+                        isEmpty = loan.linkedAccountId.isBlank(),
+                        items = selectedAccount?.let { account ->
+                            listOf<@Composable () -> Unit> {
+                                val color = try { Color(account.colorHex.toColorInt()) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
+                                ScopeChip(text = account.name, color = color)
+                            }
+                        } ?: emptyList()
+                    )
+                    ScopeSection(
+                        label = "CATEGORIES",
+                        icon = Icons.Rounded.Category,
+                        allText = "All Categories",
+                        isEmpty = loan.categoryIds.isEmpty(),
+                        items = selectedCategories.map { category ->
+                            {
+                                val color = Color(category.colorHex)
+                                ScopeChip(text = category.name, color = color)
+                            }
+                        }
+                    )
+                    ScopeSection(
+                        label = "LABELS",
+                        icon = Icons.AutoMirrored.Rounded.Label,
+                        allText = "All Labels",
+                        isEmpty = loan.tags.isEmpty(),
+                        items = loan.tags.map { tag ->
+                            {
+                                ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -396,6 +344,96 @@ private fun LoanOverviewTab(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScopeSection(
+    label: String,
+    icon: ImageVector,
+    allText: String,
+    isEmpty: Boolean,
+    items: List<@Composable () -> Unit>
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                }
+            }
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+            )
+        }
+
+        if (isEmpty) {
+            Text(
+                allText,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 56.dp)
+            )
+        } else {
+            FlowRow(
+                modifier = Modifier.padding(start = 56.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val displayCount = if (isExpanded) items.size else 5
+                items.take(displayCount).forEach { it() }
+                
+                if (items.size > 5 && !isExpanded) {
+                    Surface(
+                        onClick = { isExpanded = true },
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    ) {
+                        Text(
+                            text = "+${items.size - 5} more",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScopeChip(
+    text: String,
+    color: Color
+) {
+    Surface(
+        color = color.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(0.5.dp, color.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = color,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }
 

@@ -50,7 +50,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
@@ -288,17 +288,14 @@ fun AccountDetailScreen(
                                     }
                                 }
                             } else {
-                                RecentActivitiesCard(
+                                RecentActivitiesScreen(
                                     allTransactions = transactionsWithBalanceList,
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
-                                    decimalPrecision = state.decimalPrecision,
-                                    precision = state.decimalPrecision,
                                     onRecordsClick = { _ -> navigate { onRecordsClick(RecordsFilterContext.ByAccount(accountId)) } },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
                                     exchangeRates = state.exchangeRates,
-                                    accountCurrencyMap = accountCurrencyMap,
                                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                                     modifier = Modifier.fillMaxSize(),
                                     revealedCardIds = revealedCardIds,
@@ -310,7 +307,9 @@ fun AccountDetailScreen(
                                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                     applyFilter = false,
-                                    excludeFuture = !state.showPlannedPayments
+                                    excludeFuture = !state.showPlannedPayments,
+                                    precision = state.decimalPrecision,
+                                    filterContext = RecordsFilterContext.ByAccount(accountId)
                                 )
                             }
                         }

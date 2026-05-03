@@ -72,5 +72,49 @@ object LoanService {
         )
     }
 
+    /**
+     * Calculate loan summary from transactions instead of loan payments.
+     * Filters transactions based on loan's account, categories, and tags.
+     */
+    fun buildSummaryFromTransactions(
+        loan: Loan, 
+        transactions: List<Transaction>, 
+        now: Long, 
+        precision: Int = 2
+    ): LoanSummary {
+        val filteredTransactions = filterTransactionsForLoan(loan, transactions)
+        val totalPaid = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx -> 
+            acc + if (loan.loanType == LoanType.LENT) tx.amount.abs() else tx.amount.abs().negate()
+        }
+        val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
+        val interest = calculateInterestAccrued(loan, now)
+        return LoanSummary(
+            loan = loan,
+            totalPaid = totalPaid.setScale(precision, RoundingMode.HALF_UP),
+            remainingBalance = remaining.setScale(precision, RoundingMode.HALF_UP),
+            interestAccrued = interest.setScale(precision, RoundingMode.HALF_UP)
+        )
+    }
+
+    /**
+     * Filter transactions for a specific loan based on account, categories, and tags.
+     */
+    fun filterTransactionsForLoan(loan: Loan, transactions: List<Transaction>): List<Transaction> {
+        return transactions.filter { transaction ->
+            // Filter by linked account if specified
+            val accountMatch = loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
+            
+            // Filter by categories if specified
+            val categoryMatch = loan.categoryIds.isEmpty() || 
+                transaction.categoryId in loan.categoryIds
+            
+            // Filter by tags if specified (transaction must have at least one matching tag)
+            val tagMatch = loan.tags.isEmpty() || 
+                transaction.tags.any { it in loan.tags }
+            
+            accountMatch && categoryMatch && tagMatch
+        }.sortedByDescending { it.timestamp }
+    }
+
     fun settledCopy(loan: Loan): Loan = loan.copy(status = LoanStatus.SETTLED)
 }

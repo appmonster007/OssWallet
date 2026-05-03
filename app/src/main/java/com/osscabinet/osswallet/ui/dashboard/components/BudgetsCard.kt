@@ -6,6 +6,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.DonutLarge
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Savings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +25,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import androidx.compose.ui.unit.sp
 
 import com.osscabinet.ossWallet.ui.util.formatAmount
+import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 
 @Composable
 fun BudgetsCard(
@@ -102,8 +105,8 @@ private fun BudgetProgressRow(
     onClick: () -> Unit,
     precision: Int = 2
 ) {
-    val healthyColor = Color(0xFF004D40) // Teal
-    val warningColor = Color(0xFFB3261E) // Red
+    val healthyColor = Color(0xFF00695C)
+    val warningColor = Color(0xFFC62828)
     
     val trackColor = when (progress.alertLevel) {
         BudgetAlertLevel.EXCEEDED -> warningColor
@@ -113,9 +116,9 @@ private fun BudgetProgressRow(
 
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -123,72 +126,88 @@ private fun BudgetProgressRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = progress.budget.name,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) Icons.Rounded.ErrorOutline else Icons.Rounded.Savings,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = trackColor.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = progress.budget.name,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.2).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 Text(
                     text = "${(progress.percentage * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        fontFeatureSettings = "tnum"
                     ),
                     color = trackColor
                 )
             }
             
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             LinearProgressIndicator(
                 progress = { progress.percentage.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
+                modifier = Modifier.fillMaxWidth().height(10.dp),
                 color = trackColor,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                trackColor = trackColor.copy(alpha = 0.1f),
                 strokeCap = StrokeCap.Round
             )
             
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 1.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = trackColor.copy(alpha = 0.6f)
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            "${formatAmount(progress.spent.subtract(progress.limit), precision)} ${progress.budget.currency}"
+                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, precision)
                         } else {
-                            "${formatAmount(progress.remaining, precision)} ${progress.budget.currency}"
+                            formatCurrencyRight(progress.remaining, progress.budget.currency, precision)
                         },
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
                             color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) warningColor else MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
                 
-                Text(
-                    text = "${formatAmount(progress.spent, precision)} / ${formatAmount(progress.limit, precision)} ${progress.budget.currency}",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "${formatAmount(progress.spent, precision)} / ${formatAmount(progress.limit, precision)}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum"
+                        ),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
-                )
+                }
             }
         }
     }

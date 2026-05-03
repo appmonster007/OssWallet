@@ -238,10 +238,9 @@ fun BudgetDetailScreen(
                     }
                 }
                 1 -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                         if (budgetTransactions.isEmpty()) {
                             Surface(
-                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(24.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                                 border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
@@ -296,7 +295,6 @@ fun BudgetDetailScreen(
                                 excludeFuture = false
                             )
                         }
-                    }
                 }
             }
         }

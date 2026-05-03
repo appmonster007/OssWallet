@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +21,6 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -58,16 +56,14 @@ private fun filterToRecentTransactions(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RecentActivitiesCard(
+fun RecentActivitiesScreen(
     allTransactions: List<TransactionWithBalance>,
     accountNamesMap: Map<String, String>,
     categoryMap: Map<Long, Category>,
-    @Suppress("UNUSED_PARAMETER") decimalPrecision: Int,
     onRecordsClick: (RecordsFilterContext) -> Unit,
     onTransactionClick: (Long) -> Unit = {},
     baseCurrency: String = "USD",
     exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    @Suppress("UNUSED_PARAMETER") accountCurrencyMap: Map<String, String> = emptyMap(),
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
     modifier: Modifier = Modifier,
     revealedCardIds: List<Long> = emptyList(),
@@ -83,7 +79,9 @@ fun RecentActivitiesCard(
     applyFilter: Boolean = true,
     excludeFuture: Boolean = true,
     precision: Int = 2,
-    filterContext: RecordsFilterContext = RecordsFilterContext.None
+    filterContext: RecordsFilterContext = RecordsFilterContext.None,
+    showHeader: Boolean = true,
+    headerTitle: String = "Recent Activities"
 ) {
     // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
@@ -101,29 +99,52 @@ fun RecentActivitiesCard(
         "$year-$month-$day"
     }
 
-    AeonExpressiveCard(
-        title = "Recent Activities",
-        icon = Icons.Rounded.History,
-        modifier = modifier,
-        headerTrailing = { _ ->
-            TextButton(
-                onClick = { onRecordsClick(filterContext) },
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                modifier = Modifier.height(32.dp)
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        if (showHeader) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "VIEW ALL",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                )
+                    Text(
+                        text = headerTitle,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+                TextButton(
+                    onClick = { onRecordsClick(filterContext) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        "VIEW ALL",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            fontSize = 10.sp
+                        )
+                    )
+                }
             }
         }
-    ) {
+
         LazyColumn(
-            modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+            modifier = Modifier.fillMaxWidth().weight(1f),
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
@@ -186,7 +207,7 @@ fun RecentActivitiesCard(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .background(MaterialTheme.colorScheme.background)
                         ) {
                             TransactionHeader(
                                 title = displayDate,

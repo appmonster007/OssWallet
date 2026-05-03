@@ -91,7 +91,7 @@ import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
@@ -443,17 +443,14 @@ fun DashboardContent(
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-                RecentActivitiesCard(
+                RecentActivitiesScreen(
                     allTransactions = state.allTransactionsWithBalance,
                     accountNamesMap = accountMap,
                     categoryMap = categoryMap,
-                    decimalPrecision = state.decimalPrecision,
-                    precision = state.decimalPrecision,
                     onRecordsClick = onRecordsClick,
                     onTransactionClick = onEditTransactionClick,
                     baseCurrency = state.baseCurrency,
                     exchangeRates = state.exchangeRates,
-                    accountCurrencyMap = accountCurrencyMap,
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                     modifier = Modifier.fillMaxSize(),
                     revealedCardIds = revealedCardIds,
@@ -463,7 +460,8 @@ fun DashboardContent(
                     onClone = { onCloneTransactionClick(it) },
                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
-                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
+                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                    precision = state.decimalPrecision
                 )
             }
         }

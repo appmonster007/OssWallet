@@ -23,7 +23,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
@@ -259,12 +259,10 @@ fun BudgetDetailScreen(
                                 budget.trackTypes.first() == BudgetTrackType.INCOME
                             } else null
 
-                            RecentActivitiesCard(
+                            RecentActivitiesScreen(
                                 allTransactions = budgetTransactions,
                                 accountNamesMap = accountNamesMap,
                                 categoryMap = categoryMap,
-                                decimalPrecision = precision,
-                                precision = precision,
                                 onRecordsClick = { _ ->
                                     val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
                                     onRecordsClick(
@@ -281,7 +279,6 @@ fun BudgetDetailScreen(
                                 onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
                                 exchangeRates = emptyMap(),
-                                accountCurrencyMap = accountCurrencyMap,
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
                                 onItemExpanded = { transactionViewModel.onItemExpanded(it) },
@@ -292,7 +289,8 @@ fun BudgetDetailScreen(
                                 onSplit = { },
                                 onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                 applyFilter = false,
-                                excludeFuture = false
+                                excludeFuture = false,
+                                precision = precision
                             )
                         }
                 }

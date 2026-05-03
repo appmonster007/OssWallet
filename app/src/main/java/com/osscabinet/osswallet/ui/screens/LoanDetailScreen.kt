@@ -76,11 +76,11 @@ fun LoanDetailScreen(
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val loan = remember(loanId, loans) { loans.find { it.id == loanId } } ?: return
-    val payments by viewModel.getPaymentsForLoan(loanId).collectAsStateWithLifecycle(emptyList())
+    val allTransactions by viewModel.transactions.collectAsStateWithLifecycle()
 
     val now = System.currentTimeMillis()
-    val summary = remember(loan, payments, now) {
-        LoanService.buildSummary(loan, payments, now, precision)
+    val summary = remember(loan, allTransactions, now) {
+        LoanService.buildSummaryFromTransactions(loan, allTransactions, now, precision)
     }
 
     val progress = if (loan.principalAmount > BigDecimal.ZERO)
@@ -88,10 +88,6 @@ fun LoanDetailScreen(
     else 0f
     val accentColor = if (loan.loanType == LoanType.LENT) LentColor else BorrowedColor
 
-    var showAddPayment by remember { mutableStateOf(false) }
-    var paymentAmountText by remember { mutableStateOf("") }
-    var paymentDateMillis by remember { mutableLongStateOf(now) }
-    var paymentNote by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = 0) { 2 }
@@ -169,10 +165,7 @@ fun LoanDetailScreen(
                     loan = loan,
                     summary = summary,
                     progress = progress,
-                    accentColor = accentColor,
-                    payments = payments,
-                    onDeletePayment = { viewModel.deletePayment(it) },
-                    onAddPaymentClick = { showAddPayment = true }
+                    accentColor = accentColor
                 )
                 1 -> {
                     if (loanTransactions.isEmpty()) {
@@ -225,60 +218,6 @@ fun LoanDetailScreen(
             }
         }
     }
-
-    if (showAddPayment) {
-        AlertDialog(
-            onDismissRequest = { showAddPayment = false },
-            shape = RoundedCornerShape(28.dp),
-            title = { Text("Add Payment") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = paymentAmountText,
-                        onValueChange = { paymentAmountText = it },
-                        label = { Text("Amount (${loan.currency})") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    AeonDateField(
-                        label = "Payment Date",
-                        dateMillis = paymentDateMillis,
-                        onDateSelected = { paymentDateMillis = it }
-                    )
-                    OutlinedTextField(
-                        value = paymentNote,
-                        onValueChange = { paymentNote = it },
-                        label = { Text("Note (optional)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val amount = paymentAmountText.toBigDecimalOrNull() ?: return@TextButton
-                        viewModel.addPayment(
-                            LoanPayment(
-                                loanId = loanId,
-                                amount = amount,
-                                date = paymentDateMillis,
-                                note = paymentNote
-                            )
-                        )
-                        paymentAmountText = ""
-                        paymentNote = ""
-                        paymentDateMillis = now
-                        showAddPayment = false
-                    }
-                ) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddPayment = false }) { Text("Cancel") }
-            }
-        )
-    }
 }
 
 @Composable
@@ -286,10 +225,7 @@ private fun LoanOverviewTab(
     loan: com.osscabinet.ossWallet.domain.model.Loan,
     summary: com.osscabinet.ossWallet.domain.model.LoanSummary,
     progress: Float,
-    accentColor: Color,
-    payments: List<LoanPayment>,
-    onDeletePayment: (Long) -> Unit,
-    onAddPaymentClick: () -> Unit
+    accentColor: Color
 ) {
     var showAmortization by remember { mutableStateOf(false) }
     var showAllAmortization by remember { mutableStateOf(false) }
@@ -460,53 +396,6 @@ private fun LoanOverviewTab(
                 }
             }
         }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                LoanSectionHeaderInline(
-                    title = "PAYMENTS",
-                    sectionColor = MaterialTheme.colorScheme.primary
-                )
-                if (loan.status == com.osscabinet.ossWallet.domain.model.LoanStatus.ACTIVE) {
-                    FloatingActionButton(
-                        onClick = onAddPaymentClick,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Payment")
-                    }
-                }
-            }
-        }
-
-        if (payments.isEmpty() && loan.status == com.osscabinet.ossWallet.domain.model.LoanStatus.ACTIVE) {
-            item {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "No payments recorded yet",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-
-        items(payments, key = { it.id }) { payment ->
-            PaymentRow(
-                payment = payment,
-                currency = loan.currency,
-                onDelete = { onDeletePayment(payment.id) }
-            )
-        }
     }
 }
 
@@ -600,68 +489,4 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
     }
 }
 
-@Composable
-private fun PaymentRow(
-    payment: LoanPayment,
-    currency: String,
-    onDelete: () -> Unit
-) {
-    val dateStr = remember(payment.date) {
-        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(payment.date))
-    }
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left icon circle
-            Surface(
-                shape = CircleShape,
-                color = TealHealthy.copy(alpha = 0.1f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.Payments,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = TealHealthy
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "${payment.amount.toPlainString()} $currency",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = TealHealthy
-                )
-                Text(
-                    dateStr,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (payment.note.isNotBlank()) {
-                    Text(
-                        payment.note,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.Delete,
-                    contentDescription = "Delete payment",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
-        }
-    }
-}
 

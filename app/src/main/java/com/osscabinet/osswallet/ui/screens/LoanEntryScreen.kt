@@ -7,7 +7,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +18,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -23,13 +27,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
@@ -42,12 +50,13 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LoanEntryScreen(
     loanId: Long?,
     viewModel: LoanViewModel,
     accounts: List<Account> = emptyList(),
+    categories: List<Category> = emptyList(),
     onBackClick: () -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
@@ -63,6 +72,13 @@ fun LoanEntryScreen(
     var counterparty by remember(existing) { mutableStateOf(existing?.lenderOrBorrowerName ?: "") }
     var interestText by remember(existing) { mutableStateOf(existing?.interestRate?.toString() ?: "") }
     var note by remember(existing) { mutableStateOf(existing?.note ?: "") }
+
+    var selectedCategoryIds by remember(existing) {
+        mutableStateOf(existing?.categoryIds?.toSet() ?: emptySet<Long>())
+    }
+    var selectedTags by remember(existing) {
+        mutableStateOf(existing?.tags?.toSet() ?: emptySet<String>())
+    }
 
     val now = remember { System.currentTimeMillis() }
     var startDateMillis by remember(existing) { mutableLongStateOf(existing?.startDate ?: now) }
@@ -80,13 +96,18 @@ fun LoanEntryScreen(
     }
 
     val isEditing = loanId != null
+    val haptic = LocalHapticFeedback.current
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showSettlementDatePicker by remember { mutableStateOf(false) }
     var showNumpad by remember { mutableStateOf(false) }
+    var showInterestNumpad by remember { mutableStateOf(false) }
+    var showCategorySheet by remember { mutableStateOf(false) }
+    var showTagSheet by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = name.isNotBlank()
+    val canSave = name.isNotBlank() && principalText.toBigDecimalOrNull() != null
+    
     val tealColor = Color(0xFF004D40)
     val orangeColor = Color(0xFFE65100)
     val amountColor = if (loanType == LoanType.LENT) tealColor else orangeColor
@@ -126,6 +147,7 @@ fun LoanEntryScreen(
                     }
                     Button(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val principal = principalText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                             val rate = interestText.toFloatOrNull()
                             val loan = (existing ?: viewModel.buildDefaultLoan(profileId)).copy(
@@ -138,7 +160,9 @@ fun LoanEntryScreen(
                                 note = note,
                                 startDate = startDateMillis,
                                 expectedSettlementDate = if (hasSettlementDate) settlementDateMillis else null,
-                                linkedAccountId = linkedAccountId
+                                linkedAccountId = linkedAccountId,
+                                categoryIds = selectedCategoryIds.toList(),
+                                tags = selectedTags.toList()
                             )
                             viewModel.saveLoan(loan)
                             onBackClick()
@@ -187,6 +211,33 @@ fun LoanEntryScreen(
                 onDismiss = { showNumpad = false }
             )
         }
+        if (showInterestNumpad) {
+            CalculatorSheet(
+                currentAmount = interestText,
+                transactionType = 0,
+                decimalPrecision = 2,
+                onAmountChanged = { interestText = it },
+                onDismiss = { showInterestNumpad = false }
+            )
+        }
+        if (showCategorySheet) {
+            LoanMultiSelectSheet(
+                title = "Select Categories",
+                options = categories.map { it.id.toString() to it.name },
+                selectedIds = selectedCategoryIds.map { it.toString() }.toSet(),
+                onSelectionChanged = { ids -> selectedCategoryIds = ids.map { it.toLong() }.toSet() },
+                onDismiss = { showCategorySheet = false }
+            )
+        }
+        if (showTagSheet) {
+            LoanMultiSelectSheet(
+                title = "Select Labels",
+                options = emptyList(), // Should be fetched from VM
+                selectedIds = selectedTags,
+                onSelectionChanged = { selectedTags = it },
+                onDismiss = { showTagSheet = false }
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -196,7 +247,7 @@ fun LoanEntryScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header card: loan type selector + amount
+            // Header card: type selector + amount
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
@@ -206,13 +257,14 @@ fun LoanEntryScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     LoanTypeSelector(
                         loanType = loanType,
                         onTypeSelected = { loanType = it }
                     )
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Amount row
                     Row(
@@ -230,7 +282,6 @@ fun LoanEntryScreen(
 
                         Box(
                             modifier = Modifier
-                                .weight(1f, fill = false)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
@@ -249,45 +300,11 @@ fun LoanEntryScreen(
                 }
             }
 
-            // Row: Account + Start Date
+            // Row 1: Start Date + Interest Rate
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (accounts.isNotEmpty()) {
-                    var accountExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = accountExpanded,
-                        onExpandedChange = { accountExpanded = it },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        AeonEntryActionCard(
-                            icon = Icons.Rounded.AccountBalance,
-                            label = "ACCOUNT",
-                            value = accounts.find { it.id == linkedAccountId }?.name ?: "Select",
-                            onClick = { accountExpanded = true },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colorScheme.primary
-                        )
-                        ExposedDropdownMenu(
-                            expanded = accountExpanded,
-                            onDismissRequest = { accountExpanded = false }
-                        ) {
-                            accounts.forEach { account ->
-                                DropdownMenuItem(
-                                    text = { Text(account.name) },
-                                    onClick = { linkedAccountId = account.id; accountExpanded = false }
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
                 AeonEntryActionCard(
                     icon = Icons.Rounded.CalendarToday,
                     label = "START DATE",
@@ -297,66 +314,171 @@ fun LoanEntryScreen(
                     iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                     iconTint = MaterialTheme.colorScheme.secondary
                 )
+
+                AeonEntryActionCard(
+                    icon = Icons.Rounded.Percent,
+                    label = "INT. RATE %",
+                    value = if (interestText.isEmpty()) "0.00 %" else "$interestText %",
+                    onClick = { showInterestNumpad = true },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
             }
 
-            // Settlement date row
-            Surface(
+            // Row 2: Account + Settlement Date
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                var accountExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = accountExpanded,
+                    onExpandedChange = { accountExpanded = it },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        Icons.Rounded.EventAvailable,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.secondary
+                    AeonEntryActionCard(
+                        icon = Icons.Rounded.AccountBalance,
+                        label = "ACCOUNT",
+                        value = accounts.find { it.id == linkedAccountId }?.name ?: "Select",
+                        onClick = { accountExpanded = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.primary
                     )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Expected Settlement",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                        Text(
-                            text = if (hasSettlementDate) formatLoanEntryDate(settlementDateMillis) else "Not set",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
+                    ExposedDropdownMenu(
+                        expanded = accountExpanded,
+                        onDismissRequest = { accountExpanded = false }
+                    ) {
+                        accounts.forEach { account ->
+                            DropdownMenuItem(
+                                text = { Text(account.name) },
+                                onClick = { linkedAccountId = account.id; accountExpanded = false }
+                            )
+                        }
                     }
+                }
+
+                AeonEntryActionCard(
+                    icon = Icons.Rounded.EventAvailable,
+                    label = "SETTLEMENT",
+                    value = if (hasSettlementDate) formatLoanEntryDate(settlementDateMillis) else "Not set",
+                    onClick = { showSettlementDatePicker = true },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.secondary
+                )
+            }
+            
+            // Settlement Toggle
+            LoanStandardCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Has expected settlement date", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     Switch(
                         checked = hasSettlementDate,
                         onCheckedChange = { hasSettlementDate = it },
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = Color(0xFF004D40)
-                        )
+                        colors = SwitchDefaults.colors(checkedTrackColor = tealColor)
                     )
                 }
             }
 
-            if (hasSettlementDate) {
-                LoanEntryDateCard(
-                    icon = Icons.Rounded.CalendarMonth,
-                    label = "SETTLEMENT DATE",
-                    dateMillis = settlementDateMillis,
-                    onClick = { showSettlementDatePicker = true }
-                )
+            // Row 3: FILTERS (Categories)
+            LoanStandardCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.FilterList,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "FILTERS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                    
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (selectedCategoryIds.isEmpty()) {
+                            SuggestionChip(onClick = { showCategorySheet = true }, label = { Text("All Categories") })
+                        } else {
+                            selectedCategoryIds.forEach { id ->
+                                categories.find { it.id == id }?.let { cat ->
+                                    InputChip(
+                                        selected = true,
+                                        onClick = { selectedCategoryIds = selectedCategoryIds - id },
+                                        label = { Text(cat.name) },
+                                        trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(14.dp)) }
+                                    )
+                                }
+                            }
+                        }
+                        IconButton(
+                            onClick = { showCategorySheet = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
+            // Row 4: TAGS
+            LoanStandardCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Label,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "TAGS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                    
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (selectedTags.isEmpty()) {
+                            SuggestionChip(onClick = { showTagSheet = true }, label = { Text("All Tags") })
+                        } else {
+                            selectedTags.forEach { tag ->
+                                InputChip(
+                                    selected = true,
+                                    onClick = { selectedTags = selectedTags - tag },
+                                    label = { Text(tag) },
+                                    trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(14.dp)) }
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { showTagSheet = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.secondary)
+                        }
+                    }
+                }
             }
 
             // Details card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                shadowElevation = 0.dp
-            ) {
+            LoanStandardCard {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -366,7 +488,7 @@ fun LoanEntryScreen(
                     EditorialInput(
                         value = name,
                         onValueChange = { name = it },
-                        label = "NAME",
+                        label = "LOAN NAME",
                         icon = Icons.Rounded.Title
                     )
                     EditorialInput(
@@ -374,13 +496,6 @@ fun LoanEntryScreen(
                         onValueChange = { counterparty = it },
                         label = if (loanType == LoanType.LENT) "LENT TO" else "BORROWED FROM",
                         icon = Icons.Rounded.Person
-                    )
-                    EditorialInput(
-                        value = interestText,
-                        onValueChange = { interestText = it },
-                        label = "INTEREST RATE % / YEAR",
-                        icon = Icons.Rounded.Percent,
-                        placeholder = "Optional"
                     )
                     EditorialInput(
                         value = note,
@@ -393,6 +508,40 @@ fun LoanEntryScreen(
             }
         }
     }
+}
+
+@Composable
+private fun LoanStandardCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
+
+    Surface(
+        onClick = {
+            onClick?.let {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                it()
+            }
+        },
+        enabled = onClick != null,
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        shadowElevation = 0.dp,
+        content = content
+    )
 }
 
 @Composable
@@ -516,49 +665,63 @@ private fun LoanEntrySectionHeader(icon: ImageVector, label: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoanEntryDateCard(
-    icon: ImageVector,
-    label: String,
-    dateMillis: Long,
-    onClick: () -> Unit
+private fun LoanMultiSelectSheet(
+    title: String,
+    options: List<Pair<String, String>>, // ID to Display Name
+    selectedIds: Set<String>,
+    onSelectionChanged: (Set<String>) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.secondary
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = formatLoanEntryDate(dateMillis),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(options) { (id, label) ->
+                    val isSelected = id in selectedIds
+                    Surface(
+                        onClick = {
+                            val newSelected = if (isSelected) selectedIds - id else selectedIds + id
+                            onSelectionChanged(newSelected)
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                        border = BorderStroke(
+                            0.5.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = label, modifier = Modifier.weight(1f))
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = {
+                                    val newSelected = if (it == true) selectedIds + id else selectedIds - id
+                                    onSelectionChanged(newSelected)
+                                }
+                            )
+                        }
+                    }
+                }
             }
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
         }
     }
 }

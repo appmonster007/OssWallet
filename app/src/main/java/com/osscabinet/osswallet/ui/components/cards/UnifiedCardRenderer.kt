@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapCard
+import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
 import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
@@ -126,13 +127,13 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.CategoryPieChart -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
-            
+
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData = CategoryPieChartData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                netBalance = metric.netBalance,
-                income = metric.income,
-                expense = metric.expense,
+                netBalance = metric.netBalance.setScale(renderData.precision, RoundingMode.HALF_UP),
+                income = metric.income.setScale(renderData.precision, RoundingMode.HALF_UP),
+                expense = metric.expense.setScale(renderData.precision, RoundingMode.HALF_UP),
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
@@ -162,11 +163,11 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.CategoryTreemap -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
-            
+
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData = CategoryTreemapData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                expense = metric.expense.abs(),
+                expense = metric.expense.abs().setScale(renderData.precision, RoundingMode.HALF_UP),
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,

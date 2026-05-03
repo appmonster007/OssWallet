@@ -1,9 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,14 +18,20 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +45,7 @@ import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.EditorialInput
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import java.math.BigDecimal
@@ -62,6 +76,7 @@ fun BudgetEntryScreen(
     }
     var alertThreshold by remember(existing) { mutableFloatStateOf(existing?.alertThreshold ?: 0.8f) }
     var rollover by remember(existing) { mutableStateOf(existing?.rollover ?: false) }
+    var note by remember(existing) { mutableStateOf("") } // Placeholder until model is updated
 
     var selectedCategoryIds by remember(existing) {
         mutableStateOf(existing?.categoryIds?.toSet() ?: emptySet<Long>())
@@ -83,10 +98,15 @@ fun BudgetEntryScreen(
     }
 
     val isEditing = budgetId != null
+    val haptic = LocalHapticFeedback.current
 
     var showCustomStartPicker by remember { mutableStateOf(false) }
     var showCustomEndPicker by remember { mutableStateOf(false) }
     var showNumpad by remember { mutableStateOf(false) }
+    var showAccountSheet by remember { mutableStateOf(false) }
+    var showTrackTypeSheet by remember { mutableStateOf(false) }
+    var showCategorySheet by remember { mutableStateOf(false) }
+    var showTagSheet by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
     val canSave = name.isNotBlank()
@@ -127,6 +147,7 @@ fun BudgetEntryScreen(
                     }
                     Button(
                         onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val limit = limitText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                             val budget = (existing ?: viewModel.buildDefault(profileId)).copy(
                                 name = name,
@@ -189,6 +210,42 @@ fun BudgetEntryScreen(
                 onDismiss = { showNumpad = false }
             )
         }
+        if (showAccountSheet) {
+            MultiSelectSheet(
+                title = "Select Accounts",
+                options = accounts.map { it.id to it.name },
+                selectedIds = selectedAccountIds,
+                onSelectionChanged = { selectedAccountIds = it },
+                onDismiss = { showAccountSheet = false }
+            )
+        }
+        if (showTrackTypeSheet) {
+            MultiSelectSheet(
+                title = "Select Track Types",
+                options = BudgetTrackType.entries.map { it.name to it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                selectedIds = selectedTrackTypes.map { it.name }.toSet(),
+                onSelectionChanged = { ids -> selectedTrackTypes = ids.map { BudgetTrackType.valueOf(it) }.toSet() },
+                onDismiss = { showTrackTypeSheet = false }
+            )
+        }
+        if (showCategorySheet) {
+            MultiSelectSheet(
+                title = "Select Categories",
+                options = categories.map { it.id.toString() to it.name },
+                selectedIds = selectedCategoryIds.map { it.toString() }.toSet(),
+                onSelectionChanged = { ids -> selectedCategoryIds = ids.map { it.toLong() }.toSet() },
+                onDismiss = { showCategorySheet = false }
+            )
+        }
+        if (showTagSheet) {
+            MultiSelectSheet(
+                title = "Select Labels",
+                options = availableTags.map { it to it },
+                selectedIds = selectedTags,
+                onSelectionChanged = { selectedTags = it },
+                onDismiss = { showTagSheet = false }
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -208,64 +265,35 @@ fun BudgetEntryScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "BUDGET NAME",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            fontSize = 10.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    EditorialInput(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = "BUDGET NAME",
+                        icon = Icons.Rounded.Title
                     )
-                    Box {
-                        if (name.isEmpty()) {
-                            Text(
-                                text = "Untitled Budget",
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = (-0.5).sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                            )
-                        }
-                        BasicTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            textStyle = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.5).sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
+                    
                     HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
                         thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                    )
-
-                    Text(
-                        text = "LIMIT",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            fontSize = 10.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                     )
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
+                        CurrencySelector(
+                            selectedCurrency = currency,
+                            onCurrencySelected = { currency = it },
+                            supportedCurrencies = allCurrencies
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
                         Box(
                             modifier = Modifier
-                                .weight(1f)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
@@ -274,262 +302,184 @@ fun BudgetEntryScreen(
                             Text(
                                 text = if (limitText.isEmpty()) "0.00" else limitText,
                                 style = MaterialTheme.typography.displaySmall.copy(
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-1).sp
                                 ),
                                 color = if (limitText.isEmpty()) tealColor.copy(alpha = 0.3f) else tealColor
                             )
                         }
+                    }
+                }
+            }
 
-                        CurrencySelector(
-                            selectedCurrency = currency,
-                            onCurrencySelected = { currency = it },
-                            supportedCurrencies = allCurrencies
+            // Row 1: PERIOD card (full width)
+            AeonEntryActionCard(
+                icon = Icons.Rounded.DateRange,
+                label = "PERIOD",
+                value = if (period == BudgetPeriod.CUSTOM) {
+                    "${formatBudgetEntryDate(customStartDateMillis)} - ${formatBudgetEntryDate(customEndDateMillis)}"
+                } else {
+                    period.name.lowercase().replaceFirstChar { it.uppercase() }
+                },
+                onClick = { /* Could open period picker sheet */ },
+                modifier = Modifier.fillMaxWidth(),
+                iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colorScheme.secondary
+            )
+            
+            // Inline period selector
+            StandardCard {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BudgetPeriod.entries.forEach { p ->
+                        FilterChip(
+                            selected = period == p,
+                            onClick = { period = p },
+                            label = { Text(p.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
                 }
             }
 
-            // Period selector card
-            Surface(
+            // Row 2: Account + Tracks
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                shadowElevation = 0.dp
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BudgetEntrySectionHeader(icon = Icons.Rounded.DateRange, label = "RESETS EVERY")
+                AeonEntryActionCard(
+                    icon = Icons.Rounded.AccountBalance,
+                    label = "ACCOUNT",
+                    value = when {
+                        selectedAccountIds.isEmpty() -> "All Accounts"
+                        selectedAccountIds.size == 1 -> accounts.find { it.id == selectedAccountIds.first() }?.name ?: "1 Account"
+                        else -> "${selectedAccountIds.size} Accounts"
+                    },
+                    onClick = { showAccountSheet = true },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+
+                AeonEntryActionCard(
+                    icon = Icons.Rounded.ShowChart,
+                    label = "TRACKS",
+                    value = if (selectedTrackTypes.size == BudgetTrackType.entries.size) "All Types"
+                            else selectedTrackTypes.joinToString { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                    onClick = { showTrackTypeSheet = true },
+                    modifier = Modifier.weight(1f),
+                    iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+            }
+
+            // Row 3: FILTERS (Categories)
+            StandardCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.FilterList,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "FILTERS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                    
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        BudgetPeriod.entries.forEach { p ->
-                            FilterChip(
-                                selected = period == p,
-                                onClick = { period = p },
-                                label = { Text(p.name.lowercase().replaceFirstChar { it.uppercase() }) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Track type multi-select card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                shadowElevation = 0.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BudgetEntrySectionHeader(icon = Icons.Rounded.ShowChart, label = "TRACKS")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        BudgetTrackType.entries.forEach { type ->
-                            val isSelected = type in selectedTrackTypes
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    selectedTrackTypes = if (isSelected && selectedTrackTypes.size > 1) {
-                                        selectedTrackTypes - type
-                                    } else if (!isSelected) {
-                                        selectedTrackTypes + type
-                                    } else {
-                                        selectedTrackTypes
-                                    }
-                                },
-                                label = {
-                                    Text(type.name.lowercase().replaceFirstChar { it.uppercase() })
-                                },
-                                leadingIcon = {
-                                    if (isSelected) {
-                                        Icon(
-                                            if (type == BudgetTrackType.EXPENSE) Icons.Rounded.TrendingDown
-                                            else Icons.Rounded.TrendingUp,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
+                        if (selectedCategoryIds.isEmpty()) {
+                            SuggestionChip(onClick = { showCategorySheet = true }, label = { Text("All Categories") })
+                        } else {
+                            selectedCategoryIds.forEach { id ->
+                                categories.find { it.id == id }?.let { cat ->
+                                    InputChip(
+                                        selected = true,
+                                        onClick = { selectedCategoryIds = selectedCategoryIds - id },
+                                        label = { Text(cat.name) },
+                                        trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(14.dp)) }
+                                    )
                                 }
-                            )
+                            }
+                        }
+                        IconButton(
+                            onClick = { showCategorySheet = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    if (BudgetTrackType.EXPENSE in selectedTrackTypes && BudgetTrackType.INCOME in selectedTrackTypes) {
+                }
+            }
+
+            // Row 4: TAGS
+            StandardCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.Label,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Tracking all transactions",
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "TAGS",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     }
-                }
-            }
-
-            // Custom dates card
-            if (period == BudgetPeriod.CUSTOM) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(32.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                    shadowElevation = 0.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        BudgetEntrySectionHeader(icon = Icons.Rounded.DateRange, label = "CUSTOM PERIOD")
-                        BudgetEntryDateCard(
-                            icon = Icons.Rounded.CalendarMonth,
-                            label = "CUSTOM START",
-                            dateMillis = customStartDateMillis,
-                            onClick = { showCustomStartPicker = true }
-                        )
-                        BudgetEntryDateCard(
-                            icon = Icons.Rounded.CalendarMonth,
-                            label = "CUSTOM END",
-                            dateMillis = customEndDateMillis,
-                            onClick = { showCustomEndPicker = true }
-                        )
-                    }
-                }
-            }
-
-            // Categories card
-            if (categories.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(32.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                    shadowElevation = 0.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        BudgetEntrySectionHeader(icon = Icons.Rounded.Category, label = "CATEGORIES")
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = selectedCategoryIds.isEmpty(),
-                                onClick = { selectedCategoryIds = emptySet() },
-                                label = { Text("All") }
-                            )
-                            categories.forEach { category ->
-                                FilterChip(
-                                    selected = category.id in selectedCategoryIds,
-                                    onClick = {
-                                        selectedCategoryIds = if (category.id in selectedCategoryIds) {
-                                            selectedCategoryIds - category.id
-                                        } else {
-                                            selectedCategoryIds + category.id
-                                        }
-                                    },
-                                    label = { Text(category.name) }
+                    
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (selectedTags.isEmpty()) {
+                            SuggestionChip(onClick = { showTagSheet = true }, label = { Text("All Tags") })
+                        } else {
+                            selectedTags.forEach { tag ->
+                                InputChip(
+                                    selected = true,
+                                    onClick = { selectedTags = selectedTags - tag },
+                                    label = { Text(tag) },
+                                    trailingIcon = { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(14.dp)) }
                                 )
                             }
+                        }
+                        IconButton(
+                            onClick = { showTagSheet = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Rounded.Add, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
             }
 
-            // Accounts card
-            if (accounts.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(32.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                    shadowElevation = 0.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        BudgetEntrySectionHeader(icon = Icons.Rounded.AccountBalance, label = "ACCOUNTS")
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = selectedAccountIds.isEmpty(),
-                                onClick = { selectedAccountIds = emptySet() },
-                                label = { Text("All") }
-                            )
-                            accounts.forEach { account ->
-                                FilterChip(
-                                    selected = account.id in selectedAccountIds,
-                                    onClick = {
-                                        selectedAccountIds = if (account.id in selectedAccountIds) {
-                                            selectedAccountIds - account.id
-                                        } else {
-                                            selectedAccountIds + account.id
-                                        }
-                                    },
-                                    label = { Text(account.name) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Tags card — only shown if there are tags in use across transactions
-            if (availableTags.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(32.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                    shadowElevation = 0.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        BudgetEntrySectionHeader(icon = Icons.Rounded.Label, label = "LABELS")
-                        Text(
-                            text = if (selectedTags.isEmpty()) "Tracking all transactions"
-                                   else "Only transactions with ALL selected labels",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = selectedTags.isEmpty(),
-                                onClick = { selectedTags = emptySet() },
-                                label = { Text("All") }
-                            )
-                            availableTags.forEach { tag ->
-                                FilterChip(
-                                    selected = tag in selectedTags,
-                                    onClick = {
-                                        selectedTags = if (tag in selectedTags) {
-                                            selectedTags - tag
-                                        } else {
-                                            selectedTags + tag
-                                        }
-                                    },
-                                    label = { Text(tag) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Settings card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                shadowElevation = 0.dp
-            ) {
+            // Detail/Settings Card
+            StandardCard {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     BudgetEntrySectionHeader(icon = Icons.Rounded.Tune, label = "SETTINGS")
+
+                    EditorialInput(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = "NOTES",
+                        icon = Icons.AutoMirrored.Rounded.Notes
+                    )
+
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
                     // Alert threshold
                     Row(
@@ -623,6 +573,43 @@ fun BudgetEntryScreen(
     }
 }
 
+/**
+ * Standard container card with 32dp radius and 0dp elevation as per Slate standards.
+ */
+@Composable
+private fun StandardCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
+
+    Surface(
+        onClick = {
+            onClick?.let {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                it()
+            }
+        },
+        enabled = onClick != null,
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        shadowElevation = 0.dp,
+        content = content
+    )
+}
+
 @Composable
 private fun BudgetEntrySectionHeader(icon: ImageVector, label: String) {
     Row(
@@ -655,49 +642,63 @@ private fun BudgetEntrySectionHeader(icon: ImageVector, label: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BudgetEntryDateCard(
-    icon: ImageVector,
-    label: String,
-    dateMillis: Long,
-    onClick: () -> Unit
+private fun MultiSelectSheet(
+    title: String,
+    options: List<Pair<String, String>>, // ID to Display Name
+    selectedIds: Set<String>,
+    onSelectionChanged: (Set<String>) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.secondary
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = formatBudgetEntryDate(dateMillis),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(options) { (id, label) ->
+                    val isSelected = id in selectedIds
+                    Surface(
+                        onClick = {
+                            val newSelected = if (isSelected) selectedIds - id else selectedIds + id
+                            onSelectionChanged(newSelected)
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                        border = BorderStroke(
+                            0.5.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = label, modifier = Modifier.weight(1f))
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = {
+                                    val newSelected = if (it == true) selectedIds + id else selectedIds - id
+                                    onSelectionChanged(newSelected)
+                                }
+                            )
+                        }
+                    }
+                }
             }
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
         }
     }
 }

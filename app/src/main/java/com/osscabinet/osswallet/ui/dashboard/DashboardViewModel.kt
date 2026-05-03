@@ -4,11 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Loan
@@ -17,12 +13,12 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import com.osscabinet.ossWallet.data.local.DashboardSettings
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.*
 
 enum class DashboardSection {
     NET_WORTH,
@@ -38,7 +34,7 @@ class DashboardViewModel(
     private val computationRepository: ComputationRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
-    private val registry: CardComputerRegistry,
+    @Suppress("UNUSED_PARAMETER") private val registry: CardComputerRegistry,
     private val plannedPaymentRepository: PlannedPaymentRepository? = null,
     private val budgetRepository: BudgetRepository? = null,
     private val loanRepository: LoanRepository? = null,
@@ -151,7 +147,7 @@ class DashboardViewModel(
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 @Suppress("UNUSED_VARIABLE")
-                val dashboardSettings = args[7] as com.osscabinet.ossWallet.data.local.DashboardSettings
+                val dashboardSettings = args[7] as DashboardSettings
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[8] as List<PlannedPayment>
                 @Suppress("UNCHECKED_CAST")
@@ -163,8 +159,10 @@ class DashboardViewModel(
                     return@combine DashboardUiState.Loading
                 }
 
+                val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
                 val now = System.currentTimeMillis()
                 val transactionsWithBalance = allTransactions
+                    .asSequence()
                     .filter { it.timestamp <= now }
                     .sortedBy { it.timestamp }
                     .groupBy { it.accountId }
@@ -191,8 +189,9 @@ class DashboardViewModel(
                             )
                         }
                     }
-                    .filter { it.transaction.accountId in accounts.filter { !it.isArchived }.map { it.id }.toSet() }
+                    .filter { it.transaction.accountId in activeAccountIds }
                     .sortedByDescending { it.transaction.timestamp }
+                    .toList()
 
                 DashboardUiState.Success(
                     accounts = accounts.filter { !it.isArchived },
@@ -221,7 +220,11 @@ class DashboardViewModel(
         val manager = transactionManager ?: return
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val occurrence = PlannedPaymentOccurrence(id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate)
+            val occurrence = PlannedPaymentOccurrence(
+                id = 0,
+                plannedPaymentId = payment.id,
+                scheduledDate = payment.nextDueDate
+            )
             val request = TransactionRequest(
                 title = payment.title,
                 amount = payment.amount,
@@ -237,12 +240,16 @@ class DashboardViewModel(
                 note = payment.note
             )
             val transactionId = manager.handleSaveTransaction(null, request, profileId)
-            repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId))
+            repo.upsertOccurrence(
+                occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId)
+            )
             val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
-                repo.update(payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate))
+                repo.update(
+                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                )
             }
         }
     }
@@ -252,154 +259,31 @@ class DashboardViewModel(
         val payment = state.plannedPayments.find { it.id == id } ?: return
         val repo = plannedPaymentRepository ?: return
         viewModelScope.launch {
-            val occurrence = PlannedPaymentOccurrence(id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate)
+            val occurrence = PlannedPaymentOccurrence(
+                id = 0,
+                plannedPaymentId = payment.id,
+                scheduledDate = payment.nextDueDate
+            )
             repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
             val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
-                repo.update(payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate))
+                repo.update(
+                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                )
             }
         }
     }
 
-    fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
-        val input = CardInput(
-            transactions = transactions,
-            accounts = accounts,
-            categories = emptyList(),
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency,
-            precision = context.precision
-        )
-        val data = registry.compute(
-            type = CardType.NET_WORTH,
-            input = input,
-            config = NetWorthCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
-        ) as CardRenderData.NetWorth
-        return data.value
-    }
-
-    fun computeCashFlow(transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): CashFlowResult {
-        val input = CardInput(
-            transactions = transactions,
-            accounts = emptyList(),
-            categories = emptyList(),
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency,
-            precision = context.precision
-        )
-        val data = registry.compute(
-            type = CardType.CASH_FLOW,
-            input = input,
-            config = CashFlowCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
-        ) as CardRenderData.CashFlow
-        return data.result
-    }
-
-    fun computeCurrencyAggregation(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): List<CurrencyAggregationItem> {
-        val input = CardInput(
-            transactions = transactions,
-            accounts = accounts,
-            categories = emptyList(),
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency,
-            precision = context.precision
-        )
-        val data = registry.compute(
-            type = CardType.CURRENCY_BALANCES,
-            input = input,
-            config = CurrencyBalancesCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
-        ) as CardRenderData.CurrencyBalances
-        return data.items
-    }
-
-    fun computeAccountStats(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): Pair<List<Account>, Map<String, AccountSummaryItem>> {
-        val input = CardInput(
-            transactions = transactions,
-            accounts = accounts,
-            categories = emptyList(),
-            exchangeRates = context.exchangeRates,
-            baseCurrency = context.baseCurrency,
-            precision = context.precision
-        )
-        val data = registry.compute(
-            type = CardType.ACCOUNTS,
-            input = input,
-            config = AccountsCardConfig(cardId = "temp", filter = TransactionFilter(timelineRange = timelineRange))
-        ) as CardRenderData.Accounts
-        return Pair(data.updatedAccounts, data.accountStats)
-    }
-
-    suspend fun getTotalBalances(accounts: List<Account>, transactions: List<Transaction>, context: ComputationContext, timelineRange: TimelineRange): List<Account> {
-        return computeAccountStats(accounts, transactions, timelineRange, context).first
-    }
-
-    suspend fun computeCategoryPieChartForCard(cardConfig: CategoryPieChartCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryPieChartData> {
-        val categories = categoryRepository.getAllCategoriesSync()
-        val input = CardInput(
-            transactions = allTransactions,
-            accounts = accounts,
-            categories = categories,
-            exchangeRates = exchangeRates,
-            baseCurrency = baseCurrency,
-            precision = precision
-        )
-        val data = registry.compute(
-            type = CardType.CATEGORY_PIE_CHART,
-            input = input,
-            config = cardConfig
-        ) as CardRenderData.CategoryPieChart
-        
-        fun mapToUi(metric: CategoryTreeMetrics): CategoryPieChartData {
-            return CategoryPieChartData(
-                category = metric.category,
-                categoryId = metric.categoryId,
-                netBalance = metric.netBalance.setScale(precision, RoundingMode.HALF_UP),
-                income = metric.income.setScale(precision, RoundingMode.HALF_UP),
-                expense = metric.expense.setScale(precision, RoundingMode.HALF_UP),
-                colorHex = metric.colorHex,
-                percentage = metric.percentage,
-                hasSubcategories = metric.hasSubcategories,
-                subcategoryCount = metric.subcategoryData.size,
-                subcategoryData = metric.subcategoryData.map { mapToUi(it) }
-            )
-        }
-
-        return data.items.map { mapToUi(it) }
-    }
-
-    suspend fun computeCategoryTreemapForCard(cardConfig: CategoryTreemapCardConfig, allTransactions: List<Transaction>, accounts: List<Account>, baseCurrency: String, exchangeRates: Map<String, BigDecimal>, precision: Int): List<CategoryTreemapData> {
-        val categories = categoryRepository.getAllCategoriesSync()
-        val input = CardInput(
-            transactions = allTransactions,
-            accounts = accounts,
-            categories = categories,
-            exchangeRates = exchangeRates,
-            baseCurrency = baseCurrency,
-            precision = precision
-        )
-        val data = registry.compute(
-            type = CardType.CATEGORY_TREEMAP,
-            input = input,
-            config = cardConfig
-        ) as CardRenderData.CategoryTreemap
-        
-        fun mapToUi(metric: CategoryTreeMetrics): CategoryTreemapData {
-            return CategoryTreemapData(
-                category = if (metric.category.isEmpty()) "Uncategorized" else metric.category,
-                categoryId = metric.categoryId,
-                expense = metric.expense.abs().setScale(precision, RoundingMode.HALF_UP),
-                colorHex = metric.colorHex,
-                percentage = metric.percentage,
-                hasSubcategories = metric.hasSubcategories,
-                subcategoryCount = metric.subcategoryData.size,
-                subcategoryData = metric.subcategoryData.map { mapToUi(it) }
-            )
-        }
-
-        return data.items.map { mapToUi(it) }
-    }
+    // All card-specific computation functions now use CardComputerRegistry as the single source of truth
+    // The standardized card computers handle all computation logic:
+    // - NetWorthCardComputer handles net worth computations
+    // - CashFlowCardComputer handles cash flow computations  
+    // - CurrencyBalancesCardComputer handles currency aggregation
+    // - AccountsCardComputer handles account statistics
+    // - CategoryPieChartCardComputer handles pie chart data
+    // - CategoryTreemapCardComputer handles treemap data
 }
 
 sealed class DashboardUiState {

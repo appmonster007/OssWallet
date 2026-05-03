@@ -295,14 +295,10 @@ fun PlannedPaymentDetailScreen(
                         status = status,
                         dateFormatter = dateFormatter,
                         onConfirm = {
-                            val occ = matchedOccurrence
-                                ?: viewModel.buildDefaultOccurrence(payment, item.scheduledDate)
-                            viewModel.confirmOccurrence(occ, payment, transactionManager, profileId)
+                            viewModel.quickConfirm(payment, transactionManager, profileId)
                         },
                         onSkip = {
-                            val occ = matchedOccurrence
-                                ?: viewModel.buildDefaultOccurrence(payment, item.scheduledDate)
-                            viewModel.skipOccurrence(occ, payment)
+                            viewModel.quickSkip(payment)
                         }
                     )
                 }

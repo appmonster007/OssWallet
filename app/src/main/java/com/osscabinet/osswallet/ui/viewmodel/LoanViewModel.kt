@@ -20,6 +20,10 @@ class LoanViewModel(
 ) : ViewModel() {
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val loans: StateFlow<List<Loan>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> loanRepository.getAllLoans(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -38,7 +42,7 @@ class LoanViewModel(
         viewModelScope.launch { loanRepository.deleteLoan(loanId) }
     }
 
-    fun settleLoad(loan: Loan) {
+    fun settleLoan(loan: Loan) {
         viewModelScope.launch { loanRepository.updateLoan(LoanService.settledCopy(loan)) }
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,7 +44,10 @@ fun AppDrawerContent(
     onTemplatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onTemplateClick: (Template) -> Unit,
-    onCloseDrawer: () -> Unit
+    onCloseDrawer: () -> Unit,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {}
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(320.dp),
@@ -127,6 +131,50 @@ fun AppDrawerContent(
                                 "analytics" -> onAnalyticsClick()
                                 "exchange_rates" -> onExchangeRatesClick()
                                 "templates" -> onTemplatesClick()
+                            }
+                            onCloseDrawer()
+                        },
+                        icon = { Icon(icon, contentDescription = null) },
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                    )
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+
+                Text(
+                    "PLANNING",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+
+                val planningItems = listOf(
+                    Triple("PLANNED PAYMENTS", "planned_payments", Icons.Rounded.EventRepeat),
+                    Triple("BUDGETS", "budgets", Icons.Default.Savings),
+                    Triple("LOANS", "loans", Icons.Default.AccountBalance)
+                )
+
+                planningItems.forEach { (label, route, icon) ->
+                    NavigationDrawerItem(
+                        label = {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        },
+                        selected = selectedDestination == route,
+                        onClick = {
+                            when (route) {
+                                "planned_payments" -> onPlannedPaymentsClick()
+                                "budgets" -> onBudgetsClick()
+                                "loans" -> onLoansClick()
                             }
                             onCloseDrawer()
                         },

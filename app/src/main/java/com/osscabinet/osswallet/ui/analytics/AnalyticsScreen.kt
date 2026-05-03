@@ -36,7 +36,10 @@ fun AnalyticsScreen(
     onSettingsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
-    cardComputerRegistry: CardComputerRegistry
+    cardComputerRegistry: CardComputerRegistry,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
@@ -71,7 +74,10 @@ fun AnalyticsScreen(
                 onSettingsClick = { onSettingsClick() },
                 onAccountClick = { id -> onAccountClick(id) },
                 onTemplateClick = { template -> onAddClick(template.transactionType, template.name) },
-                onCloseDrawer = { coroutineScope.launch { drawerState.close() } }
+                onCloseDrawer = { coroutineScope.launch { drawerState.close() } },
+                onPlannedPaymentsClick = onPlannedPaymentsClick,
+                onBudgetsClick = onBudgetsClick,
+                onLoansClick = onLoansClick
             )
         }
     ) {

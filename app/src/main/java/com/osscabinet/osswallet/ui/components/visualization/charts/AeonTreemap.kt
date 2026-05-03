@@ -55,6 +55,7 @@ fun AeonTreemap(
     currency: String = "USD",
     precision: Int = 2,
     showLabels: Boolean = true,
+    rounded: Boolean = true,
     onNodeClick: (AeonTreemapNode) -> Unit = {},
     onDrillInClick: (AeonTreemapNode) -> Unit = {},
     onNavigateToRecords: (AeonTreemapNode) -> Unit = {}
@@ -143,10 +144,11 @@ fun AeonTreemap(
 
                 layouts.forEach { (node, rect) ->
                     val isSelected = selectedNode == node
-                    val cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
+                    val radius = if (rounded) 6.dp.toPx() else 0f
+                    val cornerRadius = CornerRadius(radius, radius)
                     
                     // Modern Look: Precise radial gaps (spacing between rectangles)
-                    val gap = 2.dp.toPx()
+                    val gap = if (rounded) 2.dp.toPx() else 0f
                     val drawRect = Rect(
                         rect.left + gap / 2,
                         rect.top + gap / 2,
@@ -166,11 +168,12 @@ fun AeonTreemap(
                     
                     // 3. High-Fidelity Layer: Inner Bevel/Glass Highlight
                     if (drawRect.width > 20.dp.toPx() && drawRect.height > 20.dp.toPx()) {
+                        val innerRadius = if (rounded) 5.dp.toPx() else 0f
                         drawRoundRect(
                             color = Color.White.copy(alpha = 0.15f),
                             topLeft = Offset(drawRect.left + 1.dp.toPx(), drawRect.top + 1.dp.toPx()),
                             size = Size(drawRect.width - 2.dp.toPx(), drawRect.height - 2.dp.toPx()),
-                            cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                            cornerRadius = CornerRadius(innerRadius, innerRadius),
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
                         )
                         
@@ -217,7 +220,7 @@ fun AeonTreemap(
             // Overlay labels for larger segments
             if (showLabels) {
                 layouts.forEach { (node, rect) ->
-                    val gap = with(density) { 2.dp.toPx() }
+                    val gap = with(density) { if (rounded) 2.dp.toPx() else 0f }
                     val drawRect = Rect(rect.left + gap/2, rect.top + gap/2, rect.right - gap/2, rect.bottom - gap/2)
                     val rectWidthDp = with(density) { drawRect.width.toDp() }
                     val rectHeightDp = with(density) { drawRect.height.toDp() }

@@ -51,14 +51,15 @@ object BudgetService {
         now: Long
     ): BigDecimal {
         val (start, end) = getCurrentPeriodRange(budget, now)
-        val targetType = if (budget.trackType == BudgetTrackType.EXPENSE) "expense" else "income"
+        val targetTypes = budget.trackTypes.map { if (it == BudgetTrackType.EXPENSE) "expense" else "income" }.toSet()
 
         return transactions
             .filter { tx ->
                 tx.timestamp in start..end &&
-                tx.transactionType == targetType &&
+                tx.transactionType in targetTypes &&
                 (budget.categoryIds.isEmpty() || (tx.categoryId != null && tx.categoryId in budget.categoryIds)) &&
-                (budget.accountIds.isEmpty() || tx.accountId in budget.accountIds)
+                (budget.accountIds.isEmpty() || tx.accountId in budget.accountIds) &&
+                (budget.tags.isEmpty() || budget.tags.all { tag -> tag in tx.tags })
             }
             .fold(BigDecimal.ZERO) { acc, tx ->
                 val converted = CurrencyService.convertAmount(

@@ -27,7 +27,7 @@ class UpcomingPaymentsWidget : BaseOssWalletWidget() {
         config: WidgetConfig
     ) {
         val items = (renderData as? CardRenderData.PlannedPayments)?.upcoming
-            ?.take(3) ?: emptyList()
+            ?.take(1) ?: emptyList()
         provideContent { UpcomingPaymentsWidgetContent(items) }
     }
 }

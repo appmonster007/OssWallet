@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.service.*
 import com.osscabinet.ossWallet.domain.usecase.*
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
@@ -40,7 +41,8 @@ class DashboardViewModel(
     private val registry: CardComputerRegistry,
     private val plannedPaymentRepository: PlannedPaymentRepository? = null,
     private val budgetRepository: BudgetRepository? = null,
-    private val loanRepository: LoanRepository? = null
+    private val loanRepository: LoanRepository? = null,
+    private val transactionManager: TransactionManager? = null
 ) : ViewModel(), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -211,6 +213,55 @@ class DashboardViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = DashboardUiState.Loading
         )
+
+    fun quickConfirmById(id: Long) {
+        val state = uiState.value as? DashboardUiState.Success ?: return
+        val payment = state.plannedPayments.find { it.id == id } ?: return
+        val repo = plannedPaymentRepository ?: return
+        val manager = transactionManager ?: return
+        viewModelScope.launch {
+            val profileId = settingsRepository.currentProfileId.first()
+            val occurrence = PlannedPaymentOccurrence(id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate)
+            val request = TransactionRequest(
+                title = payment.title,
+                amount = payment.amount,
+                category = "",
+                transactionType = payment.transactionType,
+                accountId = payment.accountId,
+                currency = payment.currency,
+                categoryId = payment.categoryId,
+                tags = payment.tags,
+                paymentMethod = payment.paymentMethod,
+                timestamp = occurrence.scheduledDate,
+                payee = payment.payee,
+                note = payment.note
+            )
+            val transactionId = manager.handleSaveTransaction(null, request, profileId)
+            repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId))
+            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            if (nextDue == null) {
+                repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+            } else {
+                repo.update(payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate))
+            }
+        }
+    }
+
+    fun quickSkipById(id: Long) {
+        val state = uiState.value as? DashboardUiState.Success ?: return
+        val payment = state.plannedPayments.find { it.id == id } ?: return
+        val repo = plannedPaymentRepository ?: return
+        viewModelScope.launch {
+            val occurrence = PlannedPaymentOccurrence(id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate)
+            repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
+            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            if (nextDue == null) {
+                repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+            } else {
+                repo.update(payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate))
+            }
+        }
+    }
 
     fun computeNetWorth(accounts: List<Account>, transactions: List<Transaction>, timelineRange: TimelineRange, context: ComputationContext): BigDecimal {
         val input = CardInput(

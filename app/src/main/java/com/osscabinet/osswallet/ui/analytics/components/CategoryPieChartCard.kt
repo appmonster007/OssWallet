@@ -1,16 +1,21 @@
 package com.osscabinet.ossWallet.ui.analytics.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,21 +28,18 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import com.osscabinet.ossWallet.ui.components.AeonFlowSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import java.math.BigDecimal
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Home
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.util.toChartColor
+import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.formatAmount
-import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 @Composable
 fun CategoryPieChartCard(
@@ -52,10 +54,18 @@ fun CategoryPieChartCard(
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
     baseFilter: TransactionFilter = TransactionFilter(),
+    currentTheme: String = "System",
     precision: Int = 2
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
+    
+    val isDarkTheme = when (currentTheme) {
+        "Light" -> false
+        "Dark", "Amoled" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val isAmoled = currentTheme == "Amoled"
     
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }
@@ -89,7 +99,7 @@ fun CategoryPieChartCard(
                 modifier = Modifier
                     .padding(bottom = 12.dp)
                     .horizontalScroll(rememberScrollState()),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { navigationStack = navigationStack.take(1) },
@@ -131,7 +141,7 @@ fun CategoryPieChartCard(
             }
         }
 
-        val totalGlobal = remember(data) { data.sumOf { it.netBalance }.abs() }
+        val totalGlobal = remember(data) { data.sumOf { it.netBalance.abs() } }
 
         val groupedData = remember(currentData) {
             val sorted = currentData.sortedByDescending { it.netBalance.abs() }
@@ -165,11 +175,25 @@ fun CategoryPieChartCard(
                 .height(280.dp)
         ) {
             if (groupedData.isNotEmpty()) {
-                val slices = groupedData.map { item ->
+                val slices = groupedData.mapIndexed { index, item ->
+                    val baseColor = if (navigationStack.size > 1) {
+                        val prevStack = navigationStack[navigationStack.size - 2]
+                        val parentItem = prevStack.find { it.subcategoryData === currentData }
+                        parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
+                    } else {
+                        Color(item.colorHex)
+                    }
+                    
+                    val displayColor = if (navigationStack.size > 1) {
+                        baseColor.generateShade(index, groupedData.size, isDarkTheme, isAmoled)
+                    } else {
+                        baseColor.toChartColor(isDarkTheme, isAmoled)
+                    }
+
                     AeonPieChartSlice(
                         value = item.netBalance.abs(),
                         label = item.category,
-                        color = Color(item.colorHex),
+                        color = displayColor,
                         hasSubcategories = item.hasSubcategories,
                         subcategoryCount = item.subcategoryCount,
                         percentageOfTotal = if (totalGlobal.signum() != 0) 
@@ -182,6 +206,7 @@ fun CategoryPieChartCard(
                 AeonPieChart(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
+                    rounded = config.rounded,
                     onSliceClick = { slice ->
                         // Interaction feedback
                     },
@@ -204,7 +229,7 @@ fun CategoryPieChartCard(
                     }
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No category data", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -213,7 +238,13 @@ fun CategoryPieChartCard(
         // Optimized Legend
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            CategoryLegend(data = groupedData, precision = precision)
+            CategoryLegend(
+                data = groupedData, 
+                navigationStack = navigationStack,
+                isDarkTheme = isDarkTheme, 
+                isAmoled = isAmoled, 
+                precision = precision
+            )
         }
     }
 
@@ -293,6 +324,12 @@ private fun CategoryPieChartDisplaySettingsDialog(
                     checked = config.showLegend,
                     onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
                 )
+                AeonSettingsToggle(
+                    label = "ROUNDED VISUALS",
+                    description = "Apply spacing and modern visuals to segments",
+                    checked = config.rounded,
+                    onCheckedChange = { onUpdate(config.copy(rounded = it)) }
+                )
             }
         },
         shape = RoundedCornerShape(32.dp),
@@ -301,20 +338,41 @@ private fun CategoryPieChartDisplaySettingsDialog(
 }
 
 @Composable
-fun CategoryLegend(data: List<CategoryPieChartData>, precision: Int = 2) {
+fun CategoryLegend(
+    data: List<CategoryPieChartData>, 
+    navigationStack: List<List<CategoryPieChartData>>,
+    isDarkTheme: Boolean, 
+    isAmoled: Boolean, 
+    precision: Int = 2
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        data.take(5).forEach { item ->
+        data.take(5).forEachIndexed { index, item ->
+            val baseColor = if (navigationStack.size > 1) {
+                val currentData = navigationStack.last()
+                val prevStack = navigationStack[navigationStack.size - 2]
+                val parentItem = prevStack.find { it.subcategoryData === currentData }
+                parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
+            } else {
+                Color(item.colorHex)
+            }
+            
+            val displayColor = if (navigationStack.size > 1) {
+                baseColor.generateShade(index, data.size, isDarkTheme, isAmoled)
+            } else {
+                baseColor.toChartColor(isDarkTheme, isAmoled)
+            }
+
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
                     modifier = Modifier.size(10.dp),
                     shape = RoundedCornerShape(2.dp),
-                    color = Color(item.colorHex),
+                    color = displayColor,
                     border = BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.05f))
                 ) {}
                 

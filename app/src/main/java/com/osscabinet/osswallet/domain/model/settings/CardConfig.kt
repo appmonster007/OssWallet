@@ -175,6 +175,7 @@ data class CategoryPieChartCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
+    val rounded: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -193,6 +194,7 @@ data class CategoryTreemapCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
+    val rounded: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.EXPENSE_ONLY
@@ -218,6 +220,10 @@ data class AccountHeroCardConfig(
 /**
  * Configuration for Planned Payments card instances
  */
+/** Three-stage visibility mode for the planned-payments dashboard card. */
+@Serializable
+enum class PlannedPaymentsViewMode { OVERDUE_ONLY, BOTH, FUTURE_ONLY }
+
 @Serializable
 @SerialName("planned_payments")
 data class PlannedPaymentsCardConfig(
@@ -228,7 +234,9 @@ data class PlannedPaymentsCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val daysAhead: Int = 30,
     val maxItems: Int = 5,
+    /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
+    val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT

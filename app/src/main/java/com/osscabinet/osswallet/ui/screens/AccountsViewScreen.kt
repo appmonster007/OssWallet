@@ -99,6 +99,9 @@ fun AccountsViewScreen(
     onAccountClick: (String) -> Unit,
     onAddAccountClick: () -> Unit,
     onAddClick: (Int, String?) -> Unit,
+    onPlannedPaymentsClick: () -> Unit = {},
+    onBudgetsClick: () -> Unit = {},
+    onLoansClick: () -> Unit = {},
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
@@ -189,7 +192,10 @@ fun AccountsViewScreen(
                     onTemplateClick = { template ->
                         navigate { onAddClick(template.transactionType, template.name) }
                     },
-                    onCloseDrawer = { scope.launch { drawerState.close() } }
+                    onCloseDrawer = { scope.launch { drawerState.close() } },
+                    onPlannedPaymentsClick = { navigate(onPlannedPaymentsClick) },
+                    onBudgetsClick = { navigate(onBudgetsClick) },
+                    onLoansClick = { navigate(onLoansClick) }
                 )
             }
         ) {

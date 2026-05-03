@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapCard
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
@@ -32,7 +33,7 @@ fun UnifiedCardRenderer(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     showTitle: Boolean = false,
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "light",
+    currentTheme: String = "light",
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
@@ -62,7 +63,8 @@ fun UnifiedCardRenderer(
                 baseFilter = cardWithCallbacks.baseFilter,
                 accounts = accounts,
                 allCategories = allCategories,
-                savedFilters = savedFilters
+                savedFilters = savedFilters,
+                currentTheme = currentTheme
             )
         }
         
@@ -100,7 +102,7 @@ fun UnifiedCardRenderer(
             CashFlowCard(
                 cashFlowResult = renderData.result,
                 baseCurrency = renderData.baseCurrency,
-                currentTheme = "light",
+                currentTheme = currentTheme,
                 cardId = renderData.config.cardId,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
@@ -125,20 +127,20 @@ fun UnifiedCardRenderer(
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
             
-            val uiData = renderData.items.map { metric ->
-                CategoryPieChartData(
-                    category = metric.category,
-                    categoryId = metric.categoryId,
-                    netBalance = metric.netBalance,
-                    income = metric.income,
-                    expense = metric.expense,
-                    colorHex = metric.colorHex,
-                    percentage = metric.percentage,
-                    hasSubcategories = metric.hasSubcategories,
-                    subcategoryCount = metric.subcategoryData.size,
-                    subcategoryData = emptyList() // Simplified mapping
-                )
-            }
+            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData = CategoryPieChartData(
+                category = metric.category,
+                categoryId = metric.categoryId,
+                netBalance = metric.netBalance,
+                income = metric.income,
+                expense = metric.expense,
+                colorHex = metric.colorHex,
+                percentage = metric.percentage,
+                hasSubcategories = metric.hasSubcategories,
+                subcategoryCount = metric.subcategoryData.size,
+                subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
+            )
+
+            val uiData = renderData.items.map { mapMetrics(it) }
 
             CategoryPieChartCard(
                 config = renderData.config,
@@ -152,6 +154,7 @@ fun UnifiedCardRenderer(
                 allCategories = allCategories,
                 savedFilters = savedFilters,
                 baseFilter = cardWithCallbacks.baseFilter,
+                currentTheme = currentTheme,
                 precision = renderData.precision
             )
         }
@@ -160,18 +163,18 @@ fun UnifiedCardRenderer(
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
             
-            val uiData = renderData.items.map { metric ->
-                CategoryTreemapData(
-                    category = metric.category,
-                    categoryId = metric.categoryId,
-                    expense = metric.expense.abs(),
-                    colorHex = metric.colorHex,
-                    percentage = metric.percentage,
-                    hasSubcategories = metric.hasSubcategories,
-                    subcategoryCount = metric.subcategoryData.size,
-                    subcategoryData = emptyList() // Simplified mapping
-                )
-            }
+            fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData = CategoryTreemapData(
+                category = metric.category,
+                categoryId = metric.categoryId,
+                expense = metric.expense.abs(),
+                colorHex = metric.colorHex,
+                percentage = metric.percentage,
+                hasSubcategories = metric.hasSubcategories,
+                subcategoryCount = metric.subcategoryData.size,
+                subcategoryData = metric.subcategoryData.map { mapMetrics(it) }
+            )
+
+            val uiData = renderData.items.map { mapMetrics(it) }
 
             CategoryTreemapCard(
                 config = renderData.config,
@@ -186,6 +189,7 @@ fun UnifiedCardRenderer(
                 savedFilters = savedFilters,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
+                currentTheme = currentTheme,
                 precision = renderData.precision
             )
         }
@@ -233,7 +237,7 @@ fun UnifiedCardRenderer(
                 accounts = renderData.updatedAccounts,
                 accountStats = renderData.accountStats,
                 baseCurrency = renderData.baseCurrency,
-                currentTheme = renderData.currentTheme,
+                currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 gridColumns = renderData.config.gridColumns,
                 precision = renderData.precision,
@@ -263,6 +267,8 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 onUpdate = cb.onUpdate,
                 onItemClick = cb.onItemClick,
+                onConfirmPayment = cb.onConfirm?.let { onConfirm -> { payment -> onConfirm(payment.id) } },
+                onSkipPayment = cb.onSkip?.let { onSkip -> { payment -> onSkip(payment.id) } },
                 onDelete = { cb.onDelete() },
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,

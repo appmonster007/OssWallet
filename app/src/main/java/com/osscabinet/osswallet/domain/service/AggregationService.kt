@@ -1098,20 +1098,47 @@ object AggregationService {
             categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
         }
 
-        fun buildSubTree(categoryName: String?, index: Int = 0, totalSiblings: Int = 1): CategoryTreeMetrics? {
+        fun buildSubTree(categoryName: String?): CategoryTreeMetrics? {
             val entity = categoryMap[categoryName] ?: return null
             val breakdown = categoryBreakdowns[categoryName]
                 ?: FinancialMetrics(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
 
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
-            val childrenData = childrenEntities.mapIndexedNotNull { i, child ->
-                buildSubTree(child.name, i, childrenEntities.size)
-            }.sortedByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
+            val actualChildrenData = childrenEntities.mapNotNull { child ->
+                buildSubTree(child.name)
+            }
 
-            val totalIncome = childrenData.fold(breakdown.income) { acc, child -> acc.add(child.income) }
-            val totalExpense = childrenData.fold(breakdown.expense) { acc, child -> acc.add(child.expense) }
+            val hasDirectTransactions = breakdown.income.signum() != 0 || breakdown.expense.signum() != 0
+            
+            // This is the list we will return as subcategoryData
+            val combinedChildren = mutableListOf<CategoryTreeMetrics>()
+            
+            if (actualChildrenData.isNotEmpty()) {
+                // If there are children, and there are direct transactions, add them as a pseudo-child
+                if (hasDirectTransactions) {
+                    val directMetric = if (onlyExpenses) breakdown.expense.abs() else breakdown.totalAmount.abs()
+                    combinedChildren.add(CategoryTreeMetrics(
+                        category = entity.name, // Use same name for direct part
+                        categoryId = entity.id,
+                        netBalance = breakdown.totalAmount.setScale(precision, RoundingMode.HALF_UP),
+                        income = breakdown.income.setScale(precision, RoundingMode.HALF_UP),
+                        expense = breakdown.expense.setScale(precision, RoundingMode.HALF_UP),
+                        colorHex = entity.colorHex,
+                        percentage = if (globalTotal.signum() != 0) {
+                            (directMetric.divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat()
+                        } else 0f,
+                        hasSubcategories = false,
+                        subcategoryData = emptyList()
+                    ))
+                }
+                combinedChildren.addAll(actualChildrenData)
+            }
+            
+            combinedChildren.sortByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
+
+            val totalIncome = if (actualChildrenData.isEmpty()) breakdown.income else combinedChildren.sumOf { it.income }
+            val totalExpense = if (actualChildrenData.isEmpty()) breakdown.expense else combinedChildren.sumOf { it.expense }
             val totalNet = totalIncome + totalExpense
-
             val currentMetric = if (onlyExpenses) totalExpense.abs() else totalNet.abs()
 
             return CategoryTreeMetrics(
@@ -1124,8 +1151,8 @@ object AggregationService {
                 percentage = if (globalTotal.signum() != 0) {
                     (currentMetric.divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat()
                 } else 0f,
-                hasSubcategories = childrenData.isNotEmpty(),
-                subcategoryData = childrenData
+                hasSubcategories = combinedChildren.size > 1 || (combinedChildren.size == 1 && combinedChildren[0].hasSubcategories),
+                subcategoryData = combinedChildren
             )
         }
 

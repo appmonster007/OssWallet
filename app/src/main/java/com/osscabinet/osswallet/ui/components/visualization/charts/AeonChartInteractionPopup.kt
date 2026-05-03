@@ -128,7 +128,7 @@ fun AeonChartInteractionPopup(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (hasSubcategories) {
+                if (hasSubcategories && subcategoryCount > 1) {
                     Button(
                         onClick = onDrillInClick,
                         modifier = Modifier.weight(1f).height(32.dp),

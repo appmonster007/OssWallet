@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.ui.accountdetail.*
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
+
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
@@ -147,11 +148,15 @@ fun OssWalletNavGraph(
         ) {
             composable(
                 route = Screen.Dashboard.route,
-                arguments = listOf(navArgument("viewContext") { 
+                arguments = listOf(navArgument("viewContext") {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
-                })
+                }),
+                enterTransition = { FadeEnterTransitionSpec },
+                exitTransition = { FadeExitTransitionSpec },
+                popEnterTransition = { FadeEnterTransitionSpec },
+                popExitTransition = { FadeExitTransitionSpec }
             ) { backStackEntry ->
                 val viewContext = backStackEntry.arguments?.getString("viewContext")
                 DashboardScreen(
@@ -191,7 +196,11 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterContext = backStackEntry.arguments?.getString("filterContext")
                 AccountsViewScreen(
@@ -221,7 +230,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.Settings.route) {
+            composable(
+                route = Screen.Settings.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 SettingsScreen(
                     viewModel = settingsViewModel,
                     onManageAccountsClick = { navController.navigate(Screen.AccountManagement.route) },
@@ -239,7 +254,11 @@ fun OssWalletNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterContext = backStackEntry.arguments?.getString("filterContext")
                 TransactionListScreen(
@@ -267,7 +286,11 @@ fun OssWalletNavGraph(
                     navArgument("accountId") { type = NavType.StringType; nullable = true },
                     navArgument("type") { type = NavType.IntType; defaultValue = 0 },
                     navArgument("template") { type = NavType.StringType; nullable = true }
-                )
+                ),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val accountId = backStackEntry.arguments?.getString("accountId")
                 val type = backStackEntry.arguments?.getInt("type") ?: 0
@@ -298,7 +321,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.Analytics.route) {
+            composable(
+                route = Screen.Analytics.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 AnalyticsScreen(
                     viewModel = analyticsViewModel,
                     accountViewModel = accountViewModel,
@@ -323,14 +352,26 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.SharedWallet.route) {
+            composable(
+                route = Screen.SharedWallet.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 SharedWalletScreen(
                     viewModel = sharedWalletViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            composable(Screen.AccountSetup.route) {
+            composable(
+                route = Screen.AccountSetup.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 AccountSetupScreen(
                     onBackClick = { navController.popBackStack() },
                     onAccountCreated = { navController.popBackStack() },
@@ -338,7 +379,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.AccountManagement.route) {
+            composable(
+                route = Screen.AccountManagement.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 AccountManagementScreen(
                     onBackClick = { navController.popBackStack() },
                     onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
@@ -347,14 +394,26 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.ExchangeRates.route) {
+            composable(
+                route = Screen.ExchangeRates.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 ExchangeRatesScreen(
                     viewModel = currencyViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            composable(Screen.Templates.route) {
+            composable(
+                route = Screen.Templates.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 TemplatesScreen(
                     viewModel = templateViewModel,
                     accountViewModel = accountViewModel,
@@ -368,7 +427,11 @@ fun OssWalletNavGraph(
                 arguments = listOf(navArgument("templateId") {
                     type = NavType.LongType
                     defaultValue = -1L
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val templateId = backStackEntry.arguments?.getLong("templateId") ?: -1L
                 AddTemplateScreen(
@@ -384,7 +447,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.EditTransaction.route,
-                arguments = listOf(navArgument("transactionId") { type = NavType.LongType })
+                arguments = listOf(navArgument("transactionId") { type = NavType.LongType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val transactionId = backStackEntry.arguments?.getLong("transactionId") ?: -1L
                 val entryViewModel: com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel = viewModel(
@@ -411,7 +478,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.AccountDetail.route,
-                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+                arguments = listOf(navArgument("accountId") { type = NavType.StringType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
                 val accountDetailViewModel: AccountDetailViewModel = viewModel(
@@ -453,7 +524,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.EditAccount.route,
-                arguments = listOf(navArgument("accountId") { type = NavType.StringType })
+                arguments = listOf(navArgument("accountId") { type = NavType.StringType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
                 EditAccountScreen(
@@ -464,21 +539,39 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.ManageLabels.route) {
+            composable(
+                route = Screen.ManageLabels.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 ManageLabelsScreen(
                     viewModel = tagViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            composable(Screen.ManageCategories.route) {
+            composable(
+                route = Screen.ManageCategories.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 CategoryManagementScreen(
                     viewModel = transactionViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            composable(Screen.ManageFilters.route) {
+            composable(
+                route = Screen.ManageFilters.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
 
@@ -499,7 +592,11 @@ fun OssWalletNavGraph(
                 arguments = listOf(navArgument("filterId") {
                     type = NavType.LongType
                     defaultValue = -1L
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterId = backStackEntry.arguments?.getLong("filterId") ?: -1L
                 val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
@@ -521,7 +618,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.PlannedPayments.route) {
+            composable(
+                route = Screen.PlannedPayments.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel(
@@ -540,7 +643,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.BudgetList.route) {
+            composable(
+                route = Screen.BudgetList.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel(
@@ -570,7 +679,11 @@ fun OssWalletNavGraph(
                 arguments = listOf(navArgument("budgetId") {
                     type = NavType.LongType
                     defaultValue = -1L
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: -1L
                 val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(
@@ -600,7 +713,11 @@ fun OssWalletNavGraph(
                 arguments = listOf(navArgument("plannedPaymentId") {
                     type = NavType.LongType
                     defaultValue = -1L
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: -1L
                 val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
@@ -623,7 +740,13 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(Screen.LoanList.route) {
+            composable(
+                route = Screen.LoanList.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
                 val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
                     factory = GenericViewModelFactory {
                         com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel(
@@ -644,7 +767,11 @@ fun OssWalletNavGraph(
                 route = Screen.LoanEntry.route,
                 arguments = listOf(navArgument("loanId") {
                     type = NavType.LongType; defaultValue = -1L
-                })
+                }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val loanId = backStackEntry.arguments?.getLong("loanId") ?: -1L
                 val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
@@ -666,7 +793,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.LoanDetail.route,
-                arguments = listOf(navArgument("loanId") { type = NavType.LongType })
+                arguments = listOf(navArgument("loanId") { type = NavType.LongType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val loanId = backStackEntry.arguments?.getLong("loanId") ?: return@composable
                 val loanViewModel: com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel = viewModel(
@@ -696,7 +827,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.PlannedPaymentDetail.route,
-                arguments = listOf(navArgument("plannedPaymentId") { type = NavType.LongType })
+                arguments = listOf(navArgument("plannedPaymentId") { type = NavType.LongType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val plannedPaymentId = backStackEntry.arguments?.getLong("plannedPaymentId") ?: return@composable
                 val plannedPaymentViewModel: com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel = viewModel(
@@ -722,7 +857,11 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.BudgetDetail.route,
-                arguments = listOf(navArgument("budgetId") { type = NavType.LongType })
+                arguments = listOf(navArgument("budgetId") { type = NavType.LongType }),
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val budgetId = backStackEntry.arguments?.getLong("budgetId") ?: return@composable
                 val budgetViewModel: com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel = viewModel(

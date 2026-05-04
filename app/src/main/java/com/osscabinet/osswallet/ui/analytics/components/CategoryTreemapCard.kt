@@ -75,7 +75,7 @@ fun CategoryTreemapCard(
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY,
+    filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
     baseFilter: TransactionFilter = TransactionFilter(),
     currentTheme: String = "System",
     precision: Int = 2
@@ -96,23 +96,27 @@ fun CategoryTreemapCard(
     
     // Grouping logic for "Other" category
     val groupedData = remember(currentData) {
-        val sorted = currentData.sortedByDescending { it.expense.abs() }
+        val sorted = currentData.sortedByDescending { it.amount.abs() }
         if (sorted.size > 12) {
             val top = sorted.take(10)
-            val others = sorted.drop(10)
-            val otherSum = others.sumOf { it.expense }
-            val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-            
-            top + CategoryTreemapData(
-                category = "Other",
-                categoryId = -1L,
-                expense = otherSum,
-                colorHex = 0xFF9E9E9E.toInt(), // Grey
-                percentage = otherPercentage,
-                hasSubcategories = true,
-                subcategoryCount = others.size,
-                subcategoryData = others
-            )
+            val others = sorted.drop(10).filter { it.amount.abs() > BigDecimal.ZERO }
+            if (others.isEmpty()) {
+                sorted
+            } else {
+                val otherSum = others.sumOf { it.amount }
+                val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                
+                top + CategoryTreemapData(
+                    category = "Other",
+                    categoryId = -1L,
+                    amount = otherSum,
+                    colorHex = 0xFF9E9E9E.toInt(), // Grey
+                    percentage = otherPercentage,
+                    hasSubcategories = true,
+                    subcategoryCount = others.size,
+                    subcategoryData = others
+                )
+            }
         } else {
             sorted
         }
@@ -211,7 +215,7 @@ fun CategoryTreemapCard(
 
                     AeonTreemapNode(
                         name = item.category,
-                        value = item.expense,
+                        value = item.amount,
                         color = displayColor,
                         percentageOfTotal = item.percentage,
                         id = item.categoryId,
@@ -380,7 +384,7 @@ fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmole
                 )
                 
                 Text(
-                    text = formatAmount(item.expense, precision),
+                    text = formatAmount(item.amount, precision),
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -408,20 +412,20 @@ fun TreemapLegend(data: List<CategoryTreemapData>, isDarkTheme: Boolean, isAmole
 @Composable
 fun CategoryTreemapCardPreview() {
     val sampleData = listOf(
-        CategoryTreemapData("Housing", null, BigDecimal("1200.00"), 0xFF2196F3.toInt(), 0.6f),
-        CategoryTreemapData("Food", null, BigDecimal("450.00"), 0xFFFF5722.toInt(), 0.2f),
-        CategoryTreemapData("Transport", null, BigDecimal("150.00"), 0xFF4CAF50.toInt(), 0.1f),
-        CategoryTreemapData("Entertainment", null, BigDecimal("200.00"), 0xFF9C27B0.toInt(), 0.1f),
-        CategoryTreemapData("Misc 1", null, BigDecimal("10.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 2", null, BigDecimal("9.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 3", null, BigDecimal("8.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 4", null, BigDecimal("7.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 5", null, BigDecimal("6.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 6", null, BigDecimal("5.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 7", null, BigDecimal("4.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 8", null, BigDecimal("3.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 9", null, BigDecimal("2.00"), 0xFF607D8B.toInt(), 0.01f),
-        CategoryTreemapData("Misc 10", null, BigDecimal("1.00"), 0xFF607D8B.toInt(), 0.01f)
+        CategoryTreemapData(category = "Housing", categoryId = null, amount = BigDecimal("1200.00"), colorHex = 0xFF2196F3.toInt(), percentage = 0.6f),
+        CategoryTreemapData(category = "Food", categoryId = null, amount = BigDecimal("450.00"), colorHex = 0xFFFF5722.toInt(), percentage = 0.2f),
+        CategoryTreemapData(category = "Transport", categoryId = null, amount = BigDecimal("150.00"), colorHex = 0xFF4CAF50.toInt(), percentage = 0.1f),
+        CategoryTreemapData(category = "Entertainment", categoryId = null, amount = BigDecimal("200.00"), colorHex = 0xFF9C27B0.toInt(), percentage = 0.1f),
+        CategoryTreemapData(category = "Misc 1", categoryId = null, amount = BigDecimal("10.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 2", categoryId = null, amount = BigDecimal("9.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 3", categoryId = null, amount = BigDecimal("8.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 4", categoryId = null, amount = BigDecimal("7.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 5", categoryId = null, amount = BigDecimal("6.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 6", categoryId = null, amount = BigDecimal("5.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 7", categoryId = null, amount = BigDecimal("4.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 8", categoryId = null, amount = BigDecimal("3.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 9", categoryId = null, amount = BigDecimal("2.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f),
+        CategoryTreemapData(category = "Misc 10", categoryId = null, amount = BigDecimal("1.00"), colorHex = 0xFF607D8B.toInt(), percentage = 0.01f)
     )
 
      OssWalletTheme {
@@ -439,13 +443,13 @@ fun CategoryTreemapCardPreview() {
 
 /**
  * Category data for treemap card.
- * Represents expense distribution across categories for visualization.
+ * Represents expense or income distribution across categories for visualization.
  */
 @Serializable
 data class CategoryTreemapData(
     val category: String,
     val categoryId: Long?,
-    @Contextual val expense: BigDecimal,
+    @Contextual val amount: BigDecimal,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,

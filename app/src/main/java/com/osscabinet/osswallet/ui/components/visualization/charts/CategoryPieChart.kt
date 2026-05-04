@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.util.formatAmount
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -174,11 +175,10 @@ fun CategoryBreakdownPieChart(
                     )
                     if (displaySegment != null) {
                         Text(
-                            text = formatCurrency(displaySegment.netBalance),
+                            text = formatAmount(displaySegment.amount.abs()),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
-                            color = if (displaySegment.netBalance >= java.math.BigDecimal.ZERO) 
-                                Color(0xFF4CAF50) else Color(0xFFF44336)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (displaySegment.hasSubcategories && !showSubcategories) {
                             Text(

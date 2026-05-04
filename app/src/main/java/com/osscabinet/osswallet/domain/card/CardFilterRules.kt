@@ -78,14 +78,6 @@ data class CardFilterRules(
         val DEFAULT = CardFilterRules()
 
         /**
-         * Rules for cards that only make sense for Expenses (e.g., Treemap).
-         */
-        val EXPENSE_ONLY = CardFilterRules(
-            allowedTransactionTypes = listOf("expense"),
-            forcedTransactionType = "expense"
-        )
-
-        /**
          * Rules for cards that can be either Income or Expense but NOT both/all (e.g., Category Breakdown).
          */
         val INCOME_OR_EXPENSE_ONLY = CardFilterRules(

@@ -50,7 +50,7 @@ sealed class CardWithCallbacks {
     data class CategoryTreemap(
         val renderData: CardRenderData.CategoryTreemap,
         val callbacks: CardCallbacks.Analytics,
-        override val filterRules: CardFilterRules = CardFilterRules.EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
         override val baseFilter: com.osscabinet.ossWallet.domain.model.TransactionFilter = com.osscabinet.ossWallet.domain.model.TransactionFilter()
     ) : CardWithCallbacks()
 

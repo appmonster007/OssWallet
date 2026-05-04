@@ -161,6 +161,7 @@ fun CategoryPieChartCard(
                     colorHex = 0xFF9E9E9E.toInt(), // Grey
                     percentage = otherPercentage,
                     hasSubcategories = true,
+                    subcategoryCount = others.size,
                     subcategoryData = others
                 )
             } else {

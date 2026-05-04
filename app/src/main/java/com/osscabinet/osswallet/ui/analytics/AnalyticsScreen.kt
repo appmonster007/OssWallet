@@ -53,6 +53,7 @@ fun AnalyticsScreen(
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -159,17 +160,24 @@ fun AnalyticsScreen(
                     onTabSelected = {},
                     tabs = emptyList(),
                     isFabExpanded = isFabExpanded,
-                    onFabToggle = { isFabExpanded = it },
-                    fabMenu = {
-                        TransactionFabMenu(
-                            isExpanded = isFabExpanded,
-                            templates = allTemplates,
-                            onAddClick = { type, name ->
-                                isFabExpanded = false
-                                onAddClick(type, name)
-                            }
-                        )
-                    }
+                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                    onFabClick = {
+                        if (!expandableFabEnabled) {
+                            onAddClick(0, null)
+                        }
+                    },
+                    fabMenu = if (expandableFabEnabled) {
+                        {
+                            TransactionFabMenu(
+                                isExpanded = isFabExpanded,
+                                templates = allTemplates,
+                                onAddClick = { type, name ->
+                                    isFabExpanded = false
+                                    onAddClick(type, name)
+                                }
+                            )
+                        }
+                    } else null
                 )
             }
         }

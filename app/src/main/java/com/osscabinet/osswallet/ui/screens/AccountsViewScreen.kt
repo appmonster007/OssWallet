@@ -168,6 +168,7 @@ fun AccountsViewScreen(
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -304,21 +305,28 @@ fun AccountsViewScreen(
             onTabSelected = {},
             tabs = emptyList(),
             isFabExpanded = isFabExpanded,
-            onFabToggle = { isFabExpanded = it },
-            fabMenu = {
-                TransactionFabMenu(
-                    isExpanded = isFabExpanded,
-                    templates = dbTemplates,
-                    onAddClick = { type, name ->
-                        isFabExpanded = false
-                        navigate { onAddClick(type ?: 0, name) }
-                    },
-                    onAddAccountClick = {
-                        isFabExpanded = false
-                        navigate(onAddAccountClick)
-                    }
-                )
-            }
+            onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+            onFabClick = {
+                if (!expandableFabEnabled) {
+                    navigate { onAddClick(0, null) }
+                }
+            },
+            fabMenu = if (expandableFabEnabled) {
+                {
+                    TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = dbTemplates,
+                        onAddClick = { type, name ->
+                            isFabExpanded = false
+                            navigate { onAddClick(type ?: 0, name) }
+                        },
+                        onAddAccountClick = {
+                            isFabExpanded = false
+                            navigate(onAddAccountClick)
+                        }
+                    )
+                }
+            } else null
         )
     }
 

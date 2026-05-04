@@ -265,6 +265,7 @@ fun OssWalletNavGraph(
                     viewModel = transactionViewModel,
                     accountViewModel = accountViewModel,
                     analyticsViewModel = analyticsViewModel,
+                    settingsViewModel = settingsViewModel,
                     onAddTransactionClick = { type, template -> 
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
                     },

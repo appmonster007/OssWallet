@@ -14,6 +14,7 @@ class SettingsRepositoryImpl(
     override val autoSaveExchangeRates: Flow<Boolean> = settingsDataStore.autoSaveExchangeRates
     override val isOnboardingCompleted: Flow<Boolean> = settingsDataStore.isOnboardingCompleted
     override val cardAnimationEnabled: Flow<Boolean> = settingsDataStore.cardAnimationEnabled
+    override val expandableFabEnabled: Flow<Boolean> = settingsDataStore.expandableFabEnabled
     override val isDatabaseSeeded: Flow<Boolean> = settingsDataStore.isDatabaseSeeded
     override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
     override val accountsViewSettings: Flow<AccountsViewSettings> = settingsDataStore.accountsViewSettings
@@ -31,6 +32,7 @@ class SettingsRepositoryImpl(
     override suspend fun saveAutoSaveExchangeRates(enabled: Boolean) = settingsDataStore.saveAutoSaveExchangeRates(enabled)
     override suspend fun saveOnboardingCompleted(completed: Boolean) = settingsDataStore.saveOnboardingCompleted(completed)
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) = settingsDataStore.saveCardAnimationEnabled(enabled)
+    override suspend fun saveExpandableFabEnabled(enabled: Boolean) = settingsDataStore.saveExpandableFabEnabled(enabled)
     override suspend fun saveDatabaseSeeded(seeded: Boolean) = settingsDataStore.saveDatabaseSeeded(seeded)
     override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) = settingsDataStore.updateDashboardSettings(update)
     override suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) = settingsDataStore.updateAccountsViewSettings(update)

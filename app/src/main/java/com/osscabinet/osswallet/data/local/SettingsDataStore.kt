@@ -70,6 +70,7 @@ class SettingsDataStore(private val context: Context) {
         val AUTO_SAVE_EXCHANGE_RATES_KEY = booleanPreferencesKey("auto_save_exchange_rates")
         val IS_ONBOARDING_COMPLETED_KEY = booleanPreferencesKey("is_onboarding_completed")
         val CARD_ANIMATION_ENABLED_KEY = booleanPreferencesKey("card_animation_enabled")
+        val EXPANDABLE_FAB_ENABLED_KEY = booleanPreferencesKey("expandable_fab_enabled")
         val IS_DATABASE_SEEDED_KEY = booleanPreferencesKey("is_database_seeded")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
@@ -108,6 +109,10 @@ class SettingsDataStore(private val context: Context) {
 
     val cardAnimationEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[CARD_ANIMATION_ENABLED_KEY] ?: true
+    }
+
+    val expandableFabEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[EXPANDABLE_FAB_ENABLED_KEY] ?: true
     }
 
     val isDatabaseSeeded: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -209,6 +214,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveCardAnimationEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[CARD_ANIMATION_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun saveExpandableFabEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[EXPANDABLE_FAB_ENABLED_KEY] = enabled
         }
     }
 

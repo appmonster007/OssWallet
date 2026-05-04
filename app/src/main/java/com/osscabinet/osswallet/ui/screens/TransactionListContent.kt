@@ -81,7 +81,8 @@ fun TransactionListContent(
     onClone: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {}
+    onFullSwipeRight: (Long) -> Unit = {},
+    expandableFabEnabled: Boolean = true
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -188,17 +189,24 @@ fun TransactionListContent(
                 onTabSelected = {},
                 tabs = emptyList(),
                 isFabExpanded = isFabExpanded,
-                onFabToggle = { isFabExpanded = it },
-                fabMenu = {
-                    TransactionFabMenu(
-                        isExpanded = isFabExpanded,
-                        templates = templates,
-                        onAddClick = { type, name ->
-                            isFabExpanded = false
-                            onAddTransactionClick(type, name)
-                        }
-                    )
-                }
+                onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                onFabClick = {
+                    if (!expandableFabEnabled) {
+                        onAddTransactionClick(0, null)
+                    }
+                },
+                fabMenu = if (expandableFabEnabled) {
+                    {
+                        TransactionFabMenu(
+                            isExpanded = isFabExpanded,
+                            templates = templates,
+                            onAddClick = { type, name ->
+                                isFabExpanded = false
+                                onAddTransactionClick(type, name)
+                            }
+                        )
+                    }
+                } else null
             )
         }
     }
@@ -280,7 +288,8 @@ fun TransactionListContentPreview() {
                 onAccountDetailClick = {},
                 onUpdateFilter = {},
                 onSetDateRange = { _, _ -> },
-                onUpdateRecordsSettings = {}
+                onUpdateRecordsSettings = {},
+                expandableFabEnabled = true
             )
         }
     }

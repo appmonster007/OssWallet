@@ -141,9 +141,9 @@ fun UnifiedPillNavigation(
                             horizontalAlignment = Alignment.End,
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier
-                                .padding(bottom = 88.dp)
-                                .align(Alignment.BottomEnd) // Align to end of 64dp box
-                                .wrapContentWidth(align = Alignment.End, unbounded = true) // Overflow to the left
+                                .padding(bottom = 88.dp, end = 8.dp) // End padding to align centers: (64-48)/2 = 8dp
+                                .align(Alignment.BottomEnd)
+                                .wrapContentWidth(align = Alignment.End, unbounded = true)
                         ) {
                             fabMenu()
                         }

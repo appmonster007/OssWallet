@@ -43,10 +43,10 @@ fun SettingsScreen(
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
-    val dashboardGridColumns by viewModel.dashboardGridColumns.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
+    val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -311,6 +311,25 @@ fun SettingsScreen(
                         Switch(
                             checked = cardAnimationEnabled,
                             onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        )
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                SettingsItem(
+                    title = "Expandable Action Button",
+                    subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
+                    icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
+                    trailingContent = {
+                        Switch(
+                            checked = expandableFabEnabled,
+                            onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,

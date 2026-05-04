@@ -89,6 +89,7 @@ fun AccountDetailScreen(
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -317,17 +318,24 @@ fun AccountDetailScreen(
             },
             tabs = tabs,
             isFabExpanded = isFabExpanded,
-            onFabToggle = { isFabExpanded = it },
-            fabMenu = {
-                TransactionFabMenu(
-                    isExpanded = isFabExpanded,
-                    templates = allTemplates,
-                    onAddClick = { type, name ->
-                        isFabExpanded = false
-                        navigate { onAddTransactionClick(accountId, type, name) }
-                    }
-                )
-            }
+            onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+            onFabClick = {
+                if (!expandableFabEnabled) {
+                    navigate { onAddTransactionClick(accountId, 0, null) }
+                }
+            },
+            fabMenu = if (expandableFabEnabled) {
+                {
+                    TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = allTemplates,
+                        onAddClick = { type, name ->
+                            isFabExpanded = false
+                            navigate { onAddTransactionClick(accountId, type, name) }
+                        }
+                    )
+                }
+            } else null
         )
         }
 

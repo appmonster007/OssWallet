@@ -82,32 +82,68 @@ fun UnifiedPillNavigation(
             }
         }
 
-        // Floating Pill Navigation and FAB
+        // Floating Pill Navigation and FAB Assembly
         Row(
             modifier = modifier
+                .wrapContentWidth()
                 .align(Alignment.BottomCenter)
                 .padding(bottom = fabPaddingBottom)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 16.dp)
                 .zIndex(2f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally) 
         ) {
             if (tabs.isNotEmpty()) {
-                PillNavigationBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = onTabSelected,
-                    tabs = tabs,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
+                Box(
+                    modifier = Modifier.wrapContentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    PillNavigationBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = onTabSelected,
+                        tabs = tabs,
+                        modifier = Modifier.widthIn(max = 200.dp)
+                    )
+
+                    // Animated Scrim covering the pill when FAB is expanded
+                    val scrimAlpha by animateFloatAsState(
+                        targetValue = if (isFabExpanded) 0.45f else 0f,
+                        animationSpec = tween(durationMillis = 300),
+                        label = "scrimAlpha"
+                    )
+
+                    if (scrimAlpha > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .graphicsLayer { alpha = scrimAlpha }
+                                .background(
+                                    color = Color.Black,
+                                    shape = CircleShape
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { onFabToggle(false) }
+                                .zIndex(1f)
+                        )
+                    }
+                }
             }
 
             if (showFab) {
-                Box(contentAlignment = Alignment.BottomEnd) {
+                Box(
+                    modifier = Modifier.width(64.dp), // Fixed width for stability
+                    contentAlignment = Alignment.BottomCenter
+                ) {
                     if (fabMenu != null) {
                         Column(
                             horizontalAlignment = Alignment.End,
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(bottom = 88.dp)
+                            modifier = Modifier
+                                .padding(bottom = 88.dp)
+                                .align(Alignment.BottomEnd) // Align to end of 64dp box
+                                .wrapContentWidth(align = Alignment.End, unbounded = true) // Overflow to the left
                         ) {
                             fabMenu()
                         }
@@ -119,7 +155,7 @@ fun UnifiedPillNavigation(
                         label = "FabRotation"
                     )
 
-                    AeonFloatingActionButton(
+                    FloatingActionButton(
                         onClick = {
                             if (fabMenu != null) {
                                 onFabToggle(!isFabExpanded)
@@ -130,11 +166,17 @@ fun UnifiedPillNavigation(
                         modifier = Modifier
                             .size(64.dp)
                             .graphicsLayer { rotationZ = rotation },
-                        icon = fabIcon,
-                        contentDescription = if (isFabExpanded) "Close" else "Add",
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = fabIcon,
+                            contentDescription = if (isFabExpanded) "Close" else "Add",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
@@ -331,14 +373,16 @@ fun FabMenuItem(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        isPressed = event.type == PointerEventType.Press
+            modifier = Modifier
+                .wrapContentSize(unbounded = true)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            isPressed = event.type == PointerEventType.Press
+                        }
                     }
                 }
-            }
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
@@ -357,13 +401,16 @@ fun FabMenuItem(
                     fontWeight = FontWeight.Medium
                 )
             }
-            AeonFloatingActionButton(
+            SmallFloatingActionButton(
                 onClick = onClick,
-                icon = icon,
                 modifier = Modifier.size(48.dp),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+            ) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            }
         }
     }
 }

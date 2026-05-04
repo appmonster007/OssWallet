@@ -36,9 +36,9 @@ import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailViewModel
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
-import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.accountdetail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
@@ -131,6 +131,7 @@ fun AccountDetailScreen(
 
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
 
@@ -201,15 +202,6 @@ fun AccountDetailScreen(
                         Icon(Icons.Rounded.Add, contentDescription = "Add Card")
                     }
                 }
-            )
-        },
-        bottomBar = {
-            ExpressiveNavigationBar(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index ->
-                    scope.launch { pagerState.animateScrollToPage(index) }
-                },
-                tabs = tabs
             )
         }
     ) { screenPadding ->
@@ -318,10 +310,24 @@ fun AccountDetailScreen(
             }
         }
 
-        AeonExpandableFab(
-            onAddClick = { type, name -> navigate { onAddTransactionClick(accountId, type, name) } },
-            templates = allTemplates,
-            fabPaddingBottom = 96.dp
+        UnifiedPillNavigation(
+            selectedTab = pagerState.currentPage,
+            onTabSelected = { index ->
+                scope.launch { pagerState.animateScrollToPage(index) }
+            },
+            tabs = tabs,
+            isFabExpanded = isFabExpanded,
+            onFabToggle = { isFabExpanded = it },
+            fabMenu = {
+                TransactionFabMenu(
+                    isExpanded = isFabExpanded,
+                    templates = allTemplates,
+                    onAddClick = { type, name ->
+                        isFabExpanded = false
+                        navigate { onAddTransactionClick(accountId, type, name) }
+                    }
+                )
+            }
         )
         }
 

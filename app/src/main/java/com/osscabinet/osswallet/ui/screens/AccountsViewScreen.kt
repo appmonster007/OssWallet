@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.card.*
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
 import com.osscabinet.ossWallet.ui.navigation.AccountsFilterContext
 import kotlinx.serialization.json.Json
@@ -167,6 +169,8 @@ fun AccountsViewScreen(
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
 
+    var isFabExpanded by remember { mutableStateOf(false) }
+
     val dbTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
 
@@ -295,11 +299,26 @@ fun AccountsViewScreen(
             }
         }
 
-        AeonExpandableFab(
-            onAddClick = { type, name -> navigate { onAddClick(type ?: 0, name) } },
-            templates = dbTemplates,
-            onAddAccountClick = { navigate(onAddAccountClick) },
-            fabPaddingBottom = 16.dp
+        UnifiedPillNavigation(
+            selectedTab = 0,
+            onTabSelected = {},
+            tabs = emptyList(),
+            isFabExpanded = isFabExpanded,
+            onFabToggle = { isFabExpanded = it },
+            fabMenu = {
+                TransactionFabMenu(
+                    isExpanded = isFabExpanded,
+                    templates = dbTemplates,
+                    onAddClick = { type, name ->
+                        isFabExpanded = false
+                        navigate { onAddClick(type ?: 0, name) }
+                    },
+                    onAddAccountClick = {
+                        isFabExpanded = false
+                        navigate(onAddAccountClick)
+                    }
+                )
+            }
         )
     }
 

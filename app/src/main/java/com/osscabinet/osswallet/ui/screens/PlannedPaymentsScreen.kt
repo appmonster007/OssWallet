@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
@@ -197,162 +198,166 @@ fun PlannedPaymentsScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddClick,
-                text = { Text("New Payment") },
-                icon = { Icon(Icons.Rounded.Repeat, contentDescription = null) }
-            )
         }
     ) { padding ->
-        if (payments.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (payments.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        modifier = Modifier.size(72.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.Repeat,
-                                contentDescription = null,
-                                modifier = Modifier.size(36.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.Repeat,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
-                    }
-                    Text(
-                        "No Planned Payments",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (overdue.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = "OVERDUE",
-                            count = overdue.size,
-                            sectionColor = RedWarning
+                        Text(
+                            "No Planned Payments",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                    items(overdue, key = { it.id }) { payment ->
-                        SwipeablePaymentItem(
-                            payment = payment,
-                            now = now,
-                            isOverdue = true,
-                            onTap = { onDetailClick(payment.id) },
-                            onEdit = { onEditClick(payment.id) },
-                            onDelete = { viewModel.delete(payment.id) },
-                            onPause = { viewModel.pause(payment) },
-                            onResume = { viewModel.resume(payment) },
-                            onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
-                            onSkip = { viewModel.quickSkip(payment) }
+                        Text(
+                            "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
-
-                if (upcoming.isNotEmpty()) {
-                    val upcomingNonOverdue = upcoming.filter { !it.isOverdue }
-                        .distinctBy { it.plannedPayment.id }
-                    if (upcomingNonOverdue.isNotEmpty()) {
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (overdue.isNotEmpty()) {
                         item {
                             SectionHeader(
-                                title = "UPCOMING",
-                                count = upcomingNonOverdue.size,
-                                sectionColor = MaterialTheme.colorScheme.primary
+                                title = "OVERDUE",
+                                count = overdue.size,
+                                sectionColor = RedWarning
                             )
                         }
-                        items(
-                            upcomingNonOverdue,
-                            key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
-                        ) { item ->
+                        items(overdue, key = { it.id }) { payment ->
                             SwipeablePaymentItem(
-                                payment = item.plannedPayment,
+                                payment = payment,
+                                now = now,
+                                isOverdue = true,
+                                onTap = { onDetailClick(payment.id) },
+                                onEdit = { onEditClick(payment.id) },
+                                onDelete = { viewModel.delete(payment.id) },
+                                onPause = { viewModel.pause(payment) },
+                                onResume = { viewModel.resume(payment) },
+                                onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
+                                onSkip = { viewModel.quickSkip(payment) }
+                            )
+                        }
+                    }
+
+                    if (upcoming.isNotEmpty()) {
+                        val upcomingNonOverdue = upcoming.filter { !it.isOverdue }
+                            .distinctBy { it.plannedPayment.id }
+                        if (upcomingNonOverdue.isNotEmpty()) {
+                            item {
+                                SectionHeader(
+                                    title = "UPCOMING",
+                                    count = upcomingNonOverdue.size,
+                                    sectionColor = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            items(
+                                upcomingNonOverdue,
+                                key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
+                            ) { item ->
+                                SwipeablePaymentItem(
+                                    payment = item.plannedPayment,
+                                    now = now,
+                                    isOverdue = false,
+                                    scheduledDate = item.scheduledDate,
+                                    onTap = { onDetailClick(item.plannedPayment.id) },
+                                    onEdit = { onEditClick(item.plannedPayment.id) },
+                                    onDelete = { viewModel.delete(item.plannedPayment.id) },
+                                    onPause = { viewModel.pause(item.plannedPayment) },
+                                    onResume = { viewModel.resume(item.plannedPayment) },
+                                    onConfirm = { viewModel.quickConfirm(item.plannedPayment, transactionManager, profileId) },
+                                    onSkip = { viewModel.quickSkip(item.plannedPayment) }
+                                )
+                            }
+                        }
+                    }
+
+                    if (scheduled.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                title = "SCHEDULED",
+                                count = scheduled.size,
+                                sectionColor = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        items(scheduled, key = { it.id }) { payment ->
+                            SwipeablePaymentItem(
+                                payment = payment,
                                 now = now,
                                 isOverdue = false,
-                                scheduledDate = item.scheduledDate,
-                                onTap = { onDetailClick(item.plannedPayment.id) },
-                                onEdit = { onEditClick(item.plannedPayment.id) },
-                                onDelete = { viewModel.delete(item.plannedPayment.id) },
-                                onPause = { viewModel.pause(item.plannedPayment) },
-                                onResume = { viewModel.resume(item.plannedPayment) },
-                                onConfirm = { viewModel.quickConfirm(item.plannedPayment, transactionManager, profileId) },
-                                onSkip = { viewModel.quickSkip(item.plannedPayment) }
+                                scheduledDate = payment.nextDueDate,
+                                onTap = { onDetailClick(payment.id) },
+                                onEdit = { onEditClick(payment.id) },
+                                onDelete = { viewModel.delete(payment.id) },
+                                onPause = { viewModel.pause(payment) },
+                                onResume = { viewModel.resume(payment) },
+                                onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
+                                onSkip = { viewModel.quickSkip(payment) }
                             )
                         }
                     }
-                }
 
-                if (scheduled.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = "SCHEDULED",
-                            count = scheduled.size,
-                            sectionColor = MaterialTheme.colorScheme.secondary
-                        )
+                    if (paused.isNotEmpty()) {
+                        item {
+                            SectionHeader(
+                                title = "PAUSED",
+                                count = paused.size,
+                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                        items(paused, key = { it.id }) { payment ->
+                            SwipeablePaymentItem(
+                                payment = payment,
+                                now = now,
+                                isOverdue = false,
+                                onTap = { onDetailClick(payment.id) },
+                                onEdit = { onEditClick(payment.id) },
+                                onDelete = { viewModel.delete(payment.id) },
+                                onPause = { viewModel.pause(payment) },
+                                onResume = { viewModel.resume(payment) }
+                            )
+                        }
                     }
-                    items(scheduled, key = { it.id }) { payment ->
-                        SwipeablePaymentItem(
-                            payment = payment,
-                            now = now,
-                            isOverdue = false,
-                            scheduledDate = payment.nextDueDate,
-                            onTap = { onDetailClick(payment.id) },
-                            onEdit = { onEditClick(payment.id) },
-                            onDelete = { viewModel.delete(payment.id) },
-                            onPause = { viewModel.pause(payment) },
-                            onResume = { viewModel.resume(payment) },
-                            onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
-                            onSkip = { viewModel.quickSkip(payment) }
-                        )
-                    }
-                }
 
-                if (paused.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = "PAUSED",
-                            count = paused.size,
-                            sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    items(paused, key = { it.id }) { payment ->
-                        SwipeablePaymentItem(
-                            payment = payment,
-                            now = now,
-                            isOverdue = false,
-                            onTap = { onDetailClick(payment.id) },
-                            onEdit = { onEditClick(payment.id) },
-                            onDelete = { viewModel.delete(payment.id) },
-                            onPause = { viewModel.pause(payment) },
-                            onResume = { viewModel.resume(payment) }
-                        )
-                    }
+                    item { Spacer(modifier = Modifier.height(100.dp)) }
                 }
-
-                item { Spacer(modifier = Modifier.height(80.dp)) }
             }
+
+            UnifiedPillNavigation(
+                selectedTab = 0,
+                onTabSelected = {},
+                tabs = emptyList(),
+                onFabClick = onAddClick,
+                fabIcon = Icons.Rounded.Repeat,
+                showFab = true
+            )
         }
     }
 }

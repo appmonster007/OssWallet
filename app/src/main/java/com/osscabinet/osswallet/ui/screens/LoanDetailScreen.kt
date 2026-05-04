@@ -40,7 +40,7 @@ import com.osscabinet.ossWallet.domain.service.LoanService
 import com.osscabinet.ossWallet.ui.components.AeonDateField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
-import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
@@ -150,79 +150,81 @@ fun LoanDetailScreen(
                     }
                 }
             )
-        },
-        bottomBar = {
-            ExpressiveNavigationBar(
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                when (page) {
+                    0 -> LoanOverviewTab(
+                        loan = loan,
+                        summary = summary,
+                        selectedAccount = selectedAccount,
+                        selectedCategories = selectedCategories,
+                        precision = precision
+                    )
+                    1 -> {
+                        if (loanTransactions.isEmpty()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                            ) {
+                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "No related transactions",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                        } else {
+                            RecentActivitiesScreen(
+                                allTransactions = loanTransactions,
+                                accountNamesMap = accountNamesMap,
+                                categoryMap = categoryMap,
+                                onRecordsClick = { _ ->
+                                    onRecordsClick(
+                                        RecordsFilterContext.Custom(
+                                            accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
+                                            categoryIds = loan.categoryIds.map { it.toString() },
+                                            tags = loan.tags
+                                        )
+                                    )
+                                },
+                                onTransactionClick = onTransactionClick,
+                                baseCurrency = baseCurrency,
+                                exchangeRates = emptyMap(),
+                                contentPadding = PaddingValues(0.dp),
+                                revealedCardIds = revealedCardIds,
+                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                                onClone = { },
+                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { },
+                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                applyFilter = false,
+                                excludeFuture = false,
+                                precision = precision
+                            )
+                        }
+                    }
+                }
+            }
+
+            UnifiedPillNavigation(
                 selectedTab = pagerState.currentPage,
                 onTabSelected = { index ->
                     scope.launch { pagerState.animateScrollToPage(index) }
                 },
-                tabs = tabs
+                tabs = tabs,
+                showFab = false
             )
-        }
-    ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            verticalAlignment = Alignment.Top
-        ) { page ->
-            when (page) {
-                0 -> LoanOverviewTab(
-                    loan = loan,
-                    summary = summary,
-                    selectedAccount = selectedAccount,
-                    selectedCategories = selectedCategories,
-                    precision = precision
-                )
-                1 -> {
-                    if (loanTransactions.isEmpty()) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-                        ) {
-                            Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    "No related transactions",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    } else {
-                        RecentActivitiesScreen(
-                            allTransactions = loanTransactions,
-                            accountNamesMap = accountNamesMap,
-                            categoryMap = categoryMap,
-                            onRecordsClick = { _ ->
-                                onRecordsClick(
-                                    RecordsFilterContext.Custom(
-                                        accountIds = if (loan.linkedAccountId.isBlank()) emptyList() else listOf(loan.linkedAccountId),
-                                        categoryIds = loan.categoryIds.map { it.toString() },
-                                        tags = loan.tags
-                                    )
-                                )
-                            },
-                            onTransactionClick = onTransactionClick,
-                            baseCurrency = baseCurrency,
-                            exchangeRates = emptyMap(),
-                            contentPadding = PaddingValues(0.dp),
-                            revealedCardIds = revealedCardIds,
-                            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                            onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                            onClone = { },
-                            onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                            onSplit = { },
-                            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                            applyFilter = false,
-                            excludeFuture = false,
-                            precision = precision
-                        )
-                    }
-                }
-            }
         }
     }
 }

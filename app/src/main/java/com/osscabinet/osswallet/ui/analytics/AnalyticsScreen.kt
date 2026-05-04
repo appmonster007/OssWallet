@@ -12,6 +12,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
@@ -55,6 +57,7 @@ fun AnalyticsScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -151,10 +154,22 @@ fun AnalyticsScreen(
                     }
                 }
 
-                AeonExpandableFab(
-                    onAddClick = { type, name -> onAddClick(type, name) },
-                    templates = allTemplates,
-                    fabPaddingBottom = 16.dp
+                UnifiedPillNavigation(
+                    selectedTab = 0,
+                    onTabSelected = {},
+                    tabs = emptyList(),
+                    isFabExpanded = isFabExpanded,
+                    onFabToggle = { isFabExpanded = it },
+                    fabMenu = {
+                        TransactionFabMenu(
+                            isExpanded = isFabExpanded,
+                            templates = allTemplates,
+                            onAddClick = { type, name ->
+                                isFabExpanded = false
+                                onAddClick(type, name)
+                            }
+                        )
+                    }
                 )
             }
         }

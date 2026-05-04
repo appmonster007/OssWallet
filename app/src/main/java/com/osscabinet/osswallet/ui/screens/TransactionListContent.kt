@@ -17,7 +17,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
@@ -89,6 +90,7 @@ fun TransactionListContent(
         )
     )
     val scope = rememberCoroutineScope()
+    var isFabExpanded by remember { mutableStateOf(false) }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -181,10 +183,22 @@ fun TransactionListContent(
                 }
             }
 
-            AeonExpandableFab(
-                onAddClick = onAddTransactionClick,
-                templates = templates,
-                fabPaddingBottom = 100.dp
+            UnifiedPillNavigation(
+                selectedTab = 0,
+                onTabSelected = {},
+                tabs = emptyList(),
+                isFabExpanded = isFabExpanded,
+                onFabToggle = { isFabExpanded = it },
+                fabMenu = {
+                    TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = templates,
+                        onAddClick = { type, name ->
+                            isFabExpanded = false
+                            onAddTransactionClick(type, name)
+                        }
+                    )
+                }
             )
         }
     }

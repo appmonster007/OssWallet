@@ -75,6 +75,8 @@ typealias StatusBreakdown = FinancialMetrics<String>
 /**
  * Hierarchical financial metrics for categories.
  * Supports tree structures for breakdown visualizations.
+ * Note: When transactionType is EXPENSE_ONLY, netBalance == expense.
+ * When transactionType is INCOME_ONLY, netBalance == income.
  */
 data class CategoryTreeMetrics(
     val category: String,

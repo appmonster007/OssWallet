@@ -1062,12 +1062,13 @@ object AggregationService {
      */
     /**
      * Builds a hierarchical category tree with financial metrics.
-     * 
-     * @param transactions Filtered list of transactions to process.
+     * Note: Transactions should already be filtered by transaction type (expense or income)
+     * before calling this function. The netBalance will naturally reflect the filtered type.
+     *
+     * @param transactions Pre-filtered list of transactions (by expense or income type).
      * @param allCategories Full list of categories for tree building.
      * @param exchangeRates Optional exchange rates for conversion.
      * @param baseCurrency Optional base currency for conversion.
-     * @param onlyExpenses If true, only process expense transactions.
      * @return List of root-level CategoryTreeMetrics.
      */
     fun buildCategoryTree(
@@ -1075,28 +1076,18 @@ object AggregationService {
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category>,
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null,
-        onlyExpenses: Boolean = false,
         precision: Int = 2
     ): List<CategoryTreeMetrics> {
-        val filteredTx = if (onlyExpenses) {
-            TransactionFilterService.filterExpense(transactions)
-        } else {
-            transactions
-        }
-
         val categoryMap = allCategories.associateBy { it.name }
         
         val categoryBreakdowns = breakdownByCategory(
-            transactions = filteredTx,
+            transactions = transactions,
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency
         ).associateBy { it.key }
 
-        val globalTotal = if (onlyExpenses) {
-            categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.expense.abs()) }
-        } else {
-            categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
-        }
+        // Global total for percentage calculation - use netBalance.abs() since transactions are pre-filtered
+        val globalTotal = categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
 
         fun buildSubTree(categoryName: String?): CategoryTreeMetrics? {
             val entity = categoryMap[categoryName] ?: return null
@@ -1108,15 +1099,16 @@ object AggregationService {
                 buildSubTree(child.name)
             }
 
-            val hasDirectTransactions = breakdown.income.signum() != 0 || breakdown.expense.signum() != 0
-            
+            // Check if this category has direct transactions (non-zero net balance)
+            val hasDirectTransactions = breakdown.totalAmount.signum() != 0
+
             // This is the list we will return as subcategoryData
             val combinedChildren = mutableListOf<CategoryTreeMetrics>()
-            
+
             if (actualChildrenData.isNotEmpty()) {
                 // If there are children, and there are direct transactions, add them as a pseudo-child
                 if (hasDirectTransactions) {
-                    val directMetric = if (onlyExpenses) breakdown.expense.abs() else breakdown.totalAmount.abs()
+                    val directMetric = breakdown.totalAmount.abs()
                     combinedChildren.add(CategoryTreeMetrics(
                         category = entity.name, // Use same name for direct part
                         categoryId = entity.id,
@@ -1134,12 +1126,13 @@ object AggregationService {
                 combinedChildren.addAll(actualChildrenData)
             }
             
-            combinedChildren.sortByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
+            // Sort by absolute netBalance (primary metric for display)
+            combinedChildren.sortByDescending { it.netBalance.abs() }
 
             val totalIncome = if (actualChildrenData.isEmpty()) breakdown.income else combinedChildren.sumOf { it.income }
             val totalExpense = if (actualChildrenData.isEmpty()) breakdown.expense else combinedChildren.sumOf { it.expense }
             val totalNet = totalIncome + totalExpense
-            val currentMetric = if (onlyExpenses) totalExpense.abs() else totalNet.abs()
+            val currentMetric = totalNet.abs()
 
             return CategoryTreeMetrics(
                 category = entity.name,
@@ -1159,6 +1152,6 @@ object AggregationService {
         val rootCategories = allCategories.filter { it.parentId == null }
         return rootCategories.mapNotNull { root ->
             buildSubTree(root.name)
-        }.sortedByDescending { if (onlyExpenses) it.expense.abs() else it.netBalance.abs() }
+        }.sortedByDescending { it.netBalance.abs() }
     }
 }

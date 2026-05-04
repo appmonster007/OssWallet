@@ -131,9 +131,7 @@ fun UnifiedCardRenderer(
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData = CategoryPieChartData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                netBalance = metric.netBalance.setScale(renderData.precision, RoundingMode.HALF_UP),
-                income = metric.income.setScale(renderData.precision, RoundingMode.HALF_UP),
-                expense = metric.expense.setScale(renderData.precision, RoundingMode.HALF_UP),
+                amount = metric.netBalance.abs().setScale(renderData.precision, RoundingMode.HALF_UP),
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,
@@ -167,7 +165,7 @@ fun UnifiedCardRenderer(
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData = CategoryTreemapData(
                 category = metric.category,
                 categoryId = metric.categoryId,
-                expense = metric.expense.abs().setScale(renderData.precision, RoundingMode.HALF_UP),
+                amount = metric.netBalance.abs().setScale(renderData.precision, RoundingMode.HALF_UP),
                 colorHex = metric.colorHex,
                 percentage = metric.percentage,
                 hasSubcategories = metric.hasSubcategories,

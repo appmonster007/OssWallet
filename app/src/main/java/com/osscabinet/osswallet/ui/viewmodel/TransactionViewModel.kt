@@ -11,8 +11,6 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
-import com.osscabinet.ossWallet.domain.model.forIncome
-import com.osscabinet.ossWallet.domain.model.forExpense
 import com.osscabinet.ossWallet.domain.model.withDateRange
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
@@ -138,11 +136,9 @@ class TransactionViewModel(
         }
     }
 
-    fun setIncomeTypeFilter(isIncome: Boolean?) {
-        if (isIncome != null) {
-            recordsFilterManager.setFilter("type", TransactionFilter().run {
-                if (isIncome) forIncome() else forExpense()
-            })
+    fun setIncomeTypeFilter(type: String?) {
+        if (type != null) {
+            recordsFilterManager.setFilter("type", TransactionFilter(transactionType = type))
         } else {
             recordsFilterManager.removeFilter("type")
         }
@@ -177,7 +173,7 @@ class TransactionViewModel(
         )
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = accountIds,
-            transactionType = isIncome?.let { if (it) "income" else "expense" },
+            transactionType = transactionType,
             startDate = startDate,
             endDate = endDate,
             categoryIds = categoryIds.map { it.toLong() },

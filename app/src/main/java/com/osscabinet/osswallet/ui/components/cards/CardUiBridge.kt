@@ -84,11 +84,11 @@ fun rememberCardWithCallbacks(
                         onFilterChange = { id, filter -> updateHandler.updateCardCashFlowFilter(id, filter) },
                         onClickIncome = { range ->
                             val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(range)
-                            onRecordsClick(RecordsFilterContext.Custom(isIncome = true, startDate = start, endDate = end))
+                            onRecordsClick(RecordsFilterContext.Custom(transactionType = "income", startDate = start, endDate = end))
                         },
                         onClickExpense = { range ->
                             val (start, end) = com.osscabinet.ossWallet.domain.service.TimelineService.getDateRange(range)
-                            onRecordsClick(RecordsFilterContext.Custom(isIncome = false, startDate = start, endDate = end))
+                            onRecordsClick(RecordsFilterContext.Custom(transactionType = "expense", startDate = start, endDate = end))
                         },
                         onDelete = { onDelete(config.cardId) }
                     ),

@@ -85,9 +85,9 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
 import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
-import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
-import com.osscabinet.ossWallet.ui.components.AeonExpandableFab
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.TimelineService
 import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
@@ -201,6 +201,7 @@ fun DashboardScreen(
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
 
     val pageCount = 2
     val pagerState = remember {
@@ -277,15 +278,6 @@ fun DashboardScreen(
                             }
                         }
                     )
-                },
-                bottomBar = {
-                    ExpressiveNavigationBar(
-                        selectedTab = pagerState.currentPage,
-                        onTabSelected = { index ->
-                            scope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        tabs = tabs
-                    )
                 }
             ) { innerPadding ->
                 // Context indicator banner (if view focus is applied)
@@ -330,10 +322,24 @@ fun DashboardScreen(
                 }
             }
 
-            AeonExpandableFab(
-                onAddClick = { type, name -> navigate { onAddClick(type, name) } },
-                templates = allTemplates,
-                fabPaddingBottom = 96.dp
+            UnifiedPillNavigation(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs,
+                isFabExpanded = isFabExpanded,
+                onFabToggle = { isFabExpanded = it },
+                fabMenu = {
+                    TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = allTemplates,
+                        onAddClick = { type, name ->
+                            isFabExpanded = false
+                            navigate { onAddClick(type, name) }
+                        }
+                    )
+                }
             )
         }
     }

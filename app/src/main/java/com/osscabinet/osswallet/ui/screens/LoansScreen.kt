@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 
 private val LentColor = Color(0xFF004D40)
 private val BorrowedColor = Color(0xFFE65100)
@@ -64,90 +65,94 @@ fun LoansScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddClick,
-                text = { Text("New Loan") },
-                icon = { Icon(Icons.Rounded.AccountBalance, contentDescription = null) }
-            )
         }
     ) { padding ->
-        if (loans.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (loans.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Text(
+                            "No Loans Tracked",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Track money you've lent or borrowed",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.AccountBalance,
-                                contentDescription = null,
-                                modifier = Modifier.size(36.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                    if (active.isNotEmpty()) {
+                        item {
+                            LoanSectionHeader(
+                                title = "ACTIVE",
+                                sectionColor = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        items(active, key = { it.id }) { loan ->
+                            LoanItem(
+                                loan = loan,
+                                onEdit = { onLoanClick(loan.id) },
+                                onDelete = { viewModel.deleteLoan(loan.id) },
+                                onSettle = { viewModel.settleLoan(loan) }
                             )
                         }
                     }
-                    Text(
-                        "No Loans Tracked",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Track money you've lent or borrowed",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (active.isNotEmpty()) {
-                    item {
-                        LoanSectionHeader(
-                            title = "ACTIVE",
-                            sectionColor = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    items(active, key = { it.id }) { loan ->
-                        LoanItem(
-                            loan = loan,
-                            onEdit = { onLoanClick(loan.id) },
-                            onDelete = { viewModel.deleteLoan(loan.id) },
-                            onSettle = { viewModel.settleLoan(loan) }
-                        )
-                    }
-                }
-                if (settled.isNotEmpty()) {
-                    item {
-                        LoanSectionHeader(
-                            title = "SETTLED",
-                            sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    items(settled, key = { it.id }) { loan ->
-                        LoanItem(
-                            loan = loan,
-                            onEdit = { onLoanClick(loan.id) },
-                            onDelete = { viewModel.deleteLoan(loan.id) },
-                            onSettle = {}
-                        )
+                    if (settled.isNotEmpty()) {
+                        item {
+                            LoanSectionHeader(
+                                title = "SETTLED",
+                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                        items(settled, key = { it.id }) { loan ->
+                            LoanItem(
+                                loan = loan,
+                                onEdit = { onLoanClick(loan.id) },
+                                onDelete = { viewModel.deleteLoan(loan.id) },
+                                onSettle = {}
+                            )
+                        }
                     }
                 }
             }
+
+            UnifiedPillNavigation(
+                selectedTab = 0,
+                onTabSelected = {},
+                tabs = emptyList(),
+                onFabClick = onAddClick,
+                fabIcon = Icons.Rounded.AccountBalance,
+                showFab = true
+            )
         }
     }
 }

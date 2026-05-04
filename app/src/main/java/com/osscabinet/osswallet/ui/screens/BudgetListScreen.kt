@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import java.math.BigDecimal
 
 private val TealHealthy = Color(0xFF004D40)
@@ -68,100 +69,104 @@ fun BudgetListScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddClick,
-                text = { Text("New Budget") },
-                icon = { Icon(Icons.Rounded.AccountBalance, contentDescription = null) }
-            )
         }
     ) { padding ->
-        if (budgets.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (budgets.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.AccountBalance,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(36.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Text(
+                            "No Budgets Yet",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Create a budget to track\nyour spending goals",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Rounded.AccountBalance,
-                                contentDescription = null,
-                                modifier = Modifier.size(36.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                    if (active.isNotEmpty()) {
+                        item {
+                            BudgetSectionHeader(
+                                title = "ACTIVE",
+                                sectionColor = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        items(active, key = { it.id }) { budget ->
+                            val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
+                            BudgetListItem(
+                                budget = budget,
+                                spentText = progress.spent.toPlainString(),
+                                progressFraction = progress.percentage.coerceIn(0f, 1f),
+                                alertLevel = progress.alertLevel,
+                                onTap = { onDetailClick(budget.id) },
+                                onEdit = { onEditClick(budget.id) },
+                                onDelete = { viewModel.delete(budget.id) },
+                                onArchive = { viewModel.archive(budget) }
                             )
                         }
                     }
-                    Text(
-                        "No Budgets Yet",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Create a budget to track\nyour spending goals",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (active.isNotEmpty()) {
-                    item {
-                        BudgetSectionHeader(
-                            title = "ACTIVE",
-                            sectionColor = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    items(active, key = { it.id }) { budget ->
-                        val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
-                        BudgetListItem(
-                            budget = budget,
-                            spentText = progress.spent.toPlainString(),
-                            progressFraction = progress.percentage.coerceIn(0f, 1f),
-                            alertLevel = progress.alertLevel,
-                            onTap = { onDetailClick(budget.id) },
-                            onEdit = { onEditClick(budget.id) },
-                            onDelete = { viewModel.delete(budget.id) },
-                            onArchive = { viewModel.archive(budget) }
-                        )
-                    }
-                }
-                if (archived.isNotEmpty()) {
-                    item {
-                        BudgetSectionHeader(
-                            title = "ARCHIVED",
-                            sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    items(archived, key = { it.id }) { budget ->
-                        val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
-                        BudgetListItem(
-                            budget = budget,
-                            spentText = progress.spent.toPlainString(),
-                            progressFraction = progress.percentage.coerceIn(0f, 1f),
-                            alertLevel = progress.alertLevel,
-                            onTap = { onDetailClick(budget.id) },
-                            onEdit = { onEditClick(budget.id) },
-                            onDelete = { viewModel.delete(budget.id) },
-                            onArchive = {}
-                        )
+                    if (archived.isNotEmpty()) {
+                        item {
+                            BudgetSectionHeader(
+                                title = "ARCHIVED",
+                                sectionColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                        items(archived, key = { it.id }) { budget ->
+                            val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
+                            BudgetListItem(
+                                budget = budget,
+                                spentText = progress.spent.toPlainString(),
+                                progressFraction = progress.percentage.coerceIn(0f, 1f),
+                                alertLevel = progress.alertLevel,
+                                onTap = { onDetailClick(budget.id) },
+                                onEdit = { onEditClick(budget.id) },
+                                onDelete = { viewModel.delete(budget.id) },
+                                onArchive = {}
+                            )
+                        }
                     }
                 }
             }
+
+            UnifiedPillNavigation(
+                selectedTab = 0,
+                onTabSelected = {},
+                tabs = emptyList(),
+                onFabClick = onAddClick,
+                fabIcon = Icons.Rounded.AccountBalance,
+                showFab = true
+            )
         }
     }
 }

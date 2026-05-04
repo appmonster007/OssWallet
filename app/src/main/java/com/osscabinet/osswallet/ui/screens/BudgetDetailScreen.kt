@@ -31,7 +31,7 @@ import com.osscabinet.ossWallet.domain.service.BudgetService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.components.navigation.ExpressiveNavigationBar
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -122,177 +122,179 @@ fun BudgetDetailScreen(
                     }
                 }
             )
-        },
-        bottomBar = {
-            ExpressiveNavigationBar(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index ->
-                    scope.launch { pagerState.animateScrollToPage(index) }
-                },
-                tabs = tabs
-            )
         }
     ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            verticalAlignment = Alignment.Top
-        ) { page ->
-            when (page) {
-                0 -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
-                        item {
-                            BudgetHeroCard(
-                                budget = budget,
-                                progress = progress,
-                                precision = precision,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        
-                        item {
-                            AeonExpressiveCard(
-                                title = "SCOPE & CONTEXT",
-                                icon = Icons.Rounded.FilterAlt,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                                    ScopeSection(
-                                        label = "ACCOUNTS",
-                                        icon = Icons.Rounded.AccountBalance,
-                                        allText = "All Accounts",
-                                        isEmpty = budget.accountIds.isEmpty(),
-                                        items = selectedAccounts.map { account ->
-                                            {
-                                                val color = try { 
-                                                    Color(account.colorHex.toColorInt())
-                                                } catch (_: Exception) { 
-                                                    MaterialTheme.colorScheme.primary 
+        Box(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            item {
+                                BudgetHeroCard(
+                                    budget = budget,
+                                    progress = progress,
+                                    precision = precision,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            
+                            item {
+                                AeonExpressiveCard(
+                                    title = "SCOPE & CONTEXT",
+                                    icon = Icons.Rounded.FilterAlt,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                                        ScopeSection(
+                                            label = "ACCOUNTS",
+                                            icon = Icons.Rounded.AccountBalance,
+                                            allText = "All Accounts",
+                                            isEmpty = budget.accountIds.isEmpty(),
+                                            items = selectedAccounts.map { account ->
+                                                {
+                                                    val color = try { 
+                                                        Color(account.colorHex.toColorInt())
+                                                    } catch (_: Exception) { 
+                                                        MaterialTheme.colorScheme.primary 
+                                                    }
+                                                    ScopeChip(text = account.name, color = color)
                                                 }
-                                                ScopeChip(text = account.name, color = color)
                                             }
-                                        }
-                                    )
-                                    ScopeSection(
-                                        label = "CATEGORIES",
-                                        icon = Icons.Rounded.Category,
-                                        allText = "All Categories",
-                                        isEmpty = budget.categoryIds.isEmpty(),
-                                        items = selectedCategories.map { category ->
-                                            {
-                                                val color = Color(category.colorHex)
-                                                ScopeChip(text = category.name, color = color)
+                                        )
+                                        ScopeSection(
+                                            label = "CATEGORIES",
+                                            icon = Icons.Rounded.Category,
+                                            allText = "All Categories",
+                                            isEmpty = budget.categoryIds.isEmpty(),
+                                            items = selectedCategories.map { category ->
+                                                {
+                                                    val color = Color(category.colorHex)
+                                                    ScopeChip(text = category.name, color = color)
+                                                }
                                             }
-                                        }
-                                    )
-                                    ScopeSection(
-                                        label = "LABELS",
-                                        icon = Icons.Rounded.Label,
-                                        allText = "All Labels",
-                                        isEmpty = budget.tags.isEmpty(),
-                                        items = budget.tags.map { tag ->
-                                            {
-                                                ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
+                                        )
+                                        ScopeSection(
+                                            label = "LABELS",
+                                            icon = Icons.Rounded.Label,
+                                            allText = "All Labels",
+                                            isEmpty = budget.tags.isEmpty(),
+                                            items = budget.tags.map { tag ->
+                                                {
+                                                    ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
-                            item {
-                                Surface(
-                                    color = TealHealthy.copy(alpha = 0.05f),
-                                    shape = RoundedCornerShape(20.dp),
-                                    border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
+                                item {
+                                    Surface(
+                                        color = TealHealthy.copy(alpha = 0.05f),
+                                        shape = RoundedCornerShape(20.dp),
+                                        border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
                                     ) {
-                                        Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = TealHealthy)
-                                        Column {
-                                            Text(
-                                                "Rollover Applied",
-                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                color = TealHealthy
-                                            )
-                                            Text(
-                                                "+${progress.rolloverAmount.toPlainString()} ${budget.currency} carried forward",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = TealHealthy.copy(alpha = 0.7f)
-                                            )
+                                        Row(
+                                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = TealHealthy)
+                                            Column {
+                                                Text(
+                                                    "Rollover Applied",
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = TealHealthy
+                                                )
+                                                Text(
+                                                    "+${progress.rolloverAmount.toPlainString()} ${budget.currency} carried forward",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = TealHealthy.copy(alpha = 0.7f)
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                1 -> {
-                        if (budgetTransactions.isEmpty()) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-                            ) {
-                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        "No activity in this period",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                        } else {
-                            val now = System.currentTimeMillis()
-                            val isIncome = if (budget.trackTypes.size == 1) {
-                                budget.trackTypes.first() == BudgetTrackType.INCOME
-                            } else null
-
-                            RecentActivitiesScreen(
-                                allTransactions = budgetTransactions,
-                                accountNamesMap = accountNamesMap,
-                                categoryMap = categoryMap,
-                                onRecordsClick = { _ ->
-                                    val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
-                                    onRecordsClick(
-                                        RecordsFilterContext.Custom(
-                                            accountIds = budget.accountIds,
-                                            categoryIds = budget.categoryIds.map { it.toString() },
-                                            tags = budget.tags,
-                                            startDate = start,
-                                            endDate = end,
-                                            isIncome = isIncome
+                    1 -> {
+                            if (budgetTransactions.isEmpty()) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                                ) {
+                                    Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            "No activity in this period",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                         )
-                                    )
-                                },
-                                onTransactionClick = onTransactionClick,
-                                baseCurrency = baseCurrency,
-                                exchangeRates = emptyMap(),
-                                contentPadding = PaddingValues(0.dp),
-                                revealedCardIds = revealedCardIds,
-                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                                onClone = { },
-                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                onSplit = { },
-                                onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                                applyFilter = false,
-                                excludeFuture = false,
-                                precision = precision
-                            )
-                        }
+                                    }
+                                }
+                            } else {
+                                val now = System.currentTimeMillis()
+                                val isIncome = if (budget.trackTypes.size == 1) {
+                                    budget.trackTypes.first() == BudgetTrackType.INCOME
+                                } else null
+
+                                RecentActivitiesScreen(
+                                    allTransactions = budgetTransactions,
+                                    accountNamesMap = accountNamesMap,
+                                    categoryMap = categoryMap,
+                                    onRecordsClick = { _ ->
+                                        val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
+                                        onRecordsClick(
+                                            RecordsFilterContext.Custom(
+                                                accountIds = budget.accountIds,
+                                                categoryIds = budget.categoryIds.map { it.toString() },
+                                                tags = budget.tags,
+                                                startDate = start,
+                                                endDate = end,
+                                                isIncome = isIncome
+                                            )
+                                        )
+                                    },
+                                    onTransactionClick = onTransactionClick,
+                                    baseCurrency = baseCurrency,
+                                    exchangeRates = emptyMap(),
+                                    contentPadding = PaddingValues(0.dp),
+                                    revealedCardIds = revealedCardIds,
+                                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                    onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
+                                    onClone = { },
+                                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                    onSplit = { },
+                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
+                                    applyFilter = false,
+                                    excludeFuture = false,
+                                    precision = precision
+                                )
+                            }
+                    }
                 }
             }
+
+            UnifiedPillNavigation(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs,
+                showFab = false
+            )
         }
     }
 }

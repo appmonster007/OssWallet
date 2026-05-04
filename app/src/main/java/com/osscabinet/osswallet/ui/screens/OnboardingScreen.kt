@@ -180,7 +180,7 @@ fun OnboardingScreen(
                     dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) },
                     modifier = Modifier.fillMaxHeight(0.9f)
                 ) {
-                    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+                    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).verticalScroll(rememberScrollState())) {
                         CurrencyManagementSection(
                             primaryCurrency = currency,
                             onPrimaryCurrencyChange = { viewModel.setCurrency(it) },
@@ -288,12 +288,14 @@ fun CurrencyStep(
                 }
             }
         }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
 fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    val scrollState = rememberScrollState()
+    Column(modifier = Modifier.fillMaxWidth().verticalScroll(scrollState)) {
         StepHeader(
             icon = Icons.Rounded.Palette,
             title = "Appearance",
@@ -344,6 +346,7 @@ fun ThemeStep(selectedTheme: String, onThemeSelected: (String) -> Unit) {
                 }
             }
         }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
@@ -414,6 +417,7 @@ fun PrecisionStep(selectedPrecision: Int, onPrecisionSelected: (Int) -> Unit) {
                 )
             }
         }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
@@ -537,7 +541,11 @@ private fun BalanceEditSheet(
         dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 40.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 40.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(

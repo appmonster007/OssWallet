@@ -194,8 +194,8 @@ fun CategoryPieChartCard(
                         baseColor.toChartColor(isDarkTheme, isAmoled)
                     }
                     
-                    val sliceValue = item.amount.abs()
-                    val globalValue = data.sumOf { it.amount.abs() }
+                    val sliceValue = item.amount
+                    val globalValue = data.sumOf { it.amount }
 
                     AeonPieChartSlice(
                         value = sliceValue,

@@ -15,16 +15,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.ColorUtils
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.labelExtraSmall
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
 import kotlin.math.roundToInt
+
 
 @Composable
 fun AeonChartInteractionPopup(
@@ -135,8 +138,12 @@ fun AeonChartInteractionPopup(
                         contentPadding = PaddingValues(horizontal = 8.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = color.copy(alpha = 0.15f),
-                            contentColor = color
+                            containerColor = color,
+                            contentColor = if (ColorUtils.calculateLuminance(color.toArgb()) > 0.5) {
+                                Color.Black
+                            } else {
+                                Color.White
+                            }
                         )
                     ) {
                         Icon(Icons.Default.ZoomIn, null, modifier = Modifier.size(14.dp))

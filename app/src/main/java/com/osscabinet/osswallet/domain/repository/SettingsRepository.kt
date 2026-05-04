@@ -11,6 +11,7 @@ interface SettingsRepository {
     val autoSaveExchangeRates: Flow<Boolean>
     val isOnboardingCompleted: Flow<Boolean>
     val cardAnimationEnabled: Flow<Boolean>
+    val expandableFabEnabled: Flow<Boolean>
     val isDatabaseSeeded: Flow<Boolean>
     val dashboardSettings: Flow<DashboardSettings>
     val accountsViewSettings: Flow<AccountsViewSettings>
@@ -28,6 +29,7 @@ interface SettingsRepository {
     suspend fun saveAutoSaveExchangeRates(enabled: Boolean)
     suspend fun saveOnboardingCompleted(completed: Boolean)
     suspend fun saveCardAnimationEnabled(enabled: Boolean)
+    suspend fun saveExpandableFabEnabled(enabled: Boolean)
     suspend fun saveDatabaseSeeded(seeded: Boolean)
     suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)
     suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings)

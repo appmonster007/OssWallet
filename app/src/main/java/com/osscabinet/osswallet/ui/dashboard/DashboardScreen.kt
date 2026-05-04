@@ -190,7 +190,6 @@ fun DashboardScreen(
     }
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
-    val viewFocus by dashboardViewModel.viewFocus.collectAsStateWithLifecycle()
     val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
@@ -199,6 +198,7 @@ fun DashboardScreen(
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
     
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
@@ -329,17 +329,24 @@ fun DashboardScreen(
                 },
                 tabs = tabs,
                 isFabExpanded = isFabExpanded,
-                onFabToggle = { isFabExpanded = it },
-                fabMenu = {
-                    TransactionFabMenu(
-                        isExpanded = isFabExpanded,
-                        templates = allTemplates,
-                        onAddClick = { type, name ->
-                            isFabExpanded = false
-                            navigate { onAddClick(type, name) }
-                        }
-                    )
-                }
+                onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                onFabClick = { 
+                    if (!expandableFabEnabled) {
+                        navigate { onAddClick(0, null) }
+                    }
+                },
+                fabMenu = if (expandableFabEnabled) {
+                    {
+                        TransactionFabMenu(
+                            isExpanded = isFabExpanded,
+                            templates = allTemplates,
+                            onAddClick = { type, name ->
+                                isFabExpanded = false
+                                navigate { onAddClick(type, name) }
+                            }
+                        )
+                    }
+                } else null
             )
         }
     }
@@ -444,7 +451,6 @@ fun DashboardContent(
             }
             1 -> {
                 val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
-                val accountCurrencyMap = remember(state.accounts) { state.accounts.associate { it.id to it.currencyCode } }
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()

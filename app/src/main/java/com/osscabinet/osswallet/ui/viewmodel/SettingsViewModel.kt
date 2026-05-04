@@ -81,6 +81,9 @@ class SettingsViewModel(
     val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val expandableFabEnabled: StateFlow<Boolean> = settingsRepository.expandableFabEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -185,6 +188,12 @@ class SettingsViewModel(
     fun setCardAnimationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveCardAnimationEnabled(enabled)
+        }
+    }
+
+    fun setExpandableFabEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveExpandableFabEnabled(enabled)
         }
     }
 

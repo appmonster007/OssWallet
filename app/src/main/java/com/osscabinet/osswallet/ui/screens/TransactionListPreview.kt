@@ -64,7 +64,8 @@ fun TransactionListFilteredPreview() {
             onAccountDetailClick = {},
             onUpdateFilter = {},
             onSetDateRange = { _, _ -> },
-            onUpdateRecordsSettings = {}
+            onUpdateRecordsSettings = {},
+            expandableFabEnabled = true
         )
     }
 }

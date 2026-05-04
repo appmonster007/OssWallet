@@ -4,7 +4,6 @@ import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.service.AggregationService
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.domain.model.settings.TransactionType
 
 class CategoryPieChartCardComputer : CardDataComputer<CategoryPieChartCardConfig, CardRenderData.CategoryPieChart> {
     override val supportedType = CardType.CATEGORY_PIE_CHART
@@ -15,13 +14,10 @@ class CategoryPieChartCardComputer : CardDataComputer<CategoryPieChartCardConfig
 
         // Step 2: Apply card config filter (user-selected: timeline, accounts, categories)
         // EXPAND categories to include children so they aren't filtered out
-        // Also set transactionType in filter to handle expense/income filtering
+        // Also ensure transactionType is set (default to expense if not specified)
         val expandedFilter = config.filter.copy(
             categoryIds = TransactionFilterService.expandCategoryIds(config.filter.categoryIds, input.categories),
-            transactionType = when (config.transactionType) {
-                TransactionType.EXPENSE_ONLY -> "expense"
-                TransactionType.INCOME_ONLY -> "income"
-            }
+            transactionType = config.filter.transactionType ?: "expense"
         )
         val filteredTx = TransactionFilterService.filter(baseTx, expandedFilter)
 

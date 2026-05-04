@@ -20,7 +20,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.viewmodel.*
 import kotlinx.coroutines.launch
-
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
@@ -195,7 +196,10 @@ fun AnalyticsScreen(
                             cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY PIE CHART",
-                            filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
+                            filter = TransactionFilter(
+                                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                                transactionType = "expense"
+                            ),
                             showLabels = true,
                             showLegend = true
                         )
@@ -213,7 +217,10 @@ fun AnalyticsScreen(
                             cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY TREEMAP",
-                            filter = TransactionFilter(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.LastPeriod(com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType.LAST_30_DAYS)),
+                            filter = TransactionFilter(
+                                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                                transactionType = "expense"
+                            ),
                             showLabels = true
                         )
                     )

@@ -24,7 +24,7 @@ fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
         )
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = this.accountIds,
-            transactionType = this.isIncome?.let { if (it) "income" else "expense" },
+            transactionType = this.transactionType,
             startDate = this.startDate,
             endDate = this.endDate,
             categoryIds = this.categoryIds.map { it.toLong() },

@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.ui.util.toChartColor
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
 fun CategoryTreemapCard(
@@ -71,7 +72,7 @@ fun CategoryTreemapCard(
     headerModifier: Modifier = Modifier,
     onUpdate: (CategoryTreemapCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    onRecordsClick: (RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
@@ -242,12 +243,15 @@ fun CategoryTreemapCard(
                         val clickedItem = groupedData.find { it.category == node.name }
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
-                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        val currentType = config.filter.transactionType ?: "expense"
+
+                        onRecordsClick(
+                            RecordsFilterContext.Custom(
                             categoryIds = categoryIds,
                             accountIds = config.filter.accountIds,
                             startDate = config.filter.startDate,
                             endDate = config.filter.endDate,
-                            isIncome = false // All expenses
+                            transactionType = currentType
                         ))
                     }
                 )

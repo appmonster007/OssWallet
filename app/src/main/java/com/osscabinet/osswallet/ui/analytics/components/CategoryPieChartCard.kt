@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
 fun CategoryPieChartCard(
@@ -49,7 +50,7 @@ fun CategoryPieChartCard(
     headerModifier: Modifier = Modifier,
     onUpdate: (CategoryPieChartCardConfig) -> Unit = {},
     onDelete: () -> Unit = {},
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+    onRecordsClick: (RecordsFilterContext) -> Unit = {},
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
@@ -141,7 +142,7 @@ fun CategoryPieChartCard(
             }
         }
 
-        val totalGlobal = remember(data) { data.sumOf { it.amount.abs() } }
+        remember(data) { data.sumOf { it.amount.abs() } }
 
         val groupedData = remember(currentData) {
             val sorted = currentData.sortedByDescending { it.amount.abs() }
@@ -226,11 +227,15 @@ fun CategoryPieChartCard(
                         val clickedItem = groupedData.find { it.category == slice.label }
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
                         
-                        onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.Custom(
+                        val currentType = config.filter.transactionType ?: "expense"
+
+                        onRecordsClick(
+                            RecordsFilterContext.Custom(
                             categoryIds = categoryIds,
                             accountIds = config.filter.accountIds,
                             startDate = config.filter.startDate,
-                            endDate = config.filter.endDate
+                            endDate = config.filter.endDate,
+                            transactionType = currentType
                         ))
                     }
                 )

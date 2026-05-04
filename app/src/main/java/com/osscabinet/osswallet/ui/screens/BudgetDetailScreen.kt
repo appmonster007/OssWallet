@@ -245,8 +245,8 @@ fun BudgetDetailScreen(
                                 }
                             } else {
                                 val now = System.currentTimeMillis()
-                                val isIncome = if (budget.trackTypes.size == 1) {
-                                    budget.trackTypes.first() == BudgetTrackType.INCOME
+                                val transactionType = if (budget.trackTypes.size == 1) {
+                                    if (budget.trackTypes.first() == BudgetTrackType.INCOME) "income" else "expense"
                                 } else null
 
                                 RecentActivitiesScreen(
@@ -262,7 +262,7 @@ fun BudgetDetailScreen(
                                                 tags = budget.tags,
                                                 startDate = start,
                                                 endDate = end,
-                                                isIncome = isIncome
+                                                transactionType = transactionType
                                             )
                                         )
                                     },

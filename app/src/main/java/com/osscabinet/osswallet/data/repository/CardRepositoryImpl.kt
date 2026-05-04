@@ -24,7 +24,10 @@ class CardRepositoryImpl(
                 cardId = "analytics_category_breakdown",
                 order = 0,
                 title = "CATEGORY PIE CHART",
-                filter = TransactionFilter(timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)),
+                filter = TransactionFilter(
+                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                    transactionType = "expense"
+                ),
                 showLabels = true,
                 showLegend = true
             ),
@@ -32,7 +35,10 @@ class CardRepositoryImpl(
                 cardId = "analytics_category_expense_treemap",
                 order = 1,
                 title = "CATEGORY TREEMAP",
-                filter = TransactionFilter(timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)),
+                filter = TransactionFilter(
+                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                    transactionType = "expense"
+                ),
                 showLabels = true
             )
         )

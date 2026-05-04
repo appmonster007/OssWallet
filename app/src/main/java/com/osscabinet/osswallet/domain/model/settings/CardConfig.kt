@@ -176,7 +176,6 @@ data class CategoryPieChartCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
-    val transactionType: TransactionType = TransactionType.EXPENSE_ONLY,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
@@ -196,7 +195,6 @@ data class CategoryTreemapCardConfig(
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
-    val transactionType: TransactionType = TransactionType.EXPENSE_ONLY,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY

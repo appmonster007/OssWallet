@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -52,7 +54,6 @@ fun FilterSheetContent(
 ) {
     var localFilter by remember { mutableStateOf(filter) }
     var selectedFilterIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var filtersExpanded by remember { mutableStateOf(false) }
 
     // Debouncing mechanism for instant filter application
     val filterSheetScope = rememberCoroutineScope()
@@ -118,21 +119,69 @@ fun FilterSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .background(backgroundColor)
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp)
+            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 8.dp)
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // Sticky: Handle/Selector at top
+            // Tier 1: Expressive Header
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {
+                            onResetToInitial?.invoke()
+                            localFilter = TransactionFilter()
+                            selectedFilterIds = emptySet()
+                            applyFilterWithDebounce(localFilter, debounceMs = 0)
+                        }
+                    ) {
+                        Text(
+                            "RESET",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Text(
+                        "FILTERS",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp
+                        )
+                    )
+
+                    TextButton(onClick = onClose) {
+                        Text(
+                            "DONE",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            // Tier 1: Impact (Period Selector) - Sticky
             stickyHeader {
                 AeonPeriodSelector(
                     filter = localFilter,
                     onSetDateRange = { start, end ->
                         localFilter = localFilter.copy(startDate = start, endDate = end)
                         onSetDateRange(start, end)
-                        selectedFilterIds = emptySet()  // Clear presets when manually modified
-                        applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
+                        selectedFilterIds = emptySet()
+                        applyFilterWithDebounce(localFilter, debounceMs = 0)
                     },
                     onClick = onToggleExpand,
                     isExpanded = isExpanded,
@@ -141,7 +190,7 @@ fun FilterSheetContent(
                 )
             }
 
-            // Active filters summary (collapsible)
+            // Tier 1: Active Filters Summary (Dismissible Chips)
             item {
                 ActiveFiltersSummary(
                     filter = localFilter,
@@ -150,165 +199,79 @@ fun FilterSheetContent(
                     onRemoveFilter = { field, value ->
                         removeFilter(localFilter, field, value) { updatedFilter ->
                             localFilter = updatedFilter
-                            selectedFilterIds = emptySet() // Clear presets when manually modified
-                            applyFilterWithDebounce(updatedFilter, debounceMs = 0)  // Immediate apply
+                            selectedFilterIds = emptySet()
+                            applyFilterWithDebounce(updatedFilter, debounceMs = 0)
                         }
-                    },
-                    onResetAll = {
-                        // Call the ViewModel's reset method if available
-                        onResetToInitial?.invoke()
-                        // Reset to None (All) - clear all filters
-                        localFilter = TransactionFilter()
-                        selectedFilterIds = emptySet()
-                        applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
                     }
                 )
             }
 
-            item { HorizontalDivider() }
+            // Tier 2: Presets
+            if (savedFilters.isNotEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            "PRESETS",
+                            modifier = Modifier.padding(horizontal = 24.dp),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 24.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(items = savedFilters) { savedFilter ->
+                                val isSelected = savedFilter.id in selectedFilterIds
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        selectedFilterIds = if (isSelected) {
+                                            selectedFilterIds - savedFilter.id
+                                        } else {
+                                            selectedFilterIds + savedFilter.id
+                                        }
+                                        updateFilterFromSelectedPresets()
+                                    },
+                                    label = { Text(savedFilter.name) },
+                                    leadingIcon = if (isSelected) {
+                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
+                                    } else null,
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
-            // Filter fields content
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 24.dp).alpha(0.1f)) }
+
+            // Tier 3: Filter Fields
             item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Header: Title and Reset
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Filter Transactions",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        TextButton(
-                            onClick = {
-                                // Call the ViewModel's reset method if available
-                                onResetToInitial?.invoke()
-                                localFilter = TransactionFilter()
-                                selectedFilterIds = emptySet()
-                                applyFilterWithDebounce(localFilter, debounceMs = 0)  // Immediate apply
-                            },
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Text("Reset All", style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-
-                    // Saved Filters Dropdown
-                    if (savedFilters.isNotEmpty()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "FILTER PRESET",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                            Box(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                    ),
-                                    onClick = { filtersExpanded = !filtersExpanded }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        val selectedNames = savedFilters.filter { it.id in selectedFilterIds }.map { it.name }
-                                        val selectedName = if (selectedNames.isEmpty()) "Select presets..." else selectedNames.joinToString(", ")
-                                        Text(
-                                            text = selectedName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1
-                                        )
-                                        Icon(
-                                            Icons.Default.ArrowDropDown,
-                                            null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                DropdownMenu(
-                                    expanded = filtersExpanded,
-                                    onDismissRequest = { filtersExpanded = false },
-                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                ) {
-                                    savedFilters.forEach { savedFilter ->
-                                        DropdownMenuItem(
-                                            text = { Text(savedFilter.name) },
-                                            onClick = {
-                                                // Toggle selection
-                                                selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
-                                                    selectedFilterIds - savedFilter.id
-                                                } else {
-                                                    selectedFilterIds + savedFilter.id
-                                                }
-                                                // Update filter from selected presets
-                                                updateFilterFromSelectedPresets()
-                                                // Don't close dropdown - allow multiple selection
-                                            },
-                                            trailingIcon = if (savedFilter.id in selectedFilterIds) {
-                                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                                            } else null
-                                        )
-                                    }
-                                }
-
-                                DropdownMenu(
-                                    expanded = filtersExpanded,
-                                    onDismissRequest = { filtersExpanded = false },
-                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                ) {
-                                    savedFilters.forEach { savedFilter ->
-                                        DropdownMenuItem(
-                                            text = { Text(savedFilter.name) },
-                                            onClick = {
-                                                // Toggle selection
-                                                selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
-                                                    selectedFilterIds - savedFilter.id
-                                                } else {
-                                                    selectedFilterIds + savedFilter.id
-                                                }
-                                                // Update filter from selected presets
-                                                updateFilterFromSelectedPresets()
-                                                // Don't close dropdown - allow multiple selection
-                                            },
-                                            trailingIcon = if (savedFilter.id in selectedFilterIds) {
-                                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                                            } else null
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Shared Filter Fields
                     FilterFields(
                         filter = localFilter,
                         onFilterChange = {
                             localFilter = it
-                            // Clear preset selection when a field is manually modified
                             selectedFilterIds = emptySet()
-                            applyFilterWithDebounce(it, debounceMs = 300)  // Debounced apply
+                            applyFilterWithDebounce(it, debounceMs = 300)
                         },
                         accounts = accounts,
                         allCategories = allCategories,
@@ -330,280 +293,157 @@ fun FilterSheetContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActiveFiltersSummary(
     filter: TransactionFilter,
     accountNames: Map<String, String>,
     categoryMap: Map<Long, Category>,
-    onRemoveFilter: (String, Any?) -> Unit,
-    onResetAll: () -> Unit
+    onRemoveFilter: (String, Any?) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    val activeCount = countActiveFilters(filter)
+    if (activeCount == 0) return
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterAlt,
-                    contentDescription = "Active filters",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "${countActiveFilters(filter)} filters active",
-                    style = MaterialTheme.typography.titleSmall
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (countActiveFilters(filter) > 0) {
-                    TextButton(
-                        onClick = onResetAll,
-                        contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) {
-                        Text("Reset", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand"
-                    )
-                }
-            }
-        }
-
-        if (expanded) {
-            Column(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Account filters
-                if (filter.accountIds.isNotEmpty()) {
-                    FilterGroup(
-                        label = "Accounts",
-                        chips = filter.accountIds.map { accountId ->
-                            FilterChipData(
-                                label = accountNames[accountId] ?: accountId,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("accountIds", accountId) }
-                            )
-                        }
-                    )
-                }
-
-                // Type filter
-                if (filter.transactionType != null) {
-                    FilterGroup(
-                        label = "Type",
-                        chips = listOf(
-                            FilterChipData(
-                                label = if (filter.transactionType == "income") "Income" else "Expense",
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("transactionType", null) }
-                            )
-                        )
-                    )
-                }
-
-                // Status filter
-                if (filter.statuses.isNotEmpty()) {
-                    FilterGroup(
-                        label = "Status",
-                        chips = filter.statuses.map { status ->
-                            FilterChipData(
-                                label = status.displayName,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("statuses", status) }
-                            )
-                        }
-                    )
-                }
-
-                // Date range filter
-                if (filter.startDate != null || filter.endDate != null) {
-                    FilterGroup(
-                        label = "Date Range",
-                        chips = listOf(
-                            FilterChipData(
-                                label = formatDateRange(filter.startDate, filter.endDate),
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("dateRange", null) }
-                            )
-                        )
-                    )
-                }
-
-                // Category filters
-                if (filter.categoryIds.isNotEmpty()) {
-                    FilterGroup(
-                        label = "Categories",
-                        chips = filter.categoryIds.map { categoryId ->
-                            FilterChipData(
-                                label = categoryMap[categoryId]?.name ?: "Category: $categoryId",
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("categoryIds", categoryId) }
-                            )
-                        }
-                    )
-                }
-
-                // Currency filters
-                if (filter.currencies.isNotEmpty()) {
-                    FilterGroup(
-                        label = "Currencies",
-                        chips = filter.currencies.map { currency ->
-                            FilterChipData(
-                                label = currency,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("currencies", currency) }
-                            )
-                        }
-                    )
-                }
-
-                // Payment method filters
-                if (filter.paymentMethods.isNotEmpty()) {
-                    FilterGroup(
-                        label = "Payment Methods",
-                        chips = filter.paymentMethods.map { method ->
-                            FilterChipData(
-                                label = method,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("paymentMethods", method) }
-                            )
-                        }
-                    )
-                }
-
-                // Note filter
-                if (!filter.queryNote.isNullOrBlank()) {
-                    FilterGroup(
-                        label = "Note",
-                        chips = listOf(
-                            FilterChipData(
-                                label = filter.queryNote,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("queryNote", null) }
-                            )
-                        )
-                    )
-                }
-
-                // Payee filter
-                if (!filter.queryPayee.isNullOrBlank()) {
-                    FilterGroup(
-                        label = "Payee",
-                        chips = listOf(
-                            FilterChipData(
-                                label = filter.queryPayee,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("queryPayee", null) }
-                            )
-                        )
-                    )
-                }
-
-                // Amount range filter
-                if (filter.minAmount != null || filter.maxAmount != null) {
-                    val range = buildString {
-                        if (filter.minAmount != null) append("≥${filter.minAmount}")
-                        if (filter.minAmount != null && filter.maxAmount != null) append(" - ")
-                        if (filter.maxAmount != null) append("≤${filter.maxAmount}")
-                    }
-                    FilterGroup(
-                        label = "Amount",
-                        chips = listOf(
-                            FilterChipData(
-                                label = range,
-                                isPreApplied = false,
-                                onRemove = { onRemoveFilter("amountRange", null) }
-                            )
-                        )
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FilterGroup(
-    label: String,
-    chips: List<FilterChipData>
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text(
-            text = label,
+            "ACTIVE (${activeCount})",
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.sp
             ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
         )
-        chips.forEach { chipData ->
-            ActiveFilterChip(
-                label = chipData.label,
-                isPreApplied = chipData.isPreApplied,
-                onRemove = chipData.onRemove
-            )
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Account filters
+            filter.accountIds.forEach { accountId ->
+                ActiveFilterChip(
+                    label = accountNames[accountId] ?: accountId,
+                    onRemove = { onRemoveFilter("accountIds", accountId) }
+                )
+            }
+
+            // Type filter
+            if (filter.transactionType != null) {
+                ActiveFilterChip(
+                    label = if (filter.transactionType == "income") "Income" else "Expense",
+                    onRemove = { onRemoveFilter("transactionType", null) }
+                )
+            }
+
+            // Status filter
+            filter.statuses.forEach { status ->
+                ActiveFilterChip(
+                    label = status.displayName,
+                    onRemove = { onRemoveFilter("statuses", status) }
+                )
+            }
+
+            // Date range filter
+            if (filter.startDate != null || filter.endDate != null) {
+                ActiveFilterChip(
+                    label = formatDateRange(filter.startDate, filter.endDate),
+                    onRemove = { onRemoveFilter("dateRange", null) }
+                )
+            }
+
+            // Category filters
+            filter.categoryIds.forEach { categoryId ->
+                ActiveFilterChip(
+                    label = categoryMap[categoryId]?.name ?: "Category: $categoryId",
+                    onRemove = { onRemoveFilter("categoryIds", categoryId) }
+                )
+            }
+
+            // Currency filters
+            filter.currencies.forEach { currency ->
+                ActiveFilterChip(
+                    label = currency,
+                    onRemove = { onRemoveFilter("currencies", currency) }
+                )
+            }
+
+            // Payment method filters
+            filter.paymentMethods.forEach { method ->
+                ActiveFilterChip(
+                    label = method,
+                    onRemove = { onRemoveFilter("paymentMethods", method) }
+                )
+            }
+
+            // Note filter
+            if (!filter.queryNote.isNullOrBlank()) {
+                ActiveFilterChip(
+                    label = "Note: ${filter.queryNote}",
+                    onRemove = { onRemoveFilter("queryNote", null) }
+                )
+            }
+
+            // Payee filter
+            if (!filter.queryPayee.isNullOrBlank()) {
+                ActiveFilterChip(
+                    label = "Payee: ${filter.queryPayee}",
+                    onRemove = { onRemoveFilter("queryPayee", null) }
+                )
+            }
+
+            // Amount range filter
+            if (filter.minAmount != null || filter.maxAmount != null) {
+                val range = buildString {
+                    if (filter.minAmount != null) append("≥${filter.minAmount}")
+                    if (filter.minAmount != null && filter.maxAmount != null) append(" - ")
+                    if (filter.maxAmount != null) append("≤${filter.maxAmount}")
+                }
+                ActiveFilterChip(
+                    label = range,
+                    onRemove = { onRemoveFilter("amountRange", null) }
+                )
+            }
         }
     }
 }
 
-private data class FilterChipData(
-    val label: String,
-    val isPreApplied: Boolean,
-    val onRemove: () -> Unit
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActiveFilterChip(
     label: String,
-    isPreApplied: Boolean,
     onRemove: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (isPreApplied) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Pre-applied",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.size(24.dp)
-        ) {
+    InputChip(
+        selected = true,
+        onClick = onRemove,
+        label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+        trailingIcon = {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Remove filter",
+                contentDescription = "Remove",
                 modifier = Modifier.size(16.dp)
             )
-        }
-    }
+        },
+        shape = RoundedCornerShape(12.dp),
+        colors = InputChipDefaults.inputChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ),
+        border = InputChipDefaults.inputChipBorder(
+            enabled = true,
+            selected = true,
+            borderColor = Color.Transparent,
+            selectedBorderColor = Color.Transparent
+        )
+    )
 }
+
 
 @Preview(showBackground = true)
 @Composable

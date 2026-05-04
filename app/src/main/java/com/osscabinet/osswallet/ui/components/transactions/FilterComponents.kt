@@ -151,159 +151,138 @@ fun FilterFields(
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         // Search (Note/Payee)
         if (filterRules.allowSearch) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "SEARCH",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CompactTextField(
+                        value = filter.queryNote ?: "",
+                        onValueChange = {
+                            val newFilter = filter.copy(queryNote = it.ifBlank { null })
+                            onFilterChange(newFilter)
+                            onImmediateApply?.invoke(newFilter, 500)
+                        },
+                        placeholder = "Note...",
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = Icons.Default.Search
+                    )
+                    CompactTextField(
+                        value = filter.queryPayee ?: "",
+                        onValueChange = {
+                            val newFilter = filter.copy(queryPayee = it.ifBlank { null })
+                            onFilterChange(newFilter)
+                            onImmediateApply?.invoke(newFilter, 500)
+                        },
+                        placeholder = "Payee...",
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = Icons.Default.Search
+                    )
+                }
+            }
+        }
+
+        // Primary Context Grid (Type and Accounts/Categories)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "CONTEXT",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            )
+            
+            // 2-Column Grid for Primary Dimensions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                CompactTextField(
-                    value = filter.queryNote ?: "",
-                    onValueChange = {
-                        val newFilter = filter.copy(queryNote = it.ifBlank { null })
-                        onFilterChange(newFilter)
-                        onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                // Type Card
+                ContextCard(
+                    title = "Type",
+                    value = when (filter.transactionType) {
+                        "income" -> "Income"
+                        "expense" -> "Expense"
+                        else -> "All Types"
                     },
-                    placeholder = "Note...",
-                    modifier = Modifier.weight(1f),
-                    leadingIcon = Icons.Default.Search
-                )
-                CompactTextField(
-                    value = filter.queryPayee ?: "",
-                    onValueChange = {
-                        val newFilter = filter.copy(queryPayee = it.ifBlank { null })
-                        onFilterChange(newFilter)
-                        onImmediateApply?.invoke(newFilter, 500)  // Longer debounce for typing
+                    icon = when (filter.transactionType) {
+                        "income" -> Icons.AutoMirrored.Filled.TrendingUp
+                        "expense" -> Icons.AutoMirrored.Filled.TrendingDown
+                        else -> Icons.Default.FilterList
                     },
-                    placeholder = "Payee...",
                     modifier = Modifier.weight(1f),
-                    leadingIcon = Icons.Default.Search
-                )
-            }
-        }
-
-        // Transaction Type
-        val forcedType = filterRules.forcedTransactionType
-        val allowedTypes = filterRules.allowedTransactionTypes
-        
-        if (allowedTypes != null || forcedType != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "TYPE",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    val allOptions = listOf("All", "Income", "Expense")
-                    val visibleOptions = allOptions.filter { opt ->
-                        when (opt) {
-                            "All" -> allowedTypes == null && forcedType == null
-                            "Income" -> (allowedTypes == null || "income" in allowedTypes) || forcedType == "income"
-                            "Expense" -> (allowedTypes == null || "expense" in allowedTypes) || forcedType == "expense"
-                            else -> true
+                    onClick = {
+                        val nextType = when (filter.transactionType) {
+                            null -> "expense"
+                            "expense" -> "income"
+                            else -> null
                         }
+                        onFilterChange(filter.copy(transactionType = nextType))
                     }
+                )
 
-                    visibleOptions.forEachIndexed { index, label ->
-                        val isSelected = when (label) {
-                            "Income" -> filter.transactionType == "income"
-                            "Expense" -> filter.transactionType == "expense"
-                            else -> filter.transactionType == null
-                        }
-                        
-                        val isEnabled = forcedType == null || label.lowercase() == forcedType
-
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = visibleOptions.size),
-                            onClick = {
-                                if (isEnabled) {
-                                    onFilterChange(
-                                        filter.copy(
-                                            transactionType = when (label) {
-                                                "Income" -> "income"
-                                                "Expense" -> "expense"
-                                                else -> null
-                                            }
-                                        )
-                                    )
-                                }
-                            },
-                            selected = isSelected,
-                            enabled = isEnabled,
-                            icon = {
-                                when (label) {
-                                    "All" -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                                    "Income" -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
-                                    "Expense" -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
-                                }
-                            }
-                        ) {
-                            Text(label, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
+                // Accounts Card
+                if (filterRules.allowAccountSelection && showAccountFilter) {
+                    ContextCard(
+                        title = "Accounts",
+                        value = if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
+                        icon = Icons.Default.AccountBalance,
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeDialog = "Accounts" }
+                    )
                 }
             }
-        } else {
-            // Original behavior if no restrictions specified in allowedTypes/forcedType
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "TYPE",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    val options = listOf("All", "Income", "Expense")
-                    options.forEachIndexed { index, label ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                            onClick = {
-                                onFilterChange(
-                                    filter.copy(
-                                        transactionType = when (index) {
-                                            1 -> "income"
-                                            2 -> "expense"
-                                            else -> null
-                                        }
-                                    )
-                                )
-                            },
-                            selected = when (index) {
-                                1 -> filter.transactionType == "income"
-                                2 -> filter.transactionType == "expense"
-                                else -> filter.transactionType == null
-                            },
-                            icon = {
-                                when (index) {
-                                    0 -> if (filter.transactionType == null) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
-                                    1 -> Icon(Icons.AutoMirrored.Filled.TrendingUp, null, Modifier.size(18.dp))
-                                    2 -> Icon(Icons.AutoMirrored.Filled.TrendingDown, null, Modifier.size(18.dp))
-                                }
-                            }
-                        ) {
-                            Text(label, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Categories Card
+                if (filterRules.allowCategorySelection) {
+                    ContextCard(
+                        title = "Categories",
+                        value = if (filter.categoryIds.isEmpty()) "All" else "${filter.categoryIds.size} Selected",
+                        icon = Icons.Default.Category,
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeDialog = "Categories" }
+                    )
+                }
+
+                // Currency Card
+                if (filterRules.allowCurrencySelection) {
+                    ContextCard(
+                        title = "Currencies",
+                        value = if (filter.currencies.isEmpty()) "All" else "${filter.currencies.size} Selected",
+                        icon = Icons.Default.MonetizationOn,
+                        modifier = Modifier.weight(1f),
+                        onClick = { activeDialog = "Currencies" }
+                    )
                 }
             }
         }
 
         // Status
         if (filterRules.allowStatusSelection) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "STATUS",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )
                 MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     val statusOptions = com.osscabinet.ossWallet.domain.model.TransactionStatus.values()
@@ -332,82 +311,20 @@ fun FilterFields(
             }
         }
 
-        // Collection Filters
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "FILTERS",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            MultiChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                val filterOptions = listOfNotNull(
-                    if (filterRules.allowAccountSelection && showAccountFilter) "Accounts" else null,
-                    if (filterRules.allowCategorySelection) "Categories" else null,
-                    if (filterRules.allowCurrencySelection) "Currencies" else null,
-                    if (filterRules.allowPaymentMethodSelection) "PaymentMethods" else null
-                )
-                
-                filterOptions.forEachIndexed { index, option ->
-                    val isChecked = when (option) {
-                        "Accounts" -> filter.accountIds.isNotEmpty()
-                        "Categories" -> filter.categoryIds.isNotEmpty()
-                        "Currencies" -> filter.currencies.isNotEmpty()
-                        "PaymentMethods" -> filter.paymentMethods.isNotEmpty()
-                        else -> false
-                    }
-                    
-                    val icon = when (option) {
-                        "Accounts" -> Icons.Default.AccountBalance
-                        "Categories" -> Icons.Default.Category
-                        "Currencies" -> Icons.Default.MonetizationOn
-                        "PaymentMethods" -> Icons.Default.Payments
-                        else -> Icons.Default.FilterList
-                    }
-                    
-                    val count = when (option) {
-                        "Accounts" -> filter.accountIds.size
-                        "Categories" -> filter.categoryIds.size
-                        "Currencies" -> filter.currencies.size
-                        "PaymentMethods" -> filter.paymentMethods.size
-                        else -> 0
-                    }
-
-                    SegmentedButton(
-                        checked = isChecked,
-                        onCheckedChange = { activeDialog = option },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = filterOptions.size),
-                        icon = {},
-                        label = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(icon, null, modifier = Modifier.size(18.dp))
-                                if (count > 0) {
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("$count", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-        }
-
         // Amount Range
         if (filterRules.allowAmountRange) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "AMOUNT RANGE",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CompactTextField(
@@ -416,11 +333,6 @@ fun FilterFields(
                         placeholder = "Min",
                         modifier = Modifier.weight(1f),
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                    )
-                    Text(
-                        "-",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        style = MaterialTheme.typography.bodyMedium
                     )
                     CompactTextField(
                         value = filter.maxAmount?.toString() ?: "",
@@ -433,19 +345,39 @@ fun FilterFields(
             }
         }
 
+        // Methods Card (Full Width)
+        if (filterRules.allowPaymentMethodSelection) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "PAYMENT METHODS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                )
+                ContextCard(
+                    title = "Methods",
+                    value = if (filter.paymentMethods.isEmpty()) "Any Method" else filter.paymentMethods.joinToString(", "),
+                    icon = Icons.Default.Payments,
+                    onClick = { activeDialog = "PaymentMethods" }
+                )
+            }
+        }
+
         // Warranty Expiry Range
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "WARRANTY EXPIRY",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(modifier = Modifier.weight(1f).clickable { showWarrantyStartPicker = true }) {
@@ -460,11 +392,6 @@ fun FilterFields(
                         enabled = false
                     )
                 }
-                Text(
-                    "-",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.bodyMedium
-                )
                 Box(modifier = Modifier.weight(1f).clickable { showWarrantyEndPicker = true }) {
                     CompactTextField(
                         value = filter.warrantyExpirationEnd?.let {
@@ -477,6 +404,63 @@ fun FilterFields(
                         enabled = false
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ContextCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(84.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(
+                    title.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
             }
         }
     }

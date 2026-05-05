@@ -473,7 +473,8 @@ fun DashboardContent(
                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                    precision = state.decimalPrecision
+                    precision = state.decimalPrecision,
+                    is24Hour = state.use24HourFormat
                 )
             }
         }

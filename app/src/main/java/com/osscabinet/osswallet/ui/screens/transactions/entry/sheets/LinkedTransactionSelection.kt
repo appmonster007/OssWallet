@@ -39,11 +39,13 @@ fun LinkedTransactionSelection(
     linkedIds: Set<Long>,
     accounts: List<Account>,
     categories: List<Category>,
+    is24Hour: Boolean = false,
     onLinkedTransactionsChanged: (Set<Long>) -> Unit,
     onDismiss: () -> Unit
 ) {
     var selectedIds by remember { mutableStateOf(linkedIds) }
-    val sdf = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
+    val pattern = if (is24Hour) "MMM dd, HH:mm" else "MMM dd, hh:mm a"
+    val sdf = remember(is24Hour) { SimpleDateFormat(pattern, Locale.getDefault()) }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(

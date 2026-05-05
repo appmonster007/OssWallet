@@ -84,6 +84,9 @@ class SettingsViewModel(
     val expandableFabEnabled: StateFlow<Boolean> = settingsRepository.expandableFabEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -194,6 +197,12 @@ class SettingsViewModel(
     fun setExpandableFabEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveExpandableFabEnabled(enabled)
+        }
+    }
+
+    fun setUse24HourFormat(use24Hour: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveUse24HourFormat(use24Hour)
         }
     }
 

@@ -62,6 +62,7 @@ class AccountDetailViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
+                settingsRepository.use24HourFormat,
                 settingsRepository.accountDetailSettings
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
@@ -75,7 +76,8 @@ class AccountDetailViewModel(
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
-                val settings = args[7] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
+                val use24Hour = args[7] as Boolean
+                val settings = args[8] as com.osscabinet.ossWallet.data.local.AccountDetailSettings
 
                 if (!hasLoadedExchangeRates) {
                     return@combine AccountDetailUiState.Loading
@@ -105,6 +107,7 @@ class AccountDetailViewModel(
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     decimalPrecision = precision,
+                    use24HourFormat = use24Hour,
                     showPlannedPayments = settings.transactionsSection.showPlannedPayments,
                     useNoteAsHeader = settings.transactionsSection.useNoteAsHeader
                 )
@@ -146,6 +149,7 @@ sealed class AccountDetailUiState {
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val decimalPrecision: Int,
+        val use24HourFormat: Boolean = false,
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false
     ) : AccountDetailUiState()

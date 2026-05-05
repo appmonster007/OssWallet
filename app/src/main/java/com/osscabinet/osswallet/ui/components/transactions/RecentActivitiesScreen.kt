@@ -81,7 +81,8 @@ fun RecentActivitiesScreen(
     precision: Int = 2,
     filterContext: RecordsFilterContext = RecordsFilterContext.None,
     showHeader: Boolean = true,
-    headerTitle: String = "Recent Activities"
+    headerTitle: String = "Recent Activities",
+    is24Hour: Boolean = false
 ) {
     // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
@@ -250,7 +251,7 @@ fun RecentActivitiesScreen(
                                 balanceBefore = formatCurrencyRight(balanceBeforeValue, transaction.currency, precision),
                                 balanceAfter = formatCurrencyRight(item.balanceAfter, transaction.currency, precision),
                                 type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(transaction.timestamp)),
+                                timestamp = SimpleDateFormat(if (is24Hour) "HH:mm" else "hh:mm a", Locale.getDefault()).format(Date(transaction.timestamp)),
                                 note = transaction.note,
                                 tags = transaction.tags,
                                 icon = category?.let { categoryIcons[it.iconName] } ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,

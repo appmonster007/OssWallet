@@ -30,6 +30,11 @@ class CurrencyViewModel(
                 autoSave = auto
             }
         }
+        viewModelScope.launch {
+            settingsRepository.use24HourFormat.collect { use24Hour ->
+                _uiState.update { it.copy(use24HourFormat = use24Hour) }
+            }
+        }
     }
 
     private fun loadRates(base: String) {
@@ -103,5 +108,6 @@ data class CurrencyUiState(
     val lastUpdated: Long = 0,
     val isLoading: Boolean = false,
     val syncError: String? = null,
-    val pendingResponse: CurrencyResponse? = null
+    val pendingResponse: CurrencyResponse? = null,
+    val use24HourFormat: Boolean = false
 )

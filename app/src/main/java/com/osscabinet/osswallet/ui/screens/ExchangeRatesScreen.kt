@@ -135,7 +135,8 @@ fun ExchangeRatesScreen(
                     },
                     actions = {
                         if (pagerState.currentPage == 0) {
-                            val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
+                            val pattern = if (uiState.use24HourFormat) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
+                            val dateFormat = remember(uiState.use24HourFormat) { SimpleDateFormat(pattern, Locale.getDefault()) }
                             val lastUpdatedStr = if (uiState.lastUpdated > 0) dateFormat.format(Date(uiState.lastUpdated)) else "Never"
                             
                             Row(verticalAlignment = Alignment.CenterVertically) {

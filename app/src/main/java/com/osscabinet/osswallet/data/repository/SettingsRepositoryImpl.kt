@@ -16,6 +16,7 @@ class SettingsRepositoryImpl(
     override val cardAnimationEnabled: Flow<Boolean> = settingsDataStore.cardAnimationEnabled
     override val expandableFabEnabled: Flow<Boolean> = settingsDataStore.expandableFabEnabled
     override val isDatabaseSeeded: Flow<Boolean> = settingsDataStore.isDatabaseSeeded
+    override val use24HourFormat: Flow<Boolean> = settingsDataStore.use24HourFormat
     override val dashboardSettings: Flow<DashboardSettings> = settingsDataStore.dashboardSettings
     override val accountsViewSettings: Flow<AccountsViewSettings> = settingsDataStore.accountsViewSettings
     override val accountDetailSettings: Flow<AccountDetailSettings> = settingsDataStore.accountDetailSettings
@@ -34,6 +35,7 @@ class SettingsRepositoryImpl(
     override suspend fun saveCardAnimationEnabled(enabled: Boolean) = settingsDataStore.saveCardAnimationEnabled(enabled)
     override suspend fun saveExpandableFabEnabled(enabled: Boolean) = settingsDataStore.saveExpandableFabEnabled(enabled)
     override suspend fun saveDatabaseSeeded(seeded: Boolean) = settingsDataStore.saveDatabaseSeeded(seeded)
+    override suspend fun saveUse24HourFormat(use24Hour: Boolean) = settingsDataStore.saveUse24HourFormat(use24Hour)
     override suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings) = settingsDataStore.updateDashboardSettings(update)
     override suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings) = settingsDataStore.updateAccountsViewSettings(update)
     override suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings) = settingsDataStore.updateAccountDetailSettings(update)

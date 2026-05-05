@@ -15,7 +15,8 @@ import java.text.SimpleDateFormat
 fun AeonDateTimePicker(
     initialDateTime: Long,
     onDateTimeSelected: (Long) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    is24Hour: Boolean = false
 ) {
     var showDatePicker by remember { mutableStateOf(true) }
     var selectedDateMillis by remember { mutableStateOf(initialDateTime) }
@@ -52,7 +53,8 @@ fun AeonDateTimePicker(
         val calendar = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
         val timePickerState = rememberTimePickerState(
             initialHour = calendar.get(Calendar.HOUR_OF_DAY),
-            initialMinute = calendar.get(Calendar.MINUTE)
+            initialMinute = calendar.get(Calendar.MINUTE),
+            is24Hour = is24Hour
         )
         
         AlertDialog(
@@ -82,8 +84,9 @@ fun AeonDateTimePicker(
     }
 }
 
-fun formatDateTime(millis: Long): String {
-    val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+fun formatDateTime(millis: Long, is24Hour: Boolean = false): String {
+    val pattern = if (is24Hour) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
+    val sdf = SimpleDateFormat(pattern, Locale.getDefault())
     return sdf.format(Date(millis))
 }
 

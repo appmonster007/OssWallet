@@ -152,8 +152,34 @@ fun CategoryEditSheet(
 
                         parentCategories.filter { it.id != (category?.id ?: 0L) }.forEach { parent ->
                             val isSelected = selectedParentId == parent.id
+                            
+                            // Calculate depth for indentation
+                            var depth = 0
+                            var curr = parent
+                            while (curr.parentId != null) {
+                                val p = parentCategories.find { it.id == curr.parentId }
+                                if (p != null) {
+                                    curr = p
+                                    depth++
+                                } else break
+                            }
+
                             DropdownMenuItem(
-                                text = { Text(parent.name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
+                                text = { 
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (depth > 0) {
+                                            repeat(depth) {
+                                                Box(modifier = Modifier.width(16.dp)) {
+                                                    VerticalDivider(
+                                                        modifier = Modifier.padding(horizontal = 7.dp).fillMaxHeight(0.5f),
+                                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Text(parent.name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
+                                    }
+                                },
                                 onClick = {
                                     selectedParentId = parent.id
                                     showParentDropdown = false

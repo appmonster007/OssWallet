@@ -31,70 +31,94 @@ fun CategoryMultiSelectPicker(
     onCategoryToggle: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val parentCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
+    val rootCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
 
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        parentCategories.forEach { parent ->
-            var expanded by remember { mutableStateOf(false) }
-            val children = categories.filter { it.parentId == parent.id }.sortedBy { it.name }
-            val isParentSelected = parent.id in selectedCategoryIds
-            val anyChildSelected = children.any { it.id in selectedCategoryIds }
+        rootCategories.forEach { root ->
+            RecursiveMultiSelectNode(
+                category = root,
+                allCategories = categories,
+                selectedCategoryIds = selectedCategoryIds,
+                onCategoryToggle = onCategoryToggle,
+                depth = 0
+            )
+        }
+    }
+}
 
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+@Composable
+private fun RecursiveMultiSelectNode(
+    category: Category,
+    allCategories: List<Category>,
+    selectedCategoryIds: Set<Long>,
+    onCategoryToggle: (Long) -> Unit,
+    depth: Int
+) {
+    val children = allCategories.filter { it.parentId == category.id }.sortedBy { it.name }
+    var expanded by remember { 
+        mutableStateOf(selectedCategoryIds.any { id -> 
+            allCategories.find { it.id == id }?.parentId == category.id 
+        }) 
+    }
+    
+    val content = @Composable {
+        Column {
+            CategoryMultiSelectItem(
+                category = category,
+                depth = depth,
+                isSelected = category.id in selectedCategoryIds,
+                hasChildren = children.isNotEmpty(),
+                isExpanded = expanded,
+                onToggleExpand = { expanded = !expanded },
+                onToggle = { onCategoryToggle(category.id) }
+            )
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
-                Column {
-                    CategoryMultiSelectItem(
-                        category = parent,
-                        isParent = true,
-                        isSelected = isParentSelected,
-                        hasChildren = children.isNotEmpty(),
-                        isExpanded = expanded,
-                        onToggleExpand = { expanded = !expanded },
-                        onToggle = { onCategoryToggle(parent.id) }
-                    )
-
-                    AnimatedVisibility(
-                        visible = expanded,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(start = 16.dp, end = 8.dp, bottom = 8.dp)
-                        ) {
-                            children.forEach { child ->
-                                CategoryMultiSelectItem(
-                                    category = child,
-                                    isParent = false,
-                                    isSelected = child.id in selectedCategoryIds,
-                                    hasChildren = false,
-                                    isExpanded = false,
-                                    onToggleExpand = {},
-                                    onToggle = { onCategoryToggle(child.id) }
-                                )
-                            }
-                        }
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    children.forEach { child ->
+                        RecursiveMultiSelectNode(
+                            category = child,
+                            allCategories = allCategories,
+                            selectedCategoryIds = selectedCategoryIds,
+                            onCategoryToggle = onCategoryToggle,
+                            depth = depth + 1
+                        )
                     }
                 }
             }
         }
+    }
+
+    if (depth == 0) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ) {
+            content()
+        }
+    } else {
+        content()
     }
 }
 
 @Composable
 private fun CategoryMultiSelectItem(
     category: Category,
-    isParent: Boolean,
+    depth: Int,
     isSelected: Boolean,
     hasChildren: Boolean,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onToggle: () -> Unit
 ) {
+    val isRoot = depth == 0
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -113,7 +137,7 @@ private fun CategoryMultiSelectItem(
 
         val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
         Surface(
-            modifier = Modifier.size(if (isParent) 40.dp else 32.dp),
+            modifier = Modifier.size(if (isRoot) 40.dp else 32.dp),
             shape = CircleShape,
             color = Color(displayColor).copy(alpha = 0.2f)
         ) {
@@ -121,7 +145,7 @@ private fun CategoryMultiSelectItem(
                 Icon(
                     AccountIconMap[category.iconName] ?: Icons.Rounded.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(if (isParent) 20.dp else 16.dp),
+                    modifier = Modifier.size(if (isRoot) 20.dp else 16.dp),
                     tint = Color(displayColor)
                 )
             }
@@ -131,13 +155,13 @@ private fun CategoryMultiSelectItem(
 
         Text(
             category.name,
-            style = if (isParent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            fontWeight = if (isParent) FontWeight.Bold else FontWeight.Medium,
+            style = if (isRoot) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isRoot) FontWeight.Bold else FontWeight.Medium,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
 
-        if (isParent && hasChildren) {
+        if (hasChildren) {
             IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
                 Icon(
                     if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,

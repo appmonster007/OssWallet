@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -92,9 +93,28 @@ fun CategoryManagementScreen(
 
     if (showAddDialog || selectedCategoryForEdit != null) {
         val editingCategory = selectedCategoryForEdit
+        val descendants: List<Long> = if (editingCategory != null && editingCategory.id != 0L) {
+            TransactionFilterService.expandCategoryIds(listOf(editingCategory.id), categories)
+        } else {
+            emptyList()
+        }
+        val eligibleParents = categories.filter { it.id != (editingCategory?.id ?: 0L) && !descendants.contains(it.id) }
+        
+        // Sort eligible parents hierarchically for the dropdown
+        val sortedEligibleParents = mutableListOf<Category>()
+        fun addChildren(parentId: Long?) {
+            eligibleParents.filter { it.parentId == parentId }.sortedBy { it.name }.forEach { 
+                sortedEligibleParents.add(it)
+                addChildren(it.id)
+            }
+        }
+        addChildren(null)
+        // Add any that were missed (shouldn't happen with correct logic but good for safety)
+        eligibleParents.forEach { if (it !in sortedEligibleParents) sortedEligibleParents.add(it) }
+
         CategoryEditSheet(
             category = editingCategory,
-            parentCategories = categories.filter { it.parentId == null },
+            parentCategories = sortedEligibleParents,
             onDismiss = {
                 showAddDialog = false
                 selectedCategoryForEdit = null

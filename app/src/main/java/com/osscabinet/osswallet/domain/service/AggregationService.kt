@@ -1078,10 +1078,24 @@ object AggregationService {
         baseCurrency: String? = null,
         precision: Int = 2
     ): List<CategoryTreeMetrics> {
-        val categoryMap = allCategories.associateBy { it.name }
+        val categoryMap = allCategories.associateBy { it.id }
         
-        val categoryBreakdowns = breakdownByCategory(
+        // Group transactions by categoryId
+        val categoryBreakdowns = createBreakdown(
             transactions = transactions,
+            selector = { it.categoryId ?: 0L },
+            mapper = { categoryId, summaries ->
+                FinancialMetrics(
+                    key = categoryId,
+                    financialSummary = FinancialSummary(
+                        totalAmount = summaries.values.sumOf { it.totalAmount },
+                        income = summaries.values.sumOf { it.income },
+                        expense = summaries.values.sumOf { it.expense },
+                        transactionCount = summaries.values.sumOf { it.transactionCount }
+                    ),
+                    currencyBreakdown = summaries
+                )
+            },
             exchangeRates = exchangeRates,
             baseCurrency = baseCurrency
         ).associateBy { it.key }
@@ -1089,14 +1103,14 @@ object AggregationService {
         // Global total for percentage calculation - use netBalance.abs() since transactions are pre-filtered
         val globalTotal = categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
 
-        fun buildSubTree(categoryName: String?): CategoryTreeMetrics? {
-            val entity = categoryMap[categoryName] ?: return null
-            val breakdown = categoryBreakdowns[categoryName]
-                ?: FinancialMetrics(categoryName ?: "", FinancialSummary.EMPTY, emptyMap())
+        fun buildSubTree(categoryId: Long): CategoryTreeMetrics? {
+            val entity = categoryMap[categoryId] ?: return null
+            val breakdown = categoryBreakdowns[categoryId]
+                ?: FinancialMetrics(categoryId, FinancialSummary.EMPTY, emptyMap())
 
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
             val actualChildrenData = childrenEntities.mapNotNull { child ->
-                buildSubTree(child.name)
+                buildSubTree(child.id)
             }
 
             // Check if this category has direct transactions (non-zero net balance)
@@ -1144,14 +1158,15 @@ object AggregationService {
                 percentage = if (globalTotal.signum() != 0) {
                     (currentMetric.divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat()
                 } else 0f,
-                hasSubcategories = combinedChildren.size > 1 || (combinedChildren.size == 1 && combinedChildren[0].hasSubcategories),
+                hasSubcategories = combinedChildren.isNotEmpty(),
                 subcategoryData = combinedChildren
             )
         }
 
         val rootCategories = allCategories.filter { it.parentId == null }
         return rootCategories.mapNotNull { root ->
-            buildSubTree(root.name)
-        }.sortedByDescending { it.netBalance.abs() }
+            buildSubTree(root.id)
+        }.filter { it.netBalance.signum() != 0 || it.subcategoryData.isNotEmpty() }
+            .sortedByDescending { it.netBalance.abs() }
     }
 }

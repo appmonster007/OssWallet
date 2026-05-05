@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
+import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -264,12 +266,19 @@ fun CategoryPickerSheet(
             
             Box(modifier = Modifier.weight(1f, fill = false)) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    AeonCategoryList(
+                    CategoryHybridSelectPicker(
                         categories = categories,
-                        selectedCategoryId = selectedCategoryId,
-                        onCategorySelected = {
-                            onCategorySelected(it)
-                            onDismiss()
+                        mode = CategorySelectionMode.SINGLE,
+                        selectedIds = if (selectedCategoryId != null) setOf(selectedCategoryId) else emptySet(),
+                        onSelectionChange = { ids ->
+                            val selectedId = ids.firstOrNull()
+                            if (selectedId != null) {
+                                val category = categories.find { it.id == selectedId }
+                                if (category != null) {
+                                    onCategorySelected(category)
+                                    onDismiss()
+                                }
+                            }
                         }
                     )
                 }

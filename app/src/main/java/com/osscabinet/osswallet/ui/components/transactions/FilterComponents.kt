@@ -24,7 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.components.CategoryMultiSelectPicker
+import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
+import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -721,16 +722,11 @@ fun CategorySelectionDialog(
                     .fillMaxWidth()
                     .heightIn(max = 400.dp)
             ) {
-                CategoryMultiSelectPicker(
+                CategoryHybridSelectPicker(
                     categories = categories,
-                    selectedCategoryIds = tempSelectedIds,
-                    onCategoryToggle = { categoryId ->
-                        tempSelectedIds = if (categoryId in tempSelectedIds) {
-                            tempSelectedIds - categoryId
-                        } else {
-                            tempSelectedIds + categoryId
-                        }
-                    },
+                    mode = CategorySelectionMode.MULTI,
+                    selectedIds = tempSelectedIds,
+                    onSelectionChange = { tempSelectedIds = it },
                     modifier = Modifier.weight(1f)
                 )
             }

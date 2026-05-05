@@ -28,7 +28,8 @@ import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.RecordFieldCard
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
-import com.osscabinet.ossWallet.ui.components.CategoryParentSelector
+import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
+import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,9 +134,11 @@ fun CategoryEditSheet(
                             
                             Box(modifier = Modifier.weight(1f, fill = false)) {
                                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                    CategoryParentSelector(
+                                    CategoryHybridSelectPicker(
                                         categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
-                                        selectedParentId = selectedParentId,
+                                        mode = CategorySelectionMode.PARENT,
+                                        selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
+                                        onSelectionChange = { },
                                         onParentSelected = {
                                             selectedParentId = it
                                             showParentPicker = false

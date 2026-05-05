@@ -255,17 +255,17 @@ fun BudgetEntryScreen(
                             AeonHybridSelector(
                                 items = BudgetPeriod.entries,
                                 mode = AeonSelectMode.SINGLE,
-                                selectedIds = setOf(period.name),
+                                selectedIds = setOf(period.ordinal.toLong()),
                                 onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { name -> 
-                                        period = BudgetPeriod.valueOf(name)
+                                    ids.firstOrNull()?.let { ordinal ->
+                                        period = BudgetPeriod.entries.getOrNull(ordinal.toInt()) ?: period
                                         if (period == BudgetPeriod.CUSTOM) {
                                             showCustomStartPicker = true
                                         }
                                         showPeriodSheet = false
                                     }
                                 },
-                                idMapper = { it.name },
+                                idMapper = { it.ordinal.toLong() },
                                 labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
                                 iconMapper = { Icons.Rounded.Update }
                             )
@@ -294,15 +294,17 @@ fun BudgetEntryScreen(
                             AeonHybridSelector(
                                 items = BudgetTrackType.entries,
                                 mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedTrackTypes.map { it.name }.toSet(),
-                                onSelectionChange = { ids -> 
+                                selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }.toSet(),
+                                onSelectionChange = { ids ->
                                     if (ids.isNotEmpty()) {
-                                        selectedTrackTypes = ids.map { BudgetTrackType.valueOf(it) }.toSet()
+                                        selectedTrackTypes = ids.mapNotNull { ordinal ->
+                                            BudgetTrackType.entries.getOrNull(ordinal.toInt())
+                                        }.toSet()
                                     }
                                 },
-                                idMapper = { it.name },
+                                idMapper = { it.ordinal.toLong() },
                                 labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
-                                iconMapper = { 
+                                iconMapper = {
                                     when (it) {
                                         BudgetTrackType.EXPENSE -> Rounded.TrendingDown
                                         BudgetTrackType.INCOME -> Rounded.TrendingUp
@@ -327,10 +329,15 @@ fun BudgetEntryScreen(
                     Box(modifier = Modifier.weight(1f, fill = false)) {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                             AeonHierarchicalHybridSelector(
-                                categories = categories,
+                                items = categories,
                                 mode = AeonSelectMode.MULTI,
                                 selectedIds = selectedCategoryIds,
-                                onSelectionChange = { selectedCategoryIds = it }
+                                onSelectionChange = { selectedCategoryIds = it },
+                                idMapper = { it.id },
+                                labelMapper = { it.name },
+                                parentIdMapper = { it.parentId },
+                                iconMapper = { AccountIconMap[it.iconName] },
+                                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                             )
                         }
                     }

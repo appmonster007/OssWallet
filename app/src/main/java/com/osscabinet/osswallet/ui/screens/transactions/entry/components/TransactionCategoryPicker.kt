@@ -10,9 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +54,7 @@ fun TransactionCategoryPicker(
             Box(modifier = Modifier.weight(1f, fill = false)) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     AeonHierarchicalHybridSelector(
-                        categories = categories,
+                        items = categories,
                         mode = AeonSelectMode.SINGLE,
                         selectedIds = if (selectedCategoryId != null) setOf(selectedCategoryId) else emptySet(),
                         onSelectionChange = { ids ->
@@ -61,7 +64,12 @@ fun TransactionCategoryPicker(
                                 onCategorySelected(category.name, category.id)
                                 onDismiss()
                             }
-                        }
+                        },
+                        idMapper = { it.id },
+                        labelMapper = { it.name },
+                        parentIdMapper = { it.parentId },
+                        iconMapper = { AccountIconMap[it.iconName] },
+                        colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                     )
                 }
             }

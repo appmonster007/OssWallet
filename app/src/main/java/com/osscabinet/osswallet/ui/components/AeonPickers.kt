@@ -255,7 +255,7 @@ fun CategoryPickerSheet(
             Box(modifier = Modifier.weight(1f, fill = false)) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     AeonHierarchicalHybridSelector(
-                        categories = categories,
+                        items = categories,
                         mode = AeonSelectMode.SINGLE,
                         selectedIds = if (selectedCategoryId != null) setOf(selectedCategoryId) else emptySet(),
                         onSelectionChange = { ids ->
@@ -267,7 +267,12 @@ fun CategoryPickerSheet(
                                     onDismiss()
                                 }
                             }
-                        }
+                        },
+                        idMapper = { it.id },
+                        labelMapper = { it.name },
+                        parentIdMapper = { it.parentId },
+                        iconMapper = { AccountIconMap[it.iconName] },
+                        colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                     )
                 }
             }

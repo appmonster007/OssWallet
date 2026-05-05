@@ -16,27 +16,28 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-enum class AeonSelectMode {
-    SINGLE, MULTI, PARENT, MANAGEMENT
-}
-
 /**
- * A unified selector for regular lists that supports single-select and multi-select modes.
+ * A unified selector for regular lists that supports single-select, multi-select, and management modes.
  * Features a modern "layered" design consistent with AeonHierarchicalHybridSelector.
+ * Generic version that works with any data type and any ID type.
+ *
+ * @param T The type of items in the list
+ * @param ID The type of item IDs (typically Long or String)
  */
 @Composable
-fun <T> AeonHybridSelector(
+fun <T, ID> AeonHybridSelector(
     items: List<T>,
     mode: AeonSelectMode,
-    selectedIds: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit,
-    idMapper: (T) -> String,
+    selectedIds: Set<ID>,
+    onSelectionChange: (Set<ID>) -> Unit,
+    idMapper: (T) -> ID,
     labelMapper: (T) -> String,
     modifier: Modifier = Modifier,
     iconMapper: (T) -> ImageVector? = { null },
     colorMapper: (T) -> Color? = { null },
     detailMapper: (T) -> String? = { null },
-    onEditClick: (T) -> Unit = {}
+    onEditClick: (T) -> Unit = {},
+    onAddChildClick: (T) -> Unit = {}
 ) {
     Column(
         modifier = modifier,
@@ -149,13 +150,23 @@ fun <T> AeonHybridSelector(
                             )
                         }
                         AeonSelectMode.MANAGEMENT -> {
-                            IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(24.dp)) {
-                                Icon(
-                                    Icons.Rounded.Edit,
-                                    contentDescription = "Edit",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.outline
-                                )
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                IconButton(onClick = { onAddChildClick(item) }, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        Icons.Rounded.Add,
+                                        contentDescription = "Add",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        Icons.Rounded.Edit,
+                                        contentDescription = "Edit",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.outline
+                                    )
+                                }
                             }
                         }
                         else -> {}

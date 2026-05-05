@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -74,12 +75,17 @@ fun CategoryManagementScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             AeonHierarchicalHybridSelector(
-                categories = categories,
+                items = categories,
                 mode = AeonSelectMode.MANAGEMENT,
                 selectedIds = emptySet(),
                 onSelectionChange = { },
+                idMapper = { it.id },
+                labelMapper = { it.name },
+                parentIdMapper = { it.parentId },
+                iconMapper = { AccountIconMap[it.iconName] },
+                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
                 onEditClick = { selectedCategoryForEdit = it },
-                onAddSubCategoryClick = { parent ->
+                onAddChildClick = { parent ->
                     selectedCategoryForEdit = Category(
                         id = 0,
                         name = "",

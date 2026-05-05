@@ -135,10 +135,16 @@ fun CategoryEditSheet(
                             Box(modifier = Modifier.weight(1f, fill = false)) {
                                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                     AeonHierarchicalHybridSelector(
-                                        categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
+                                        items = parentCategories.filter { it.id != (category?.id ?: 0L) },
                                         mode = AeonSelectMode.PARENT,
                                         selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
                                         onSelectionChange = { },
+                                        idMapper = { it.id },
+                                        labelMapper = { it.name },
+                                        parentIdMapper = { it.parentId },
+                                        iconMapper = { AccountIconMap[it.iconName] },
+                                        colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
+                                        noneLabel = "None (Primary Category)",
                                         onParentSelected = {
                                             selectedParentId = it
                                             showParentPicker = false

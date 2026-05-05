@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 
 @Composable
 fun RecordFieldCard(
@@ -194,11 +196,12 @@ fun CurrencySelector(
         }
 
         if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Select Currency", fontWeight = FontWeight.Bold) },
-                text = {
-                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
+            AeonFullScreenDialog(onDismissRequest = { showDialog = false }) {
+                AeonSelectionScreen(
+                    title = "Select Currency",
+                    onBack = { showDialog = false }
+                ) { padding ->
+                    Box(modifier = Modifier.padding(padding).padding(24.dp)) {
                         val list = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
                         AeonHybridSelector(
                             items = list,
@@ -214,14 +217,8 @@ fun CurrencySelector(
                             labelMapper = { it }
                         )
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showDialog = false }) {
-                        Text("Cancel")
-                    }
-                },
-                shape = RoundedCornerShape(28.dp)
-            )
+                }
+            }
         }
     }
 }

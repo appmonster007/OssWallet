@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
@@ -386,7 +387,7 @@ fun AddTemplateScreen(
     }
 
     if (showAccountSheet) {
-        AccountPickerSheet(
+        AccountSelection(
             accounts = accounts,
             selectedAccount = selectedAccount,
             onAccountSelected = {
@@ -398,7 +399,7 @@ fun AddTemplateScreen(
     }
 
     if (showCategorySheet) {
-        CategoryPickerSheet(
+        CategorySelection(
             categories = categoriesList,
             selectedCategoryId = categoriesList.find { it.name == category }?.id,
             onCategorySelected = {
@@ -410,7 +411,7 @@ fun AddTemplateScreen(
     }
 
     if (showPaymentMethodSheet) {
-        PaymentMethodPickerSheet(
+        PaymentMethodSelection(
             selectedMethod = paymentMethod,
             onMethodSelected = { paymentMethod = it },
             onDismiss = { showPaymentMethodSheet = false }
@@ -418,7 +419,7 @@ fun AddTemplateScreen(
     }
 
     if (showLabelSheet) {
-        LabelPickerSheet(
+        LabelSelection(
             selectedTags = tags,
             onTagsChanged = { tags = it },
             onDismiss = { showLabelSheet = false },

@@ -27,12 +27,13 @@ import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanActionCards
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanDetailSection
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanHeaderCard
-import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanTagSheet
+import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanTagSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.LoanViewModel
 import java.math.BigDecimal
@@ -207,35 +208,35 @@ fun LoanEntryScreen(
         }
 
         if (showAccountSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showAccountSheet = false },
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Select Account")
-                    Text(
-                        text = "Choose the source/destination account for this loan",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = accounts,
-                                mode = AeonSelectMode.SINGLE,
-                                selectedIds = setOf(linkedAccountId),
-                                onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { linkedAccountId = it }
-                                    showAccountSheet = false
-                                },
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                detailMapper = { it.currencyCode },
-                                iconMapper = { AccountIconMap[it.icon] },
-                                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-                            )
+            AeonFullScreenDialog(onDismissRequest = { showAccountSheet = false }) {
+                AeonSelectionScreen(
+                    title = "Select Account",
+                    onBack = { showAccountSheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                        Text(
+                            text = "Choose the source/destination account for this loan",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHybridSelector(
+                                    items = accounts,
+                                    mode = AeonSelectMode.SINGLE,
+                                    selectedIds = setOf(linkedAccountId),
+                                    onSelectionChange = { ids ->
+                                        ids.firstOrNull()?.let { linkedAccountId = it }
+                                        showAccountSheet = false
+                                    },
+                                    idMapper = { it.id },
+                                    labelMapper = { it.name },
+                                    detailMapper = { it.currencyCode },
+                                    iconMapper = { AccountIconMap[it.icon] },
+                                    colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                                )
+                            }
                         }
                     }
                 }
@@ -243,27 +244,26 @@ fun LoanEntryScreen(
         }
 
         if (showCategorySheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showCategorySheet = false },
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Categories")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHierarchicalHybridSelector(
-                                items = categories,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedCategoryIds,
-                                onSelectionChange = { selectedCategoryIds = it },
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                parentIdMapper = { it.parentId },
-                                iconMapper = { AccountIconMap[it.iconName] },
-                                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
-                            )
+            AeonFullScreenDialog(onDismissRequest = { showCategorySheet = false }) {
+                AeonSelectionScreen(
+                    title = "Categories",
+                    onBack = { showCategorySheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHierarchicalHybridSelector(
+                                    items = categories,
+                                    mode = AeonSelectMode.MULTI,
+                                    selectedIds = selectedCategoryIds,
+                                    onSelectionChange = { selectedCategoryIds = it },
+                                    idMapper = { it.id },
+                                    labelMapper = { it.name },
+                                    parentIdMapper = { it.parentId },
+                                    iconMapper = { AccountIconMap[it.iconName] },
+                                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
+                                )
+                            }
                         }
                     }
                 }
@@ -272,7 +272,7 @@ fun LoanEntryScreen(
 
         if (showTagSheet) {
             val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
-            LoanTagSheet(
+            LoanTagSelection(
                 availableTags = availableTags,
                 selectedTags = selectedTags,
                 onSelectionChanged = { selectedTags = it },

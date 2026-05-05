@@ -29,6 +29,9 @@ import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
@@ -399,11 +402,11 @@ fun AddTemplateScreen(
     }
 
     if (showCategorySheet) {
-        CategorySelection(
+        TransactionCategorySelection(
             categories = categoriesList,
             selectedCategoryId = categoriesList.find { it.name == category }?.id,
-            onCategorySelected = {
-                category = it.name
+            onCategorySelected = { name, id ->
+                category = name
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }
@@ -419,12 +422,12 @@ fun AddTemplateScreen(
     }
 
     if (showLabelSheet) {
-        LabelSelection(
+        TagSelection(
+            tags = allTags,
             selectedTags = tags,
-            onTagsChanged = { tags = it },
-            onDismiss = { showLabelSheet = false },
-            allTags = allTags,
-            onAddTag = { tagViewModel.addTag(it) }
+            onTagsSelected = { tags = it },
+            onAddTag = { tagViewModel.addTag(it) },
+            onDismiss = { showLabelSheet = false }
         )
     }
 }

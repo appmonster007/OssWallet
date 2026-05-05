@@ -13,6 +13,13 @@ class OssWalletApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        
+        // Initialize osmdroid
+        org.osmdroid.config.Configuration.getInstance().load(
+            this,
+            getSharedPreferences("osmdroid", MODE_PRIVATE)
+        )
+
         container = AppContainer(this)
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)

@@ -16,12 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
 
 @Composable
 fun CategoryListItem(
     category: Category,
-    depth: Int = 0,
     isSelected: Boolean = false,
     hasChildren: Boolean = false,
     isExpanded: Boolean = false,
@@ -30,7 +28,6 @@ fun CategoryListItem(
     onEditClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    val isRoot = depth == 0
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -39,9 +36,23 @@ fun CategoryListItem(
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (hasChildren) {
+            IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.width(24.dp))
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
         Surface(
-            modifier = Modifier.size(if (isRoot) 40.dp else 32.dp),
+            modifier = Modifier.size(40.dp),
             shape = CircleShape,
             color = Color(displayColor).copy(alpha = 0.2f)
         ) {
@@ -49,7 +60,7 @@ fun CategoryListItem(
                 Icon(
                     AccountIconMap[category.iconName] ?: Icons.Rounded.Category,
                     contentDescription = null,
-                    modifier = Modifier.size(if (isRoot) 20.dp else 16.dp),
+                    modifier = Modifier.size(20.dp),
                     tint = Color(displayColor)
                 )
             }
@@ -59,8 +70,8 @@ fun CategoryListItem(
         
         Text(
             category.name,
-            style = if (isRoot) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            fontWeight = if (isRoot) FontWeight.Bold else FontWeight.Medium,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
@@ -71,16 +82,6 @@ fun CategoryListItem(
             }
         } else if (isSelected) {
             Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        }
-        
-        if (hasChildren) {
-            IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline
-                )
-            }
         }
     }
 }
@@ -96,7 +97,7 @@ fun AeonCategoryList(
 ) {
     val rootCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
     
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         rootCategories.forEach { root ->
             RecursiveCategoryNode(
                 category = root,
@@ -131,11 +132,20 @@ private fun RecursiveCategoryNode(
         ) 
     }
     
-    val content = @Composable {
+    val backgroundColor = if (depth % 2 == 0) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+    }
+
+    Surface(
+        shape = if (depth == 0) RoundedCornerShape(24.dp) else RoundedCornerShape(16.dp),
+        color = backgroundColor,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+    ) {
         Column {
             CategoryListItem(
                 category = category,
-                depth = depth,
                 isSelected = selectedCategoryId == category.id,
                 hasChildren = children.isNotEmpty() || isManagementMode,
                 isExpanded = expanded,
@@ -152,7 +162,7 @@ private fun RecursiveCategoryNode(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(start = 16.dp)) {
+                Column {
                     children.forEach { child ->
                         RecursiveCategoryNode(
                             category = child,
@@ -193,19 +203,16 @@ private fun RecursiveCategoryNode(
                             }
                         }
                     }
+
+                    if (children.isNotEmpty() || isManagementMode) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
-    }
-
-    if (depth == 0) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ) {
-            content()
-        }
-    } else {
-        content()
     }
 }

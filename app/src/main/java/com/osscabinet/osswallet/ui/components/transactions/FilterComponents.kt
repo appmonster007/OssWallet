@@ -479,13 +479,13 @@ fun ContextCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> MultiSelectionDialog(
+fun <T, ID> MultiSelectionDialog(
     title: String,
     items: List<T>,
     selectedItems: List<T>,
     onDismissRequest: () -> Unit,
     onConfirm: (List<T>) -> Unit,
-    idMapper: (T) -> String,
+    idMapper: (T) -> ID,
     labelMapper: (T) -> String,
     iconMapper: (T) -> ImageVector? = { null },
     colorMapper: (T) -> Color? = { null }
@@ -667,7 +667,7 @@ fun MultiSelectionDialogPreview() {
             selectedItems = listOf("Food & Dining", "Shopping"),
             onDismissRequest = {},
             onConfirm = {},
-            idMapper = { it },
+            idMapper = { it.hashCode().toLong() },
             labelMapper = { it }
         )
     }
@@ -699,11 +699,16 @@ fun CategorySelectionDialog(
                     .heightIn(max = 400.dp)
             ) {
                 AeonHierarchicalHybridSelector(
-                    categories = categories,
+                    items = categories,
                     mode = AeonSelectMode.MULTI,
                     selectedIds = tempSelectedIds,
                     onSelectionChange = { tempSelectedIds = it },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    idMapper = { it.id },
+                    labelMapper = { it.name },
+                    parentIdMapper = { it.parentId },
+                    iconMapper = { AccountIconMap[it.iconName] },
+                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                 )
             }
         },

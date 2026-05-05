@@ -12,34 +12,44 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.Category
 
 /**
  * A unified hierarchical selector that supports single-select, multi-select, parent-selection, and management modes.
  * Implements a "layered" hierarchical design with left-aligned expansion controls.
+ * Generic version that works with any data type and any ID type.
+ *
+ * @param T The type of items in the list
+ * @param ID The type of item IDs (typically Long or String)
  */
 @Composable
-fun AeonHierarchicalHybridSelector(
-    categories: List<Category>,
+fun <T, ID> AeonHierarchicalHybridSelector(
+    items: List<T>,
     mode: AeonSelectMode,
-    selectedIds: Set<Long>,
-    onSelectionChange: (Set<Long>) -> Unit,
+    selectedIds: Set<ID>,
+    onSelectionChange: (Set<ID>) -> Unit,
+    idMapper: (T) -> ID,
+    labelMapper: (T) -> String,
+    parentIdMapper: (T) -> ID?,
     modifier: Modifier = Modifier,
-    onParentSelected: (Long?) -> Unit = {},
-    onEditClick: (Category) -> Unit = {},
-    onAddSubCategoryClick: (Category) -> Unit = {}
+    iconMapper: (T) -> ImageVector? = { null },
+    colorMapper: (T) -> Color? = { null },
+    noneLabel: String? = null,
+    noneIcon: ImageVector = Icons.Rounded.Block,
+    onParentSelected: (ID?) -> Unit = {},
+    onEditClick: (T) -> Unit = {},
+    onAddChildClick: (T) -> Unit = {}
 ) {
-    val rootCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
+    val rootItems = items.filter { parentIdMapper(it) == null }.sortedBy { labelMapper(it) }
 
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Special "None" option for Parent Selection mode
-        if (mode == AeonSelectMode.PARENT) {
+        if (mode == AeonSelectMode.PARENT && noneLabel != null) {
             val isNoneSelected = selectedIds.isEmpty()
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -52,19 +62,19 @@ fun AeonHierarchicalHybridSelector(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Spacer(modifier = Modifier.width(32.dp)) // Alignment with icons
+                    Spacer(modifier = Modifier.width(32.dp))
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Icon(noneIcon, contentDescription = null, modifier = Modifier.size(20.dp))
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        "None (Primary Category)",
+                        noneLabel,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
@@ -76,16 +86,21 @@ fun AeonHierarchicalHybridSelector(
             }
         }
 
-        rootCategories.forEach { root ->
+        rootItems.forEach { root ->
             RecursiveHybridNode(
-                category = root,
-                allCategories = categories,
+                item = root,
+                allItems = items,
                 mode = mode,
                 selectedIds = selectedIds,
                 onSelectionChange = onSelectionChange,
+                idMapper = idMapper,
+                labelMapper = labelMapper,
+                parentIdMapper = parentIdMapper,
+                iconMapper = iconMapper,
+                colorMapper = colorMapper,
                 onParentSelected = onParentSelected,
                 onEditClick = onEditClick,
-                onAddSubCategoryClick = onAddSubCategoryClick,
+                onAddChildClick = onAddChildClick,
                 depth = 0
             )
         }
@@ -93,24 +108,29 @@ fun AeonHierarchicalHybridSelector(
 }
 
 @Composable
-private fun RecursiveHybridNode(
-    category: Category,
-    allCategories: List<Category>,
+private fun <T, ID> RecursiveHybridNode(
+    item: T,
+    allItems: List<T>,
     mode: AeonSelectMode,
-    selectedIds: Set<Long>,
-    onSelectionChange: (Set<Long>) -> Unit,
-    onParentSelected: (Long?) -> Unit,
-    onEditClick: (Category) -> Unit,
-    onAddSubCategoryClick: (Category) -> Unit,
+    selectedIds: Set<ID>,
+    onSelectionChange: (Set<ID>) -> Unit,
+    idMapper: (T) -> ID,
+    labelMapper: (T) -> String,
+    parentIdMapper: (T) -> ID?,
+    iconMapper: (T) -> ImageVector?,
+    colorMapper: (T) -> Color?,
+    onParentSelected: (ID?) -> Unit,
+    onEditClick: (T) -> Unit,
+    onAddChildClick: (T) -> Unit,
     depth: Int
 ) {
-    val children = allCategories.filter { it.parentId == category.id }.sortedBy { it.name }
-    var expanded by remember { 
-        mutableStateOf(selectedIds.contains(category.id) || 
-            selectedIds.any { id -> allCategories.find { it.id == id }?.parentId == category.id } ||
-            mode == AeonSelectMode.MANAGEMENT) 
+    val itemId = idMapper(item)
+    val children = allItems.filter { parentIdMapper(it) == itemId }.sortedBy { labelMapper(it) }
+    var expanded by remember {
+        mutableStateOf(selectedIds.contains(itemId) ||
+            selectedIds.any { id -> allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId })
     }
-    
+
     val backgroundColor = if (depth % 2 == 0) {
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     } else {
@@ -124,26 +144,31 @@ private fun RecursiveHybridNode(
     ) {
         Column {
             HybridSelectItem(
-                category = category,
+                item = item,
                 mode = mode,
-                isSelected = selectedIds.contains(category.id),
+                isSelected = selectedIds.contains(itemId),
                 hasChildren = children.isNotEmpty() || mode == AeonSelectMode.MANAGEMENT,
                 isExpanded = expanded,
                 onToggleExpand = { expanded = !expanded },
-                onEditClick = { onEditClick(category) },
+                idMapper = idMapper,
+                labelMapper = labelMapper,
+                iconMapper = iconMapper,
+                colorMapper = colorMapper,
+                onEditClick = { onEditClick(item) },
+                onAddChildClick = { onAddChildClick(item) },
                 onClick = {
                     when (mode) {
-                        AeonSelectMode.SINGLE -> onSelectionChange(setOf(category.id))
-                        AeonSelectMode.PARENT -> onParentSelected(category.id)
+                        AeonSelectMode.SINGLE -> onSelectionChange(setOf(itemId))
+                        AeonSelectMode.PARENT -> onParentSelected(itemId)
                         AeonSelectMode.MULTI -> {
-                            val newSelected = if (category.id in selectedIds) {
-                                selectedIds - category.id
+                            val newSelected = if (itemId in selectedIds) {
+                                selectedIds - itemId
                             } else {
-                                selectedIds + category.id
+                                selectedIds + itemId
                             }
                             onSelectionChange(newSelected)
                         }
-                        AeonSelectMode.MANAGEMENT -> onEditClick(category)
+                        AeonSelectMode.MANAGEMENT -> onEditClick(item)
                     }
                 }
             )
@@ -156,47 +181,24 @@ private fun RecursiveHybridNode(
                 Column {
                     children.forEach { child ->
                         RecursiveHybridNode(
-                            category = child,
-                            allCategories = allCategories,
+                            item = child,
+                            allItems = allItems,
                             mode = mode,
                             selectedIds = selectedIds,
                             onSelectionChange = onSelectionChange,
+                            idMapper = idMapper,
+                            labelMapper = labelMapper,
+                            parentIdMapper = parentIdMapper,
+                            iconMapper = iconMapper,
+                            colorMapper = colorMapper,
                             onParentSelected = onParentSelected,
                             onEditClick = onEditClick,
-                            onAddSubCategoryClick = onAddSubCategoryClick,
+                            onAddChildClick = onAddChildClick,
                             depth = depth + 1
                         )
                     }
-                    
-                    if (mode == AeonSelectMode.MANAGEMENT) {
-                        // Add Sub-category button
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onAddSubCategoryClick(category) }
-                                .padding(vertical = 12.dp, horizontal = 16.dp),
-                            color = Color.Transparent
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(32.dp)) // Aligns with expansion arrow + spacer
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    "Add sub-category",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
 
-                    if (children.isNotEmpty() || mode == AeonSelectMode.MANAGEMENT) {
+                    if (children.isNotEmpty()) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -210,14 +212,19 @@ private fun RecursiveHybridNode(
 }
 
 @Composable
-private fun HybridSelectItem(
-    category: Category,
+private fun <T, ID> HybridSelectItem(
+    item: T,
     mode: AeonSelectMode,
     isSelected: Boolean,
     hasChildren: Boolean,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
+    idMapper: (T) -> ID,
+    labelMapper: (T) -> String,
+    iconMapper: (T) -> ImageVector?,
+    colorMapper: (T) -> Color?,
     onEditClick: () -> Unit,
+    onAddChildClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
     Row(
@@ -242,28 +249,31 @@ private fun HybridSelectItem(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Category Icon
-        val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
+        // Item Icon
+        val icon = iconMapper(item)
+        val color = colorMapper(item) ?: MaterialTheme.colorScheme.primary
         Surface(
             modifier = Modifier.size(40.dp),
             shape = CircleShape,
-            color = Color(displayColor).copy(alpha = 0.2f)
+            color = color.copy(alpha = 0.2f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    AccountIconMap[category.iconName] ?: Icons.Rounded.Category,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = Color(displayColor)
-                )
+                if (icon != null) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = color
+                    )
+                }
             }
         }
-        
+
         Spacer(modifier = Modifier.width(16.dp))
-        
-        // Category Name
+
+        // Item Label
         Text(
-            category.name,
+            labelMapper(item),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
@@ -292,62 +302,25 @@ private fun HybridSelectItem(
                 )
             }
             AeonSelectMode.MANAGEMENT -> {
-                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        Icons.Rounded.Edit,
-                        contentDescription = "Edit",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.outline
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    IconButton(onClick = onAddChildClick, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = "Add child",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.Rounded.Edit,
+                            contentDescription = "Edit",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }
     }
 }
-
-@Preview(showBackground = true, name = "Multi Select Mode")
-@Composable
-fun HierarchicalHybridPickerMultiPreview() {
-    val mockCategories = getMockCategories()
-    var selectedIds by remember { mutableStateOf(setOf(1L, 2L, 6L)) }
-    
-    MaterialTheme {
-        Surface(modifier = Modifier.padding(16.dp)) {
-            AeonHierarchicalHybridSelector(
-                categories = mockCategories,
-                mode = AeonSelectMode.MULTI,
-                selectedIds = selectedIds,
-                onSelectionChange = { selectedIds = it }
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Parent Select Mode")
-@Composable
-fun HierarchicalHybridPickerParentPreview() {
-    val mockCategories = getMockCategories()
-    var selectedId by remember { mutableStateOf<Long?>(1L) }
-    
-    MaterialTheme {
-        Surface(modifier = Modifier.padding(16.dp)) {
-            AeonHierarchicalHybridSelector(
-                categories = mockCategories,
-                mode = AeonSelectMode.PARENT,
-                selectedIds = if (selectedId != null) setOf(selectedId!!) else emptySet(),
-                onSelectionChange = { },
-                onParentSelected = { selectedId = it }
-            )
-        }
-    }
-}
-
-private fun getMockCategories() = listOf(
-    Category(1, "Food", "Restaurant", 0xFFE91E63.toInt(), true, null),
-    Category(2, "Groceries", "ShoppingBag", 0xFFE91E63.toInt(), false, 1),
-    Category(3, "Dining Out", "Restaurant", 0xFFE91E63.toInt(), false, 1),
-    Category(4, "Fast Food", "Fastfood", 0xFFE91E63.toInt(), false, 3),
-    Category(5, "Transport", "DirectionsCar", 0xFF2196F3.toInt(), true, null),
-    Category(6, "Fuel", "LocalGasStation", 0xFF2196F3.toInt(), false, 5),
-    Category(7, "Public Transport", "DirectionsBus", 0xFF2196F3.toInt(), false, 5)
-)

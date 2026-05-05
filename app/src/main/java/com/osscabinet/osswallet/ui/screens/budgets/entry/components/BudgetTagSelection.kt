@@ -21,23 +21,23 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 
 /**
- * Full-screen selection for Labels in Budget Entry.
- * Replaced BudgetLabelSheet.
+ * Full-screen selection for Tags in Budget Entry.
+ * Replaced BudgetTagSheet.
  */
 @Composable
-fun BudgetLabelSelection(
-    availableLabels: List<String>,
-    selectedLabels: Set<String>,
+fun BudgetTagSelection(
+    availableTags: List<String>,
+    selectedTags: Set<String>,
     onSelectionChanged: (Set<String>) -> Unit,
-    onAddLabel: (String) -> Unit,
+    onAddTag: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var currentSelection by remember { mutableStateOf(selectedLabels) }
-    var newLabelName by remember { mutableStateOf("") }
+    var currentSelection by remember { mutableStateOf(selectedTags) }
+    var newTagName by remember { mutableStateOf("") }
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
-            title = "Budget Labels",
+            title = "Budget Tags",
             onBack = onDismiss
         ) { padding ->
             Column(
@@ -46,14 +46,14 @@ fun BudgetLabelSelection(
                     .padding(horizontal = 24.dp)
             ) {
                 Text(
-                    text = "Filter budget by specific custom labels",
+                    text = "Filter budget by specific custom tags",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Add new label row
+                // Add new tag row
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -71,9 +71,9 @@ fun BudgetLabelSelection(
                             modifier = Modifier.size(20.dp)
                         )
                         TextField(
-                            value = newLabelName,
-                            onValueChange = { newLabelName = it },
-                            placeholder = { Text("Create new label...", style = MaterialTheme.typography.bodyLarge) },
+                            value = newTagName,
+                            onValueChange = { newTagName = it },
+                            placeholder = { Text("Create new tag...", style = MaterialTheme.typography.bodyLarge) },
                             modifier = Modifier.weight(1f),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
@@ -85,13 +85,13 @@ fun BudgetLabelSelection(
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
-                        if (newLabelName.isNotBlank()) {
+                        if (newTagName.isNotBlank()) {
                             TextButton(
                                 onClick = {
-                                    val trimmed = newLabelName.trim()
-                                    onAddLabel(trimmed)
+                                    val trimmed = newTagName.trim()
+                                    onAddTag(trimmed)
                                     currentSelection = currentSelection + trimmed
-                                    newLabelName = ""
+                                    newTagName = ""
                                 }
                             ) {
                                 Text("ADD", fontWeight = FontWeight.Bold)
@@ -107,11 +107,11 @@ fun BudgetLabelSelection(
                     modifier = Modifier.weight(1f, fill = false),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(availableLabels) { label ->
-                        val isSelected = label in currentSelection
+                    items(availableTags) { tag ->
+                        val isSelected = tag in currentSelection
                         Surface(
                             onClick = {
-                                currentSelection = if (isSelected) currentSelection - label else currentSelection + label
+                                currentSelection = if (isSelected) currentSelection - tag else currentSelection + tag
                             },
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) {
@@ -145,7 +145,7 @@ fun BudgetLabelSelection(
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(
-                                    text = label,
+                                    text = tag,
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
                                     ),

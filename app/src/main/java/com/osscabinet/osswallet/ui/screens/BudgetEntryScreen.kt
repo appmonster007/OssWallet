@@ -35,7 +35,7 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetActionCards
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetDetailSection
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetHeaderCard
-import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetLabelSelection
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetTagSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import java.math.BigDecimal
@@ -346,11 +346,11 @@ fun BudgetEntryScreen(
         }
 
         if (showTagSheet) {
-            BudgetLabelSelection(
-                availableLabels = availableTags,
-                selectedLabels = selectedTags,
+            BudgetTagSelection(
+                availableTags = availableTags,
+                selectedTags = selectedTags,
                 onSelectionChanged = { selectedTags = it },
-                onAddLabel = { /* ViewModel handles derive from transactions, but for quick UX: */
+                onAddTag = { /* ViewModel handles derive from transactions, but for quick UX: */
                      selectedTags = selectedTags + it
                 },
                 onDismiss = { showTagSheet = false }

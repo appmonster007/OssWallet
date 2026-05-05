@@ -35,7 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onManageAccountsClick: () -> Unit,
-    onManageLabelsClick: () -> Unit,
+    onManageTagsClick: () -> Unit,
     onManageCategoriesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onManageFiltersClick: () -> Unit,
@@ -393,10 +393,10 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(
-                    title = "Manage Labels",
+                    title = "Manage Tags",
                     subtitle = "Create, edit, or delete tags",
                     icon = Icons.Rounded.Label,
-                    onClick = { navigate(onManageLabelsClick) }
+                    onClick = { navigate(onManageTagsClick) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SettingsItem(

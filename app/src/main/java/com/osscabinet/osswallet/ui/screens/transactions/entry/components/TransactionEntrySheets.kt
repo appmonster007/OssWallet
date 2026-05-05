@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountPicker
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategoryPicker
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionAccountSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.*
@@ -34,9 +34,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Category Selection Sheet
+    // Category Selection Screen
     if (state.showCategorySheet) {
-        TransactionCategoryPicker(
+        TransactionCategorySelection(
             categories = state.categories,
             selectedCategoryId = state.selectedCategoryId,
             onCategorySelected = { category, id ->
@@ -47,9 +47,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Account Selection Sheet
+    // Account Selection Screen
     if (state.showAccountSheet) {
-        TransactionAccountPicker(
+        TransactionAccountSelection(
             accounts = state.accounts,
             selectedAccountId = state.selectedAccount?.id,
             onAccountSelected = { account ->
@@ -60,9 +60,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Target Account Selection Sheet (for transfers)
+    // Target Account Selection Screen (for transfers)
     if (state.showTargetAccountSheet) {
-        TransactionAccountPicker(
+        TransactionAccountSelection(
             accounts = state.accounts.filter { it.id != state.selectedAccount?.id },
             selectedAccountId = state.targetAccount?.id,
             onAccountSelected = { account ->
@@ -75,9 +75,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Template Selection Sheet
+    // Template Selection Screen
     if (state.showTemplateSheet) {
-        TemplateSelectionSheet(
+        TemplateSelection(
             templates = state.templates,
             onTemplateSelected = { template ->
                 onEvent(TransactionEntryEvent.ApplyTemplate(template))
@@ -102,9 +102,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Tag Selection Sheet
+    // Tag Selection Screen
     if (state.showLabelSheet) {
-        TagSelectionSheet(
+        TagSelection(
             tags = state.allTags,
             selectedTags = state.selectedTags,
             onTagsSelected = { tags ->
@@ -116,9 +116,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Payment Method Sheet
+    // Payment Method Selection Screen
     if (state.showPaymentMethodSheet) {
-        PaymentMethodSheet(
+        PaymentMethodSelection(
             selectedMethod = state.paymentMethod,
             onMethodSelected = { method ->
                 onEvent(TransactionEntryEvent.SetPaymentMethod(method))
@@ -128,9 +128,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Status Sheet
+    // Status Selection Screen
     if (state.showStatusSheet) {
-        StatusSheet(
+        StatusSelection(
             selectedStatus = state.status,
             onStatusSelected = { status ->
                 onEvent(TransactionEntryEvent.SetStatus(status))

@@ -29,12 +29,13 @@ import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetActionCards
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetDetailSection
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetHeaderCard
-import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetLabelSheet
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetLabelSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import java.math.BigDecimal
@@ -204,32 +205,32 @@ fun BudgetEntryScreen(
         }
 
         if (showAccountSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showAccountSheet = false },
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Select Accounts")
-                    Text(
-                        text = "Choose which accounts to include in this budget",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = accounts,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedAccountIds,
-                                onSelectionChange = { selectedAccountIds = it },
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                detailMapper = { it.currencyCode },
-                                iconMapper = { AccountIconMap[it.icon] },
-                                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-                            )
+            AeonFullScreenDialog(onDismissRequest = { showAccountSheet = false }) {
+                AeonSelectionScreen(
+                    title = "Select Accounts",
+                    onBack = { showAccountSheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                        Text(
+                            text = "Choose which accounts to include in this budget",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHybridSelector(
+                                    items = accounts,
+                                    mode = AeonSelectMode.MULTI,
+                                    selectedIds = selectedAccountIds,
+                                    onSelectionChange = { selectedAccountIds = it },
+                                    idMapper = { it.id },
+                                    labelMapper = { it.name },
+                                    detailMapper = { it.currencyCode },
+                                    iconMapper = { AccountIconMap[it.icon] },
+                                    colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                                )
+                            }
                         }
                     }
                 }
@@ -237,38 +238,38 @@ fun BudgetEntryScreen(
         }
 
         if (showPeriodSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showPeriodSheet = false },
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Reset Period")
-                    Text(
-                        text = "How often should this budget reset?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = BudgetPeriod.entries,
-                                mode = AeonSelectMode.SINGLE,
-                                selectedIds = setOf(period.ordinal.toLong()),
-                                onSelectionChange = { ids ->
-                                    ids.firstOrNull()?.let { ordinal ->
-                                        period = BudgetPeriod.entries.getOrNull(ordinal.toInt()) ?: period
-                                        if (period == BudgetPeriod.CUSTOM) {
-                                            showCustomStartPicker = true
+            AeonFullScreenDialog(onDismissRequest = { showPeriodSheet = false }) {
+                AeonSelectionScreen(
+                    title = "Reset Period",
+                    onBack = { showPeriodSheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                        Text(
+                            text = "How often should this budget reset?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHybridSelector(
+                                    items = BudgetPeriod.entries,
+                                    mode = AeonSelectMode.SINGLE,
+                                    selectedIds = setOf(period.ordinal.toLong()),
+                                    onSelectionChange = { ids ->
+                                        ids.firstOrNull()?.let { ordinal ->
+                                            period = BudgetPeriod.entries.getOrNull(ordinal.toInt()) ?: period
+                                            if (period == BudgetPeriod.CUSTOM) {
+                                                showCustomStartPicker = true
+                                            }
+                                            showPeriodSheet = false
                                         }
-                                        showPeriodSheet = false
-                                    }
-                                },
-                                idMapper = { it.ordinal.toLong() },
-                                labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
-                                iconMapper = { Icons.Rounded.Update }
-                            )
+                                    },
+                                    idMapper = { it.ordinal.toLong() },
+                                    labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                                    iconMapper = { Icons.Rounded.Update }
+                                )
+                            }
                         }
                     }
                 }
@@ -276,41 +277,41 @@ fun BudgetEntryScreen(
         }
 
         if (showTrackTypeSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showTrackTypeSheet = false },
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Track Types")
-                    Text(
-                        text = "Should this budget track expenses, income, or both?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHybridSelector(
-                                items = BudgetTrackType.entries,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }.toSet(),
-                                onSelectionChange = { ids ->
-                                    if (ids.isNotEmpty()) {
-                                        selectedTrackTypes = ids.mapNotNull { ordinal ->
-                                            BudgetTrackType.entries.getOrNull(ordinal.toInt())
-                                        }.toSet()
+            AeonFullScreenDialog(onDismissRequest = { showTrackTypeSheet = false }) {
+                AeonSelectionScreen(
+                    title = "Track Types",
+                    onBack = { showTrackTypeSheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                        Text(
+                            text = "Should this budget track expenses, income, or both?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHybridSelector(
+                                    items = BudgetTrackType.entries,
+                                    mode = AeonSelectMode.MULTI,
+                                    selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }.toSet(),
+                                    onSelectionChange = { ids ->
+                                        if (ids.isNotEmpty()) {
+                                            selectedTrackTypes = ids.mapNotNull { ordinal ->
+                                                BudgetTrackType.entries.getOrNull(ordinal.toInt())
+                                            }.toSet()
+                                        }
+                                    },
+                                    idMapper = { it.ordinal.toLong() },
+                                    labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                                    iconMapper = {
+                                        when (it) {
+                                            BudgetTrackType.EXPENSE -> Rounded.TrendingDown
+                                            BudgetTrackType.INCOME -> Rounded.TrendingUp
+                                        }
                                     }
-                                },
-                                idMapper = { it.ordinal.toLong() },
-                                labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
-                                iconMapper = {
-                                    when (it) {
-                                        BudgetTrackType.EXPENSE -> Rounded.TrendingDown
-                                        BudgetTrackType.INCOME -> Rounded.TrendingUp
-                                    }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -318,27 +319,26 @@ fun BudgetEntryScreen(
         }
 
         if (showCategorySheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showCategorySheet = false },
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-                    AeonSectionHeader(title = "Categories")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            AeonHierarchicalHybridSelector(
-                                items = categories,
-                                mode = AeonSelectMode.MULTI,
-                                selectedIds = selectedCategoryIds,
-                                onSelectionChange = { selectedCategoryIds = it },
-                                idMapper = { it.id },
-                                labelMapper = { it.name },
-                                parentIdMapper = { it.parentId },
-                                iconMapper = { AccountIconMap[it.iconName] },
-                                colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
-                            )
+            AeonFullScreenDialog(onDismissRequest = { showCategorySheet = false }) {
+                AeonSelectionScreen(
+                    title = "Categories",
+                    onBack = { showCategorySheet = false }
+                ) { padding ->
+                    Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                AeonHierarchicalHybridSelector(
+                                    items = categories,
+                                    mode = AeonSelectMode.MULTI,
+                                    selectedIds = selectedCategoryIds,
+                                    onSelectionChange = { selectedCategoryIds = it },
+                                    idMapper = { it.id },
+                                    labelMapper = { it.name },
+                                    parentIdMapper = { it.parentId },
+                                    iconMapper = { AccountIconMap[it.iconName] },
+                                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
+                                )
+                            }
                         }
                     }
                 }
@@ -346,7 +346,7 @@ fun BudgetEntryScreen(
         }
 
         if (showTagSheet) {
-            BudgetLabelSheet(
+            BudgetLabelSelection(
                 availableLabels = availableTags,
                 selectedLabels = selectedTags,
                 onSelectionChanged = { selectedTags = it },

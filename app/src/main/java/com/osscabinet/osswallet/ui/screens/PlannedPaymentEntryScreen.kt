@@ -44,10 +44,10 @@ import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.EditorialInput
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategoryPicker
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSheet
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelectionSheet
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
 import java.math.BigDecimal
@@ -264,7 +264,7 @@ fun PlannedPaymentEntryScreen(
             )
         }
         if (showCategorySheet) {
-            TransactionCategoryPicker(
+            TransactionCategorySelection(
                 categories = categories,
                 selectedCategoryId = selectedCategoryId,
                 onCategorySelected = { _, id -> selectedCategoryId = id; showCategorySheet = false },
@@ -272,14 +272,14 @@ fun PlannedPaymentEntryScreen(
             )
         }
         if (showPaymentMethodSheet) {
-            PaymentMethodSheet(
+            PaymentMethodSelection(
                 selectedMethod = paymentMethod,
                 onMethodSelected = { paymentMethod = it; showPaymentMethodSheet = false },
                 onDismiss = { showPaymentMethodSheet = false }
             )
         }
         if (showTagSheet) {
-            TagSelectionSheet(
+            TagSelection(
                 tags = availableTags,
                 selectedTags = selectedTagNames,
                 onTagsSelected = { selectedTagNames = it; showTagSheet = false },

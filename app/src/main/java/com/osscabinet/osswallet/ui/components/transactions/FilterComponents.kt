@@ -30,6 +30,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import androidx.compose.ui.graphics.Color
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -498,23 +500,23 @@ fun <T, ID> MultiSelectionDialog(
         else items.filter { labelMapper(it).contains(searchQuery, ignoreCase = true) }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 32.sp
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
+    AeonFullScreenDialog(onDismissRequest = onDismissRequest) {
+        AeonSelectionScreen(
+            title = title,
+            onBack = onDismissRequest,
+            actions = {
+                TextButton(onClick = { onConfirm(items.filter { idMapper(it) in currentSelectionIds }) }) {
+                    Text("DONE", fontWeight = FontWeight.Bold)
+                }
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -565,10 +567,7 @@ fun <T, ID> MultiSelectionDialog(
                         )
                     }
                 }
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 if (items.size > 5) {
                     OutlinedTextField(
                         value = searchQuery,
@@ -593,7 +592,6 @@ fun <T, ID> MultiSelectionDialog(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
 
@@ -619,7 +617,7 @@ fun <T, ID> MultiSelectionDialog(
                     }
                 }
 
-                Box(modifier = Modifier.heightIn(max = 450.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         AeonHybridSelector(
                             items = filteredItems,
@@ -631,30 +629,12 @@ fun <T, ID> MultiSelectionDialog(
                             iconMapper = iconMapper,
                             colorMapper = colorMapper
                         )
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(items.filter { idMapper(it) in currentSelectionIds }) },
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Confirm Selection", style = MaterialTheme.typography.labelLarge)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismissRequest,
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge)
-            }
         }
-    )
+    }
 }
 
 @Preview(showBackground = true)
@@ -662,8 +642,8 @@ fun <T, ID> MultiSelectionDialog(
 fun MultiSelectionDialogPreview() {
     MaterialTheme {
         MultiSelectionDialog(
-            title = "Select Categories with a very long title that should wrap nicely in this expressive layout",
-            items = listOf("Food & Dining", "Transportation", "Shopping", "Entertainment", "Health & Fitness", "Education", "Gifts & Donations", "Investments", "Long Category Name That Might Wrap To Multiple Lines To Test UI Robustness"),
+            title = "Select Categories",
+            items = listOf("Food & Dining", "Transportation", "Shopping", "Entertainment", "Health & Fitness", "Education", "Gifts & Donations", "Investments"),
             selectedItems = listOf("Food & Dining", "Shopping"),
             onDismissRequest = {},
             onConfirm = {},
@@ -683,55 +663,41 @@ fun CategorySelectionDialog(
 ) {
     var tempSelectedIds by remember { mutableStateOf(selectedCategoryIds) }
 
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        modifier = Modifier.fillMaxWidth(0.9f),
-        title = {
-            Text(
-                "Select Categories",
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        text = {
+    AeonFullScreenDialog(onDismissRequest = onDismissRequest) {
+        AeonSelectionScreen(
+            title = "Select Categories",
+            onBack = onDismissRequest,
+            actions = {
+                TextButton(onClick = { onConfirm(tempSelectedIds) }) {
+                    Text("DONE", fontWeight = FontWeight.Bold)
+                }
+            }
+        ) { padding ->
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                    .padding(padding)
+                    .padding(24.dp)
+                    .fillMaxSize()
             ) {
-                AeonHierarchicalHybridSelector(
-                    items = categories,
-                    mode = AeonSelectMode.MULTI,
-                    selectedIds = tempSelectedIds,
-                    onSelectionChange = { tempSelectedIds = it },
-                    modifier = Modifier.weight(1f),
-                    idMapper = { it.id },
-                    labelMapper = { it.name },
-                    parentIdMapper = { it.parentId },
-                    iconMapper = { AccountIconMap[it.iconName] },
-                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(tempSelectedIds) },
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Confirm Selection", style = MaterialTheme.typography.labelLarge)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismissRequest,
-                modifier = Modifier.padding(end = 8.dp)
-            ) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge)
+                Box(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        AeonHierarchicalHybridSelector(
+                            items = categories,
+                            mode = AeonSelectMode.MULTI,
+                            selectedIds = tempSelectedIds,
+                            onSelectionChange = { tempSelectedIds = it },
+                            idMapper = { it.id },
+                            labelMapper = { it.name },
+                            parentIdMapper = { it.parentId },
+                            iconMapper = { AccountIconMap[it.iconName] },
+                            colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

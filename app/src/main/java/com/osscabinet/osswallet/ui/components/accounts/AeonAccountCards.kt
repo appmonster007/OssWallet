@@ -27,6 +27,8 @@ import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
@@ -367,43 +369,42 @@ fun AeonAccountCardLarge(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AccountPickerSheet(
+fun AccountSelection(
     accounts: List<Account>,
     selectedAccount: Account?,
     onAccountSelected: (Account) -> Unit,
     onDismiss: () -> Unit
 ) {
     val sortedAccounts = remember(accounts) { accounts.sortedBy { it.name } }
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
-    ) {
-        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
-            AeonSectionHeader(title = "Select Account")
-            Spacer(modifier = Modifier.height(24.dp))
-            Box(modifier = Modifier.weight(1f, fill = false)) {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    AeonHybridSelector(
-                        items = sortedAccounts,
-                        mode = AeonSelectMode.SINGLE,
-                        selectedIds = if (selectedAccount != null) setOf(selectedAccount.id) else emptySet(),
-                        onSelectionChange = { ids ->
-                            ids.firstOrNull()?.let { id ->
-                                sortedAccounts.find { it.id == id }?.let { 
-                                    onAccountSelected(it)
-                                    onDismiss()
+    
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        AeonSelectionScreen(
+            title = "Select Account",
+            onBack = onDismiss
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        AeonHybridSelector(
+                            items = sortedAccounts,
+                            mode = AeonSelectMode.SINGLE,
+                            selectedIds = if (selectedAccount != null) setOf(selectedAccount.id) else emptySet(),
+                            onSelectionChange = { ids ->
+                                ids.firstOrNull()?.let { id ->
+                                    sortedAccounts.find { it.id == id }?.let { 
+                                        onAccountSelected(it)
+                                        onDismiss()
+                                    }
                                 }
-                            }
-                        },
-                        idMapper = { it.id },
-                        labelMapper = { it.name },
-                        detailMapper = { it.structureType },
-                        iconMapper = { AccountIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
-                        colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
-                    )
+                            },
+                            idMapper = { it.id },
+                            labelMapper = { it.name },
+                            detailMapper = { it.structureType },
+                            iconMapper = { AccountIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
+                            colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                        )
+                    }
                 }
             }
         }

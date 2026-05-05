@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 
@@ -329,7 +330,7 @@ fun TemplateDialog(
     )
 
     if (showAccountPicker) {
-        AccountPickerSheet(
+        AccountSelection(
             accounts = accounts,
             selectedAccount = selectedAccount,
             onAccountSelected = {

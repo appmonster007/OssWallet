@@ -74,7 +74,7 @@ fun AddTemplateScreen(
     var showAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
-    var showLabelSheet by remember { mutableStateOf(false) }
+    var showTagSheet by remember { mutableStateOf(false) }
     var isNumpadVisible by remember { mutableStateOf(false) }
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -306,10 +306,10 @@ fun AddTemplateScreen(
                 EditorialInput(
                     value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
                     onValueChange = { },
-                    label = "Labels",
+                    label = "Tags",
                     icon = Icons.Rounded.Label,
                     readOnly = true,
-                    onClick = { showLabelSheet = true }
+                    onClick = { showTagSheet = true }
                 )
 
                 EditorialInput(
@@ -371,7 +371,7 @@ fun AddTemplateScreen(
         }
 
         // Background dimming for Sheets
-        if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showLabelSheet) {
+        if (showAccountSheet || showCategorySheet || showPaymentMethodSheet || showTagSheet) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -383,7 +383,7 @@ fun AddTemplateScreen(
                         showAccountSheet = false
                         showCategorySheet = false
                         showPaymentMethodSheet = false
-                        showLabelSheet = false
+                        showTagSheet = false
                     }
             )
         }
@@ -421,13 +421,13 @@ fun AddTemplateScreen(
         )
     }
 
-    if (showLabelSheet) {
+    if (showTagSheet) {
         TagSelection(
             tags = allTags,
             selectedTags = tags,
             onTagsSelected = { tags = it },
             onAddTag = { tagViewModel.addTag(it) },
-            onDismiss = { showLabelSheet = false }
+            onDismiss = { showTagSheet = false }
         )
     }
 }

@@ -309,7 +309,7 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.ShowLinkedTransactionSheet -> update {
                 it.copy(showLinkedTransactionSheet = event.show)
             }
-            is TransactionEntryEvent.ShowLabelSheet -> update { it.copy(showLabelSheet = event.show) }
+            is TransactionEntryEvent.ShowTagSheet -> update { it.copy(showTagSheet = event.show) }
             is TransactionEntryEvent.ShowPaymentMethodSheet -> update {
                 it.copy(showPaymentMethodSheet = event.show)
             }

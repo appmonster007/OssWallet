@@ -22,7 +22,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.TagViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManageLabelsScreen(
+fun ManageTagsScreen(
     viewModel: TagViewModel,
     onBackClick: () -> Unit
 ) {
@@ -33,8 +33,8 @@ fun ManageLabelsScreen(
 
     AeonConfirmDeleteDialog(
         show = tagToDelete != null,
-        title = "Delete Label",
-        message = "Are you sure you want to delete the label \"${tagToDelete?.name}\"? Transactions using this label will not be deleted, but the label will be removed from them.",
+        title = "Delete Tag",
+        message = "Are you sure you want to delete the tag \"${tagToDelete?.name}\"? Transactions using this tag will not be deleted, but the tag will be removed from them.",
         onConfirm = {
             tagToDelete?.let { viewModel.deleteTag(it) }
             tagToDelete = null
@@ -45,7 +45,7 @@ fun ManageLabelsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Labels", fontWeight = FontWeight.Bold) },
+                title = { Text("Manage Tags", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -53,7 +53,7 @@ fun ManageLabelsScreen(
                 },
                 actions = {
                     IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add Label")
+                        Icon(Icons.Rounded.Add, contentDescription = "Add Tag")
                     }
                 }
             )
@@ -67,11 +67,11 @@ fun ManageLabelsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                AeonSectionHeader(title = "Your Labels")
+                AeonSectionHeader(title = "Your Tags")
                 Spacer(modifier = Modifier.height(8.dp))
             }
             items(tags.sortedBy { it.name.lowercase() }) { tag ->
-                LabelItem(
+                TagItem(
                     tag = tag,
                     onDelete = { tagToDelete = tag }
                 )
@@ -82,12 +82,12 @@ fun ManageLabelsScreen(
     if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Label") },
+            title = { Text("Add Tag") },
             text = {
                 OutlinedTextField(
                     value = newTagName,
                     onValueChange = { newTagName = it },
-                    label = { Text("Label Name") },
+                    label = { Text("Tag Name") },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -116,7 +116,7 @@ fun ManageLabelsScreen(
 }
 
 @Composable
-fun LabelItem(tag: Tag, onDelete: () -> Unit) {
+fun TagItem(tag: Tag, onDelete: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),

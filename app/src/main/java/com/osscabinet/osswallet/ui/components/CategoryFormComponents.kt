@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +28,8 @@ import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.RecordFieldCard
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.CategoryParentSelector
+import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,111 +106,43 @@ fun CategoryEditSheet(
                 )
 
                 val parentCategory = parentCategories.find { it.id == selectedParentId }
-                var showParentDropdown by remember { mutableStateOf(false) }
+                var showParentPicker by remember { mutableStateOf(false) }
 
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    RecordFieldCard(
-                        icon = Icons.Rounded.AccountTree,
-                        label = "PARENT CATEGORY",
-                        value = parentCategory?.name ?: "None",
-                        onClick = { showParentDropdown = true },
-                        trailingIcon = if (showParentDropdown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                    )
+                RecordFieldCard(
+                    icon = Icons.Rounded.AccountTree,
+                    label = "PARENT CATEGORY",
+                    value = parentCategory?.name ?: "None",
+                    onClick = { showParentPicker = true },
+                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                )
 
-                    DropdownMenu(
-                        expanded = showParentDropdown,
-                        onDismissRequest = { showParentDropdown = false },
-                        modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .background(MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(24.dp)
+                if (showParentPicker) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showParentPicker = false },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                     ) {
-                        DropdownMenuItem(
-                            text = { Text("None", fontWeight = FontWeight.Medium) },
-                            onClick = {
-                                selectedParentId = null
-                                showParentDropdown = false
-                            },
-                            leadingIcon = {
-                                Surface(
-                                    modifier = Modifier.size(32.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    }
-                                }
-                            },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                        
-                        if (parentCategories.isNotEmpty()) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
-                        }
-
-                        parentCategories.filter { it.id != (category?.id ?: 0L) }.forEach { parent ->
-                            val isSelected = selectedParentId == parent.id
+                        Column(
+                            modifier = Modifier
+                                .padding(24.dp)
+                                .padding(bottom = 32.dp)
+                        ) {
+                            AeonSectionHeader(title = "Select Parent Category")
+                            Spacer(modifier = Modifier.height(24.dp))
                             
-                            // Calculate depth for indentation
-                            var depth = 0
-                            var curr = parent
-                            while (curr.parentId != null) {
-                                val p = parentCategories.find { it.id == curr.parentId }
-                                if (p != null) {
-                                    curr = p
-                                    depth++
-                                } else break
+                            Box(modifier = Modifier.weight(1f, fill = false)) {
+                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                    CategoryParentSelector(
+                                        categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
+                                        selectedParentId = selectedParentId,
+                                        onParentSelected = {
+                                            selectedParentId = it
+                                            showParentPicker = false
+                                        }
+                                    )
+                                }
                             }
-
-                            DropdownMenuItem(
-                                text = { 
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (depth > 0) {
-                                            repeat(depth) {
-                                                Box(modifier = Modifier.width(16.dp)) {
-                                                    VerticalDivider(
-                                                        modifier = Modifier.padding(horizontal = 7.dp).fillMaxHeight(0.5f),
-                                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Text(parent.name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
-                                    }
-                                },
-                                onClick = {
-                                    selectedParentId = parent.id
-                                    showParentDropdown = false
-                                },
-                                leadingIcon = {
-                                    Surface(
-                                        modifier = Modifier.size(32.dp),
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = Color(parent.colorHex).copy(alpha = 0.1f)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                AccountIconMap[parent.iconName] ?: Icons.Rounded.Category,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                                tint = Color(parent.colorHex)
-                                            )
-                                        }
-                                    }
-                                },
-                                trailingIcon = if (isSelected) {
-                                    { Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) }
-                                } else null,
-                                colors = MenuDefaults.itemColors(
-                                    textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                ),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            )
                         }
                     }
                 }

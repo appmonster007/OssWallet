@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
@@ -64,11 +64,20 @@ private fun RecursiveMultiSelectNode(
         }) 
     }
     
-    val content = @Composable {
+    val backgroundColor = if (depth % 2 == 0) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+    }
+
+    Surface(
+        shape = if (depth == 0) RoundedCornerShape(24.dp) else RoundedCornerShape(16.dp),
+        color = backgroundColor,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+    ) {
         Column {
             CategoryMultiSelectItem(
                 category = category,
-                depth = depth,
                 isSelected = category.id in selectedCategoryIds,
                 hasChildren = children.isNotEmpty(),
                 isExpanded = expanded,
@@ -81,7 +90,7 @@ private fun RecursiveMultiSelectNode(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(start = 16.dp)) {
+                Column {
                     children.forEach { child ->
                         RecursiveMultiSelectNode(
                             category = child,
@@ -91,34 +100,29 @@ private fun RecursiveMultiSelectNode(
                             depth = depth + 1
                         )
                     }
+
+                    if (children.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
-    }
-
-    if (depth == 0) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ) {
-            content()
-        }
-    } else {
-        content()
     }
 }
 
 @Composable
 private fun CategoryMultiSelectItem(
     category: Category,
-    depth: Int,
     isSelected: Boolean,
     hasChildren: Boolean,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
     onToggle: () -> Unit
 ) {
-    val isRoot = depth == 0
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -133,33 +137,7 @@ private fun CategoryMultiSelectItem(
             modifier = Modifier.size(24.dp)
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
-        Surface(
-            modifier = Modifier.size(if (isRoot) 40.dp else 32.dp),
-            shape = CircleShape,
-            color = Color(displayColor).copy(alpha = 0.2f)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    AccountIconMap[category.iconName] ?: Icons.Rounded.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(if (isRoot) 20.dp else 16.dp),
-                    tint = Color(displayColor)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Text(
-            category.name,
-            style = if (isRoot) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            fontWeight = if (isRoot) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
+        Spacer(modifier = Modifier.width(8.dp))
 
         if (hasChildren) {
             IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
@@ -169,6 +147,67 @@ private fun CategoryMultiSelectItem(
                     tint = MaterialTheme.colorScheme.outline
                 )
             }
+        } else {
+            Spacer(modifier = Modifier.width(24.dp))
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = CircleShape,
+            color = Color(displayColor).copy(alpha = 0.2f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    AccountIconMap[category.iconName] ?: Icons.Rounded.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(displayColor)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Text(
+            category.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CategoryMultiSelectPickerPreview() {
+    val mockCategories = listOf(
+        Category(1, "Food", "Restaurant", 0xFFE91E63.toInt(), true, null),
+        Category(2, "Groceries", "ShoppingBag", 0xFFE91E63.toInt(), false, 1),
+        Category(3, "Dining Out", "Restaurant", 0xFFE91E63.toInt(), false, 1),
+        Category(4, "Fast Food", "Fastfood", 0xFFE91E63.toInt(), false, 3),
+        Category(5, "Transport", "DirectionsCar", 0xFF2196F3.toInt(), true, null),
+        Category(6, "Fuel", "LocalGasStation", 0xFF2196F3.toInt(), false, 5),
+        Category(7, "Public Transport", "DirectionsBus", 0xFF2196F3.toInt(), false, 5)
+    )
+    
+    var selectedIds by remember { mutableStateOf(setOf(1L, 2L, 6L)) }
+    
+    MaterialTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            CategoryMultiSelectPicker(
+                categories = mockCategories,
+                selectedCategoryIds = selectedIds,
+                onCategoryToggle = { id ->
+                    selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+                }
+            )
         }
     }
 }

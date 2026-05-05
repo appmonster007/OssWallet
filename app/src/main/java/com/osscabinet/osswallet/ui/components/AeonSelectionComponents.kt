@@ -46,6 +46,7 @@ fun AeonSelectionScreen(
     onBack: () -> Unit,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     actions: @Composable RowScope.() -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -70,6 +71,7 @@ fun AeonSelectionScreen(
                 )
             )
         },
+        bottomBar = bottomBar,
         containerColor = containerColor,
         contentWindowInsets = WindowInsets.systemBars
     ) { padding ->

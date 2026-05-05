@@ -21,7 +21,7 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 @Composable
 fun CategoryListItem(
     category: Category,
-    isParent: Boolean,
+    depth: Int = 0,
     isSelected: Boolean = false,
     hasChildren: Boolean = false,
     isExpanded: Boolean = false,
@@ -30,6 +30,7 @@ fun CategoryListItem(
     onEditClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
+    val isRoot = depth == 0
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,7 +41,7 @@ fun CategoryListItem(
     ) {
         val displayColor = if (category.colorHex == -1) 0xFF9E9E9E.toInt() else category.colorHex
         Surface(
-            modifier = Modifier.size(if (isParent) 40.dp else 32.dp),
+            modifier = Modifier.size(if (isRoot) 40.dp else 32.dp),
             shape = CircleShape,
             color = Color(displayColor).copy(alpha = 0.2f)
         ) {
@@ -48,7 +49,7 @@ fun CategoryListItem(
                 Icon(
                     AccountIconMap[category.iconName] ?: Icons.Rounded.Category,
                     contentDescription = null,
-                    modifier = Modifier.size(if (isParent) 20.dp else 16.dp),
+                    modifier = Modifier.size(if (isRoot) 20.dp else 16.dp),
                     tint = Color(displayColor)
                 )
             }
@@ -58,8 +59,8 @@ fun CategoryListItem(
         
         Text(
             category.name,
-            style = if (isParent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
-            fontWeight = if (isParent) FontWeight.Bold else FontWeight.Medium,
+            style = if (isRoot) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            fontWeight = if (isRoot) FontWeight.Bold else FontWeight.Medium,
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
@@ -72,7 +73,7 @@ fun CategoryListItem(
             Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         }
         
-        if (isParent && hasChildren) {
+        if (hasChildren) {
             IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
                 Icon(
                     if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
@@ -93,82 +94,118 @@ fun AeonCategoryList(
     onEditClick: (Category) -> Unit = {},
     onAddSubCategoryClick: (Category) -> Unit = {}
 ) {
-    val parentCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
+    val rootCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
     
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        parentCategories.forEach { parent ->
-            var expanded by remember { mutableStateOf(categories.any { it.parentId == parent.id && it.id == selectedCategoryId }) }
-            val children = categories.filter { it.parentId == parent.id }.sortedBy { it.name }
+        rootCategories.forEach { root ->
+            RecursiveCategoryNode(
+                category = root,
+                allCategories = categories,
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = onCategorySelected,
+                isManagementMode = isManagementMode,
+                onEditClick = onEditClick,
+                onAddSubCategoryClick = onAddSubCategoryClick,
+                depth = 0
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecursiveCategoryNode(
+    category: Category,
+    allCategories: List<Category>,
+    selectedCategoryId: Long?,
+    onCategorySelected: (Category) -> Unit,
+    isManagementMode: Boolean,
+    onEditClick: (Category) -> Unit,
+    onAddSubCategoryClick: (Category) -> Unit,
+    depth: Int
+) {
+    val children = allCategories.filter { it.parentId == category.id }.sortedBy { it.name }
+    var expanded by remember { 
+        mutableStateOf(
+            selectedCategoryId != null && 
+            (category.id == selectedCategoryId || allCategories.any { it.parentId == category.id && it.id == selectedCategoryId })
+        ) 
+    }
+    
+    val content = @Composable {
+        Column {
+            CategoryListItem(
+                category = category,
+                depth = depth,
+                isSelected = selectedCategoryId == category.id,
+                hasChildren = children.isNotEmpty() || isManagementMode,
+                isExpanded = expanded,
+                isManagementMode = isManagementMode,
+                onToggleExpand = { expanded = !expanded },
+                onEditClick = { onEditClick(category) },
+                onClick = {
+                    if (isManagementMode) onEditClick(category) else onCategorySelected(category)
+                }
+            )
             
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
-                Column {
-                    CategoryListItem(
-                        category = parent,
-                        isParent = true,
-                        isSelected = selectedCategoryId == parent.id,
-                        hasChildren = children.isNotEmpty(),
-                        isExpanded = expanded,
-                        isManagementMode = isManagementMode,
-                        onToggleExpand = { expanded = !expanded },
-                        onEditClick = { onEditClick(parent) },
-                        onClick = {
-                            if (isManagementMode) onEditClick(parent) else onCategorySelected(parent)
-                        }
-                    )
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    children.forEach { child ->
+                        RecursiveCategoryNode(
+                            category = child,
+                            allCategories = allCategories,
+                            selectedCategoryId = selectedCategoryId,
+                            onCategorySelected = onCategorySelected,
+                            isManagementMode = isManagementMode,
+                            onEditClick = onEditClick,
+                            onAddSubCategoryClick = onAddSubCategoryClick,
+                            depth = depth + 1
+                        )
+                    }
                     
-                    AnimatedVisibility(
-                        visible = expanded,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Column(modifier = Modifier.padding(start = 16.dp, end = 8.dp, bottom = 8.dp)) {
-                            children.forEach { child ->
-                                CategoryListItem(
-                                    category = child,
-                                    isParent = false,
-                                    isSelected = selectedCategoryId == child.id,
-                                    isManagementMode = isManagementMode,
-                                    onEditClick = { onEditClick(child) },
-                                    onClick = {
-                                        if (isManagementMode) onEditClick(child) else onCategorySelected(child)
-                                    }
+                    if (isManagementMode) {
+                        // Add Sub-category button
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { onAddSubCategoryClick(category) }
+                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                            color = Color.Transparent
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                            }
-                            
-                            if (isManagementMode) {
-                                // Add Sub-category button
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .clickable { onAddSubCategoryClick(parent) }
-                                        .padding(vertical = 12.dp, horizontal = 16.dp),
-                                    color = Color.Transparent
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Rounded.Add,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            "Add sub-category",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    "Add sub-category",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    if (depth == 0) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ) {
+            content()
+        }
+    } else {
+        content()
     }
 }

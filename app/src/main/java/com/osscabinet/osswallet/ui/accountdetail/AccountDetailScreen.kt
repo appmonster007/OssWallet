@@ -302,6 +302,7 @@ fun AccountDetailScreen(
                                     applyFilter = false,
                                     excludeFuture = !state.showPlannedPayments,
                                     precision = state.decimalPrecision,
+                                    is24Hour = state.use24HourFormat,
                                     filterContext = RecordsFilterContext.ByAccount(accountId)
                                 )
                             }

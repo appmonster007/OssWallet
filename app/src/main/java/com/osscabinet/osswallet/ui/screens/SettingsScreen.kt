@@ -47,6 +47,7 @@ fun SettingsScreen(
     val autoSaveExchangeRates by viewModel.autoSaveExchangeRates.collectAsStateWithLifecycle()
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
+    val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -330,6 +331,25 @@ fun SettingsScreen(
                         Switch(
                             checked = expandableFabEnabled,
                             onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                        )
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                SettingsItem(
+                    title = "24-Hour Time Format",
+                    subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",
+                    icon = Icons.Rounded.Schedule,
+                    trailingContent = {
+                        Switch(
+                            checked = use24HourFormat,
+                            onCheckedChange = { viewModel.setUse24HourFormat(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,

@@ -61,7 +61,8 @@ fun AeonTransactionList(
     onClone: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
-    onFullSwipeRight: (Long) -> Unit = {}
+    onFullSwipeRight: (Long) -> Unit = {},
+    is24Hour: Boolean = false
 ) {
     val calendar = Calendar.getInstance()
     val groupedByWeek = transactions.groupBy {
@@ -169,7 +170,7 @@ fun AeonTransactionList(
                         balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
                         balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
                         type = if (item.transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                        timestamp = SimpleDateFormat("EEE, MMM d • HH:mm", Locale.getDefault()).format(Date(item.transaction.timestamp)),
+                        timestamp = SimpleDateFormat(if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a", Locale.getDefault()).format(Date(item.transaction.timestamp)),
                         note = item.transaction.note,
                         tags = item.transaction.tags,
                         icon = icon,

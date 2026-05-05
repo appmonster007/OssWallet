@@ -130,6 +130,7 @@ class DashboardViewModel(
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
+                settingsRepository.use24HourFormat,
                 settingsRepository.dashboardSettings,
                 plannedPaymentsFlow,
                 budgetsFlow,
@@ -146,14 +147,15 @@ class DashboardViewModel(
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
+                val use24Hour = args[7] as Boolean
                 @Suppress("UNUSED_VARIABLE")
-                val dashboardSettings = args[7] as DashboardSettings
+                val dashboardSettings = args[8] as DashboardSettings
                 @Suppress("UNCHECKED_CAST")
-                val plannedPayments = args[8] as List<PlannedPayment>
+                val plannedPayments = args[9] as List<PlannedPayment>
                 @Suppress("UNCHECKED_CAST")
-                val budgets = args[9] as List<Budget>
+                val budgets = args[10] as List<Budget>
                 @Suppress("UNCHECKED_CAST")
-                val loans = args[10] as List<Loan>
+                val loans = args[11] as List<Loan>
 
                 if (!hasLoadedExchangeRates) {
                     return@combine DashboardUiState.Loading
@@ -201,6 +203,7 @@ class DashboardViewModel(
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
                     decimalPrecision = precision,
+                    use24HourFormat = use24Hour,
                     plannedPayments = plannedPayments,
                     budgets = budgets,
                     loans = loans
@@ -296,6 +299,7 @@ sealed class DashboardUiState {
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val decimalPrecision: Int,
+        val use24HourFormat: Boolean = false,
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),
         val loans: List<Loan> = emptyList()

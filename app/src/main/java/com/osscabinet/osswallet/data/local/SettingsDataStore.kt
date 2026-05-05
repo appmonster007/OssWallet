@@ -72,6 +72,7 @@ class SettingsDataStore(private val context: Context) {
         val CARD_ANIMATION_ENABLED_KEY = booleanPreferencesKey("card_animation_enabled")
         val EXPANDABLE_FAB_ENABLED_KEY = booleanPreferencesKey("expandable_fab_enabled")
         val IS_DATABASE_SEEDED_KEY = booleanPreferencesKey("is_database_seeded")
+        val USE_24_HOUR_FORMAT_KEY = booleanPreferencesKey("use_24_hour_format")
 
         val DASHBOARD_SETTINGS_KEY = stringPreferencesKey("dashboard_settings")
         val ACCOUNTS_VIEW_SETTINGS_KEY = stringPreferencesKey("accounts_view_settings")
@@ -117,6 +118,10 @@ class SettingsDataStore(private val context: Context) {
 
     val isDatabaseSeeded: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[IS_DATABASE_SEEDED_KEY] ?: false
+    }
+
+    val use24HourFormat: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[USE_24_HOUR_FORMAT_KEY] ?: android.text.format.DateFormat.is24HourFormat(context)
     }
 
     val dashboardSettings: Flow<DashboardSettings> = context.dataStore.data.map { preferences ->
@@ -226,6 +231,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveDatabaseSeeded(seeded: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_DATABASE_SEEDED_KEY] = seeded
+        }
+    }
+
+    suspend fun saveUse24HourFormat(use24Hour: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[USE_24_HOUR_FORMAT_KEY] = use24Hour
         }
     }
 

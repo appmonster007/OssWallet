@@ -72,6 +72,7 @@ data class TransactionEntryState(
     val templates: List<Template> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap(),
     val decimalPrecision: Int = 2,
+    val use24HourFormat: Boolean = false,
 
     // Edit mode data
     val transactionId: Long? = null,

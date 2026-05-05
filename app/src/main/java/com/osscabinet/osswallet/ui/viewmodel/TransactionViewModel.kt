@@ -66,6 +66,9 @@ class TransactionViewModel(
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
 
+    val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 

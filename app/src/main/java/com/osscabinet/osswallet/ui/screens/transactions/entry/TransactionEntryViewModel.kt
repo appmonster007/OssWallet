@@ -69,6 +69,7 @@ class TransactionEntryViewModel(
             val tags = tagRepository.getAllTags().first()
             val templates = templateRepository.getAllTemplates().first()
             val precision = settingsRepository.decimalPrecision.first()
+            val use24Hour = settingsRepository.use24HourFormat.first()
             val transactions = if (transactionId != null) {
                 transactionUseCases.getTransactions(profileId).first()
             } else emptyList()
@@ -97,6 +98,7 @@ class TransactionEntryViewModel(
                 allTags = tags,
                 templates = templates,
                 decimalPrecision = precision,
+                use24HourFormat = use24Hour,
                 transactions = transactions,
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",

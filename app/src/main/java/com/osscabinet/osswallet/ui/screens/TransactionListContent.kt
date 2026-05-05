@@ -82,7 +82,8 @@ fun TransactionListContent(
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
     onFullSwipeRight: (Long) -> Unit = {},
-    expandableFabEnabled: Boolean = true
+    expandableFabEnabled: Boolean = true,
+    is24Hour: Boolean = false
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -179,7 +180,8 @@ fun TransactionListContent(
                         onClone = onClone,
                         onDelete = onDelete,
                         onSplit = onSplit,
-                        onFullSwipeRight = onFullSwipeRight
+                        onFullSwipeRight = onFullSwipeRight,
+                        is24Hour = is24Hour
                     )
                 }
             }

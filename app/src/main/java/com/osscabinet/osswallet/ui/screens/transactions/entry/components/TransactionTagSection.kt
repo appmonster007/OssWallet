@@ -95,6 +95,7 @@ fun TransactionTagSection(
                 linkedTransactions = state.displayLinkedTxs,
                 accounts = state.accounts,
                 categories = state.categories,
+                is24Hour = state.use24HourFormat,
                 onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
                 onRemoveLink = { txId ->
                     state.transactionId?.let { onEvent(TransactionEntryEvent.RemoveLinkedTransaction(it, txId)) }
@@ -173,6 +174,7 @@ private fun LinkedTransactionsSection(
     linkedTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
     categories: List<com.osscabinet.ossWallet.domain.model.Category>,
+    is24Hour: Boolean,
     onShowSheet: () -> Unit,
     onRemoveLink: (Long) -> Unit
 ) {
@@ -221,6 +223,7 @@ private fun LinkedTransactionsSection(
                 tx = tx,
                 account = accounts.find { it.id == tx.accountId },
                 category = categories.find { it.name == tx.category },
+                is24Hour = is24Hour,
                 onRemove = { onRemoveLink(tx.id) }
             )
         }
@@ -232,6 +235,7 @@ private fun LinkedTransactionItem(
     tx: com.osscabinet.ossWallet.domain.model.Transaction,
     account: com.osscabinet.ossWallet.domain.model.Account?,
     category: com.osscabinet.ossWallet.domain.model.Category?,
+    is24Hour: Boolean,
     onRemove: () -> Unit
 ) {
     val icon: ImageVector = category?.iconName?.let { categoryIcons[it] }
@@ -247,7 +251,7 @@ private fun LinkedTransactionItem(
             balanceBefore = java.math.BigDecimal.ZERO.toPlainString(),
             balanceAfter = tx.amount.toPlainString(),
             type = if (tx.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
-            timestamp = formatDateTime(tx.timestamp),
+            timestamp = formatDateTime(tx.timestamp, is24Hour),
             note = tx.note,
             tags = tx.tags,
             icon = icon,
@@ -448,7 +452,8 @@ private fun formatDate(millis: Long): String {
     return formatter.format(java.util.Date(millis))
 }
 
-private fun formatDateTime(millis: Long): String {
-    val formatter = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault())
+private fun formatDateTime(millis: Long, is24Hour: Boolean = false): String {
+    val pattern = if (is24Hour) "MMM dd, HH:mm" else "MMM dd, hh:mm a"
+    val formatter = java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
     return formatter.format(java.util.Date(millis))
 }

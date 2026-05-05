@@ -13,6 +13,7 @@ interface SettingsRepository {
     val cardAnimationEnabled: Flow<Boolean>
     val expandableFabEnabled: Flow<Boolean>
     val isDatabaseSeeded: Flow<Boolean>
+    val use24HourFormat: Flow<Boolean>
     val dashboardSettings: Flow<DashboardSettings>
     val accountsViewSettings: Flow<AccountsViewSettings>
     val accountDetailSettings: Flow<AccountDetailSettings>
@@ -31,6 +32,7 @@ interface SettingsRepository {
     suspend fun saveCardAnimationEnabled(enabled: Boolean)
     suspend fun saveExpandableFabEnabled(enabled: Boolean)
     suspend fun saveDatabaseSeeded(seeded: Boolean)
+    suspend fun saveUse24HourFormat(use24Hour: Boolean)
     suspend fun updateDashboardSettings(update: (DashboardSettings) -> DashboardSettings)
     suspend fun updateAccountsViewSettings(update: (AccountsViewSettings) -> AccountsViewSettings)
     suspend fun updateAccountDetailSettings(update: (AccountDetailSettings) -> AccountDetailSettings)

@@ -24,8 +24,11 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.service.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
-import com.osscabinet.ossWallet.ui.components.AeonMultiSelectPicker
-import com.osscabinet.ossWallet.ui.components.MultiSelectOption
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanActionCards
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanDetailSection
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanHeaderCard
@@ -204,40 +207,62 @@ fun LoanEntryScreen(
         }
 
         if (showAccountSheet) {
-            AeonMultiSelectPicker(
-                title = "Select Account",
-                description = "Choose the source/destination account for this loan",
-                options = accounts.map {
-                    MultiSelectOption(
-                        id = it.id,
-                        label = it.name,
-                        detail = it.currencyCode,
-                        icon = Icons.Rounded.AccountBalance,
-                        color = Color(android.graphics.Color.parseColor(it.colorHex))
+            ModalBottomSheet(
+                onDismissRequest = { showAccountSheet = false },
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+                    AeonSectionHeader(title = "Select Account")
+                    Text(
+                        text = "Choose the source/destination account for this loan",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
-                },
-                selectedIds = setOf(linkedAccountId),
-                onSelectionChanged = { it.firstOrNull()?.let { id -> linkedAccountId = id } },
-                onDismiss = { showAccountSheet = false }
-            )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            AeonHybridSelector(
+                                items = accounts,
+                                mode = AeonSelectMode.SINGLE,
+                                selectedIds = setOf(linkedAccountId),
+                                onSelectionChange = { ids ->
+                                    ids.firstOrNull()?.let { linkedAccountId = it }
+                                    showAccountSheet = false
+                                },
+                                idMapper = { it.id },
+                                labelMapper = { it.name },
+                                detailMapper = { it.currencyCode },
+                                iconMapper = { AccountIconMap[it.icon] },
+                                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         if (showCategorySheet) {
-            AeonMultiSelectPicker(
-                title = "Categories",
-                description = "Filter transactions for this loan",
-                options = categories.map {
-                    MultiSelectOption(
-                        id = it.id.toString(),
-                        label = it.name,
-                        icon = Icons.Rounded.Category,
-                        color = Color(it.colorHex)
-                    )
-                },
-                selectedIds = selectedCategoryIds.map { it.toString() }.toSet(),
-                onSelectionChanged = { ids -> selectedCategoryIds = ids.map { it.toLong() }.toSet() },
-                onDismiss = { showCategorySheet = false }
-            )
+            ModalBottomSheet(
+                onDismissRequest = { showCategorySheet = false },
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
+                    AeonSectionHeader(title = "Categories")
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            AeonHierarchicalHybridSelector(
+                                categories = categories,
+                                mode = AeonSelectMode.MULTI,
+                                selectedIds = selectedCategoryIds,
+                                onSelectionChange = { selectedCategoryIds = it }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         if (showTagSheet) {

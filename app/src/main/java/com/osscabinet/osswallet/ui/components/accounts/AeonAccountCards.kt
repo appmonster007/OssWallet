@@ -25,6 +25,8 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.toContainerColor
@@ -382,56 +384,26 @@ fun AccountPickerSheet(
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
             AeonSectionHeader(title = "Select Account")
             Spacer(modifier = Modifier.height(24.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(sortedAccounts) { account ->
-                    val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onAccountSelected(account) },
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (selectedAccount?.id == account.id) accountColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        border = if (selectedAccount?.id == account.id) BorderStroke(2.dp, accountColor) else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = accountColor.copy(alpha = 0.2f),
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance,
-                                        contentDescription = null,
-                                        tint = accountColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    AeonHybridSelector(
+                        items = sortedAccounts,
+                        mode = AeonSelectMode.SINGLE,
+                        selectedIds = if (selectedAccount != null) setOf(selectedAccount.id) else emptySet(),
+                        onSelectionChange = { ids ->
+                            ids.firstOrNull()?.let { id ->
+                                sortedAccounts.find { it.id == id }?.let { 
+                                    onAccountSelected(it)
+                                    onDismiss()
                                 }
                             }
-                            
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    account.name,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    account.structureType,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            
-                            Text(
-                                formatCurrencyRight(BigDecimal.ZERO, account.currencyCode),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
+                        },
+                        idMapper = { it.id },
+                        labelMapper = { it.name },
+                        detailMapper = { it.structureType },
+                        iconMapper = { AccountIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
+                        colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
+                    )
                 }
             }
         }

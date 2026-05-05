@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -24,8 +26,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
-import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import androidx.compose.ui.graphics.Color
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -98,7 +103,10 @@ fun FilterFields(
                     onFilterChange(filter.copy(accountIds = selected.map { it.id }))
                     activeDialog = null
                 },
-                itemLabel = { it.name }
+                idMapper = { it.id },
+                labelMapper = { it.name },
+                iconMapper = { AccountIconMap[it.icon] },
+                colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
             )
         }
         "Categories" -> {
@@ -133,7 +141,8 @@ fun FilterFields(
                     onFilterChange(filter.copy(currencies = selected))
                     activeDialog = null
                 },
-                itemLabel = { it }
+                idMapper = { it },
+                labelMapper = { it }
             )
         }
         "PaymentMethods" -> {
@@ -147,7 +156,8 @@ fun FilterFields(
                     onFilterChange(filter.copy(paymentMethods = selected))
                     activeDialog = null
                 },
-                itemLabel = { it }
+                idMapper = { it },
+                labelMapper = { it }
             )
         }
     }
@@ -475,14 +485,17 @@ fun <T> MultiSelectionDialog(
     selectedItems: List<T>,
     onDismissRequest: () -> Unit,
     onConfirm: (List<T>) -> Unit,
-    itemLabel: (T) -> String
+    idMapper: (T) -> String,
+    labelMapper: (T) -> String,
+    iconMapper: (T) -> ImageVector? = { null },
+    colorMapper: (T) -> Color? = { null }
 ) {
-    var currentSelection by remember { mutableStateOf(selectedItems.toSet()) }
+    var currentSelectionIds by remember { mutableStateOf(selectedItems.map(idMapper).toSet()) }
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredItems = remember(items, searchQuery) {
         if (searchQuery.isBlank()) items
-        else items.filter { itemLabel(it).contains(searchQuery, ignoreCase = true) }
+        else items.filter { labelMapper(it).contains(searchQuery, ignoreCase = true) }
     }
 
     AlertDialog(
@@ -507,12 +520,12 @@ fun <T> MultiSelectionDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val allSelected = items.isNotEmpty() && currentSelection.size == items.size
+                    val allSelected = items.isNotEmpty() && currentSelectionIds.size == items.size
 
                     FilterChip(
                         selected = allSelected,
                         onClick = {
-                            currentSelection = if (allSelected) emptySet() else items.toSet()
+                            currentSelectionIds = if (allSelected) emptySet() else items.map(idMapper).toSet()
                         },
                         label = { Text(if (allSelected) "Deselect All" else "Select All") },
                         leadingIcon = if (allSelected) {
@@ -525,8 +538,8 @@ fun <T> MultiSelectionDialog(
 
                     AssistChip(
                         onClick = {
-                            val allItemsSet = items.toSet()
-                            currentSelection = allItemsSet.subtract(currentSelection)
+                            val allItemsSet = items.map(idMapper).toSet()
+                            currentSelectionIds = allItemsSet.subtract(currentSelectionIds)
                         },
                         label = { Text("Invert") },
                         leadingIcon = {
@@ -547,7 +560,7 @@ fun <T> MultiSelectionDialog(
                         modifier = Modifier.sizeIn(minWidth = 24.dp, minHeight = 24.dp)
                     ) {
                         Text(
-                            text = "${currentSelection.size}",
+                            text = "${currentSelectionIds.size}",
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -606,63 +619,25 @@ fun <T> MultiSelectionDialog(
                     }
                 }
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 450.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 8.dp)
-                ) {
-                    items(filteredItems) { item ->
-                        val isSelected = item in currentSelection
-                        Surface(
-                            onClick = {
-                                currentSelection = if (isSelected) {
-                                    currentSelection - item
-                                } else {
-                                    currentSelection + item
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            else androidx.compose.ui.graphics.Color.Transparent,
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                            ) else null
-                        ) {
-                            ListItem(
-                                headlineContent = {
-                                    Text(
-                                        itemLabel(item),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                        ),
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                leadingContent = {
-                                    Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null,
-                                        colors = CheckboxDefaults.colors(
-                                            checkedColor = MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-                                },
-                                colors = ListItemDefaults.colors(
-                                    containerColor = androidx.compose.ui.graphics.Color.Transparent
-                                )
-                            )
-                        }
+                Box(modifier = Modifier.heightIn(max = 450.dp)) {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        AeonHybridSelector(
+                            items = filteredItems,
+                            mode = AeonSelectMode.MULTI,
+                            selectedIds = currentSelectionIds,
+                            onSelectionChange = { currentSelectionIds = it },
+                            idMapper = idMapper,
+                            labelMapper = labelMapper,
+                            iconMapper = iconMapper,
+                            colorMapper = colorMapper
+                        )
                     }
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(currentSelection.toList()) },
+                onClick = { onConfirm(items.filter { idMapper(it) in currentSelectionIds }) },
                 shape = RoundedCornerShape(16.dp),
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
             ) {
@@ -692,7 +667,8 @@ fun MultiSelectionDialogPreview() {
             selectedItems = listOf("Food & Dining", "Shopping"),
             onDismissRequest = {},
             onConfirm = {},
-            itemLabel = { it }
+            idMapper = { it },
+            labelMapper = { it }
         )
     }
 }
@@ -722,9 +698,9 @@ fun CategorySelectionDialog(
                     .fillMaxWidth()
                     .heightIn(max = 400.dp)
             ) {
-                CategoryHybridSelectPicker(
+                AeonHierarchicalHybridSelector(
                     categories = categories,
-                    mode = CategorySelectionMode.MULTI,
+                    mode = AeonSelectMode.MULTI,
                     selectedIds = tempSelectedIds,
                     onSelectionChange = { tempSelectedIds = it },
                     modifier = Modifier.weight(1f)

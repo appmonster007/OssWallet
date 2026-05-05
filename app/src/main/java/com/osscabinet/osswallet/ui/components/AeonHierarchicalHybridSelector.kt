@@ -17,22 +17,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 
-enum class CategorySelectionMode {
-    SINGLE, MULTI, PARENT
-}
-
 /**
- * A unified category picker that supports single-select, multi-select, and parent-selection modes.
+ * A unified hierarchical selector that supports single-select, multi-select, parent-selection, and management modes.
  * Implements a "layered" hierarchical design with left-aligned expansion controls.
  */
 @Composable
-fun CategoryHybridSelectPicker(
+fun AeonHierarchicalHybridSelector(
     categories: List<Category>,
-    mode: CategorySelectionMode,
+    mode: AeonSelectMode,
     selectedIds: Set<Long>,
     onSelectionChange: (Set<Long>) -> Unit,
     modifier: Modifier = Modifier,
-    onParentSelected: (Long?) -> Unit = {}
+    onParentSelected: (Long?) -> Unit = {},
+    onEditClick: (Category) -> Unit = {},
+    onAddSubCategoryClick: (Category) -> Unit = {}
 ) {
     val rootCategories = categories.filter { it.parentId == null }.sortedBy { it.name }
 
@@ -41,7 +39,7 @@ fun CategoryHybridSelectPicker(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Special "None" option for Parent Selection mode
-        if (mode == CategorySelectionMode.PARENT) {
+        if (mode == AeonSelectMode.PARENT) {
             val isNoneSelected = selectedIds.isEmpty()
             Surface(
                 shape = RoundedCornerShape(24.dp),
@@ -86,6 +84,8 @@ fun CategoryHybridSelectPicker(
                 selectedIds = selectedIds,
                 onSelectionChange = onSelectionChange,
                 onParentSelected = onParentSelected,
+                onEditClick = onEditClick,
+                onAddSubCategoryClick = onAddSubCategoryClick,
                 depth = 0
             )
         }
@@ -96,16 +96,19 @@ fun CategoryHybridSelectPicker(
 private fun RecursiveHybridNode(
     category: Category,
     allCategories: List<Category>,
-    mode: CategorySelectionMode,
+    mode: AeonSelectMode,
     selectedIds: Set<Long>,
     onSelectionChange: (Set<Long>) -> Unit,
     onParentSelected: (Long?) -> Unit,
+    onEditClick: (Category) -> Unit,
+    onAddSubCategoryClick: (Category) -> Unit,
     depth: Int
 ) {
     val children = allCategories.filter { it.parentId == category.id }.sortedBy { it.name }
     var expanded by remember { 
         mutableStateOf(selectedIds.contains(category.id) || 
-            selectedIds.any { id -> allCategories.find { it.id == id }?.parentId == category.id }) 
+            selectedIds.any { id -> allCategories.find { it.id == id }?.parentId == category.id } ||
+            mode == AeonSelectMode.MANAGEMENT) 
     }
     
     val backgroundColor = if (depth % 2 == 0) {
@@ -124,14 +127,15 @@ private fun RecursiveHybridNode(
                 category = category,
                 mode = mode,
                 isSelected = selectedIds.contains(category.id),
-                hasChildren = children.isNotEmpty(),
+                hasChildren = children.isNotEmpty() || mode == AeonSelectMode.MANAGEMENT,
                 isExpanded = expanded,
                 onToggleExpand = { expanded = !expanded },
+                onEditClick = { onEditClick(category) },
                 onClick = {
                     when (mode) {
-                        CategorySelectionMode.SINGLE -> onSelectionChange(setOf(category.id))
-                        CategorySelectionMode.PARENT -> onParentSelected(category.id)
-                        CategorySelectionMode.MULTI -> {
+                        AeonSelectMode.SINGLE -> onSelectionChange(setOf(category.id))
+                        AeonSelectMode.PARENT -> onParentSelected(category.id)
+                        AeonSelectMode.MULTI -> {
                             val newSelected = if (category.id in selectedIds) {
                                 selectedIds - category.id
                             } else {
@@ -139,6 +143,7 @@ private fun RecursiveHybridNode(
                             }
                             onSelectionChange(newSelected)
                         }
+                        AeonSelectMode.MANAGEMENT -> onEditClick(category)
                     }
                 }
             )
@@ -157,11 +162,41 @@ private fun RecursiveHybridNode(
                             selectedIds = selectedIds,
                             onSelectionChange = onSelectionChange,
                             onParentSelected = onParentSelected,
+                            onEditClick = onEditClick,
+                            onAddSubCategoryClick = onAddSubCategoryClick,
                             depth = depth + 1
                         )
                     }
+                    
+                    if (mode == AeonSelectMode.MANAGEMENT) {
+                        // Add Sub-category button
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onAddSubCategoryClick(category) }
+                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                            color = Color.Transparent
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Spacer(modifier = Modifier.width(32.dp)) // Aligns with expansion arrow + spacer
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    "Add sub-category",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
 
-                    if (children.isNotEmpty()) {
+                    if (children.isNotEmpty() || mode == AeonSelectMode.MANAGEMENT) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -177,11 +212,12 @@ private fun RecursiveHybridNode(
 @Composable
 private fun HybridSelectItem(
     category: Category,
-    mode: CategorySelectionMode,
+    mode: AeonSelectMode,
     isSelected: Boolean,
     hasChildren: Boolean,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
+    onEditClick: () -> Unit,
     onClick: () -> Unit
 ) {
     Row(
@@ -234,9 +270,9 @@ private fun HybridSelectItem(
             modifier = Modifier.weight(1f)
         )
 
-        // Right side: Selection Indicator
+        // Right side: Selection Indicator / Management Controls
         when (mode) {
-            CategorySelectionMode.SINGLE, CategorySelectionMode.PARENT -> {
+            AeonSelectMode.SINGLE, AeonSelectMode.PARENT -> {
                 if (isSelected) {
                     Icon(
                         Icons.Rounded.Check,
@@ -245,7 +281,7 @@ private fun HybridSelectItem(
                     )
                 }
             }
-            CategorySelectionMode.MULTI -> {
+            AeonSelectMode.MULTI -> {
                 Switch(
                     checked = isSelected,
                     onCheckedChange = { onClick() },
@@ -255,21 +291,31 @@ private fun HybridSelectItem(
                     )
                 )
             }
+            AeonSelectMode.MANAGEMENT -> {
+                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
         }
     }
 }
 
 @Preview(showBackground = true, name = "Multi Select Mode")
 @Composable
-fun HybridPickerMultiPreview() {
+fun HierarchicalHybridPickerMultiPreview() {
     val mockCategories = getMockCategories()
     var selectedIds by remember { mutableStateOf(setOf(1L, 2L, 6L)) }
     
     MaterialTheme {
         Surface(modifier = Modifier.padding(16.dp)) {
-            CategoryHybridSelectPicker(
+            AeonHierarchicalHybridSelector(
                 categories = mockCategories,
-                mode = CategorySelectionMode.MULTI,
+                mode = AeonSelectMode.MULTI,
                 selectedIds = selectedIds,
                 onSelectionChange = { selectedIds = it }
             )
@@ -279,15 +325,15 @@ fun HybridPickerMultiPreview() {
 
 @Preview(showBackground = true, name = "Parent Select Mode")
 @Composable
-fun HybridPickerParentPreview() {
+fun HierarchicalHybridPickerParentPreview() {
     val mockCategories = getMockCategories()
     var selectedId by remember { mutableStateOf<Long?>(1L) }
     
     MaterialTheme {
         Surface(modifier = Modifier.padding(16.dp)) {
-            CategoryHybridSelectPicker(
+            AeonHierarchicalHybridSelector(
                 categories = mockCategories,
-                mode = CategorySelectionMode.PARENT,
+                mode = AeonSelectMode.PARENT,
                 selectedIds = if (selectedId != null) setOf(selectedId!!) else emptySet(),
                 onSelectionChange = { },
                 onParentSelected = { selectedId = it }

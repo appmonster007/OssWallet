@@ -22,8 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
-import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -212,35 +213,22 @@ fun PaymentMethodPickerSheet(
         Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp)) {
             AeonSectionHeader(title = "Payment Method")
             Spacer(modifier = Modifier.height(24.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(methods) { (name, icon) ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onMethodSelected(name)
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    AeonHybridSelector(
+                        items = methods,
+                        mode = AeonSelectMode.SINGLE,
+                        selectedIds = setOf(selectedMethod),
+                        onSelectionChange = { ids ->
+                            ids.firstOrNull()?.let { 
+                                onMethodSelected(it)
                                 onDismiss()
-                            },
-                        shape = RoundedCornerShape(24.dp),
-                        color = if (selectedMethod == name) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(icon, contentDescription = null, tint = if (selectedMethod == name) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = if (selectedMethod == name) FontWeight.Bold else FontWeight.Medium
-                            )
-                            if (selectedMethod == name) {
-                                Spacer(modifier = Modifier.weight(1f))
-                                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
-                        }
-                    }
+                        },
+                        idMapper = { it.first },
+                        labelMapper = { it.first },
+                        iconMapper = { it.second }
+                    )
                 }
             }
         }
@@ -266,9 +254,9 @@ fun CategoryPickerSheet(
             
             Box(modifier = Modifier.weight(1f, fill = false)) {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    CategoryHybridSelectPicker(
+                    AeonHierarchicalHybridSelector(
                         categories = categories,
-                        mode = CategorySelectionMode.SINGLE,
+                        mode = AeonSelectMode.SINGLE,
                         selectedIds = if (selectedCategoryId != null) setOf(selectedCategoryId) else emptySet(),
                         onSelectionChange = { ids ->
                             val selectedId = ids.firstOrNull()

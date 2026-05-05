@@ -2,15 +2,12 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,13 +44,7 @@ fun TagSelectionSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text(
-                text = "Transaction Tags",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp
-                )
-            )
+            AeonSectionHeader(title = "Transaction Tags")
             Text(
                 text = "Organize with multiple custom labels",
                 style = MaterialTheme.typography.bodyMedium,
@@ -107,69 +101,17 @@ fun TagSelectionSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.heightIn(max = 400.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(tags) { tag ->
-                    val isSelected = tag.name in currentSelection
-                    Surface(
-                        onClick = {
-                            currentSelection = if (isSelected) {
-                                currentSelection - tag.name
-                            } else {
-                                currentSelection + tag.name
-                            }
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerLowest
-                        },
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 0.5.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceContainerLow,
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.Label, 
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                        tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = tag.name,
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.CheckCircle,
-                                    contentDescription = "Selected",
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
+            Box(modifier = Modifier.weight(1f, fill = false)) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    AeonHybridSelector(
+                        items = tags,
+                        mode = AeonSelectMode.MULTI,
+                        selectedIds = currentSelection,
+                        onSelectionChange = { currentSelection = it },
+                        idMapper = { it.name },
+                        labelMapper = { it.name },
+                        iconMapper = { Icons.AutoMirrored.Rounded.Label }
+                    )
                 }
             }
 

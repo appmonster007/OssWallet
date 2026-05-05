@@ -2,8 +2,6 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -20,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 
 @Composable
 fun RecordFieldCard(
@@ -199,29 +199,20 @@ fun CurrencySelector(
                 title = { Text("Select Currency", fontWeight = FontWeight.Bold) },
                 text = {
                     Box(modifier = Modifier.heightIn(max = 400.dp)) {
-                        LazyColumn {
-                            val list = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
-                            items(list) { currency ->
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onCurrencySelected(currency)
-                                            showDialog = false
-                                        },
-                                    color = if (selectedCurrency == currency) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text(
-                                        currency,
-                                        modifier = Modifier.padding(16.dp),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontWeight = if (selectedCurrency == currency) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    )
+                        val list = if (supportedCurrencies.isEmpty()) listOf("USD") else supportedCurrencies.sorted()
+                        AeonHybridSelector(
+                            items = list,
+                            mode = AeonSelectMode.SINGLE,
+                            selectedIds = if (selectedCurrency.isNotEmpty()) setOf(selectedCurrency) else emptySet(),
+                            onSelectionChange = { ids ->
+                                ids.firstOrNull()?.let { 
+                                    onCurrencySelected(it)
+                                    showDialog = false
                                 }
-                            }
-                        }
+                            },
+                            idMapper = { it },
+                            labelMapper = { it }
+                        )
                     }
                 },
                 confirmButton = {

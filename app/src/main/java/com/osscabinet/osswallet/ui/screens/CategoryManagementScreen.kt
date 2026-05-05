@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.TransactionFilterService
-import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.CategoryEditSheet
 import com.osscabinet.ossWallet.ui.util.*
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 
@@ -71,9 +73,11 @@ fun CategoryManagementScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            AeonCategoryList(
+            AeonHierarchicalHybridSelector(
                 categories = categories,
-                isManagementMode = true,
+                mode = AeonSelectMode.MANAGEMENT,
+                selectedIds = emptySet(),
+                onSelectionChange = { },
                 onEditClick = { selectedCategoryForEdit = it },
                 onAddSubCategoryClick = { parent ->
                     selectedCategoryForEdit = Category(
@@ -84,8 +88,7 @@ fun CategoryManagementScreen(
                         isDefault = false,
                         parentId = parent.id
                     )
-                },
-                onCategorySelected = { /* Not used in management mode */ }
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
         }

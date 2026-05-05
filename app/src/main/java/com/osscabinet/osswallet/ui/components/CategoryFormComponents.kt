@@ -28,8 +28,8 @@ import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.RecordFieldCard
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
-import com.osscabinet.ossWallet.ui.components.CategoryHybridSelectPicker
-import com.osscabinet.ossWallet.ui.components.CategorySelectionMode
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -134,9 +134,9 @@ fun CategoryEditSheet(
                             
                             Box(modifier = Modifier.weight(1f, fill = false)) {
                                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                    CategoryHybridSelectPicker(
+                                    AeonHierarchicalHybridSelector(
                                         categories = parentCategories.filter { it.id != (category?.id ?: 0L) },
-                                        mode = CategorySelectionMode.PARENT,
+                                        mode = AeonSelectMode.PARENT,
                                         selectedIds = if (selectedParentId != null) setOf(selectedParentId!!) else emptySet(),
                                         onSelectionChange = { },
                                         onParentSelected = {

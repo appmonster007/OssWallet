@@ -105,7 +105,7 @@ fun TransactionTagSection(
             TagsSection(
                 tags = state.selectedTags,
                 allTags = state.allTags,
-                onShowSheet = { onEvent(TransactionEntryEvent.ShowLabelSheet(true)) },
+                onShowSheet = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) }
             )
 

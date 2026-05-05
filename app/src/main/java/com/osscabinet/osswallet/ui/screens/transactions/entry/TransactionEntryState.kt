@@ -57,7 +57,7 @@ data class TransactionEntryState(
     val showExchangeRateDialog: Boolean = false,
     val showTemplateSheet: Boolean = false,
     val showLinkedTransactionSheet: Boolean = false,
-    val showLabelSheet: Boolean = false,
+    val showTagSheet: Boolean = false,
     val showPaymentMethodSheet: Boolean = false,
     val showStatusSheet: Boolean = false,
     val showWarrantyDatePicker: Boolean = false,
@@ -140,7 +140,7 @@ sealed class TransactionEntryEvent {
     data class ShowExchangeRateDialog(val show: Boolean) : TransactionEntryEvent()
     data class ShowTemplateSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowLinkedTransactionSheet(val show: Boolean) : TransactionEntryEvent()
-    data class ShowLabelSheet(val show: Boolean) : TransactionEntryEvent()
+    data class ShowTagSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowPaymentMethodSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowWarrantyDatePicker(val show: Boolean) : TransactionEntryEvent()

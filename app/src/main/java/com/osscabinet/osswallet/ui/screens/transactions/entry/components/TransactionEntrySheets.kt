@@ -87,9 +87,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Linked Transaction Sheet
+    // Linked Transaction Selection Screen
     if (state.showLinkedTransactionSheet) {
-        LinkedTransactionSheet(
+        LinkedTransactionSelection(
             transactions = state.transactions,
             currentTransactionId = state.transactionId,
             linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
@@ -103,16 +103,16 @@ fun TransactionEntrySheets(
     }
 
     // Tag Selection Screen
-    if (state.showLabelSheet) {
+    if (state.showTagSheet) {
         TagSelection(
             tags = state.allTags,
             selectedTags = state.selectedTags,
             onTagsSelected = { tags ->
                 onEvent(TransactionEntryEvent.SetTags(tags))
-                onEvent(TransactionEntryEvent.ShowLabelSheet(false))
+                onEvent(TransactionEntryEvent.ShowTagSheet(false))
             },
             onAddTag = { tag -> onEvent(TransactionEntryEvent.AddTag(tag)) },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowLabelSheet(false)) }
+            onDismiss = { onEvent(TransactionEntryEvent.ShowTagSheet(false)) }
         )
     }
 
@@ -152,9 +152,9 @@ fun TransactionEntrySheets(
         )
     }
 
-    // Location Sheet
+    // Location Selection Screen
     if (state.showLocationSheet) {
-        LocationSheet(
+        LocationSelection(
             currentCoords = state.locationCoords,
             onLocationSelected = { coords ->
                 onEvent(TransactionEntryEvent.SetLocation(coords))

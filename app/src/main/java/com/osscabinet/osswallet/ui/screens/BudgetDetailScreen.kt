@@ -182,9 +182,9 @@ fun BudgetDetailScreen(
                                             }
                                         )
                                         ScopeSection(
-                                            label = "LABELS",
+                                            label = "TAGS",
                                             icon = Icons.Rounded.Label,
-                                            allText = "All Labels",
+                                            allText = "All Tags",
                                             isEmpty = budget.tags.isEmpty(),
                                             items = budget.tags.map { tag ->
                                                 {

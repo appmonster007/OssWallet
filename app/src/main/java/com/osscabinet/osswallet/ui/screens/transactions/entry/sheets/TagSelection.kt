@@ -47,7 +47,7 @@ fun TagSelection(
                     .padding(horizontal = 24.dp)
             ) {
                 Text(
-                    text = "Organize with multiple custom labels",
+                    text = "Organize with multiple custom tags",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )

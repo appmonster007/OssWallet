@@ -90,14 +90,14 @@ fun BudgetActionCards(
             iconTint = MaterialTheme.colorScheme.primary
         )
 
-        // Row 4: Labels (Full Width)
+        // Row 4: Tags (Full Width)
         AeonEntryActionCard(
             icon = Icons.Rounded.Label,
-            label = "LABELS",
+            label = "TAGS",
             value = when {
-                selectedTags.isEmpty() -> "All Labels"
+                selectedTags.isEmpty() -> "All Tags"
                 selectedTags.size == 1 -> selectedTags.first()
-                else -> "${selectedTags.size} Labels"
+                else -> "${selectedTags.size} Tags"
             },
             onClick = onTagClick,
             modifier = Modifier.fillMaxWidth(),

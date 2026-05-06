@@ -16,7 +16,7 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi

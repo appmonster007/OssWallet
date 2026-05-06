@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
-import com.osscabinet.ossWallet.domain.service.lifecycle.BudgetService
+import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import java.math.BigDecimal

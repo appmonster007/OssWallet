@@ -6,8 +6,9 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
-import com.osscabinet.ossWallet.domain.service.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByAccount
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.RoundingMode
@@ -23,10 +24,7 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
         val filteredTx = TransactionFilterService.filter(baseTx, config.filter)
 
         // Step 3: Compute all values from filteredTx
-        val accountBreakdowns = AggregationService.breakdownByAccount(
-            transactions = filteredTx,
-            accounts = input.accounts
-        )
+        val accountBreakdowns = filteredTx.breakdownByAccount()
 
         val accountStats = input.accounts.associate { acc ->
             val summary = accountBreakdowns.find { it.key == acc.id }
@@ -49,8 +47,8 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
 
             acc.id to AccountSummaryItem(
                 account = acc,
-                currencyBalances = summary?.currencyBreakdown?.mapValues {
-                    it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP)
+                currencyBalances = summary?.currencyBreakdown?.mapValues { entry ->
+                    entry.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP)
                 } ?: emptyMap(),
                 balance = balanceInAccountCurrency.setScale(input.precision, RoundingMode.HALF_UP),
                 balanceInBase = balanceInBase,

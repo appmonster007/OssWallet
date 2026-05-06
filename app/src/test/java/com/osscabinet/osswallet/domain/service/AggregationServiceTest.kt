@@ -2,6 +2,9 @@ package com.osscabinet.ossWallet.domain.service
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByCategory
+import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
@@ -108,8 +111,7 @@ class AggregationServiceTest {
             createTransaction(amount = BigDecimal("50"), currency = "USD").copy(category = "Transport")
         )
 
-        val breakdown = AggregationService.breakdownByCategory(
-            transactions = transactions,
+        val breakdown = transactions.breakdownByCategory(
             exchangeRates = exchangeRates,
             baseCurrency = "USD"
         )
@@ -133,8 +135,7 @@ class AggregationServiceTest {
             createTransaction(amount = BigDecimal("85"), currency = "EUR").copy(timestamp = timestamp) // 100 USD
         )
 
-        val breakdown = AggregationService.breakdownByDate(
-            transactions = transactions,
+        val breakdown = transactions.breakdownByDate(
             exchangeRates = exchangeRates,
             baseCurrency = "USD"
         )

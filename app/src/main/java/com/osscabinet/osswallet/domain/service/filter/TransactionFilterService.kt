@@ -4,161 +4,245 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 
 /**
- * **DEPRECATED**: All functionality has been merged into [FilterService].
- * Use [FilterService] directly for all transaction filtering operations.
- *
- * This service now acts as a thin wrapper for backward compatibility.
- * It will be removed in a future release.
+ * Domain service for unified transaction filtering.
+ * Consolidates complex filtering logic used across ViewModels and Repositories.
  */
-@Deprecated(
-    message = "Use FilterService directly. All filter methods are available there with better type safety.",
-    replaceWith = ReplaceWith("FilterService"),
-    level = DeprecationLevel.WARNING
-)
 object TransactionFilterService {
 
-    @Deprecated(
-        "Use FilterService.filterTransactions instead",
-        ReplaceWith("FilterService.filterTransactions(transactions, filter)")
-    )
-    fun filter(transactions: List<Transaction>, filter: TransactionFilter): List<Transaction> =
-        FilterService.filterTransactions(transactions, filter)
+    /**
+     * Filters a list of transactions based on the provided filter criteria.
+     */
+    fun filter(
+        transactions: List<Transaction>,
+        filter: TransactionFilter
+    ): List<Transaction> = filterTransactions(transactions, filter)
 
-    @Deprecated(
-        "Use FilterService.expandCategoryIds instead",
-        ReplaceWith("FilterService.expandCategoryIds(categoryIds, allCategories)")
-    )
-    fun expandCategoryIds(categoryIds: List<Long>, allCategories: List<Category>): List<Long> =
-        FilterService.expandCategoryIds(categoryIds, allCategories)
+    fun filterTransactions(
+        transactions: List<Transaction>,
+        filter: TransactionFilter
+    ): List<Transaction> {
+        val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
+        val now = System.currentTimeMillis()
 
-    @Deprecated(
-        "Use FilterService.filterIncome instead",
-        ReplaceWith("FilterService.filterIncome(transactions)")
-    )
-    fun filterIncome(transactions: List<Transaction>): List<Transaction> =
-        FilterService.filterIncome(transactions)
+        return transactions.filter { tx ->
+            // 0. Future exclusion
+            if (filter.excludeFuture && tx.timestamp > now) return@filter false
 
-    @Deprecated(
-        "Use FilterService.filterExpense instead",
-        ReplaceWith("FilterService.filterExpense(transactions)")
-    )
-    fun filterExpense(transactions: List<Transaction>): List<Transaction> =
-        FilterService.filterExpense(transactions)
+            // 1. Timeline check
+            val effectiveStart = filter.startDate ?: startTime
+            val effectiveEnd = filter.endDate ?: endTime
+            val inTimeRange = (effectiveStart == null || tx.timestamp >= effectiveStart) &&
+                    (effectiveEnd == null || tx.timestamp <= effectiveEnd)
+            if (!inTimeRange) return@filter false
 
-    @Deprecated(
-        "Use FilterService.filterByCurrency or FilterService.filterByCurrencies instead",
-        ReplaceWith("FilterService.filterByCurrency(transactions, currency) or FilterService.filterByCurrencies(transactions, currencies)")
-    )
-    fun filterByCurrency(transactions: List<Transaction>, currencies: Any): List<Transaction> =
-        when (currencies) {
-            is String -> FilterService.filterByCurrency(transactions, currencies)
-            is Set<*> -> FilterService.filterByCurrencies(transactions, currencies as Set<String>)
-            else -> throw IllegalArgumentException("currencies must be String or Set<String>")
+            // 2. Attribute checks
+            val matchesAccounts = filter.accountIds.isEmpty() || tx.accountId in filter.accountIds
+            val matchesCategories = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
+            val matchesType = filter.transactionType == null || tx.transactionType == filter.transactionType
+
+            // Amount check (absolute value for UI consistency)
+            val matchesAmount = (filter.minAmount == null || tx.amount.abs() >= filter.minAmount) &&
+                    (filter.maxAmount == null || tx.amount.abs() <= filter.maxAmount)
+
+            val matchesStatuses = filter.statuses.isEmpty() || tx.status in filter.statuses
+            val matchesCurrencies = filter.currencies.isEmpty() || tx.currency in filter.currencies
+            val matchesTags = filter.tags.isEmpty() || tx.tags.any { it in filter.tags }
+
+            // Payee match
+            val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
+                try { Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch (e: Exception) { false }
+            } else if (!filter.queryPayee.isNullOrBlank()) {
+                tx.payee.contains(filter.queryPayee, ignoreCase = true)
+            } else true
+
+            // Note match
+            val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
+                try { Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch (e: Exception) { false }
+            } else if (!filter.queryNote.isNullOrBlank()) {
+                tx.note.contains(filter.queryNote, ignoreCase = true)
+            } else true
+
+            // Warranty check
+            val matchesWarranty = when (filter.hasWarranty) {
+                true -> tx.warrantyExpiration != null
+                false -> tx.warrantyExpiration == null
+                null -> true
+            }
+
+            val inWarrantyRange = (filter.warrantyExpirationStart == null || (tx.warrantyExpiration ?: 0) >= filter.warrantyExpirationStart) &&
+                    (filter.warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= filter.warrantyExpirationEnd)
+
+            val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
+
+            matchesAccounts && matchesCategories && matchesType && matchesAmount &&
+                    matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
+                    matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags
         }
+    }
 
-    @Deprecated(
-        "Use FilterService.filterByCategory or FilterService.filterByCategories instead",
-        ReplaceWith("FilterService.filterByCategory(transactions, category) or FilterService.filterByCategories(transactions, categories)")
-    )
-    fun filterByCategory(transactions: List<Transaction>, categories: Any): List<Transaction> =
-        when (categories) {
-            is String -> FilterService.filterByCategory(transactions, categories)
-            is Set<*> -> FilterService.filterByCategories(transactions, categories as Set<String>)
-            else -> throw IllegalArgumentException("categories must be String or Set<String>")
+    /**
+     * Creates a filter for the period immediately preceding the current filter's timeline range.
+     */
+    fun getPreviousPeriodFilter(currentFilter: TransactionFilter): TransactionFilter {
+        val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
+        return currentFilter.copy(
+            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
+                start = prevStart ?: 0L,
+                end = prevEnd ?: System.currentTimeMillis()
+            ),
+            startDate = null,
+            endDate = null
+        )
+    }
+
+    /**
+     * Expands selected category IDs to include all their descendants.
+     */
+    fun expandCategoryIds(categoryIds: List<Long>, allCategories: List<Category>): List<Long> {
+        if (categoryIds.isEmpty()) return emptyList()
+        val expanded = mutableSetOf<Long>()
+        val queue = categoryIds.toMutableList()
+
+        while (queue.isNotEmpty()) {
+            val id = queue.removeAt(0)
+            if (expanded.add(id)) {
+                allCategories.filter { it.parentId == id }.forEach { queue.add(it.id) }
+            }
         }
+        return expanded.toList()
+    }
 
-    @Deprecated(
-        "Use FilterService.filterByAccount or FilterService.filterByAccounts instead",
-        ReplaceWith("FilterService.filterByAccount(transactions, accountId) or FilterService.filterByAccounts(transactions, accountIds)")
-    )
-    fun filterByAccount(transactions: List<Transaction>, accountIds: Any): List<Transaction> =
-        when (accountIds) {
-            is String -> FilterService.filterByAccount(transactions, accountIds)
-            is Set<*> -> FilterService.filterByAccounts(transactions, accountIds as Set<String>)
-            else -> throw IllegalArgumentException("accountIds must be String or Set<String>")
-        }
+    /**
+     * Common filters for semantic clarity.
+     */
+    fun filterIncome(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.amount.signum() >= 0 }
+    fun filterExpense(transactions: List<Transaction>): List<Transaction> = transactions.filter { it.amount.signum() < 0 }
 
-    @Deprecated(
-        "Use FilterService.filterByStatus or FilterService.filterByStatuses instead",
-        ReplaceWith("FilterService.filterByStatus(transactions, status) or FilterService.filterByStatuses(transactions, statuses)")
-    )
-    fun filterByStatus(transactions: List<Transaction>, statuses: Any): List<Transaction> =
-        when (statuses) {
-            is TransactionStatus -> FilterService.filterByStatus(transactions, statuses)
-            is Set<*> -> FilterService.filterByStatuses(
-                transactions,
-                statuses as Set<TransactionStatus>
-            )
+    // ==================== Additional Convenience Filter Methods ====================
 
-            else -> throw IllegalArgumentException("statuses must be TransactionStatus or Set<TransactionStatus>")
-        }
+    /**
+     * Filters transactions by a single currency code.
+     */
+    fun filterByCurrency(transactions: List<Transaction>, currency: String): List<Transaction> =
+        transactions.filter { it.currency == currency }
 
-    @Deprecated(
-        "Use FilterService.filterByTransactionType instead",
-        ReplaceWith("FilterService.filterByTransactionType(transactions, transactionType)")
-    )
+    /**
+     * Filters transactions by multiple currency codes.
+     */
+    fun filterByCurrencies(
+        transactions: List<Transaction>,
+        currencies: Set<String>
+    ): List<Transaction> =
+        transactions.filter { it.currency in currencies }
+
+    /**
+     * Filters transactions by a single category name.
+     */
+    fun filterByCategory(transactions: List<Transaction>, category: String): List<Transaction> =
+        transactions.filter { it.category == category }
+
+    /**
+     * Filters transactions by multiple category names.
+     */
+    fun filterByCategories(
+        transactions: List<Transaction>,
+        categories: Set<String>
+    ): List<Transaction> =
+        transactions.filter { it.category in categories }
+
+    /**
+     * Filters transactions by a single account ID.
+     */
+    fun filterByAccount(transactions: List<Transaction>, accountId: String): List<Transaction> =
+        transactions.filter { it.accountId == accountId }
+
+    /**
+     * Filters transactions by multiple account IDs.
+     */
+    fun filterByAccounts(
+        transactions: List<Transaction>,
+        accountIds: Set<String>
+    ): List<Transaction> =
+        transactions.filter { it.accountId in accountIds }
+
+    /**
+     * Filters transactions by a single status.
+     */
+    fun filterByStatus(
+        transactions: List<Transaction>,
+        status: TransactionStatus
+    ): List<Transaction> =
+        transactions.filter { it.status == status }
+
+    /**
+     * Filters transactions by multiple statuses.
+     */
+    fun filterByStatuses(
+        transactions: List<Transaction>,
+        statuses: Set<TransactionStatus>
+    ): List<Transaction> =
+        transactions.filter { it.status in statuses }
+
+    /**
+     * Filters transactions by transaction type.
+     */
     fun filterByTransactionType(
         transactions: List<Transaction>,
         transactionType: String
     ): List<Transaction> =
-        FilterService.filterByTransactionType(transactions, transactionType)
+        transactions.filter { it.transactionType == transactionType }
 
-    @Deprecated(
-        "Use FilterService.filterByAmountGreaterThan instead",
-        ReplaceWith("FilterService.filterByAmountGreaterThan(transactions, amount)")
-    )
+    /**
+     * Filters transactions by amount greater than or equal to a threshold.
+     */
     fun filterByAmountGreaterThan(
         transactions: List<Transaction>,
         amount: BigDecimal
     ): List<Transaction> =
-        FilterService.filterByAmountGreaterThan(transactions, amount)
+        transactions.filter { it.amount >= amount }
 
-    @Deprecated(
-        "Use FilterService.filterByAmountLessThan instead",
-        ReplaceWith("FilterService.filterByAmountLessThan(transactions, amount)")
-    )
+    /**
+     * Filters transactions by amount less than or equal to a threshold.
+     */
     fun filterByAmountLessThan(
         transactions: List<Transaction>,
         amount: BigDecimal
     ): List<Transaction> =
-        FilterService.filterByAmountLessThan(transactions, amount)
+        transactions.filter { it.amount <= amount }
 
-    @Deprecated(
-        "Use FilterService.filterByAmountRange instead",
-        ReplaceWith("FilterService.filterByAmountRange(transactions, minAmount, maxAmount)")
-    )
+    /**
+     * Filters transactions by amount range (inclusive).
+     */
     fun filterByAmountRange(
         transactions: List<Transaction>,
         minAmount: BigDecimal,
         maxAmount: BigDecimal
     ): List<Transaction> =
-        FilterService.filterByAmountRange(transactions, minAmount, maxAmount)
+        transactions.filter { it.amount >= minAmount && it.amount <= maxAmount }
 
-    @Deprecated(
-        "Use FilterService.filterByDateRange instead",
-        ReplaceWith("FilterService.filterByDateRange(transactions, startTime, endTime)")
-    )
+    /**
+     * Filters transactions by date range (inclusive).
+     */
     fun filterByDateRange(
         transactions: List<Transaction>,
         startTime: Long,
         endTime: Long
     ): List<Transaction> =
-        FilterService.filterByDateRange(transactions, startTime, endTime)
+        transactions.filter { it.timestamp in startTime..endTime }
 
-    @Deprecated(
-        "Use FilterService.filterByTags instead",
-        ReplaceWith("FilterService.filterByTags(transactions, tags)")
-    )
+    /**
+     * Filters transactions that contain any of the specified tags.
+     */
     fun filterByTags(transactions: List<Transaction>, tags: Set<String>): List<Transaction> =
-        FilterService.filterByTags(transactions, tags)
+        transactions.filter { tx -> tx.tags.any { it in tags } }
 
-    @Deprecated(
-        "Use FilterService.filterByAllTags instead",
-        ReplaceWith("FilterService.filterByAllTags(transactions, tags)")
-    )
+    /**
+     * Filters transactions that contain all of the specified tags.
+     */
     fun filterByAllTags(transactions: List<Transaction>, tags: Set<String>): List<Transaction> =
-        FilterService.filterByAllTags(transactions, tags)
+        transactions.filter { tx -> tags.all { it in tx.tags } }
 }

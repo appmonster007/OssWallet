@@ -1,93 +1,84 @@
 package com.osscabinet.ossWallet.domain.service.timeline
 
+import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import java.math.BigDecimal
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 /**
- * Domain service for timeline and filtering business logic.
- * Moved from ui.util.FilterUtils to follow Clean Architecture principles.
+ * Domain service for timeline, grouping, and filtering business logic.
  */
 object TimelineService {
 
+    val systemZoneId: ZoneId = ZoneId.systemDefault()
+    private val monthFormatter = DateTimeFormatter.ofPattern("yyyy-MM")
+    private val weekFields = WeekFields.of(Locale.getDefault())
+    private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+    private val shortDateFormatter = DateTimeFormatter.ofPattern("MMM d")
+
     /**
      * Gets the date range for a "this period" type.
-     * 
-     * @param period The period type (today, week, month, etc.)
-     * @param firstDayOfWeek The first day of the week (default: Monday)
-     * @return Pair of start and end timestamps in milliseconds
      */
     fun getRangeForThis(
         period: ThisPeriodType,
         firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY
     ): Pair<Long, Long> {
-        val now = ZonedDateTime.now(ZoneId.systemDefault())
+        val now = ZonedDateTime.now(systemZoneId)
         val start: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> now.toLocalDate().atStartOfDay(now.zone)
             ThisPeriodType.WEEK -> now.toLocalDate()
                 .with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(now.zone)
-
-            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth())
-                .atStartOfDay(now.zone)
-
+            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
             ThisPeriodType.QUARTER -> {
                 val month = now.monthValue
                 val firstMonthOfQuarter = ((month - 1) / 3) * 3 + 1
-                now.toLocalDate().withMonth(firstMonthOfQuarter)
-                    .with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
+                now.toLocalDate().withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
             }
-
             ThisPeriodType.HALF_YEAR -> {
                 val firstMonthOfHalf = if (now.monthValue <= 6) 1 else 7
-                now.toLocalDate().withMonth(firstMonthOfHalf)
-                    .with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
+                now.toLocalDate().withMonth(firstMonthOfHalf).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
             }
-
-            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.firstDayOfYear())
-                .atStartOfDay(now.zone)
+            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.firstDayOfYear()).atStartOfDay(now.zone)
         }
         val end: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
             ThisPeriodType.WEEK -> now.toLocalDate()
-                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX)
-                .atZone(now.zone)
-
-            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth())
-                .atTime(LocalTime.MAX).atZone(now.zone)
-
+                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX).atZone(now.zone)
+            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
             ThisPeriodType.QUARTER -> {
                 val month = now.monthValue
                 val lastMonthOfQuarter = ((month - 1) / 3) * 3 + 3
-                now.toLocalDate().withMonth(lastMonthOfQuarter)
-                    .with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
+                now.toLocalDate().withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
             }
-
             ThisPeriodType.HALF_YEAR -> {
                 val lastMonthOfHalf = if (now.monthValue <= 6) 6 else 12
-                now.toLocalDate().withMonth(lastMonthOfHalf)
-                    .with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
+                now.toLocalDate().withMonth(lastMonthOfHalf).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
             }
-
-            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.lastDayOfYear())
-                .atTime(LocalTime.MAX).atZone(now.zone)
+            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX).atZone(now.zone)
         }
         return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
     }
 
     /**
      * Gets the date range for a "last period" type.
-     * 
-     * @param period The period type (last 24h, last 7 days, etc.)
-     * @return Pair of start and end timestamps in milliseconds
      */
     fun getRangeForLast(period: LastPeriodType): Pair<Long, Long> {
-        val now = ZonedDateTime.now(ZoneId.systemDefault())
+        val now = ZonedDateTime.now(systemZoneId)
         val end = now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
         val start: ZonedDateTime = when (period) {
             LastPeriodType.LAST_24H -> now.minusHours(24)
@@ -103,34 +94,18 @@ object TimelineService {
 
     /**
      * Extracts the date range from a timeline range.
-     * 
-     * @param timelineRange The timeline range to extract dates from
-     * @return Pair of start and end timestamps (nullable for AllTime)
      */
     fun getDateRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
         return when (timelineRange) {
             is TimelineRange.AllTime -> Pair(null, null)
-            is TimelineRange.ThisPeriod -> {
-                val (start, end) = getRangeForThis(timelineRange.period)
-                Pair(start, end)
-            }
-
-            is TimelineRange.LastPeriod -> {
-                val (start, end) = getRangeForLast(timelineRange.period)
-                Pair(start, end)
-            }
-
-            is TimelineRange.CustomRange -> {
-                Pair(timelineRange.start, timelineRange.end)
-            }
+            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period)
+            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period)
+            is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
         }
     }
 
     /**
      * Gets the previous date range for a given timeline range.
-     * 
-     * @param timelineRange The current timeline range
-     * @return Pair of start and end timestamps in milliseconds
      */
     fun getPreviousRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
         val (currentStart, currentEnd) = getDateRange(timelineRange)
@@ -138,7 +113,7 @@ object TimelineService {
 
         return when (timelineRange) {
             is TimelineRange.ThisPeriod -> {
-                val start = Instant.ofEpochMilli(currentStart).atZone(ZoneId.systemDefault())
+                val start = Instant.ofEpochMilli(currentStart).atZone(systemZoneId)
                 val prevStart: ZonedDateTime = when (timelineRange.period) {
                     ThisPeriodType.TODAY -> start.minusDays(1)
                     ThisPeriodType.WEEK -> start.minusWeeks(1)
@@ -150,52 +125,184 @@ object TimelineService {
                 val prevEnd: ZonedDateTime = when (timelineRange.period) {
                     ThisPeriodType.TODAY -> prevStart.with(LocalTime.MAX)
                     ThisPeriodType.WEEK -> prevStart.plusDays(6).with(LocalTime.MAX)
-                    ThisPeriodType.MONTH -> prevStart.with(TemporalAdjusters.lastDayOfMonth())
-                        .with(LocalTime.MAX)
-
-                    ThisPeriodType.QUARTER -> prevStart.plusMonths(2)
-                        .with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
-
-                    ThisPeriodType.HALF_YEAR -> prevStart.plusMonths(5)
-                        .with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
-
-                    ThisPeriodType.YEAR -> prevStart.with(TemporalAdjusters.lastDayOfYear())
-                        .with(LocalTime.MAX)
+                    ThisPeriodType.MONTH -> prevStart.with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.QUARTER -> prevStart.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.HALF_YEAR -> prevStart.plusMonths(5).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
+                    ThisPeriodType.YEAR -> prevStart.with(TemporalAdjusters.lastDayOfYear()).with(LocalTime.MAX)
                 }
                 Pair(prevStart.toInstant().toEpochMilli(), prevEnd.toInstant().toEpochMilli())
             }
-
-            is TimelineRange.LastPeriod -> {
+            else -> {
                 val duration = currentEnd - currentStart
                 Pair(currentStart - duration - 1000, currentStart - 1000)
             }
-
-            is TimelineRange.CustomRange -> {
-                val duration = currentEnd - currentStart
-                Pair(currentStart - duration - 1000, currentStart - 1000)
-            }
-
-            else -> Pair(null, null)
         }
     }
 
     /**
      * Filters a list of timestamped items by a timeline range.
-     * 
-     * @param items The list of items to filter
-     * @param timelineRange The timeline range to filter by
-     * @return The filtered list of items
      */
     fun <T : com.osscabinet.ossWallet.domain.model.Timestamped> filterByTimelineRange(
         items: List<T>,
         timelineRange: TimelineRange
     ): List<T> {
         val (start, end) = getDateRange(timelineRange)
+        return if (start == null || end == null) items else items.filter { it.timestamp in start..end }
+    }
 
-        return if (start == null || end == null) {
-            items
-        } else {
-            items.filter { it.timestamp in start..end }
+    // ==================== Grouping Methods ====================
+
+    fun groupTransactions(
+        transactions: List<TransactionWithBalance>,
+        groupingType: TransactionGroupingType
+    ): Map<String, List<TransactionWithBalance>> = when (groupingType) {
+        TransactionGroupingType.BY_DAY -> {
+            transactions.groupBy {
+                val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+                "${date.year}-${date.monthValue}-${date.dayOfMonth}"
+            }
+        }
+        TransactionGroupingType.BY_WEEK -> {
+            transactions.groupBy {
+                val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+                val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
+                "${date.year}-W$weekOfYear"
+            }
         }
     }
+
+    /**
+     * Formats a timestamp as a month string (yyyy-MM).
+     */
+    fun formatMonth(timestamp: Long): String {
+        return Instant.ofEpochMilli(timestamp).atZone(systemZoneId).format(monthFormatter)
+    }
+
+    /**
+     * Converts a timestamp to a date string (yyyy-MM-dd).
+     */
+    fun formatDate(timestamp: Long): String {
+        return Instant.ofEpochMilli(timestamp).atZone(systemZoneId).toLocalDate().toString()
+    }
+
+    /**
+     * Generates a list of time buckets (start/end pairs) for a given range.
+     */
+    fun getTimeBuckets(timelineRange: TimelineRange, numPoints: Int = 30): List<TimeBucket> {
+        val (start, end) = getDateRange(timelineRange)
+        val actualStart = start ?: 0L
+        val actualEnd = end ?: System.currentTimeMillis()
+        val duration = actualEnd - actualStart
+        val step = if (numPoints > 0) duration / numPoints else 0L
+
+        return if (step > 0) {
+            (0 until numPoints).map { i ->
+                TimeBucket(actualStart + (i * step), actualStart + ((i + 1) * step))
+            }
+        } else listOf(TimeBucket(actualStart, actualEnd))
+    }
+
+    /**
+     * Calculates a cumulative sum (running total) across a list of financial metrics.
+     */
+    fun <K> calculateCumulativeSum(
+        items: List<FinancialMetrics<K>>,
+        initialBalance: BigDecimal = BigDecimal.ZERO
+    ): List<TrajectoryPoint<K>> {
+        var currentBalance = initialBalance
+        return items.map { item ->
+            currentBalance += item.totalAmount
+            TrajectoryPoint(
+                key = item.key,
+                income = item.income,
+                expense = item.expense,
+                totalAmount = item.totalAmount,
+                cumulativeBalance = currentBalance,
+                transactionCount = item.transactionCount
+            )
+        }
+    }
+
+    fun getHeaderData(
+        groupKey: String,
+        groupTransactions: List<TransactionWithBalance>,
+        allTransactions: List<TransactionWithBalance>,
+        groupingType: TransactionGroupingType,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int
+    ): GroupHeaderData {
+        val (title, subtitle, endTimestamp) = when (groupingType) {
+            TransactionGroupingType.BY_DAY -> {
+                val firstTx = groupTransactions.first()
+                val date = Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+                val formattedDate = date.format(dateFormatter)
+                val isToday = formattedDate == LocalDate.now(systemZoneId).format(dateFormatter)
+                val titleText = if (isToday) "Today" else formattedDate
+                val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId).toInstant().toEpochMilli()
+                Triple(titleText, "${groupTransactions.size} transaction${if (groupTransactions.size > 1) "s" else ""}", endOfDay)
+            }
+            TransactionGroupingType.BY_WEEK -> {
+                val (year, week) = groupKey.split("-W").map { it.toInt() }
+                val weekStartDate = LocalDate.now(systemZoneId).withYear(year).with(weekFields.weekOfWeekBasedYear(), week.toLong()).with(weekFields.dayOfWeek(), 1)
+                val weekEndDate = weekStartDate.plusDays(6)
+                val endOfWeek = weekEndDate.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId).toInstant().toEpochMilli()
+                Triple("WEEK $week", "${weekStartDate.format(shortDateFormatter)} - ${weekEndDate.format(dateFormatter)}", endOfWeek)
+            }
+        }
+
+        val summaryByCurrency = AggregationService.calculateSummaryByCurrency(groupTransactions.map { it.transaction })
+        val incomeByCurrency = summaryByCurrency.mapValues { it.value.income }
+        val incomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
+
+        val expenseByCurrency = summaryByCurrency.mapValues { it.value.expense }
+        val expenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
+
+        val closingBalancesByCurrency = allTransactions
+            .filter { it.transaction.timestamp <= endTimestamp }
+            .groupBy { it.transaction.accountId }
+            .mapValues { (_, txs) -> txs.maxBy { it.transaction.timestamp } }
+            .values
+            .groupBy { it.transaction.currency }
+            .mapValues { it.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } }
+
+        val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(closingBalancesByCurrency, baseCurrency, exchangeRates, precision)
+
+        return GroupHeaderData(
+            title = title,
+            subtitle = subtitle,
+            incomeByCurrency = incomeByCurrency,
+            expenseByCurrency = expenseByCurrency,
+            closingBalancesByCurrency = closingBalancesByCurrency,
+            allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys).distinct().sorted(),
+            incomeBase = incomeBase,
+            expenseBase = expenseBase,
+            netBase = incomeBase.add(expenseBase),
+            totalClosingBalanceBase = totalClosingBalanceBase
+        )
+    }
+
+    data class GroupHeaderData(
+        val title: String,
+        val subtitle: String,
+        val incomeByCurrency: Map<String, BigDecimal>,
+        val expenseByCurrency: Map<String, BigDecimal>,
+        val closingBalancesByCurrency: Map<String, BigDecimal>,
+        val allCurrencies: List<String>,
+        val incomeBase: BigDecimal,
+        val expenseBase: BigDecimal,
+        val netBase: BigDecimal,
+        val totalClosingBalanceBase: BigDecimal
+    )
 }
+
+data class TimeBucket(val start: Long, val end: Long)
+
+data class TrajectoryPoint<K>(
+    val key: K,
+    val income: BigDecimal,
+    val expense: BigDecimal,
+    val totalAmount: BigDecimal,
+    val cumulativeBalance: BigDecimal,
+    val transactionCount: Int
+)

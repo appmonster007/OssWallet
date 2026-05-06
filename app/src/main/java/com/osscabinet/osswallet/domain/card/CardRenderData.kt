@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import java.math.BigDecimal
 
 /**

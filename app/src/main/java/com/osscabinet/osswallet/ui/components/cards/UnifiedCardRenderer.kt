@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.service.CategoryTreeMetrics
+import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapCard
 import java.math.RoundingMode

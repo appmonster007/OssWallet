@@ -1,39 +1,64 @@
 package com.osscabinet.ossWallet.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FilterAlt
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Label
+import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.BudgetService
+import com.osscabinet.ossWallet.domain.service.lifecycle.BudgetService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -67,7 +92,11 @@ fun BudgetDetailScreen(
         return
     }
 
-    val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(budget, BigDecimal.ZERO, BigDecimal.ZERO)
+    val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(
+        budget,
+        BigDecimal.ZERO,
+        BigDecimal.ZERO
+    )
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -76,11 +105,12 @@ fun BudgetDetailScreen(
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
     val recordsSettings by transactionViewModel.recordsSettings.collectAsStateWithLifecycle()
 
-    val budgetTransactions = remember(budget, viewModel.transactions.collectAsStateWithLifecycle().value) {
-        viewModel.getBudgetTransactions(budget).map { 
-            TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO) 
+    val budgetTransactions =
+        remember(budget, viewModel.transactions.collectAsStateWithLifecycle().value) {
+            viewModel.getBudgetTransactions(budget).map {
+                TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO)
+            }
         }
-    }
 
     val selectedAccounts = remember(accounts, budget.accountIds) {
         if (budget.accountIds.isEmpty()) emptyList()
@@ -111,7 +141,12 @@ fun BudgetDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(budget.name, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = {
+                    Text(
+                        budget.name,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
@@ -128,7 +163,9 @@ fun BudgetDetailScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 verticalAlignment = Alignment.Top
             ) { page ->
                 when (page) {
@@ -146,7 +183,7 @@ fun BudgetDetailScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            
+
                             item {
                                 AeonExpressiveCard(
                                     title = "SCOPE & CONTEXT",
@@ -161,10 +198,10 @@ fun BudgetDetailScreen(
                                             isEmpty = budget.accountIds.isEmpty(),
                                             items = selectedAccounts.map { account ->
                                                 {
-                                                    val color = try { 
+                                                    val color = try {
                                                         Color(account.colorHex.toColorInt())
-                                                    } catch (_: Exception) { 
-                                                        MaterialTheme.colorScheme.primary 
+                                                    } catch (_: Exception) {
+                                                        MaterialTheme.colorScheme.primary
                                                     }
                                                     ScopeChip(text = account.name, color = color)
                                                 }
@@ -189,7 +226,10 @@ fun BudgetDetailScreen(
                                             isEmpty = budget.tags.isEmpty(),
                                             items = budget.tags.map { tag ->
                                                 {
-                                                    ScopeChip(text = tag, color = MaterialTheme.colorScheme.secondary)
+                                                    ScopeChip(
+                                                        text = tag,
+                                                        color = MaterialTheme.colorScheme.secondary
+                                                    )
                                                 }
                                             }
                                         )
@@ -205,15 +245,23 @@ fun BudgetDetailScreen(
                                         border = BorderStroke(1.dp, TealHealthy.copy(alpha = 0.1f))
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                            modifier = Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            Icon(Icons.Rounded.Autorenew, contentDescription = null, tint = TealHealthy)
+                                            Icon(
+                                                Icons.Rounded.Autorenew,
+                                                contentDescription = null,
+                                                tint = TealHealthy
+                                            )
                                             Column {
                                                 Text(
                                                     "Rollover Applied",
-                                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                    style = MaterialTheme.typography.titleSmall.copy(
+                                                        fontWeight = FontWeight.Bold
+                                                    ),
                                                     color = TealHealthy
                                                 )
                                                 Text(
@@ -228,63 +276,81 @@ fun BudgetDetailScreen(
                             }
                         }
                     }
-                    1 -> {
-                            if (budgetTransactions.isEmpty()) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(24.dp),
-                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-                                ) {
-                                    Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
-                                        Text(
-                                            "No activity in this period",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                }
-                            } else {
-                                val now = System.currentTimeMillis()
-                                val transactionType = if (budget.trackTypes.size == 1) {
-                                    if (budget.trackTypes.first() == BudgetTrackType.INCOME) "income" else "expense"
-                                } else null
 
-                                RecentActivitiesScreen(
-                                    allTransactions = budgetTransactions,
-                                    accountNamesMap = accountNamesMap,
-                                    categoryMap = categoryMap,
-                                    onRecordsClick = { _ ->
-                                        val (start, end) = BudgetService.getCurrentPeriodRange(budget, now)
-                                        onRecordsClick(
-                                            RecordsFilterContext.Custom(
-                                                accountIds = budget.accountIds,
-                                                categoryIds = budget.categoryIds.map { it.toString() },
-                                                tags = budget.tags,
-                                                startDate = start,
-                                                endDate = end,
-                                                transactionType = transactionType
-                                            )
-                                        )
-                                    },
-                                    onTransactionClick = onTransactionClick,
-                                    baseCurrency = baseCurrency,
-                                    exchangeRates = emptyMap(),
-                                    contentPadding = PaddingValues(0.dp),
-                                    revealedCardIds = revealedCardIds,
-                                    onItemExpanded = { transactionViewModel.onItemExpanded(it) },
-                                    onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                                    onStatusChange = { id, status -> transactionViewModel.quickUpdateStatus(id, status) },
-                                    onClone = { },
-                                    onDelete = { transactionViewModel.quickDeleteTransaction(it) },
-                                    onSplit = { },
-                                    onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                                    applyFilter = false,
-                                    excludeFuture = false,
-                                    precision = precision,
-                                    groupBy = recordsSettings.groupBy
+                    1 -> {
+                        if (budgetTransactions.isEmpty()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                border = BorderStroke(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                                 )
+                            ) {
+                                Box(Modifier.padding(32.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "No activity in this period",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.6f
+                                        )
+                                    )
+                                }
                             }
+                        } else {
+                            val now = System.currentTimeMillis()
+                            val transactionType = if (budget.trackTypes.size == 1) {
+                                if (budget.trackTypes.first() == BudgetTrackType.INCOME) "income" else "expense"
+                            } else null
+
+                            RecentActivitiesScreen(
+                                allTransactions = budgetTransactions,
+                                accountNamesMap = accountNamesMap,
+                                categoryMap = categoryMap,
+                                onRecordsClick = { _ ->
+                                    val (start, end) = BudgetService.getCurrentPeriodRange(
+                                        budget,
+                                        now
+                                    )
+                                    onRecordsClick(
+                                        RecordsFilterContext.Custom(
+                                            accountIds = budget.accountIds,
+                                            categoryIds = budget.categoryIds.map { it.toString() },
+                                            tags = budget.tags,
+                                            startDate = start,
+                                            endDate = end,
+                                            transactionType = transactionType
+                                        )
+                                    )
+                                },
+                                onTransactionClick = onTransactionClick,
+                                baseCurrency = baseCurrency,
+                                exchangeRates = emptyMap(),
+                                contentPadding = PaddingValues(0.dp),
+                                revealedCardIds = revealedCardIds,
+                                onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                                onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                                onStatusChange = { id, status ->
+                                    transactionViewModel.quickUpdateStatus(
+                                        id,
+                                        status
+                                    )
+                                },
+                                onClone = { },
+                                onDelete = { transactionViewModel.quickDeleteTransaction(it) },
+                                onSplit = { },
+                                onFullSwipeRight = {
+                                    transactionViewModel.toggleStatusClearedUncleared(
+                                        it
+                                    )
+                                },
+                                applyFilter = false,
+                                excludeFuture = false,
+                                precision = precision,
+                                groupBy = recordsSettings.groupBy
+                            )
+                        }
                     }
                 }
             }
@@ -311,7 +377,7 @@ private fun ScopeSection(
     items: List<@Composable () -> Unit>
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -323,7 +389,12 @@ private fun ScopeSection(
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
             Text(
@@ -351,13 +422,16 @@ private fun ScopeSection(
             ) {
                 val displayCount = if (isExpanded) items.size else 5
                 items.take(displayCount).forEach { it() }
-                
+
                 if (items.size > 5 && !isExpanded) {
                     Surface(
                         onClick = { isExpanded = true },
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
                         shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                        border = BorderStroke(
+                            0.5.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        )
                     ) {
                         Text(
                             text = "+${items.size - 5} more",

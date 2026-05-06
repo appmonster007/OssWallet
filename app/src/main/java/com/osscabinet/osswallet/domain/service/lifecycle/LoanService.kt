@@ -1,8 +1,13 @@
-package com.osscabinet.ossWallet.domain.service
+package com.osscabinet.ossWallet.domain.service.lifecycle
 
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.AmortizationEntry
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import com.osscabinet.ossWallet.domain.model.LoanSummary
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.Transaction
 import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
@@ -60,7 +65,12 @@ object LoanService {
         return entries
     }
 
-    fun buildSummary(loan: Loan, payments: List<LoanPayment>, now: Long, precision: Int = 2): LoanSummary {
+    fun buildSummary(
+        loan: Loan,
+        payments: List<LoanPayment>,
+        now: Long,
+        precision: Int = 2
+    ): LoanSummary {
         val totalPaid = payments.fold(BigDecimal.ZERO) { acc, p -> acc + p.amount }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
         val interest = calculateInterestAccrued(loan, now)
@@ -77,13 +87,13 @@ object LoanService {
      * Filters transactions based on loan's account, categories, and tags.
      */
     fun buildSummaryFromTransactions(
-        loan: Loan, 
-        transactions: List<Transaction>, 
-        now: Long, 
+        loan: Loan,
+        transactions: List<Transaction>,
+        now: Long,
         precision: Int = 2
     ): LoanSummary {
         val filteredTransactions = filterTransactionsForLoan(loan, transactions)
-        val totalPaid = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx -> 
+        val totalPaid = filteredTransactions.fold(BigDecimal.ZERO) { acc, tx ->
             acc + if (loan.loanType == LoanType.LENT) tx.amount.abs() else tx.amount.abs().negate()
         }
         val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
@@ -102,16 +112,17 @@ object LoanService {
     fun filterTransactionsForLoan(loan: Loan, transactions: List<Transaction>): List<Transaction> {
         return transactions.filter { transaction ->
             // Filter by linked account if specified
-            val accountMatch = loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
-            
+            val accountMatch =
+                loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
+
             // Filter by categories if specified
-            val categoryMatch = loan.categoryIds.isEmpty() || 
-                transaction.categoryId in loan.categoryIds
-            
+            val categoryMatch = loan.categoryIds.isEmpty() ||
+                    transaction.categoryId in loan.categoryIds
+
             // Filter by tags if specified (transaction must have at least one matching tag)
-            val tagMatch = loan.tags.isEmpty() || 
-                transaction.tags.any { it in loan.tags }
-            
+            val tagMatch = loan.tags.isEmpty() ||
+                    transaction.tags.any { it in loan.tags }
+
             accountMatch && categoryMatch && tagMatch
         }.sortedByDescending { it.timestamp }
     }

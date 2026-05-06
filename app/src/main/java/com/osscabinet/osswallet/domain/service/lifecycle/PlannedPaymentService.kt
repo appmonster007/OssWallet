@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.domain.service
+package com.osscabinet.ossWallet.domain.service.lifecycle
 
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneOffset
 
 object PlannedPaymentService {
@@ -31,6 +30,7 @@ object PlannedPaymentService {
                     candidate.withDayOfMonth(clamped)
                 } ?: candidate
             }
+
             RecurrenceType.YEARLY -> from.plusYears(rule.interval.toLong())
             RecurrenceType.ONE_TIME -> return null
         }
@@ -124,20 +124,24 @@ object PlannedPaymentService {
                 val day = dayOfWeekName(rule.dayOfWeek)
                 if (day != null) "Every week on $day" else "Weekly"
             }
+
             RecurrenceType.MONTHLY -> {
                 if (rule.dayOfMonth != null) "Every month on day ${rule.dayOfMonth}" else "Monthly"
             }
+
             RecurrenceType.YEARLY -> "Yearly"
             RecurrenceType.EVERY_N_DAYS -> {
                 val n = rule.interval
                 if (n == 1) "Daily" else "Every $n days"
             }
+
             RecurrenceType.EVERY_N_WEEKS -> {
                 val n = rule.interval
                 val day = dayOfWeekName(rule.dayOfWeek)
                 val base = if (n == 1) "Weekly" else "Every $n weeks"
                 if (day != null) "$base on $day" else base
             }
+
             RecurrenceType.EVERY_N_MONTHS -> {
                 val n = rule.interval
                 val base = if (n == 1) "Monthly" else "Every $n months"

@@ -1,19 +1,46 @@
 package com.osscabinet.ossWallet.di
 
 import android.content.Context
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
-import com.osscabinet.ossWallet.data.repository.*
-import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.BackupRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.CardRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.PlannedPaymentRepositoryImpl
-import com.osscabinet.ossWallet.domain.service.TransactionManager
-import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.data.repository.ProfileRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.SettingsRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.SharedWalletRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.TagRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.TemplateRepositoryImpl
+import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CardRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.LoanRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.repository.ProfileRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 
 /**
  * Dependency container for the application.
@@ -84,7 +111,18 @@ class AppContainer(private val context: Context) {
     }
 
     val backupRepository: BackupRepository by lazy {
-        BackupRepositoryImpl(context.contentResolver, db.profileDao(), db.accountDao(), db.transactionDao(), db.categoryDao(), db.tagDao(), db.templateDao(), db.transactionLinkDao(), context, settingsDataStore)
+        BackupRepositoryImpl(
+            context.contentResolver,
+            db.profileDao(),
+            db.accountDao(),
+            db.transactionDao(),
+            db.categoryDao(),
+            db.tagDao(),
+            db.templateDao(),
+            db.transactionLinkDao(),
+            context,
+            settingsDataStore
+        )
     }
 
     val tagRepository: TagRepository by lazy {
@@ -104,10 +142,10 @@ class AppContainer(private val context: Context) {
     }
 
     // Consolidated Use Cases
-    val transactionUseCases by lazy { 
-        TransactionUseCases(transactionRepository, sharedWalletRepository) 
+    val transactionUseCases by lazy {
+        TransactionUseCases(transactionRepository, sharedWalletRepository)
     }
-    
+
     val accountUseCases by lazy {
         AccountUseCases(accountRepository)
     }

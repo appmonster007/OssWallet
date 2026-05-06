@@ -1,42 +1,55 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
-import com.osscabinet.ossWallet.domain.service.TransactionGroupingService
 import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.timeline.TransactionGroupingService
 import com.osscabinet.ossWallet.ui.components.categoryIcons
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionHeader
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
-
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -104,10 +117,18 @@ fun AeonTransactionList(
 
             items(groupTransactions, key = { it.transaction.id }) { item ->
                 val category = categoryMap[item.transaction.categoryId]
-                val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
-                val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer
+                val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name]
+                ?: Icons.Rounded.Category
+                val iconBg = category?.colorHex?.let { Color(it) }
+                    ?: MaterialTheme.colorScheme.primaryContainer
 
-                val amountInBase = CurrencyService.convertAmount(item.transaction.amount, item.transaction.currency, baseCurrency, exchangeRates, precision)
+                val amountInBase = CurrencyService.convertAmount(
+                    item.transaction.amount,
+                    item.transaction.currency,
+                    baseCurrency,
+                    exchangeRates,
+                    precision
+                )
 
                 SwipeableTransactionItem(
                     transaction = item.transaction,
@@ -124,14 +145,29 @@ fun AeonTransactionList(
                     AeonTransactionItem(
                         category = category?.name ?: "Uncategorized",
                         account = accountMap[item.transaction.accountId] ?: "Unknown Account",
-                        amount = formatCurrencyRight(item.transaction.amount, item.transaction.currency, precision),
+                        amount = formatCurrencyRight(
+                            item.transaction.amount,
+                            item.transaction.currency,
+                            precision
+                        ),
                         convertedAmount = if (item.transaction.currency != baseCurrency) {
                             formatCurrencyRight(amountInBase, baseCurrency, precision)
                         } else null,
-                        balanceBefore = formatCurrencyRight(item.balanceBefore, item.transaction.currency, precision),
-                        balanceAfter = formatCurrencyRight(item.balanceAfter, item.transaction.currency, precision),
+                        balanceBefore = formatCurrencyRight(
+                            item.balanceBefore,
+                            item.transaction.currency,
+                            precision
+                        ),
+                        balanceAfter = formatCurrencyRight(
+                            item.balanceAfter,
+                            item.transaction.currency,
+                            precision
+                        ),
                         type = if (item.transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                        timestamp = SimpleDateFormat(if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a", Locale.getDefault()).format(Date(item.transaction.timestamp)),
+                        timestamp = SimpleDateFormat(
+                            if (is24Hour) "EEE, MMM d • HH:mm" else "EEE, MMM d • hh:mm a",
+                            Locale.getDefault()
+                        ).format(Date(item.transaction.timestamp)),
                         note = item.transaction.note,
                         tags = item.transaction.tags,
                         icon = icon,
@@ -196,7 +232,7 @@ fun AeonTransactionItem(
                 thickness = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
-            
+
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -205,7 +241,9 @@ fun AeonTransactionItem(
                         Surface(
                             modifier = Modifier.fillMaxSize(),
                             shape = CircleShape,
-                            color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(alpha = 0.2f)
+                            color = (iconBg ?: MaterialTheme.colorScheme.primaryContainer).copy(
+                                alpha = 0.2f
+                            )
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -225,8 +263,14 @@ fun AeonTransactionItem(
                                     .align(Alignment.BottomStart),
                                 shape = CircleShape,
                                 color = when (status) {
-                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(0xFF4CAF50)
-                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(0xFF2196F3)
+                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED -> Color(
+                                        0xFF4CAF50
+                                    )
+
+                                    com.osscabinet.ossWallet.domain.model.TransactionStatus.RECONCILE -> Color(
+                                        0xFF2196F3
+                                    )
+
                                     com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED -> Color.Transparent
                                 }
                             ) {
@@ -294,7 +338,7 @@ fun AeonTransactionItem(
                                     color = if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
                                 )
                             )
-                            
+
                             if (convertedAmount != null) {
                                 Text(
                                     text = convertedAmount,
@@ -302,7 +346,9 @@ fun AeonTransactionItem(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 10.sp
                                     ),
-                                    color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(alpha = 0.7f)
+                                    color = (if (type == CashFlowType.INCOME) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error).copy(
+                                        alpha = 0.7f
+                                    )
                                 )
                             }
 

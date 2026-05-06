@@ -6,20 +6,46 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,14 +62,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
-import com.osscabinet.ossWallet.domain.service.TransactionManager
-import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.viewmodel.PlannedPaymentViewModel
 import java.math.RoundingMode
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -74,6 +98,7 @@ private fun SwipeablePaymentItem(
                     }
                     false
                 }
+
                 SwipeToDismissBoxValue.EndToStart -> {
                     if (onSkip != null) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -81,6 +106,7 @@ private fun SwipeablePaymentItem(
                     }
                     false
                 }
+
                 else -> false
             }
         },
@@ -117,12 +143,14 @@ private fun SwipeablePaymentItem(
                         tint = Color(0xFF004D40),
                         modifier = Modifier.size(28.dp)
                     )
+
                     SwipeToDismissBoxValue.EndToStart -> Icon(
                         Icons.Rounded.SkipNext,
                         contentDescription = "Skip",
                         tint = Color(0xFFB3261E),
                         modifier = Modifier.size(28.dp)
                     )
+
                     else -> {}
                 }
             }
@@ -173,9 +201,9 @@ fun PlannedPaymentsScreen(
         val overdueIds = overdue.map { it.id }.toSet()
         payments.filter { p ->
             p.status == PlannedPaymentStatus.ACTIVE &&
-                p.nextDueDate > windowEnd &&
-                p.id !in upcomingIds &&
-                p.id !in overdueIds
+                    p.nextDueDate > windowEnd &&
+                    p.id !in upcomingIds &&
+                    p.id !in overdueIds
         }
     }
     val paused = remember(payments) { payments.filter { it.status == PlannedPaymentStatus.PAUSED } }
@@ -204,7 +232,9 @@ fun PlannedPaymentsScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             if (payments.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -240,7 +270,9 @@ fun PlannedPaymentsScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -262,7 +294,13 @@ fun PlannedPaymentsScreen(
                                 onDelete = { viewModel.delete(payment.id) },
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
-                                onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
+                                onConfirm = {
+                                    viewModel.quickConfirm(
+                                        payment,
+                                        transactionManager,
+                                        profileId
+                                    )
+                                },
                                 onSkip = { viewModel.quickSkip(payment) }
                             )
                         }
@@ -293,7 +331,13 @@ fun PlannedPaymentsScreen(
                                     onDelete = { viewModel.delete(item.plannedPayment.id) },
                                     onPause = { viewModel.pause(item.plannedPayment) },
                                     onResume = { viewModel.resume(item.plannedPayment) },
-                                    onConfirm = { viewModel.quickConfirm(item.plannedPayment, transactionManager, profileId) },
+                                    onConfirm = {
+                                        viewModel.quickConfirm(
+                                            item.plannedPayment,
+                                            transactionManager,
+                                            profileId
+                                        )
+                                    },
                                     onSkip = { viewModel.quickSkip(item.plannedPayment) }
                                 )
                             }
@@ -319,7 +363,13 @@ fun PlannedPaymentsScreen(
                                 onDelete = { viewModel.delete(payment.id) },
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
-                                onConfirm = { viewModel.quickConfirm(payment, transactionManager, profileId) },
+                                onConfirm = {
+                                    viewModel.quickConfirm(
+                                        payment,
+                                        transactionManager,
+                                        profileId
+                                    )
+                                },
                                 onSkip = { viewModel.quickSkip(payment) }
                             )
                         }
@@ -431,7 +481,8 @@ private fun PlannedPaymentListItem(
         payment.transactionType == "income" -> TealHealthy
         else -> RedWarning
     }
-    val dateColor = if (isOverdue) RedWarning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    val dateColor =
+        if (isOverdue) RedWarning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
 
     val recurrenceLabel = PlannedPaymentService.formatRecurrenceHuman(payment.recurrenceRule)
     val formattedAmount = remember(payment.amount) {

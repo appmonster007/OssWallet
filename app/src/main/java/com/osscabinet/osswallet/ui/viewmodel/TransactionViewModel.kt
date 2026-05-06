@@ -2,21 +2,33 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.withDateRange
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
-import com.osscabinet.ossWallet.domain.service.TransactionManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -33,16 +45,17 @@ class TransactionViewModel(
 
     // Replace multiple filter states with single FilterManager
     private val recordsFilterManager = FilterManager()
-    
+
     // Expose merged filter as StateFlow directly from FilterManager
     val recordsFilter: StateFlow<TransactionFilter> = recordsFilterManager.mergedFilter
-    
+
     // Keep account detail filter separate (used in AccountDetailScreen)
     private val _accountDetailFilter = MutableStateFlow(TransactionFilter())
     val accountDetailFilter = _accountDetailFilter.asStateFlow()
 
     // Track the initial filter context from navigation (for backward compatibility)
-    private val _initialFilterContext = MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
+    private val _initialFilterContext =
+        MutableStateFlow<RecordsFilterContext>(RecordsFilterContext.None)
     val initialFilterContext = _initialFilterContext.asStateFlow()
 
     // Track if records filter has been manually initialized (to prevent reinitialization from navigation)
@@ -72,35 +85,46 @@ class TransactionViewModel(
     val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val recordsSettings: StateFlow<com.osscabinet.ossWallet.data.local.TransactionSectionSettings> = settingsRepository.recordsSettings
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.osscabinet.ossWallet.data.local.TransactionSectionSettings())
+    val recordsSettings: StateFlow<com.osscabinet.ossWallet.data.local.TransactionSectionSettings> =
+        settingsRepository.recordsSettings
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                com.osscabinet.ossWallet.data.local.TransactionSectionSettings()
+            )
 
-    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> = settingsRepository.currentProfileId
-        .flatMapLatest { profileId ->
-            combine(
-                recordsFilter.flatMapLatest { transactionUseCases.getFilteredTransactions(profileId, it) },
-                accountRepository.getAllAccounts(profileId),
-                computationRepository.exchangeRates,
-                computationRepository.hasLoadedExchangeRates,
-                recordsFilter
-            ) { filteredTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
-                if (!hasLoadedExchangeRates) return@combine emptyList<TransactionWithBalance>()
+    val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
+        settingsRepository.currentProfileId
+            .flatMapLatest { profileId ->
+                combine(
+                    recordsFilter.flatMapLatest {
+                        transactionUseCases.getFilteredTransactions(
+                            profileId,
+                            it
+                        )
+                    },
+                    accountRepository.getAllAccounts(profileId),
+                    computationRepository.exchangeRates,
+                    computationRepository.hasLoadedExchangeRates,
+                    recordsFilter
+                ) { filteredTransactions, accounts, rates, hasLoadedExchangeRates, currentFilter ->
+                    if (!hasLoadedExchangeRates) return@combine emptyList<TransactionWithBalance>()
 
-                val precision = decimalPrecision.value
+                    val precision = decimalPrecision.value
 
-                transactionUseCases.getRecentTransactions(
-                    allTransactions = filteredTransactions,
-                    accounts = accounts,
-                    exchangeRates = rates,
-                    precision = precision,
-                    limit = Int.MAX_VALUE // Use MAX_VALUE for the full list with balances
-                )
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+                    transactionUseCases.getRecentTransactions(
+                        allTransactions = filteredTransactions,
+                        accounts = accounts,
+                        exchangeRates = rates,
+                        precision = precision,
+                        limit = Int.MAX_VALUE // Use MAX_VALUE for the full list with balances
+                    )
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
 
     val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
         .map { list -> list.map { it.transaction } }
@@ -148,7 +172,8 @@ class TransactionViewModel(
     }
 
     fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
-        _accountDetailFilter.value = _accountDetailFilter.value.copy(startDate = start, endDate = end)
+        _accountDetailFilter.value =
+            _accountDetailFilter.value.copy(startDate = start, endDate = end)
     }
 
     fun clearRecordsFilters() {
@@ -170,10 +195,12 @@ class TransactionViewModel(
             accountIds = listOf(accountId),
             transactionType = if (isIncome) "income" else "expense"
         )
+
         is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
             accountIds = listOf(accountId),
             currencies = listOf(currency)
         )
+
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = accountIds,
             transactionType = transactionType,
@@ -183,8 +210,8 @@ class TransactionViewModel(
             currencies = currencies,
             paymentMethods = paymentMethods,
             queryNote = queryNote,
-            minAmount = minAmount?.let { java.math.BigDecimal(it) },
-            maxAmount = maxAmount?.let { java.math.BigDecimal(it) },
+            minAmount = minAmount?.let { BigDecimal(it) },
+            maxAmount = maxAmount?.let { BigDecimal(it) },
             queryPayee = queryPayee,
             tags = tags
         )
@@ -308,7 +335,10 @@ class TransactionViewModel(
         }
     }
 
-    fun quickUpdateStatus(transactionId: Long, newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
+    fun quickUpdateStatus(
+        transactionId: Long,
+        newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus
+    ) {
         viewModelScope.launch {
             withProfile { profileId ->
                 if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
@@ -337,7 +367,10 @@ class TransactionViewModel(
         viewModelScope.launch {
             val transaction = transactionUseCases.getTransactionById(transactionId)
             if (transaction != null) {
-                _prefillDto.value = TransactionPrefillDTO.fromTransaction(transaction, clonedFromTransactionId = transactionId)
+                _prefillDto.value = TransactionPrefillDTO.fromTransaction(
+                    transaction,
+                    clonedFromTransactionId = transactionId
+                )
             } else {
                 _prefillDto.value = null
             }
@@ -399,11 +432,11 @@ class TransactionViewModel(
         }
     }
 
-    fun getLinkedTransactionIds(transactionId: Long): kotlinx.coroutines.flow.Flow<List<Long>> {
+    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
         return transactionUseCases.getLinkedTransactionIds(transactionId)
     }
 
-    fun getLinkedTransactions(transactionId: Long): kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>> {
+    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
         return transactionUseCases.getLinkedTransactions(transactionId)
     }
 }

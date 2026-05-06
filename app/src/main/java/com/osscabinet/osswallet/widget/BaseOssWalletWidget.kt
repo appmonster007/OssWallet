@@ -3,9 +3,10 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
 
 abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
@@ -13,7 +14,8 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val configStore = WidgetConfigStore(context)
-        val config = (configStore.getConfig(id.hashCode()) ?: defaultConfig).withInstanceCardId(id.hashCode())
+        val config = (configStore.getConfig(id.hashCode())
+            ?: defaultConfig).withInstanceCardId(id.hashCode())
         val data = WidgetDataLoader.load(context)
 
         val input = CardInput(
@@ -36,8 +38,18 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
     private fun computeRenderData(input: CardInput, config: WidgetConfig): CardRenderData? {
         val registry = CardComputerRegistry.DEFAULT
         return when (config) {
-            is WidgetConfig.NetWorth -> registry.compute(CardType.NET_WORTH, input, config.cardConfig)
-            is WidgetConfig.CashFlow -> registry.compute(CardType.CASH_FLOW, input, config.cardConfig)
+            is WidgetConfig.NetWorth -> registry.compute(
+                CardType.NET_WORTH,
+                input,
+                config.cardConfig
+            )
+
+            is WidgetConfig.CashFlow -> registry.compute(
+                CardType.CASH_FLOW,
+                input,
+                config.cardConfig
+            )
+
             is WidgetConfig.AccountBalance -> {
                 val accountInput = input.copy(
                     accounts = input.accounts.filter { it.id == config.accountId },
@@ -45,7 +57,13 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
                 )
                 registry.compute(CardType.ACCOUNT_HERO, accountInput, config.cardConfig)
             }
-            is WidgetConfig.UpcomingPayments -> registry.compute(CardType.PLANNED_PAYMENTS, input, config.cardConfig)
+
+            is WidgetConfig.UpcomingPayments -> registry.compute(
+                CardType.PLANNED_PAYMENTS,
+                input,
+                config.cardConfig
+            )
+
             is WidgetConfig.Budget -> registry.compute(CardType.BUDGETS, input, config.cardConfig)
         }
     }

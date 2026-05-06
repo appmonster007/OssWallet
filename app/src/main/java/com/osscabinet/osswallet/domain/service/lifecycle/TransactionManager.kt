@@ -1,9 +1,9 @@
-package com.osscabinet.ossWallet.domain.service
+package com.osscabinet.ossWallet.domain.service.lifecycle
 
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import java.math.BigDecimal
 
 /**
@@ -60,7 +60,11 @@ class TransactionManager(
                 warrantyExpiration = request.warrantyExpiration,
                 status = request.status
             )
-            transactionUseCases.updateTransaction(existingTransaction, updatedTransaction, profileId)
+            transactionUseCases.updateTransaction(
+                existingTransaction,
+                updatedTransaction,
+                profileId
+            )
             return existingTransaction.id
         } else {
             val newTransaction = Transaction(
@@ -125,7 +129,11 @@ class TransactionManager(
             return if (existingTransaction != null) {
                 // Clear any existing links since this is now outside-wallet
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
-                transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
+                transactionUseCases.updateTransaction(
+                    existingTransaction,
+                    sourceTransaction,
+                    profileId
+                )
                 existingTransaction.id
             } else {
                 transactionUseCases.insertTransaction(sourceTransaction, profileId)
@@ -171,10 +179,10 @@ class TransactionManager(
             timestamp = System.currentTimeMillis()
         )
         val newId = transactionUseCases.insertTransaction(clonedTransaction, profileId)
-        
+
         // Optionally link cloned transactions in the future
         // transactionUseCases.addTransactionLink(newId, transactionId)
-        
+
         return newId
     }
 
@@ -189,17 +197,21 @@ class TransactionManager(
             TransactionStatus.UNCLEARED -> TransactionStatus.CLEARED
             TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
         }
-        
+
         val updatedTransaction = transaction.copy(status = newStatus)
         transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)
-        
+
         return newStatus
     }
 
     /**
      * Updates the status of a transaction to a specific value.
      */
-    suspend fun updateStatus(transactionId: Long, newStatus: TransactionStatus, profileId: Int): Boolean {
+    suspend fun updateStatus(
+        transactionId: Long,
+        newStatus: TransactionStatus,
+        profileId: Int
+    ): Boolean {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
         val updatedTransaction = transaction.copy(status = newStatus)
         transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)

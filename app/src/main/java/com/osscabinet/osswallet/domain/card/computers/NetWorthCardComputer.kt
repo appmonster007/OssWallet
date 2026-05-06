@@ -1,9 +1,13 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.card.CardDataComputer
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
-import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 
 class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
     override val supportedType = CardType.NET_WORTH
@@ -30,6 +34,12 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
             precision = input.precision
         )
 
-        return CardRenderData.NetWorth(config, netWorth, cashFlowResult, input.baseCurrency, input.precision)
+        return CardRenderData.NetWorth(
+            config,
+            netWorth,
+            cashFlowResult,
+            input.baseCurrency,
+            input.precision
+        )
     }
 }

@@ -1,115 +1,81 @@
 package com.osscabinet.ossWallet.ui.dashboard
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.runtime.*
-import androidx.compose.runtime.produceState
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.map
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonShimmer
+import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
+import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
-import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
-import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
-import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.util.toContainerColor
-import com.osscabinet.ossWallet.ui.util.toOnContainerColor
-import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.ui.components.cards.*
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
-import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
-import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.TimelineService
-import com.osscabinet.ossWallet.ui.dashboard.components.NetWorthCard
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
-import com.osscabinet.ossWallet.ui.dashboard.components.AccountsCard
-import com.osscabinet.ossWallet.ui.dashboard.components.CashFlowCard
-import com.osscabinet.ossWallet.ui.dashboard.components.CurrencyBalancesCard
-import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryPieChartData
-import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
-import com.osscabinet.ossWallet.ui.viewmodel.NetWorthUiState
-import java.math.BigDecimal
-import java.math.RoundingMode
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -124,7 +90,11 @@ private fun calculateScrollBottomPadding(): Dp {
     return with(density) { thirtyPercentPx.toDp() }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun DashboardScreen(
     onMenuClick: () -> Unit,
@@ -147,7 +117,7 @@ fun DashboardScreen(
     viewContext: String? = null
 ) {
     var navTriggered by remember { mutableStateOf(false) }
-    
+
     // Reset navTriggered when returning to this screen
     androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
         navTriggered = false
@@ -157,7 +127,8 @@ fun DashboardScreen(
     LaunchedEffect(viewContext) {
         viewContext?.let { contextString ->
             try {
-                val decodedContext = URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
+                val decodedContext =
+                    URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
                 val context = Json.decodeFromString<DashboardViewContext>(decodedContext)
                 dashboardViewModel.initializeDashboardView(context)
             } catch (e: Exception) {
@@ -186,14 +157,17 @@ fun DashboardScreen(
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
-    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
-    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
-    
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
+        initialValue = true
+    )
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(
+        initialValue = true
+    )
+
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -236,14 +210,24 @@ fun DashboardScreen(
                             }
                         } else {
                             IconButton(onClick = onBackClick) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
                             }
                         }
                     },
                     title = {
                         Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
-                            Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                            Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            Text(
+                                currentProfile?.name ?: "Intelligence",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                "Personal Account",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
                         }
                     }
                 )
@@ -261,6 +245,7 @@ fun DashboardScreen(
                 is DashboardUiState.Loading -> {
                     AeonShimmer(innerPadding = innerPadding)
                 }
+
                 is DashboardUiState.Success -> {
                     DashboardContent(
                         innerPadding = innerPadding,
@@ -282,6 +267,7 @@ fun DashboardScreen(
                         cardAnimationEnabled = cardAnimationEnabled
                     )
                 }
+
                 is DashboardUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(state.message)
@@ -298,7 +284,7 @@ fun DashboardScreen(
             tabs = tabs,
             isFabExpanded = isFabExpanded,
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-            onFabClick = { 
+            onFabClick = {
                 if (!expandableFabEnabled) {
                     navigate { onAddClick(0, null) }
                 }
@@ -324,7 +310,7 @@ fun DashboardScreen(
 @Composable
 fun DashboardContent(
     innerPadding: PaddingValues,
-    pagerState: androidx.compose.foundation.pager.PagerState,
+    pagerState: PagerState,
     tabs: List<NavigationTab>,
     state: DashboardUiState.Success,
     currentTheme: String,
@@ -378,9 +364,9 @@ fun DashboardContent(
                             )
                         }
                     }
-                    
+
                     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-                    
+
                     AeonCardList(
                         cards = cardsConfig.cards,
                         cardInput = CardInput(
@@ -401,7 +387,12 @@ fun DashboardContent(
                         onDelete = { dashboardViewModel.removeCard(it) },
                         onRecordsClick = onRecordsClick,
                         modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = calculateScrollBottomPadding()),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 8.dp,
+                            bottom = calculateScrollBottomPadding()
+                        ),
                         animateCards = cardAnimationEnabled,
                         currentTheme = currentTheme,
                         accounts = state.accounts,
@@ -414,8 +405,10 @@ fun DashboardContent(
                     )
                 }
             }
+
             1 -> {
-                val accountMap = remember(state.accounts) { state.accounts.associate { it.id to it.name } }
+                val accountMap =
+                    remember(state.accounts) { state.accounts.associate { it.id to it.name } }
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
@@ -434,7 +427,12 @@ fun DashboardContent(
                     revealedCardIds = revealedCardIds,
                     onItemExpanded = { transactionViewModel.onItemExpanded(it) },
                     onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
-                    onStatusChange = { transactionId, status -> transactionViewModel.quickUpdateStatus(transactionId, status) },
+                    onStatusChange = { transactionId, status ->
+                        transactionViewModel.quickUpdateStatus(
+                            transactionId,
+                            status
+                        )
+                    },
                     onClone = { onCloneTransactionClick(it) },
                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
@@ -446,7 +444,7 @@ fun DashboardContent(
             }
         }
     }
-    
+
     // Add Card Dialog
     if (showAddCardDialog) {
         AddCardDialog(
@@ -469,22 +467,23 @@ fun AddCardDialog(
 ) {
     GenericAddCardDialog(
         onDismiss = onDismiss,
-        cardOptions = CardType.entries.filter { it.isUserAddableOn(ScreenContext.DASHBOARD) && it != CardType.BUDGETS }.map { type ->
-            CardTypeOptionData(
-                title = type.displayName,
-                description = "", // TODO: Add descriptions to CardType
-                icon = when (type) {
-                    CardType.NET_WORTH -> Icons.Default.AccountBalance
-                    CardType.CURRENCY_BALANCES -> Icons.Default.AttachMoney
-                    CardType.CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
-                    CardType.ACCOUNTS -> Icons.Default.AccountBox
-                    CardType.CATEGORY_PIE_CHART -> Icons.Default.PieChart
-                    CardType.CATEGORY_TREEMAP -> Icons.Default.GridView
-                    else -> null
-                },
-                onClick = { onAddCard(type.serialName) }
-            )
-        }
+        cardOptions = CardType.entries.filter { it.isUserAddableOn(ScreenContext.DASHBOARD) && it != CardType.BUDGETS }
+            .map { type ->
+                CardTypeOptionData(
+                    title = type.displayName,
+                    description = "", // TODO: Add descriptions to CardType
+                    icon = when (type) {
+                        CardType.NET_WORTH -> Icons.Default.AccountBalance
+                        CardType.CURRENCY_BALANCES -> Icons.Default.AttachMoney
+                        CardType.CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
+                        CardType.ACCOUNTS -> Icons.Default.AccountBox
+                        CardType.CATEGORY_PIE_CHART -> Icons.Default.PieChart
+                        CardType.CATEGORY_TREEMAP -> Icons.Default.GridView
+                        else -> null
+                    },
+                    onClick = { onAddCard(type.serialName) }
+                )
+            }
     )
 }
 

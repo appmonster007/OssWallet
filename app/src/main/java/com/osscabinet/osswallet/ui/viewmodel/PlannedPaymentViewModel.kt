@@ -11,10 +11,14 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
-import com.osscabinet.ossWallet.domain.service.TransactionManager
+import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -87,14 +91,21 @@ class PlannedPaymentViewModel(
             )
             val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
             plannedPaymentRepository.upsertOccurrence(
-                occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId)
+                occurrence.copy(
+                    status = OccurrenceStatus.CONFIRMED,
+                    generatedTransactionId = transactionId
+                )
             )
-            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            val nextDue =
+                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
                 plannedPaymentRepository.update(
-                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                    payment.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = occurrence.scheduledDate
+                    )
                 )
             }
         }
@@ -103,19 +114,27 @@ class PlannedPaymentViewModel(
     fun skipOccurrence(occurrence: PlannedPaymentOccurrence, payment: PlannedPayment) {
         viewModelScope.launch {
             plannedPaymentRepository.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
-            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            val nextDue =
+                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
                 plannedPaymentRepository.update(
-                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                    payment.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = occurrence.scheduledDate
+                    )
                 )
             }
         }
     }
 
     /** Confirm a payment directly from the list view (no pre-loaded occurrence needed). */
-    fun quickConfirm(payment: PlannedPayment, transactionManager: TransactionManager, profileId: Int) {
+    fun quickConfirm(
+        payment: PlannedPayment,
+        transactionManager: TransactionManager,
+        profileId: Int
+    ) {
         val occurrence = PlannedPaymentOccurrence(
             id = 0, plannedPaymentId = payment.id, scheduledDate = payment.nextDueDate
         )
@@ -133,8 +152,15 @@ class PlannedPaymentViewModel(
     fun getOccurrencesForPayment(paymentId: Long): Flow<List<PlannedPaymentOccurrence>> =
         plannedPaymentRepository.getOccurrences(paymentId)
 
-    fun buildDefaultOccurrence(payment: PlannedPayment, scheduledDate: Long): PlannedPaymentOccurrence =
-        PlannedPaymentOccurrence(id = 0, plannedPaymentId = payment.id, scheduledDate = scheduledDate)
+    fun buildDefaultOccurrence(
+        payment: PlannedPayment,
+        scheduledDate: Long
+    ): PlannedPaymentOccurrence =
+        PlannedPaymentOccurrence(
+            id = 0,
+            plannedPaymentId = payment.id,
+            scheduledDate = scheduledDate
+        )
 
     fun buildDefault(accountId: String, profileId: Int): PlannedPayment {
         val now = LocalDate.now(ZoneOffset.UTC)

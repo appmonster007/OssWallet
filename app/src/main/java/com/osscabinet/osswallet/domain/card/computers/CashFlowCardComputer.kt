@@ -1,9 +1,12 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.card.CardDataComputer
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 
 class CashFlowCardComputer : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
     override val supportedType = CardType.CASH_FLOW

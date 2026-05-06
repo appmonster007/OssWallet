@@ -1,25 +1,22 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.domain.service.CurrencyService
-import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.ui.viewmodel.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -134,8 +131,8 @@ class TransactionEntryViewModel(
         if (txType == 2) {
             val linkedTransfer = linkedTxs.find { tx ->
                 tx.category == "Transfer" &&
-                tx.transactionType == "income" &&
-                kotlin.math.abs(tx.timestamp - transaction.timestamp) < 1000
+                        tx.transactionType == "income" &&
+                        kotlin.math.abs(tx.timestamp - transaction.timestamp) < 1000
             }
             targetAcc = linkedTransfer?.let { accounts.find { acc -> acc.id == it.accountId } }
         }
@@ -152,7 +149,8 @@ class TransactionEntryViewModel(
             selectedDateMillis = transaction.timestamp,
             payee = transaction.payee,
             note = transaction.note,
-            warrantyExpirationMillis = transaction.warrantyExpiration ?: System.currentTimeMillis() + 31536000000L,
+            warrantyExpirationMillis = transaction.warrantyExpiration
+                ?: System.currentTimeMillis() + 31536000000L,
             isWarrantyEnabled = transaction.warrantyExpiration != null,
             locationCoords = transaction.latitude?.let { lat ->
                 transaction.longitude?.let { lng -> lat to lng }
@@ -180,7 +178,8 @@ class TransactionEntryViewModel(
 
         _state.value = _state.value.copy(
             title = prefillDto.title,
-            amount = prefillDto.amount.toBigDecimalOrNull()?.abs()?.toPlainString() ?: prefillDto.amount,
+            amount = prefillDto.amount.toBigDecimalOrNull()?.abs()?.toPlainString()
+                ?: prefillDto.amount,
             category = prefillDto.category,
             selectedCategoryId = prefillDto.categoryId,
             selectedTags = prefillDto.tags,
@@ -190,12 +189,14 @@ class TransactionEntryViewModel(
             selectedDateMillis = System.currentTimeMillis(),
             payee = prefillDto.payee,
             note = prefillDto.note,
-            warrantyExpirationMillis = prefillDto.warrantyExpiration ?: System.currentTimeMillis() + 31536000000L,
+            warrantyExpirationMillis = prefillDto.warrantyExpiration
+                ?: System.currentTimeMillis() + 31536000000L,
             isWarrantyEnabled = prefillDto.warrantyExpiration != null,
             locationCoords = prefillDto.latitude?.let { lat ->
                 prefillDto.longitude?.let { lng -> lat to lng }
             },
-            linkedTransactionIds = prefillDto.clonedFromTransactionId?.let { listOf(it) } ?: emptyList(),
+            linkedTransactionIds = prefillDto.clonedFromTransactionId?.let { listOf(it) }
+                ?: emptyList(),
             selectedAccount = prefillAcc,
             selectedCurrency = prefillDto.currency,
             targetAccount = targetAcc,
@@ -214,16 +215,20 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.SetCategory -> update {
                 it.copy(category = event.category, selectedCategoryId = event.categoryId)
             }
+
             is TransactionEntryEvent.SetTags -> update { it.copy(selectedTags = event.tags) }
             is TransactionEntryEvent.AddTag -> update {
                 it.copy(selectedTags = it.selectedTags + event.tag)
             }
+
             is TransactionEntryEvent.RemoveTag -> update {
                 it.copy(selectedTags = it.selectedTags - event.tag)
             }
+
             is TransactionEntryEvent.SetPaymentMethod -> update {
                 it.copy(paymentMethod = event.method)
             }
+
             is TransactionEntryEvent.SetStatus -> update { it.copy(status = event.status) }
             is TransactionEntryEvent.SetTransactionType -> {
                 val oldType = _state.value.transactionType
@@ -239,30 +244,39 @@ class TransactionEntryViewModel(
                     recalculateExchangeRate()
                 }
             }
+
             is TransactionEntryEvent.SetDate -> update { it.copy(selectedDateMillis = event.millis) }
             is TransactionEntryEvent.SetPayee -> update { it.copy(payee = event.payee) }
             is TransactionEntryEvent.SetNote -> update { it.copy(note = event.note) }
             is TransactionEntryEvent.SetWarrantyEnabled -> update {
                 it.copy(isWarrantyEnabled = event.enabled)
             }
+
             is TransactionEntryEvent.SetWarrantyExpiration -> update {
                 it.copy(warrantyExpirationMillis = event.millis)
             }
+
             is TransactionEntryEvent.SetLocation -> update { it.copy(locationCoords = event.coords) }
             is TransactionEntryEvent.AddLinkedTransaction -> update {
                 it.copy(linkedTransactionIds = it.linkedTransactionIds + event.id)
             }
+
             is TransactionEntryEvent.RemoveLinkedTransaction -> {
                 // Remove from local state for new transactions
                 update { it.copy(linkedTransactionIds = it.linkedTransactionIds - event.linkedTransactionId) }
                 // For edit mode, also remove from database
                 viewModelScope.launch {
-                    transactionUseCases.removeTransactionLink(event.transactionId, event.linkedTransactionId)
+                    transactionUseCases.removeTransactionLink(
+                        event.transactionId,
+                        event.linkedTransactionId
+                    )
                 }
             }
+
             is TransactionEntryEvent.SetLinkedTransactionIds -> update {
                 it.copy(linkedTransactionIds = event.ids)
             }
+
             is TransactionEntryEvent.SetAccount -> {
                 update {
                     it.copy(
@@ -272,10 +286,12 @@ class TransactionEntryViewModel(
                 }
                 recalculateExchangeRate()
             }
+
             is TransactionEntryEvent.SetCurrency -> {
                 update { it.copy(selectedCurrency = event.currency) }
                 recalculateExchangeRate()
             }
+
             is TransactionEntryEvent.SetTargetAccount -> {
                 update {
                     it.copy(
@@ -285,16 +301,20 @@ class TransactionEntryViewModel(
                 }
                 recalculateExchangeRate()
             }
+
             is TransactionEntryEvent.SetTargetCurrency -> {
                 update { it.copy(targetCurrency = event.currency) }
                 recalculateExchangeRate()
             }
+
             is TransactionEntryEvent.SetExchangeRate -> update {
                 it.copy(exchangeRate = event.rate)
             }
+
             is TransactionEntryEvent.SetTemplate -> update {
                 it.copy(selectedTemplateName = event.templateName)
             }
+
             is TransactionEntryEvent.ApplyTemplate -> applyTemplate(event.template)
 
             // Sheet visibility
@@ -304,21 +324,26 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.ShowTargetAccountSheet -> update {
                 it.copy(showTargetAccountSheet = event.show)
             }
+
             is TransactionEntryEvent.ShowExchangeRateDialog -> update {
                 it.copy(showExchangeRateDialog = event.show)
             }
+
             is TransactionEntryEvent.ShowTemplateSheet -> update { it.copy(showTemplateSheet = event.show) }
             is TransactionEntryEvent.ShowLinkedTransactionSheet -> update {
                 it.copy(showLinkedTransactionSheet = event.show)
             }
+
             is TransactionEntryEvent.ShowTagSheet -> update { it.copy(showTagSheet = event.show) }
             is TransactionEntryEvent.ShowPaymentMethodSheet -> update {
                 it.copy(showPaymentMethodSheet = event.show)
             }
+
             is TransactionEntryEvent.ShowStatusSheet -> update { it.copy(showStatusSheet = event.show) }
             is TransactionEntryEvent.ShowWarrantyDatePicker -> update {
                 it.copy(showWarrantyDatePicker = event.show)
             }
+
             is TransactionEntryEvent.ShowLocationSheet -> update { it.copy(showLocationSheet = event.show) }
             is TransactionEntryEvent.ShowNumpad -> update { it.copy(isNumpadVisible = event.show) }
 
@@ -377,7 +402,8 @@ class TransactionEntryViewModel(
             val currentState = _state.value
             if (currentState.isTransfer &&
                 currentState.selectedCurrency.isNotEmpty() &&
-                currentState.targetCurrency.isNotEmpty()) {
+                currentState.targetCurrency.isNotEmpty()
+            ) {
 
                 val rates = computationRepository.exchangeRates.first()
                 val rate = CurrencyService.convertAmount(
@@ -399,7 +425,8 @@ class TransactionEntryViewModel(
         if (!currentState.canSave) return null
 
         val finalTimestamp = if (!currentState.isEditMode &&
-            currentState.selectedDateMillis == initialTimestamp) {
+            currentState.selectedDateMillis == initialTimestamp
+        ) {
             System.currentTimeMillis()
         } else {
             currentState.selectedDateMillis
@@ -511,7 +538,7 @@ class TransactionEntryViewModel(
      */
     fun addTag(name: String) {
         viewModelScope.launch {
-            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name))
+            tagRepository.insertTag(Tag(name = name))
         }
     }
 

@@ -10,9 +10,15 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.LoanService
+import com.osscabinet.ossWallet.domain.service.lifecycle.LoanService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -93,16 +99,17 @@ class LoanViewModel(
         val allTransactions = transactions.value
         return allTransactions.filter { transaction ->
             // Filter by linked account if specified
-            val accountMatch = loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
-            
+            val accountMatch =
+                loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
+
             // Filter by categories if specified
-            val categoryMatch = loan.categoryIds.isEmpty() || 
-                transaction.categoryId in loan.categoryIds
-            
+            val categoryMatch = loan.categoryIds.isEmpty() ||
+                    transaction.categoryId in loan.categoryIds
+
             // Filter by tags if specified (transaction must have at least one matching tag)
-            val tagMatch = loan.tags.isEmpty() || 
-                transaction.tags.any { it in loan.tags }
-            
+            val tagMatch = loan.tags.isEmpty() ||
+                    transaction.tags.any { it in loan.tags }
+
             accountMatch && categoryMatch && tagMatch
         }.sortedByDescending { it.timestamp }
     }

@@ -13,9 +13,15 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.BudgetService
+import com.osscabinet.ossWallet.domain.service.lifecycle.BudgetService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -68,19 +74,38 @@ class BudgetViewModel(
     ) { arr ->
         @Suppress("UNCHECKED_CAST")
         val budgetsList = arr[0] as List<Budget>
+
         @Suppress("UNCHECKED_CAST")
         val transactionsList = arr[1] as List<Transaction>
         val baseCurrency = arr[2] as String
         val precision = arr[3] as Int
+
         @Suppress("UNCHECKED_CAST")
         val rates = arr[4] as Map<String, BigDecimal>
+
         @Suppress("UNCHECKED_CAST")
         val categoriesList = arr[5] as List<Category>
-        
+
         val now = System.currentTimeMillis()
         budgetsList.associate { budget ->
-            val rollover = BudgetService.calculateRollover(budget, transactionsList, rates, baseCurrency, precision, now, categoriesList)
-            val spent = BudgetService.calculateSpent(budget, transactionsList, rates, baseCurrency, precision, now, categoriesList)
+            val rollover = BudgetService.calculateRollover(
+                budget,
+                transactionsList,
+                rates,
+                baseCurrency,
+                precision,
+                now,
+                categoriesList
+            )
+            val spent = BudgetService.calculateSpent(
+                budget,
+                transactionsList,
+                rates,
+                baseCurrency,
+                precision,
+                now,
+                categoriesList
+            )
             budget.id to BudgetService.buildProgress(budget, spent, rollover)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -92,7 +117,8 @@ class BudgetViewModel(
                     try {
                         val rates = currencyRepository.getExchangeRates(base)
                         _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
-                    } catch (_: Exception) { }
+                    } catch (_: Exception) {
+                    }
                 }
             }
         }
@@ -125,8 +151,24 @@ class BudgetViewModel(
         val allTx = transactions.value
         val allCats = categories.value
         val rates = _exchangeRates.value
-        val rollover = BudgetService.calculateRollover(budget, allTx, rates, baseCurrency, precision, now, allCats)
-        val spent = BudgetService.calculateSpent(budget, allTx, rates, baseCurrency, precision, now, allCats)
+        val rollover = BudgetService.calculateRollover(
+            budget,
+            allTx,
+            rates,
+            baseCurrency,
+            precision,
+            now,
+            allCats
+        )
+        val spent = BudgetService.calculateSpent(
+            budget,
+            allTx,
+            rates,
+            baseCurrency,
+            precision,
+            now,
+            allCats
+        )
         return BudgetService.buildProgress(budget, spent, rollover)
     }
 

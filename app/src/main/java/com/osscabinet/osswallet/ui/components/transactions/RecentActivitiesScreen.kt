@@ -96,9 +96,11 @@ fun RecentActivitiesScreen(
     filterContext: RecordsFilterContext = RecordsFilterContext.None,
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
-    is24Hour: Boolean = false,
-    groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY
+    is24Hour: Boolean = false
 ) {
+    // Recent activities are always grouped by day
+    val groupBy = TransactionGroupingType.BY_DAY
+
     // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
         filterToRecentTransactions(allTransactions, limit, days, excludeFuture)

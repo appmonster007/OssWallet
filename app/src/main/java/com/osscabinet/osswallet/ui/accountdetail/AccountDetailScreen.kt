@@ -259,8 +259,6 @@ fun AccountDetailScreen(
 
                             val transactionsWithBalanceList = state.transactionsWithBalance
 
-                            val recordsSettings by transactionViewModel.recordsSettings.collectAsStateWithLifecycle()
-
                             if (transactionsWithBalanceList.isEmpty()) {
                                 Box(
                                     modifier = Modifier
@@ -305,8 +303,7 @@ fun AccountDetailScreen(
                                     excludeFuture = !state.showPlannedPayments,
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
-                                    filterContext = RecordsFilterContext.ByAccount(accountId),
-                                    groupBy = recordsSettings.groupBy
+                                    filterContext = RecordsFilterContext.ByAccount(accountId)
                                 )
                             }
                         }

@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.domain.service.lifecycle
+package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus

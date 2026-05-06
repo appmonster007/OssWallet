@@ -31,7 +31,7 @@ import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.timeline.TransactionGroupingService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -107,7 +107,7 @@ fun RecentActivitiesScreen(
     }
 
     val groupedTransactions =
-        TransactionGroupingService.groupTransactions(recentTransactions, groupBy)
+        TimelineService.groupTransactions(recentTransactions, groupBy)
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -177,7 +177,7 @@ fun RecentActivitiesScreen(
                 }
             } else {
                 groupedTransactions.forEach { (key, groupTransactions) ->
-                    val headerData = TransactionGroupingService.getHeaderData(
+                    val headerData = TimelineService.getHeaderData(
                         groupKey = key,
                         groupTransactions = groupTransactions,
                         allTransactions = allTransactions,

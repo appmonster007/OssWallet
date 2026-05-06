@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.domain.service
+package com.osscabinet.ossWallet.domain.service.financial
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import java.math.BigDecimal
@@ -28,6 +28,19 @@ data class FinancialSummary(
             expense = BigDecimal.ZERO,
             transactionCount = 0
         )
+
+        /**
+         * Aggregates a collection of FinancialSummary objects into a single one.
+         */
+        fun aggregate(summaries: Collection<FinancialSummary>): FinancialSummary {
+            if (summaries.isEmpty()) return EMPTY
+            return FinancialSummary(
+                totalAmount = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.totalAmount) },
+                income = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.income) },
+                expense = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.expense) },
+                transactionCount = summaries.sumOf { it.transactionCount }
+            )
+        }
     }
 }
 

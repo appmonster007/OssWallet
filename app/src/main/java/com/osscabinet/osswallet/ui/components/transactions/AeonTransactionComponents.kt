@@ -43,7 +43,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.timeline.TransactionGroupingService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
@@ -80,7 +80,7 @@ fun AeonTransactionList(
     onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
-    val groupedTransactions = TransactionGroupingService.groupTransactions(transactions, groupBy)
+    val groupedTransactions = TimelineService.groupTransactions(transactions, groupBy)
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -88,7 +88,7 @@ fun AeonTransactionList(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         groupedTransactions.forEach { (key, groupTransactions) ->
-            val headerData = TransactionGroupingService.getHeaderData(
+            val headerData = TimelineService.getHeaderData(
                 groupKey = key,
                 groupTransactions = groupTransactions,
                 allTransactions = transactions,

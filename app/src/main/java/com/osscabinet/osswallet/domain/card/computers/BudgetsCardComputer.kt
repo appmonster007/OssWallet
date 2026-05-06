@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.lifecycle.BudgetService
+import com.osscabinet.ossWallet.domain.service.management.BudgetService
 
 class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
     override val supportedType = CardType.BUDGETS

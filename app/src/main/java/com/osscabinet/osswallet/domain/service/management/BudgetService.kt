@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.domain.service.lifecycle
+package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
@@ -9,7 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.filter.FilterService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.DayOfWeek
@@ -123,7 +123,7 @@ object BudgetService {
             startDate = start,
             endDate = end,
             accountIds = budget.accountIds,
-            categoryIds = FilterService.expandCategoryIds(budget.categoryIds, allCategories),
+            categoryIds = TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories),
             tags = budget.tags,
             transactionType = if (budget.trackTypes.size == 1) {
                 budget.trackTypes.first().name.lowercase()
@@ -131,7 +131,7 @@ object BudgetService {
             excludeFuture = false // Budgets track the whole configured period
         )
 
-        return FilterService.filterTransactions(transactions, filter)
+        return TransactionFilterService.filterTransactions(transactions, filter)
     }
 
     fun buildProgress(

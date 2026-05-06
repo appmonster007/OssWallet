@@ -7,7 +7,7 @@ import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 
 class PlannedPaymentsCardComputer :
     CardDataComputer<PlannedPaymentsCardConfig, CardRenderData.PlannedPayments> {

@@ -9,7 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.osscabinet.ossWallet.OssWalletApp
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 

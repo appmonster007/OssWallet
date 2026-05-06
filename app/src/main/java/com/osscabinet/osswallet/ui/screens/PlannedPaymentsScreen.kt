@@ -430,7 +430,7 @@ private fun SectionHeader(title: String, count: Int, sectionColor: Color) {
             title,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 letterSpacing = 1.5.sp
             ),
             color = sectionColor,
@@ -444,7 +444,7 @@ private fun SectionHeader(title: String, count: Int, sectionColor: Color) {
                 text = count.toString(),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 ),
                 color = sectionColor,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -548,7 +548,7 @@ private fun PlannedPaymentListItem(
                 )
                 Text(
                     recurrenceLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -556,7 +556,7 @@ private fun PlannedPaymentListItem(
                 Text(
                     relativeDateLabel,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     color = dateColor

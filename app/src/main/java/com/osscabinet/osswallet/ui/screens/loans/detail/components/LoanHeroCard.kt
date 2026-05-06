@@ -52,10 +52,10 @@ fun LoanHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Main Progress Section
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -82,14 +82,14 @@ fun LoanHeroCard(
                                 withStyle(SpanStyle(
                                     fontWeight = FontWeight.Light,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    fontSize = 24.sp
+                                    fontSize = 18.sp
                                 )) {
                                     append(symbolText)
                                 }
                             },
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.ExtraBold,
-                                fontSize = 40.sp,
+                                fontSize = 32.sp,
                                 letterSpacing = (-1).sp
                             ),
                             color = MaterialTheme.colorScheme.onSurface
@@ -108,7 +108,7 @@ fun LoanHeroCard(
 
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
                     color = accentColor,
                     trackColor = accentColor.copy(alpha = 0.1f),
                     strokeCap = StrokeCap.Round
@@ -134,7 +134,7 @@ fun LoanHeroCard(
             // Loan Details Grid-like summary
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 LoanMetricItem(
                     label = if (loan.loanType == LoanType.LENT) "Lent to" else "Borrowed from",
@@ -167,23 +167,23 @@ private fun LoanMetricItem(
 ) {
     Surface(
         color = color.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(12.dp)
                 )
                 Text(
                     text = label.uppercase(),

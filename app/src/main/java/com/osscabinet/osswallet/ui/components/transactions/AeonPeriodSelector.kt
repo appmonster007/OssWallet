@@ -277,7 +277,7 @@ private fun PillNavigationRow(
                     text = if (page == 0) "All Time" else getPeriodText(filter),
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp
+                        fontSize = 11.sp
                     ),
                     color = MaterialTheme.colorScheme.onPrimary
                 )

@@ -50,10 +50,10 @@ fun BudgetHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Main Progress Section
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,14 +87,14 @@ fun BudgetHeroCard(
 //                                withStyle(SpanStyle(
 //                                    fontWeight = FontWeight.Light,
 //                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                                    fontSize = 24.sp
+//                                    fontSize = 18.sp
 //                                )) {
 //                                    append(symbolText)
 //                                }
                             },
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.ExtraBold,
-                                fontSize = 40.sp,
+                                fontSize = 32.sp,
                                 letterSpacing = (-1).sp
                             ),
                             color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) warningColor else MaterialTheme.colorScheme.onSurface
@@ -113,7 +113,7 @@ fun BudgetHeroCard(
 
                 LinearProgressIndicator(
                     progress = { progress.percentage.coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth().height(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
                     color = accentColor,
                     trackColor = accentColor.copy(alpha = 0.1f),
                     strokeCap = StrokeCap.Round
@@ -139,19 +139,19 @@ fun BudgetHeroCard(
             if (progress.alertLevel != BudgetAlertLevel.NONE) {
                 Surface(
                     color = warningColor.copy(alpha = 0.05f),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, warningColor.copy(alpha = 0.1f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
                             Icons.Rounded.Warning,
                             contentDescription = null,
                             tint = warningColor,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Column {
                             Text(

@@ -114,10 +114,10 @@ fun AccountHeroCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(28.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Main Balance Section
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = "TOTAL BALANCE",
                     style = MaterialTheme.typography.labelMedium.copy(
@@ -142,7 +142,7 @@ fun AccountHeroCard(
                             SpanStyle(
                                 fontWeight = FontWeight.Light,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                fontSize = 24.sp
+                                fontSize = 18.sp
                             )
                         ) {
                             append(symbolText)
@@ -150,7 +150,7 @@ fun AccountHeroCard(
                     },
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 40.sp,
+                        fontSize = 32.sp,
                         letterSpacing = (-1).sp
                     ),
                     color = MaterialTheme.colorScheme.onSurface
@@ -176,7 +176,7 @@ fun AccountHeroCard(
             // Income/Expense Flow Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FlowSummaryItem(
                     label = "Income",
@@ -198,7 +198,7 @@ fun AccountHeroCard(
 
             // Multi-Currency Section
             if (showCurrencyBadges && currencyBalances.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "DISTRIBUTION",
                         style = MaterialTheme.typography.labelMedium.copy(
@@ -210,7 +210,7 @@ fun AccountHeroCard(
 
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
@@ -223,10 +223,10 @@ fun AccountHeroCard(
                             ) {
                                 Row(
                                     modifier = Modifier.padding(
-                                        horizontal = 12.dp,
-                                        vertical = 10.dp
+                                        horizontal = 10.dp,
+                                        vertical = 8.dp
                                     ),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
@@ -304,23 +304,23 @@ private fun FlowSummaryItem(
 ) {
     Surface(
         color = color.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(12.dp)
                 )
                 Text(
                     text = label.uppercase(),

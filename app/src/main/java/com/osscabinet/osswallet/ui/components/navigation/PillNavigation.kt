@@ -53,7 +53,7 @@ fun UnifiedPillNavigation(
     onTabSelected: (Int) -> Unit,
     tabs: List<NavigationTab>,
     modifier: Modifier = Modifier,
-    fabPaddingBottom: Dp = 24.dp,
+    fabPaddingBottom: Dp = 16.dp,
     showFab: Boolean = true,
     isFabExpanded: Boolean = false,
     onFabToggle: (Boolean) -> Unit = {},
@@ -91,7 +91,7 @@ fun UnifiedPillNavigation(
                 .padding(horizontal = 16.dp)
                 .zIndex(2f),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally) 
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally) 
         ) {
             if (tabs.isNotEmpty()) {
                 Box(
@@ -133,15 +133,15 @@ fun UnifiedPillNavigation(
 
             if (showFab) {
                 Box(
-                    modifier = Modifier.width(64.dp), // Fixed width for stability
+                    modifier = Modifier.width(56.dp), // Fixed width for stability
                     contentAlignment = Alignment.BottomCenter
                 ) {
                     if (fabMenu != null) {
                         Column(
                             horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
-                                .padding(bottom = 88.dp, end = 8.dp) // End padding to align centers: (64-48)/2 = 8dp
+                                .padding(bottom = 72.dp, end = 8.dp) // End padding to align centers: (56-40)/2 = 8dp
                                 .align(Alignment.BottomEnd)
                                 .wrapContentWidth(align = Alignment.End, unbounded = true)
                         ) {
@@ -164,7 +164,7 @@ fun UnifiedPillNavigation(
                             }
                         },
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(56.dp)
                             .graphicsLayer { rotationZ = rotation },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -174,7 +174,7 @@ fun UnifiedPillNavigation(
                         Icon(
                             imageVector = fabIcon,
                             contentDescription = if (isFabExpanded) "Close" else "Add",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -191,7 +191,7 @@ fun PillNavigationBar(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.height(64.dp),
+        modifier = modifier.height(56.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(12.dp),
         tonalElevation = 8.dp,
@@ -199,7 +199,7 @@ fun PillNavigationBar(
     ) {
         BoxWithConstraints(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(6.dp)
                 .fillMaxHeight()
         ) {
             val tabWidth = maxWidth / tabs.size
@@ -372,7 +372,7 @@ fun FabMenuItem(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .wrapContentSize(unbounded = true)
                 .pointerInput(Unit) {
@@ -395,7 +395,7 @@ fun FabMenuItem(
             ) {
                 Text(
                     label,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
@@ -403,13 +403,13 @@ fun FabMenuItem(
             }
             SmallFloatingActionButton(
                 onClick = onClick,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(40.dp),
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             }
         }
     }

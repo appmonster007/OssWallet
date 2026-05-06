@@ -55,7 +55,7 @@ fun TransactionHeader(
     ) {
         Column {
             HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 // Row 1: Title Info
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -68,7 +68,7 @@ fun TransactionHeader(
                             fontWeight = FontWeight.ExtraBold,
                             color = outlineColor,
                             letterSpacing = 1.sp,
-                            fontSize = 9.sp
+                            fontSize = 8.sp
                         )
                     )
                     Text(
@@ -77,22 +77,22 @@ fun TransactionHeader(
                             fontWeight = FontWeight.Medium,
                             color = outlineColor.copy(alpha = 0.6f),
                             letterSpacing = 0.5.sp,
-                            fontSize = 8.sp
+                            fontSize = 7.sp
                         )
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Row 2: Headers
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Spacer(modifier = Modifier.width(44.dp))
+                    Spacer(modifier = Modifier.width(40.dp))
                     Row(
                         modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         listOf("INCOME", "EXPENSE", "NET").forEach { label ->
                             Text(
@@ -115,7 +115,7 @@ fun TransactionHeader(
                             letterSpacing = 0.5.sp
                         ),
                         color = outlineColor.copy(alpha = 0.5f),
-                        modifier = Modifier.width(80.dp),
+                        modifier = Modifier.width(70.dp),
                         textAlign = TextAlign.End
                     )
                 }
@@ -130,14 +130,14 @@ fun TransactionHeader(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
-                        modifier = Modifier.width(44.dp),
+                        modifier = Modifier.width(40.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "TOTAL",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Black,
-                                fontSize = 8.5.sp
+                                fontSize = 8.sp
                             ),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -152,31 +152,31 @@ fun TransactionHeader(
                     }
                     Row(
                         modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
                             formatCurrencyRight(incomeBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = positiveColor,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
                             formatCurrencyRight(expenseBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
                             formatCurrencyRight(netBase, baseCurrency, precision),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                     }
                     Text(
                         formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.5.sp),
-                        modifier = Modifier.width(80.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                        modifier = Modifier.width(70.dp),
                         textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -184,7 +184,7 @@ fun TransactionHeader(
 
                 // Row 4+: Breakdown (Expandable)
                 AnimatedVisibility(visible = isExpanded) {
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                    Column(modifier = Modifier.padding(top = 2.dp)) {
                         allCurrencies.forEach { curr ->
                             val inc = incomeByCurrency[curr] ?: BigDecimal.ZERO
                             val exp = expenseByCurrency[curr] ?: BigDecimal.ZERO
@@ -201,25 +201,25 @@ fun TransactionHeader(
                                     text = curr,
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
+                                        fontSize = 9.sp
                                     ),
-                                    modifier = Modifier.width(44.dp),
+                                    modifier = Modifier.width(40.dp),
                                     color = outlineColor.copy(alpha = 0.8f)
                                 )
 
                                 Row(
                                     modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
                                         formatCurrencyRight(inc, curr, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                         color = positiveColor.copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
                                     )
                                     Text(
                                         formatCurrencyRight(exp, curr, precision),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                         color = negativeColor.copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
                                     )
@@ -228,7 +228,7 @@ fun TransactionHeader(
                                         netSign + formatCurrencyRight(net, curr, precision),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 10.sp
+                                            fontSize = 9.sp
                                         ),
                                         color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
@@ -239,9 +239,9 @@ fun TransactionHeader(
                                     if (bal != null) formatCurrencyRight(bal, curr, precision) else "0.00 $curr",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
+                                        fontSize = 9.sp
                                     ),
-                                    modifier = Modifier.width(80.dp),
+                                    modifier = Modifier.width(70.dp),
                                     textAlign = TextAlign.End,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                 )

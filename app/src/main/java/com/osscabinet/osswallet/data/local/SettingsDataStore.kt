@@ -46,11 +46,17 @@ data class AccountsViewSettings(
 )
 
 @Serializable
+enum class TransactionGroupingType {
+    BY_DAY, BY_WEEK
+}
+
+@Serializable
 data class TransactionSectionSettings(
     val showPlannedPayments: Boolean = false,
     val useNoteAsHeader: Boolean = false,
     val showOpeningBalance: Boolean = false,
-    val showClosingBalance: Boolean = true
+    val showClosingBalance: Boolean = true,
+    val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK
 )
 
 @Serializable

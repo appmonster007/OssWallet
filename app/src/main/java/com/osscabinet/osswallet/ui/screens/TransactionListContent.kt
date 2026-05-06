@@ -173,6 +173,7 @@ fun TransactionListContent(
                         useNoteAsHeader = recordsSettings.useNoteAsHeader,
                         showOpeningBalance = recordsSettings.showOpeningBalance,
                         showClosingBalance = recordsSettings.showClosingBalance,
+                        groupBy = recordsSettings.groupBy,
                         baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
                         exchangeRates = (analyticsState as? AnalyticsUiState.Success)?.exchangeRates ?: emptyMap(),
                         accountCurrencyMap = accountCurrencyMap,

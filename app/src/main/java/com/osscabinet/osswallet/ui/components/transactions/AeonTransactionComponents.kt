@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.service.TransactionGroupingService
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -50,6 +52,7 @@ fun AeonTransactionList(
     useNoteAsHeader: Boolean = false,
     showOpeningBalance: Boolean = false,
     showClosingBalance: Boolean = true,
+    groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     baseCurrency: String,
     exchangeRates: Map<String, BigDecimal>,
     accountCurrencyMap: Map<String, String> = emptyMap(),
@@ -64,84 +67,42 @@ fun AeonTransactionList(
     onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
-    val calendar = Calendar.getInstance()
-    val groupedByWeek = transactions.groupBy {
-        calendar.timeInMillis = it.transaction.timestamp
-        val weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR)
-        val year = calendar.get(Calendar.YEAR)
-        "$year-W$weekOfYear"
-    }
+    val groupedTransactions = TransactionGroupingService.groupTransactions(transactions, groupBy)
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        groupedByWeek.forEach { (weekKey, weekTransactions) ->
-            val (year, week) = weekKey.split("-W").map { it.toInt() }
-            calendar.set(Calendar.YEAR, year)
-            calendar.set(Calendar.WEEK_OF_YEAR, week)
-            calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-            val weekStart = calendar.time
-            calendar.add(Calendar.DAY_OF_WEEK, 6)
-            val weekEnd = calendar.time
-            val weekRange = "${SimpleDateFormat("MMM d", Locale.getDefault()).format(weekStart)} - ${SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(weekEnd)}"
-
-            // Aggregation using CurrencyUtils (CurrencyUtilkit) - using signed amounts
-            val incomeByCurrency = weekTransactions.filter { it.transaction.amount.signum() >= 0 }
-                .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
-
-            val expenseByCurrency = weekTransactions.filter { it.transaction.amount.signum() < 0 }
-                .groupBy { it.transaction.currency }
-                .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-            val weekExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
-
-            val weekNetBase = weekIncomeBase.add(weekExpenseBase)
-
-            val weekEndTimestamp = weekEnd.time
-            // Calculate cumulative closing balances for all accounts in the filtered list up to this week's end
-            val finalClosingBalancesByCurrency = transactions
-                .filter { it.transaction.timestamp <= weekEndTimestamp }
-                .groupBy { it.transaction.accountId }
-                .mapValues { (_, accountTxs) -> accountTxs.maxBy { it.transaction.timestamp } }
-                .values
-                .groupBy { it.transaction.currency }
-                .mapValues { (_, latestTxs) -> 
-                    latestTxs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) } 
-                }
-            
-            val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
-                finalClosingBalancesByCurrency, 
-                baseCurrency, 
-                exchangeRates, 
-                precision
+        groupedTransactions.forEach { (key, groupTransactions) ->
+            val headerData = TransactionGroupingService.getHeaderData(
+                groupKey = key,
+                groupTransactions = groupTransactions,
+                allTransactions = transactions,
+                groupingType = groupBy,
+                baseCurrency = baseCurrency,
+                exchangeRates = exchangeRates,
+                precision = precision
             )
-
-            // Combined currencies involved in this week (only those with active transactions)
-            val allWeekCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys)
-                .distinct()
-                .sorted()
 
             stickyHeader {
                 TransactionHeader(
-                    title = "WEEK $week",
-                    subtitle = weekRange,
-                    incomeByCurrency = incomeByCurrency,
-                    expenseByCurrency = expenseByCurrency,
-                    closingBalancesByCurrency = finalClosingBalancesByCurrency,
-                    allCurrencies = allWeekCurrencies,
-                    incomeBase = weekIncomeBase,
-                    expenseBase = weekExpenseBase,
-                    netBase = weekNetBase,
-                    totalClosingBalanceBase = totalClosingBalanceBase,
+                    title = headerData.title,
+                    subtitle = headerData.subtitle,
+                    incomeByCurrency = headerData.incomeByCurrency,
+                    expenseByCurrency = headerData.expenseByCurrency,
+                    closingBalancesByCurrency = headerData.closingBalancesByCurrency,
+                    allCurrencies = headerData.allCurrencies,
+                    incomeBase = headerData.incomeBase,
+                    expenseBase = headerData.expenseBase,
+                    netBase = headerData.netBase,
+                    totalClosingBalanceBase = headerData.totalClosingBalanceBase,
                     baseCurrency = baseCurrency,
                     precision = precision
                 )
             }
 
-            items(weekTransactions, key = { it.transaction.id }) { item ->
+            items(groupTransactions, key = { it.transaction.id }) { item ->
                 val category = categoryMap[item.transaction.categoryId]
                 val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name] ?: Icons.Rounded.Category
                 val iconBg = category?.colorHex?.let { Color(it) } ?: MaterialTheme.colorScheme.primaryContainer

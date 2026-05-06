@@ -116,6 +116,7 @@ fun LoanDetailScreen(
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+    val recordsSettings by transactionViewModel.recordsSettings.collectAsStateWithLifecycle()
 
     val selectedAccount = remember(accounts, loan.linkedAccountId) {
         accounts.find { it.id == loan.linkedAccountId }
@@ -210,7 +211,8 @@ fun LoanDetailScreen(
                                 onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                 applyFilter = false,
                                 excludeFuture = false,
-                                precision = precision
+                                precision = precision,
+                                groupBy = recordsSettings.groupBy
                             )
                         }
                     }

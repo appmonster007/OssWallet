@@ -16,12 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.service.TransactionGroupingService
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
-import com.osscabinet.ossWallet.domain.service.CurrencyService
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,7 +83,8 @@ fun RecentActivitiesScreen(
     filterContext: RecordsFilterContext = RecordsFilterContext.None,
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
-    is24Hour: Boolean = false
+    is24Hour: Boolean = false,
+    groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY
 ) {
     // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
@@ -91,14 +93,7 @@ fun RecentActivitiesScreen(
         allTransactions
     }
 
-    val calendar = Calendar.getInstance()
-    val groupedByDay = recentTransactions.groupBy {
-        calendar.timeInMillis = it.transaction.timestamp
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val month = calendar.get(Calendar.MONTH)
-        val year = calendar.get(Calendar.YEAR)
-        "$year-$month-$day"
-    }
+    val groupedTransactions = TransactionGroupingService.groupTransactions(recentTransactions, groupBy)
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -163,46 +158,16 @@ fun RecentActivitiesScreen(
                     }
                 }
             } else {
-                groupedByDay.forEach { (_, dayTransactions) ->
-                    // Logic from original code for calculations
-                    val incomeByCurrency = dayTransactions.filter { it.transaction.amount.signum() >= 0 }
-                        .groupBy { it.transaction.currency }
-                        .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-                    val dayIncomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
-
-                    val expenseByCurrency = dayTransactions.filter { it.transaction.amount.signum() < 0 }
-                        .groupBy { it.transaction.currency }
-                        .mapValues { entry -> entry.value.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) } }
-                    val dayExpenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
-
-                    val dayNetBase = dayIncomeBase.add(dayExpenseBase)
-
-                    // Calculate closing balance at end of day
-                    val dayEndTimestamp = dayTransactions.maxOf { it.transaction.timestamp }
-                    val closingBalancesByCurrency = recentTransactions
-                        .filter { it.transaction.timestamp <= dayEndTimestamp }
-                        .groupBy { it.transaction.accountId }
-                        .mapValues { (_, accountTxs) -> accountTxs.maxBy { it.transaction.timestamp } }
-                        .values
-                        .groupBy { it.transaction.currency }
-                        .mapValues { (_, latestTxs) ->
-                            latestTxs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.balanceAfter) }
-                        }
-
-                    val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
-                        closingBalancesByCurrency,
-                        baseCurrency,
-                        exchangeRates,
-                        precision
+                groupedTransactions.forEach { (key, groupTransactions) ->
+                    val headerData = TransactionGroupingService.getHeaderData(
+                        groupKey = key,
+                        groupTransactions = groupTransactions,
+                        allTransactions = allTransactions,
+                        groupingType = groupBy,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
+                        precision = precision
                     )
-
-                    val allDayCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys)
-                        .distinct()
-                        .sorted()
-
-                    val date = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(dayTransactions.first().transaction.timestamp))
-                    val isToday = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(System.currentTimeMillis())) == date
-                    val displayDate = if (isToday) "Today" else date
 
                     stickyHeader {
                         Column(
@@ -211,23 +176,23 @@ fun RecentActivitiesScreen(
                                 .background(MaterialTheme.colorScheme.background)
                         ) {
                             TransactionHeader(
-                                title = displayDate,
-                                subtitle = "${dayTransactions.size} transaction${if (dayTransactions.size > 1) "s" else ""}",
-                                incomeByCurrency = incomeByCurrency,
-                                expenseByCurrency = expenseByCurrency,
-                                closingBalancesByCurrency = closingBalancesByCurrency,
-                                allCurrencies = allDayCurrencies,
-                                incomeBase = dayIncomeBase,
-                                expenseBase = dayExpenseBase,
-                                netBase = dayNetBase,
-                                totalClosingBalanceBase = totalClosingBalanceBase,
+                                title = headerData.title,
+                                subtitle = headerData.subtitle,
+                                incomeByCurrency = headerData.incomeByCurrency,
+                                expenseByCurrency = headerData.expenseByCurrency,
+                                closingBalancesByCurrency = headerData.closingBalancesByCurrency,
+                                allCurrencies = headerData.allCurrencies,
+                                incomeBase = headerData.incomeBase,
+                                expenseBase = headerData.expenseBase,
+                                netBase = headerData.netBase,
+                                totalClosingBalanceBase = headerData.totalClosingBalanceBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision
                             )
                         }
                     }
 
-                    items(dayTransactions, key = { it.transaction.id }) { item ->
+                    items(groupTransactions, key = { it.transaction.id }) { item ->
                         val transaction = item.transaction
                         val category = transaction.categoryId?.let { categoryMap[it] }
                         val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)

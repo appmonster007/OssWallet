@@ -419,6 +419,7 @@ fun DashboardContent(
                 val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
                 val categoryMap = remember(categories) { categories.associateBy { it.id } }
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+                val recordsSettings by transactionViewModel.recordsSettings.collectAsStateWithLifecycle()
 
                 RecentActivitiesScreen(
                     allTransactions = state.allTransactionsWithBalance,
@@ -439,7 +440,8 @@ fun DashboardContent(
                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                     precision = state.decimalPrecision,
-                    is24Hour = state.use24HourFormat
+                    is24Hour = state.use24HourFormat,
+                    groupBy = recordsSettings.groupBy
                 )
             }
         }

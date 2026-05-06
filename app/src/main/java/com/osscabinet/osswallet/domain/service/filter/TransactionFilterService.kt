@@ -245,4 +245,31 @@ object TransactionFilterService {
      */
     fun filterByAllTags(transactions: List<Transaction>, tags: Set<String>): List<Transaction> =
         transactions.filter { tx -> tags.all { it in tx.tags } }
+
+    /**
+     * Filters items to recent ones (last N or last X days, whichever is more)
+     */
+    fun <T> filterToRecent(
+        items: List<T>,
+        getTimestamp: (T) -> Long,
+        limit: Int = 20,
+        days: Int = 7,
+        excludeFuture: Boolean = true
+    ): List<T> {
+        val now = System.currentTimeMillis()
+        val base = if (excludeFuture) items.filter { getTimestamp(it) <= now } else items
+
+        // Ensure sorted by descending timestamp
+        val sortedBase = base.sortedByDescending { getTimestamp(it) }
+
+        val cutoffTime = now - (days * 24 * 60 * 60 * 1000L)
+        val transactionsFromLastDays = sortedBase.filter { getTimestamp(it) >= cutoffTime }
+        val lastLimitTransactions = sortedBase.take(limit)
+
+        return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
+            transactionsFromLastDays
+        } else {
+            lastLimitTransactions
+        }
+    }
 }

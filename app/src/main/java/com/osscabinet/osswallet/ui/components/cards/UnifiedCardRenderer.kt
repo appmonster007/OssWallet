@@ -20,6 +20,7 @@ import com.osscabinet.ossWallet.ui.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.ui.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.dashboard.components.LoansCard
 import com.osscabinet.ossWallet.ui.dashboard.components.PlannedPaymentsCard
+import com.osscabinet.ossWallet.ui.dashboard.components.RecentActivitiesCard
 
 /**
  * Unified card renderer composable that handles all card types across all screens.
@@ -303,6 +304,37 @@ fun UnifiedCardRenderer(
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 precision = renderData.precision
+            )
+        }
+
+        is CardWithCallbacks.RecentActivities -> {
+            val renderData = cardWithCallbacks.renderData
+            val cb = cardWithCallbacks.callbacks
+
+            RecentActivitiesCard(
+                transactions = renderData.transactions,
+                accountNamesMap = renderData.accountNamesMap,
+                categoryMap = renderData.categoryMap,
+                config = renderData.config,
+                onUpdate = cb.onUpdate,
+                onTransactionClick = cb.onTransactionClick,
+                onRecordsClick = cb.onRecordsClick,
+                onDelete = { cb.onDelete() },
+                modifier = modifier.fillMaxWidth(),
+                headerModifier = headerModifier,
+                precision = renderData.precision,
+                baseCurrency = renderData.baseCurrency,
+                exchangeRates = renderData.exchangeRates,
+                onItemExpanded = cb.onItemExpanded,
+                onItemCollapsed = cb.onItemCollapsed,
+                onStatusChange = cb.onStatusChange,
+                onClone = cb.onClone,
+                onDeleteTransaction = cb.onDeleteTransaction,
+                onSplit = cb.onSplit,
+                onFullSwipeRight = cb.onFullSwipeRight,
+                accounts = accounts,
+                allCategories = allCategories,
+                savedFilters = savedFilters
             )
         }
 

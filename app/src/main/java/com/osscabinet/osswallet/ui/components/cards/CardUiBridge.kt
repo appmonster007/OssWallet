@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
@@ -36,8 +37,16 @@ fun rememberCardWithCallbacks(
     onRecordsClick: (RecordsFilterContext) -> Unit,
     onManageAccountsClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
+    onTransactionClick: (Long) -> Unit = {},
     onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
     onPlannedPaymentSkip: ((Long) -> Unit)? = null,
+    onItemExpanded: (Long) -> Unit = {},
+    onItemCollapsed: (Long) -> Unit = {},
+    onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+    onClone: (Long) -> Unit = {},
+    onDeleteTransaction: (Long) -> Unit = {},
+    onSplit: (Long) -> Unit = {},
+    onFullSwipeRight: (Long) -> Unit = {},
     currentTheme: String = "light"
 ): CardWithCallbacks? {
     return remember(
@@ -49,8 +58,16 @@ fun rememberCardWithCallbacks(
         onRecordsClick,
         onManageAccountsClick,
         onAccountClick,
+        onTransactionClick,
         onPlannedPaymentConfirm,
         onPlannedPaymentSkip,
+        onItemExpanded,
+        onItemCollapsed,
+        onStatusChange,
+        onClone,
+        onDeleteTransaction,
+        onSplit,
+        onFullSwipeRight,
         currentTheme
     ) {
         val renderData = try {
@@ -85,6 +102,7 @@ fun rememberCardWithCallbacks(
 
                 is BudgetsCardConfig -> registry.compute(CardType.BUDGETS, input, config)
                 is LoansCardConfig -> registry.compute(CardType.LOANS, input, config)
+                is RecentActivitiesCardConfig -> registry.compute(CardType.RECENT_ACTIVITIES, input, config)
             }
         } catch (e: Exception) {
             android.util.Log.e("CardUiBridge", "Card compute failed [${config.cardId}]", e)
@@ -357,6 +375,32 @@ fun rememberCardWithCallbacks(
                         },
                         onLoanClick = {},
                         onDelete = { onDelete(config.cardId) }
+                    ),
+                    filterRules = config.filterRules,
+                    baseFilter = input.filter
+                )
+            }
+
+            config is RecentActivitiesCardConfig && renderData is CardRenderData.RecentActivities -> {
+                CardWithCallbacks.RecentActivities(
+                    renderData = renderData,
+                    callbacks = CardCallbacks.RecentActivities(
+                        onUpdate = { newConfig ->
+                            updateHandler.updateCardRecentActivitiesConfig(
+                                config.cardId,
+                                newConfig
+                            )
+                        },
+                        onTransactionClick = onTransactionClick,
+                        onRecordsClick = onRecordsClick,
+                        onDelete = { onDelete(config.cardId) },
+                        onItemExpanded = onItemExpanded,
+                        onItemCollapsed = onItemCollapsed,
+                        onStatusChange = onStatusChange,
+                        onClone = onClone,
+                        onDeleteTransaction = onDeleteTransaction,
+                        onSplit = onSplit,
+                        onFullSwipeRight = onFullSwipeRight
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter

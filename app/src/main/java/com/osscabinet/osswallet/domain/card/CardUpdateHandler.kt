@@ -157,6 +157,12 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardRecentActivitiesConfig(cardId: String, config: RecentActivitiesCardConfig) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config }
+        }
+    }
+
     // Structural Updates
     fun addCard(type: CardType) {
         cardUpdateScope.launch {

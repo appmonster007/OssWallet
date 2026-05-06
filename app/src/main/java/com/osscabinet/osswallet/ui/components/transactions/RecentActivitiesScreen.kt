@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
@@ -39,34 +40,6 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-/**
- * Helper function to filter transactions to recent ones (last N or last X days, whichever is more)
- */
-private fun filterToRecentTransactions(
-    allTransactions: List<TransactionWithBalance>,
-    limit: Int = 20,
-    days: Int = 7,
-    excludeFuture: Boolean = true
-): List<TransactionWithBalance> {
-    val now = System.currentTimeMillis()
-    val base =
-        if (excludeFuture) allTransactions.filter { it.transaction.timestamp <= now } else allTransactions
-
-    // Get transactions from last 7 days
-    val cutoffTime = now - (days * 24 * 60 * 60 * 1000L)
-    val transactionsFromLastDays = base.filter { it.transaction.timestamp >= cutoffTime }
-
-    // Get last 20 transactions
-    val lastLimitTransactions = base.take(limit)
-
-    // Return whichever has more transactions
-    return if (transactionsFromLastDays.size > lastLimitTransactions.size) {
-        transactionsFromLastDays
-    } else {
-        lastLimitTransactions
-    }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -96,14 +69,18 @@ fun RecentActivitiesScreen(
     filterContext: RecordsFilterContext = RecordsFilterContext.None,
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
-    is24Hour: Boolean = false
+    is24Hour: Boolean = false,
+    groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY
 ) {
-    // Recent activities are always grouped by day
-    val groupBy = TransactionGroupingType.BY_DAY
-
     // Apply recent transactions filter if enabled
     val recentTransactions = if (applyFilter) {
-        filterToRecentTransactions(allTransactions, limit, days, excludeFuture)
+        TransactionFilterService.filterToRecent(
+            items = allTransactions,
+            getTimestamp = { it.transaction.timestamp },
+            limit = limit,
+            days = days,
+            excludeFuture = excludeFuture
+        )
     } else {
         allTransactions
     }

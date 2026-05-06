@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.settings
 
+import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -9,6 +10,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonClassDiscriminator
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardType
 
 /**
  * Card scope determines the context in which a card operates.
@@ -72,20 +74,21 @@ sealed class CardConfig : BaseCardConfig {
 
     companion object {
         fun createDefault(
-            type: com.osscabinet.ossWallet.domain.card.CardType,
+            type: CardType,
             context: ScreenContext,
             cardId: String = java.util.UUID.randomUUID().toString()
         ): CardConfig = when (type) {
-            com.osscabinet.ossWallet.domain.card.CardType.NET_WORTH -> NetWorthCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW -> CashFlowCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS -> AccountsCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_PIE_CHART -> CategoryPieChartCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.CATEGORY_TREEMAP -> CategoryTreemapCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.PLANNED_PAYMENTS -> PlannedPaymentsCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.BUDGETS -> BudgetsCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
-            com.osscabinet.ossWallet.domain.card.CardType.ACCOUNT_HERO -> AccountHeroCardConfig(cardId = cardId, screenContext = context)
+            CardType.NET_WORTH -> NetWorthCardConfig(cardId = cardId, screenContext = context)
+            CardType.CURRENCY_BALANCES -> CurrencyBalancesCardConfig(cardId = cardId, screenContext = context)
+            CardType.CASH_FLOW -> CashFlowCardConfig(cardId = cardId, screenContext = context)
+            CardType.ACCOUNTS -> AccountsCardConfig(cardId = cardId, screenContext = context)
+            CardType.CATEGORY_PIE_CHART -> CategoryPieChartCardConfig(cardId = cardId, screenContext = context)
+            CardType.CATEGORY_TREEMAP -> CategoryTreemapCardConfig(cardId = cardId, screenContext = context)
+            CardType.PLANNED_PAYMENTS -> PlannedPaymentsCardConfig(cardId = cardId, screenContext = context)
+            CardType.BUDGETS -> BudgetsCardConfig(cardId = cardId, screenContext = context)
+            CardType.LOANS -> LoansCardConfig(cardId = cardId, screenContext = context)
+            CardType.ACCOUNT_HERO -> AccountHeroCardConfig(cardId = cardId, screenContext = context)
+            CardType.RECENT_ACTIVITIES -> RecentActivitiesCardConfig(cardId = cardId, screenContext = context)
         }
     }
 }
@@ -278,6 +281,23 @@ data class LoansCardConfig(
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
+/**
+ * Configuration for Recent Activities card instances
+ */
+@Serializable
+@SerialName("recent_activities")
+data class RecentActivitiesCardConfig(
+    override val cardId: String,
+    override val title: String = "RECENT ACTIVITIES",
+    override val isEnabled: Boolean = true,
+    override val order: Int = 0,
+    override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
+    val groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY,
+    override val filter: TransactionFilter = TransactionFilter()
+) : CardConfig() {
+    override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
+}
+
 @Serializable
 data class DashboardCardsConfig(
     val cards: List<CardConfig> = emptyList()
@@ -303,4 +323,5 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter())
     is BudgetsCardConfig -> copy(filter = TransactionFilter())
     is LoansCardConfig -> copy(filter = TransactionFilter())
+    is RecentActivitiesCardConfig -> copy(filter = TransactionFilter())
 }

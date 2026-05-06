@@ -82,10 +82,11 @@ fun AccountDetailScreen(
     templateViewModel: TemplateViewModel,
     onBackClick: () -> Unit,
     onEditAccountClick: (String) -> Unit,
+    onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onAddTransactionClick: (String, Int?, String?) -> Unit,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit
+    onRecordsClick: (RecordsFilterContext) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -209,7 +210,7 @@ fun AccountDetailScreen(
         Box(modifier = Modifier.fillMaxSize()) {
         when (val state = uiState) {
             is AccountDetailUiState.Loading -> {
-                com.osscabinet.ossWallet.ui.components.AeonShimmer(
+                AeonShimmer(
                     innerPadding = screenPadding,
                     showCashflow = false,
                     showAccounts = false
@@ -239,6 +240,11 @@ fun AccountDetailScreen(
                                 accountId = accountId,
                                 currentTheme = currentTheme,
                                 savedFilters = savedFilters,
+                                transactionViewModel = transactionViewModel,
+                                onCloneTransactionClick = onCloneTransactionClick,
+                                onEditTransactionClick = onEditTransactionClick,
+                                onAccountClick = onAccountClick,
+                                navigate = navigate,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(horizontal = 16.dp),
@@ -252,7 +258,7 @@ fun AccountDetailScreen(
                             // Transactions tab content using RecentActivitiesCard
                             val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-                            val accountCurrencyMap = remember(accounts) { accounts.associate { it.id to it.currencyCode } }
+                            remember(accounts) { accounts.associate { it.id to it.currencyCode } }
                             val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
                             val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
@@ -346,13 +352,18 @@ fun AccountDetailScreen(
 @Composable
 fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
-    cardsConfig: com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig,
+    cardsConfig: DashboardCardsConfig,
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
-    onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
+    onRecordsClick: (RecordsFilterContext) -> Unit,
     accountId: String,
     currentTheme: String,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
+    transactionViewModel: TransactionViewModel,
+    onCloneTransactionClick: (Long) -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
+    onAccountClick: (String) -> Unit,
+    navigate: (() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     screenPadding: PaddingValues = PaddingValues(),
     showAddCardDialog: Boolean,
@@ -388,6 +399,18 @@ fun DynamicAccountDetailCards(
         updateHandler = accountDetailViewModel,
         onDelete = {},
         onRecordsClick = onRecordsClick,
+        onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+        onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+        onStatusChange = { transactionId, status ->
+            transactionViewModel.quickUpdateStatus(
+                transactionId,
+                status
+            )
+        },
+        onClone = { onCloneTransactionClick(it) },
+        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+        onSplit = { transactionViewModel.quickSplitTransaction(it) },
+        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
         currentTheme = currentTheme
     )
 
@@ -415,10 +438,24 @@ fun DynamicAccountDetailCards(
             accounts = listOf(state.account),
             allCategories = state.allCategories,
             savedFilters = savedFilters,
+            onAccountClick = { id -> navigate { onAccountClick(id) } },
+            onTransactionClick = onEditTransactionClick,
+            onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+            onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+            onStatusChange = { transactionId, status ->
+                transactionViewModel.quickUpdateStatus(
+                    transactionId,
+                    status
+                )
+            },
+            onClone = { onCloneTransactionClick(it) },
+            onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+            onSplit = { transactionViewModel.quickSplitTransaction(it) },
+            onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
             baseFilter = accountScopeFilter,
             forceDisableAccountSelection = true,
             header = {
-                if (heroCard != null && heroCard !is com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks.ComputeError) {
+                if (heroCard != null && heroCard !is CardWithCallbacks.ComputeError) {
                     UnifiedCardRenderer(
                         cardWithCallbacks = heroCard,
                         modifier = Modifier
@@ -482,7 +519,7 @@ fun AccountDetailCardTypeSelectionDialog(
 
 @Composable
 fun DeleteAccountDetailCardsDialog(
-    cardsConfig: List<com.osscabinet.ossWallet.domain.model.settings.CardConfig>,
+    cardsConfig: List<CardConfig>,
     onDismiss: () -> Unit,
     onDeleteCards: (List<String>) -> Unit
 ) {

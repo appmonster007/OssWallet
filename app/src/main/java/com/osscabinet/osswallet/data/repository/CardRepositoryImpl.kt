@@ -150,6 +150,7 @@ class CardRepositoryImpl(
                 is PlannedPaymentsCardConfig -> card.copy(order = index)
                 is BudgetsCardConfig -> card.copy(order = index)
                 is LoansCardConfig -> card.copy(order = index)
+                is RecentActivitiesCardConfig -> card.copy(order = index)
             }
         }
 }

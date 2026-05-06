@@ -38,8 +38,16 @@ fun AeonCardList(
     savedFilters: List<Filter> = emptyList(),
     onManageAccountsClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
+    onTransactionClick: (Long) -> Unit = {},
     onPlannedPaymentConfirm: ((Long) -> Unit)? = null,
     onPlannedPaymentSkip: ((Long) -> Unit)? = null,
+    onItemExpanded: (Long) -> Unit = {},
+    onItemCollapsed: (Long) -> Unit = {},
+    onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
+    onClone: (Long) -> Unit = {},
+    onDeleteTransaction: (Long) -> Unit = {},
+    onSplit: (Long) -> Unit = {},
+    onFullSwipeRight: (Long) -> Unit = {},
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null
@@ -66,8 +74,16 @@ fun AeonCardList(
             onRecordsClick = onRecordsClick,
             onManageAccountsClick = onManageAccountsClick,
             onAccountClick = onAccountClick,
+            onTransactionClick = onTransactionClick,
             onPlannedPaymentConfirm = onPlannedPaymentConfirm,
             onPlannedPaymentSkip = onPlannedPaymentSkip,
+            onItemExpanded = onItemExpanded,
+            onItemCollapsed = onItemCollapsed,
+            onStatusChange = onStatusChange,
+            onClone = onClone,
+            onDeleteTransaction = onDeleteTransaction,
+            onSplit = onSplit,
+            onFullSwipeRight = onFullSwipeRight,
             currentTheme = currentTheme
         )
 
@@ -114,6 +130,7 @@ private fun CardWithCallbacks.copyWithRules(
     is CardWithCallbacks.PlannedPayments -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.Budgets -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.Loans -> copy(filterRules = rules, baseFilter = baseFilter)
+    is CardWithCallbacks.RecentActivities -> copy(filterRules = rules, baseFilter = baseFilter)
     is CardWithCallbacks.ComputeError -> this
 }
 

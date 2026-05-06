@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -68,13 +69,13 @@ sealed class CardRenderData {
     ) : CardRenderData()
 
     data class Budgets(
-        val config: com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig,
+        val config: BudgetsCardConfig,
         val items: List<BudgetProgress>,
         val precision: Int
     ) : CardRenderData()
 
     data class Loans(
-        val config: com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig,
+        val config: LoansCardConfig,
         val items: List<LoanSummary>,
         val precision: Int
     ) : CardRenderData()
@@ -88,6 +89,16 @@ sealed class CardRenderData {
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val currencyBalances: Map<String, BigDecimal> = emptyMap(),
+        val precision: Int
+    ) : CardRenderData()
+
+    data class RecentActivities(
+        val config: RecentActivitiesCardConfig,
+        val transactions: List<TransactionWithBalance>,
+        val accountNamesMap: Map<String, String>,
+        val categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
+        val baseCurrency: String,
+        val exchangeRates: Map<String, BigDecimal>,
         val precision: Int
     ) : CardRenderData()
 }

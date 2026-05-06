@@ -83,6 +83,13 @@ sealed class CardWithCallbacks {
         override val baseFilter: TransactionFilter = TransactionFilter()
     ) : CardWithCallbacks()
 
+    data class RecentActivities(
+        val renderData: CardRenderData.RecentActivities,
+        val callbacks: CardCallbacks.RecentActivities,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: TransactionFilter = TransactionFilter()
+    ) : CardWithCallbacks()
+
     data class ComputeError(
         val cardId: String,
         val message: String?,

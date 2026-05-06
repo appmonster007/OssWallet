@@ -69,6 +69,11 @@ enum class CardType(
         "loans",
         "Loans",
         "Track money you lent or borrowed."
+    ),
+    RECENT_ACTIVITIES(
+        "recent_activities",
+        "Recent Activities",
+        "List of your latest transactions."
     );
 
     /** Returns true when this card type can be added by the user on [screen]. */

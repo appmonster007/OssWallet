@@ -405,8 +405,21 @@ fun DashboardContent(
                         savedFilters = savedFilters,
                         onManageAccountsClick = onManageAccountsClick,
                         onAccountClick = onAccountClick,
+                        onTransactionClick = onEditTransactionClick,
                         onPlannedPaymentConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
-                        onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) }
+                        onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) },
+                        onItemExpanded = { transactionViewModel.onItemExpanded(it) },
+                        onItemCollapsed = { transactionViewModel.onItemCollapsed(it) },
+                        onStatusChange = { transactionId, status ->
+                            transactionViewModel.quickUpdateStatus(
+                                transactionId,
+                                status
+                            )
+                        },
+                        onClone = { onCloneTransactionClick(it) },
+                        onDeleteTransaction = { transactionViewModel.quickDeleteTransaction(it) },
+                        onSplit = { transactionViewModel.quickSplitTransaction(it) },
+                        onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
                     )
                 }
             }

@@ -113,6 +113,23 @@ sealed class CardCallbacks {
     ) : CardCallbacks()
 
     /**
+     * Callbacks for recent activities card
+     */
+    data class RecentActivities(
+        val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig) -> Unit = {},
+        val onTransactionClick: (Long) -> Unit = {},
+        val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
+        val onDelete: () -> Unit = {},
+        val onItemExpanded: (Long) -> Unit = {},
+        val onItemCollapsed: (Long) -> Unit = {},
+        val onStatusChange: (Long, com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit = { _, _ -> },
+        val onClone: (Long) -> Unit = {},
+        val onDeleteTransaction: (Long) -> Unit = {},
+        val onSplit: (Long) -> Unit = {},
+        val onFullSwipeRight: (Long) -> Unit = {}
+    ) : CardCallbacks()
+
+    /**
      * Legacy/Deprecated
      */
     data class WithFontSizeAndTimeline(

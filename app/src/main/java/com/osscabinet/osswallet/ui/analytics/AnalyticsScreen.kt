@@ -33,6 +33,7 @@ fun AnalyticsScreen(
     settingsViewModel: SettingsViewModel,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onAccountClick: (String) -> Unit,
+    onEditTransactionClick: (Long) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     cardComputerRegistry: CardComputerRegistry
 ) {
@@ -118,7 +119,8 @@ fun AnalyticsScreen(
                                 accounts = state.accounts,
                                 allCategories = state.allCategories,
                                 savedFilters = savedFilters,
-                                onAccountClick = onAccountClick
+                                onAccountClick = onAccountClick,
+                                onTransactionClick = onEditTransactionClick
                             )
                         }
                     }

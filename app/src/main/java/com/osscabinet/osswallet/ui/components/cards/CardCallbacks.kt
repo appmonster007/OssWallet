@@ -24,6 +24,7 @@ sealed class CardCallbacks {
      */
     data class NetWorth(
         val onFontSizeChange: (String, String) -> Unit,
+        val onShowComparisonChange: (String, Boolean) -> Unit,
         val onFilterChange: (String, TransactionFilter) -> Unit,
         val onDelete: () -> Unit
     ) : CardCallbacks()

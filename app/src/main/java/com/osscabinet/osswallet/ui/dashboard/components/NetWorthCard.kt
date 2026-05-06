@@ -27,6 +27,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,8 +70,10 @@ fun NetWorthCard(
     precision: Int,
     cardId: String,
     fontSize: String,
+    showComparison: Boolean,
     filter: TransactionFilter,
     onFontSizeChange: (String, String) -> Unit,
+    onShowComparisonChange: (String, Boolean) -> Unit,
     onFilterChange: (String, TransactionFilter) -> Unit,
     onDelete: () -> Unit = {},
     onClickIncome: (TimelineRange) -> Unit = {},
@@ -150,7 +153,7 @@ fun NetWorthCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                if (previousMetrics != null) {
+                if (showComparison && previousMetrics != null) {
                     val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)
                     if (change.signum() != 0 && previousMetrics.netWorth.signum() != 0) {
                         val percentage = change.multiply(BigDecimal("100"))
@@ -192,7 +195,7 @@ fun NetWorthCard(
                     isIncome = true,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickIncome(filter.timelineRange) },
-                    previousAmount = previousMetrics?.cashFlow?.totalIncomeInBase
+                    previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
                 FlowBadge(
                     label = "EXPENSE",
@@ -203,7 +206,7 @@ fun NetWorthCard(
                     isIncome = false,
                     modifier = Modifier.weight(1f),
                     onClick = { onClickExpense(filter.timelineRange) },
-                    previousAmount = previousMetrics?.cashFlow?.totalExpensesInBase
+                    previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }
         }
@@ -212,8 +215,10 @@ fun NetWorthCard(
     if (showDisplaySettings) {
         NetWorthDisplaySettingsDialog(
             fontSize = fontSize,
+            showComparison = showComparison,
             cardId = cardId,
             onFontSizeChange = onFontSizeChange,
+            onShowComparisonChange = onShowComparisonChange,
             onDismiss = { showDisplaySettings = false },
             onDelete = onDelete
         )
@@ -325,8 +330,10 @@ private fun FlowBadge(
 @Composable
 private fun NetWorthDisplaySettingsDialog(
     fontSize: String,
+    showComparison: Boolean,
     cardId: String,
     onFontSizeChange: (String, String) -> Unit,
+    onShowComparisonChange: (String, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -407,6 +414,41 @@ private fun NetWorthDisplaySettingsDialog(
                         }
                     }
                 }
+
+                // Show Comparison Toggle
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "SHOW COMPARISON",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Show change from previous period",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = showComparison,
+                            onCheckedChange = { onShowComparisonChange(cardId, it) }
+                        )
+                    }
+                }
             }
         },
         shape = RoundedCornerShape(32.dp),
@@ -431,8 +473,10 @@ fun NetWorthCardPreview() {
                 precision = 2,
                 cardId = "preview",
                 fontSize = "Medium",
+                showComparison = true,
                 filter = TransactionFilter(),
                 onFontSizeChange = { _, _ -> },
+                onShowComparisonChange = { _, _ -> },
                 onFilterChange = { _, _ -> }
             )
         }
@@ -456,8 +500,10 @@ fun NetWorthCardComparisonPreview() {
                 precision = 2,
                 cardId = "preview_comparison",
                 fontSize = "Medium",
+                showComparison = true,
                 filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)),
                 onFontSizeChange = { _, _ -> },
+                onShowComparisonChange = { _, _ -> },
                 onFilterChange = { _, _ -> },
                 previousMetrics = NetWorthMetrics(
                     netWorth = BigDecimal("122300.50"),

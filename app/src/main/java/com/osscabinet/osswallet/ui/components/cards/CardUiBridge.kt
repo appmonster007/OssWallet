@@ -123,6 +123,12 @@ fun rememberCardWithCallbacks(
                                 size
                             )
                         },
+                        onShowComparisonChange = { id, show ->
+                            updateHandler.updateCardNetWorthShowComparison(
+                                id,
+                                show
+                            )
+                        },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardNetWorthFilter(
                                 id,

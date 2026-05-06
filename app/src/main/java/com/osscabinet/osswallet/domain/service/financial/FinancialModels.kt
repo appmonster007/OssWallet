@@ -128,6 +128,16 @@ data class IncomeExpenseBreakdown(
     val incomeCurrencyBreakdown: Map<String, FinancialSummary>,
     val expenseCurrencyBreakdown: Map<String, FinancialSummary>
 ) {
+    companion object {
+        fun empty() = IncomeExpenseBreakdown(
+            financialSummary = FinancialSummary.EMPTY,
+            incomeTransactions = emptyList(),
+            expenseTransactions = emptyList(),
+            incomeCurrencyBreakdown = emptyMap(),
+            expenseCurrencyBreakdown = emptyMap()
+        )
+    }
+
     // Convenience accessors for backward compatibility
     val totalIncome: BigDecimal get() = financialSummary.income
     val totalExpense: BigDecimal get() = financialSummary.expense

@@ -47,6 +47,8 @@ object AggregationService {
         exchangeRates: Map<String, BigDecimal>,
         precision: Int
     ): CashFlowResult {
+        if (transactions.isEmpty()) return CashFlowResult.empty()
+
         val breakdown = calculateIncomeExpenseBreakdown(transactions, exchangeRates, baseCurrency)
 
         val cashFlowBreakdown =
@@ -151,6 +153,8 @@ object AggregationService {
         exchangeRates: Map<String, BigDecimal>? = null,
         baseCurrency: String? = null
     ): IncomeExpenseBreakdown {
+        if (transactions.isEmpty()) return IncomeExpenseBreakdown.empty()
+
         val (income, expenses) = transactions.partition { it.amount.signum() >= 0 }
         val incomeCurrencyBreakdown = calculateSummaryByCurrency(income)
         val expenseCurrencyBreakdown = calculateSummaryByCurrency(expenses)

@@ -259,23 +259,56 @@ private fun FlowBadge(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = color
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = color.copy(alpha = 0.8f)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+//                Icon(
+//                    if (isIncome) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(14.dp),
+//                    tint = color
+//                )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = color.copy(alpha = 0.8f)
+                    )
+                }
+                if (previousAmount != null) {
+                    val change = amount.subtract(previousAmount)
+                    if (change.signum() != 0 && previousAmount.signum() != 0) {
+                        val percentage = change.multiply(BigDecimal("100"))
+                            .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(10.dp),
+                                tint = color.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "${if (change.signum() > 0) "+" else ""}$percentage%",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.sp
+                                ),
+                                color = color.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
             }
             Text(
                 text = formatCurrencyRight(amount, currency, precision),
@@ -285,34 +318,6 @@ private fun FlowBadge(
                 ),
                 color = color
             )
-
-            if (previousAmount != null) {
-                val change = amount.subtract(previousAmount)
-                if (change.signum() != 0 && previousAmount.signum() != 0) {
-                    val percentage = change.multiply(BigDecimal("100"))
-                        .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                            contentDescription = null,
-                            modifier = Modifier.size(10.dp),
-                            tint = color.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = "${if (change.signum() > 0) "+" else ""}$percentage%",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 10.sp
-                            ),
-                            color = color.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
         }
     }
 }

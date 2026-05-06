@@ -74,6 +74,7 @@ fun BudgetDetailScreen(
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
     val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+    val recordsSettings by transactionViewModel.recordsSettings.collectAsStateWithLifecycle()
 
     val budgetTransactions = remember(budget, viewModel.transactions.collectAsStateWithLifecycle().value) {
         viewModel.getBudgetTransactions(budget).map { 
@@ -280,7 +281,8 @@ fun BudgetDetailScreen(
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
                                     applyFilter = false,
                                     excludeFuture = false,
-                                    precision = precision
+                                    precision = precision,
+                                    groupBy = recordsSettings.groupBy
                                 )
                             }
                     }

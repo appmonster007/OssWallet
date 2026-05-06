@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import com.osscabinet.ossWallet.data.local.TransactionGroupingType
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
@@ -61,6 +62,33 @@ fun TransactionListTopAppBar(
                     expanded = showMoreMenu,
                     onDismissRequest = { showMoreMenu = false }
                 ) {
+                    DropdownMenuItem(
+                        text = { Text("Group by Day") },
+                        leadingIcon = {
+                            RadioButton(
+                                selected = recordsSettings.groupBy == TransactionGroupingType.BY_DAY,
+                                onClick = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(groupBy = TransactionGroupingType.BY_DAY))
+                            showMoreMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Group by Week") },
+                        leadingIcon = {
+                            RadioButton(
+                                selected = recordsSettings.groupBy == TransactionGroupingType.BY_WEEK,
+                                onClick = null
+                            )
+                        },
+                        onClick = {
+                            onUpdateRecordsSettings(recordsSettings.copy(groupBy = TransactionGroupingType.BY_WEEK))
+                            showMoreMenu = false
+                        }
+                    )
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Use Note as Header") },
                         leadingIcon = {

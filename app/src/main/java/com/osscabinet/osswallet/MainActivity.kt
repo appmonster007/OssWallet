@@ -19,6 +19,10 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.viewmodel.MainViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
 import com.osscabinet.ossWallet.ui.components.AppDrawerContent
+import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
+import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
+import com.osscabinet.ossWallet.ui.navigation.navigateToDashboard
+import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
@@ -71,7 +75,7 @@ class MainActivity : FragmentActivity() {
                             starredTemplates = starredTemplates,
                             selectedDestination = currentDestination,
                             onDashboardClick = {
-                                navController.navigate(Screen.Dashboard.route) {
+                                navController.navigate(Screen.Dashboard.createRoute(topLevel = true)) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -80,7 +84,7 @@ class MainActivity : FragmentActivity() {
                                 }
                             },
                             onRecordsClick = {
-                                navController.navigate(Screen.TransactionList.route) {
+                                navController.navigate(Screen.TransactionList.createRoute(topLevel = true)) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }

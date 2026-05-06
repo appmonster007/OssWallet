@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
@@ -77,6 +78,7 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.osscabinet.ossWallet.domain.card.*
 import com.osscabinet.ossWallet.ui.components.cards.*
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -126,6 +128,8 @@ private fun calculateScrollBottomPadding(): Dp {
 @Composable
 fun DashboardScreen(
     onMenuClick: () -> Unit,
+    onBackClick: () -> Unit = {},
+    isTopLevelParam: Boolean = false,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
@@ -217,13 +221,23 @@ fun DashboardScreen(
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
+    val isTopLevel = remember(initialViewContext, isTopLevelParam) {
+        isTopLevelParam || initialViewContext == DashboardViewContext.None
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     navigationIcon = {
-                        IconButton(onClick = onMenuClick) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        if (isTopLevel) {
+                            IconButton(onClick = onMenuClick) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        } else {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
                         }
                     },
                     title = {

@@ -50,7 +50,7 @@ class CardComputationTest {
         // 1000 USD + (-50 EUR converted to USD)
         // EUR to USD: -50 / 0.85 = -58.8235...
         // 1000 - 58.8235... = 941.1764...
-        assertEquals(BigDecimal("941.18"), result.value.setScale(2, java.math.RoundingMode.HALF_UP))
+        assertEquals(BigDecimal("941.18"), result.currentMetrics.netWorth.setScale(2, java.math.RoundingMode.HALF_UP))
     }
 
     @Test

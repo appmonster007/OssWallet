@@ -42,10 +42,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
@@ -55,15 +57,14 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun NetWorthCard(
-    netWorth: BigDecimal,
-    netIncome: BigDecimal,
-    netExpense: BigDecimal,
+    currentMetrics: NetWorthMetrics,
     baseCurrency: String,
     precision: Int,
     cardId: String,
@@ -81,7 +82,8 @@ fun NetWorthCard(
     accounts: List<Account> = emptyList(),
     allCategories: List<Category> = emptyList(),
     savedFilters: List<Filter> = emptyList(),
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System"
+    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
+    previousMetrics: NetWorthMetrics? = null
 ) {
     var showDisplaySettings by remember { mutableStateOf(false) }
     var showFilterSettings by remember { mutableStateOf(false) }
@@ -137,15 +139,45 @@ fun NetWorthCard(
                 else -> 20.sp
             }
             
-            Text(
-                text = formatCurrencyRight(netWorth, baseCurrency, precision),
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = baseFontSize,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Column {
+                Text(
+                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = baseFontSize,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                if (previousMetrics != null) {
+                    val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)
+                    if (change.signum() != 0 && previousMetrics.netWorth.signum() != 0) {
+                        val percentage = change.multiply(BigDecimal("100"))
+                            .divide(previousMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = "${if (change.signum() > 0) "+" else ""}$percentage% from prev. period",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 11.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -153,23 +185,25 @@ fun NetWorthCard(
             ) {
                 FlowBadge(
                     label = "INCOME",
-                    amount = netIncome,
+                    amount = currentMetrics.cashFlow.totalIncomeInBase,
                     currency = baseCurrency,
                     precision = precision,
                     color = PositiveAmountColor,
                     isIncome = true,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.timelineRange) }
+                    onClick = { onClickIncome(filter.timelineRange) },
+                    previousAmount = previousMetrics?.cashFlow?.totalIncomeInBase
                 )
                 FlowBadge(
                     label = "EXPENSE",
-                    amount = netExpense,
+                    amount = currentMetrics.cashFlow.totalExpensesInBase,
                     currency = baseCurrency,
                     precision = precision,
                     color = NegativeAmountColor,
                     isIncome = false,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.timelineRange) }
+                    onClick = { onClickExpense(filter.timelineRange) },
+                    previousAmount = previousMetrics?.cashFlow?.totalExpensesInBase
                 )
             }
         }
@@ -210,7 +244,8 @@ private fun FlowBadge(
     color: Color,
     isIncome: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    previousAmount: BigDecimal? = null
 ) {
     Surface(
         modifier = modifier.clickable(onClick = onClick),
@@ -250,6 +285,34 @@ private fun FlowBadge(
                 ),
                 color = color
             )
+
+            if (previousAmount != null) {
+                val change = amount.subtract(previousAmount)
+                if (change.signum() != 0 && previousAmount.signum() != 0) {
+                    val percentage = change.multiply(BigDecimal("100"))
+                        .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = color.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "${if (change.signum() > 0) "+" else ""}$percentage%",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 10.sp
+                            ),
+                            color = color.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -346,15 +409,19 @@ private fun NetWorthDisplaySettingsDialog(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Net Worth Card - Normal")
 @Composable
 fun NetWorthCardPreview() {
     OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             NetWorthCard(
-                netWorth = BigDecimal("125000.50"),
-                netIncome = BigDecimal("5000.00"),
-                netExpense = BigDecimal("3200.00"),
+                currentMetrics = NetWorthMetrics(
+                    netWorth = BigDecimal("125000.50"),
+                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
+                        totalIncomeInBase = BigDecimal("5000.00"),
+                        totalExpensesInBase = BigDecimal("3200.00")
+                    )
+                ),
                 baseCurrency = "USD",
                 precision = 2,
                 cardId = "preview",
@@ -362,6 +429,38 @@ fun NetWorthCardPreview() {
                 filter = TransactionFilter(),
                 onFontSizeChange = { _, _ -> },
                 onFilterChange = { _, _ -> }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Net Worth Card - With Comparison")
+@Composable
+fun NetWorthCardComparisonPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            NetWorthCard(
+                currentMetrics = NetWorthMetrics(
+                    netWorth = BigDecimal("125000.50"),
+                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
+                        totalIncomeInBase = BigDecimal("5500.00"),
+                        totalExpensesInBase = BigDecimal("2800.00")
+                    )
+                ),
+                baseCurrency = "USD",
+                precision = 2,
+                cardId = "preview_comparison",
+                fontSize = "Medium",
+                filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH)),
+                onFontSizeChange = { _, _ -> },
+                onFilterChange = { _, _ -> },
+                previousMetrics = NetWorthMetrics(
+                    netWorth = BigDecimal("122300.50"),
+                    cashFlow = com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult.empty().copy(
+                        totalIncomeInBase = BigDecimal("4800.00"),
+                        totalExpensesInBase = BigDecimal("3000.00")
+                    )
+                )
             )
         }
     }

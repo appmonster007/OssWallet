@@ -46,9 +46,7 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
             
             NetWorthCard(
-                netWorth = renderData.value,
-                netIncome = renderData.cashFlowResult.totalIncomeInBase,
-                netExpense = renderData.cashFlowResult.totalExpensesInBase,
+                currentMetrics = renderData.currentMetrics,
                 baseCurrency = renderData.baseCurrency,
                 precision = renderData.precision,
                 cardId = renderData.config.cardId,
@@ -66,7 +64,8 @@ fun UnifiedCardRenderer(
                 accounts = accounts,
                 allCategories = allCategories,
                 savedFilters = savedFilters,
-                currentTheme = currentTheme
+                currentTheme = currentTheme,
+                previousMetrics = renderData.previousMetrics
             )
         }
         

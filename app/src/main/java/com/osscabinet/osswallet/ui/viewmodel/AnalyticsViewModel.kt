@@ -23,7 +23,10 @@ class AnalyticsViewModel(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val registry: CardComputerRegistry,
-    override val cardRepository: CardRepository
+    override val cardRepository: CardRepository,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val budgetRepository: BudgetRepository,
+    private val loanRepository: LoanRepository
 ) : ViewModel(), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -42,7 +45,10 @@ class AnalyticsViewModel(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
                 computationRepository.hasLoadedExchangeRates,
-                settingsRepository.decimalPrecision
+                settingsRepository.decimalPrecision,
+                plannedPaymentRepository.getActivePlannedPayments(profileId),
+                budgetRepository.getActiveBudgets(profileId),
+                loanRepository.getActiveLoans(profileId)
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val transactions = args[0] as List<Transaction>
@@ -55,6 +61,12 @@ class AnalyticsViewModel(
                 val baseCurrency = args[4] as String
                 val hasLoadedRates = args[5] as Boolean
                 val precision = args[6] as Int
+                @Suppress("UNCHECKED_CAST")
+                val plannedPayments = args[7] as List<PlannedPayment>
+                @Suppress("UNCHECKED_CAST")
+                val budgets = args[8] as List<Budget>
+                @Suppress("UNCHECKED_CAST")
+                val loans = args[9] as List<Loan>
 
                 if (!hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading
@@ -69,7 +81,10 @@ class AnalyticsViewModel(
                     allCategories = categories,
                     exchangeRates = rates,
                     selectedCurrency = baseCurrency,
-                    decimalPrecision = precision
+                    decimalPrecision = precision,
+                    plannedPayments = plannedPayments,
+                    budgets = budgets,
+                    loans = loans
                 )
             }
         }
@@ -88,7 +103,10 @@ sealed class AnalyticsUiState {
         val allCategories: List<Category> = emptyList(),
         val selectedCurrency: String = "USD",
         val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-        val decimalPrecision: Int = 2
+        val decimalPrecision: Int = 2,
+        val plannedPayments: List<PlannedPayment> = emptyList(),
+        val budgets: List<Budget> = emptyList(),
+        val loans: List<Loan> = emptyList()
     ) : AnalyticsUiState()
     data class Error(val message: String) : AnalyticsUiState()
 }

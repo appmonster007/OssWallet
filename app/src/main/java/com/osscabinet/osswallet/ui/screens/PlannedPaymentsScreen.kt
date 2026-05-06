@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
@@ -147,12 +148,12 @@ private val RedWarning = Color(0xFFB3261E)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentsScreen(
+    onMenuClick: () -> Unit,
     viewModel: PlannedPaymentViewModel,
     transactionManager: TransactionManager,
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
-    onDetailClick: (Long) -> Unit,
-    onBackClick: () -> Unit
+    onDetailClick: (Long) -> Unit
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
@@ -190,8 +191,8 @@ fun PlannedPaymentsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

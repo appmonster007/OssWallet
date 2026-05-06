@@ -3,29 +3,38 @@ package com.osscabinet.ossWallet
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.activity.viewModels
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
+import com.osscabinet.ossWallet.ui.navigation.Screen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.viewmodel.MainViewModel
+import com.osscabinet.ossWallet.ui.viewmodel.GenericViewModelFactory
+import com.osscabinet.ossWallet.ui.components.AppDrawerContent
 import kotlinx.coroutines.launch
 
-/**
- * Main Activity of the OssWallet application.
- * Responsibility: Entry point and UI theme/navigation hosting.
- * Follows SRP by delegating dependency management to [AppContainer] 
- * and navigation to [OssWalletNavGraph].
- */
 class MainActivity : FragmentActivity() {
     private var keepSplashOnScreen = true
     private lateinit var appContainer: AppContainer
+
+    private val mainViewModel: MainViewModel by viewModels {
+        GenericViewModelFactory {
+            MainViewModel(
+                appContainer.profileRepository,
+                appContainer.settingsRepository,
+                appContainer.accountRepository,
+                appContainer.templateRepository
+            )
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -36,44 +45,97 @@ class MainActivity : FragmentActivity() {
         // Initialize dependency container
         appContainer = (application as OssWalletApp).container
 
-        // Seed database if enabled (only in debug builds)
-        // TO DISABLE SEEDING: Set ENABLE_SEEDING = false in app/build.gradle.kts
-        // TO REMOVE SEEDING: Delete the entire block below and the /data/seed package
-        if (SeedingConfig.shouldSeed()) {
-            val seeder = SeedingConfig.createSeeder(
-                database = appContainer.db,
-                settingsDataStore = appContainer.settingsDataStore,
-                context = this
-            )
-            seeder?.let {
-                lifecycleScope.launch {
-                    it.seed()
+        setContent {
+            val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
+
+            OssWalletTheme(theme = theme) {
+                val navController = rememberNavController()
+                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                val scope = rememberCoroutineScope()
+                
+                val currentProfile by mainViewModel.currentProfile.collectAsStateWithLifecycle()
+                val nonArchivedAccounts by mainViewModel.nonArchivedAccounts.collectAsStateWithLifecycle()
+                val starredTemplates by mainViewModel.starredTemplates.collectAsStateWithLifecycle()
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                
+                // Extract base route from currentDestination to match drawer highlights
+                val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
+                    ?: Screen.Dashboard.route.substringBefore("?")
+
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        AppDrawerContent(
+                            currentProfile = currentProfile,
+                            nonArchivedAccounts = nonArchivedAccounts,
+                            starredTemplates = starredTemplates,
+                            selectedDestination = currentDestination,
+                            onDashboardClick = {
+                                navController.navigate(Screen.Dashboard.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onRecordsClick = {
+                                navController.navigate(Screen.TransactionList.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onAnalyticsClick = {
+                                navController.navigate(Screen.Analytics.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onExchangeRatesClick = {
+                                navController.navigate(Screen.ExchangeRates.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onSettingsClick = {
+                                navController.navigate(Screen.Settings.route)
+                            },
+                            onAccountClick = { id ->
+                                navController.navigate(Screen.AccountDetail.createRoute(id))
+                            },
+                            onTemplateClick = { template ->
+                                navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, template = template.name))
+                            },
+                            onCloseDrawer = { scope.launch { drawerState.close() } },
+                            onPlannedPaymentsClick = {
+                                navController.navigate(Screen.PlannedPayments.route)
+                            },
+                            onBudgetsClick = {
+                                navController.navigate(Screen.BudgetList.route)
+                            },
+                            onLoansClick = {
+                                navController.navigate(Screen.LoanList.route)
+                            }
+                        )
+                    }
+                ) {
+                    OssWalletNavGraph(
+                        navController = navController,
+                        appContainer = appContainer,
+                        onSplashConditionChanged = { keepSplashOnScreen = it },
+                        onOpenDrawer = { scope.launch { drawerState.open() } }
+                    )
                 }
             }
         }
-
-        setContent {
-            OssWalletApp(
-                appContainer = appContainer,
-                onSplashConditionChanged = { keepSplashOnScreen = it }
-            )
-        }
-    }
-}
-
-@Composable
-fun OssWalletApp(
-    appContainer: AppContainer,
-    onSplashConditionChanged: (Boolean) -> Unit = {}
-) {
-    val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
-
-    OssWalletTheme(theme = theme) {
-        val navController = rememberNavController()
-        OssWalletNavGraph(
-            navController = navController,
-            appContainer = appContainer,
-            onSplashConditionChanged = onSplashConditionChanged
-        )
     }
 }

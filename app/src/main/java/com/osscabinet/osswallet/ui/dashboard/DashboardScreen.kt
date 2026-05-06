@@ -125,20 +125,14 @@ private fun calculateScrollBottomPadding(): Dp {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
-    onAnalyticsClick: () -> Unit,
+    onMenuClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
-    onAccountsViewClick: () -> Unit,
-    onExchangeRatesClick: () -> Unit,
-    onTemplatesClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
-    onPlannedPaymentsClick: () -> Unit = {},
-    onBudgetsClick: () -> Unit = {},
-    onLoansClick: () -> Unit = {},
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
@@ -148,9 +142,6 @@ fun DashboardScreen(
     cardComputerRegistry: CardComputerRegistry,
     viewContext: String? = null
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
     var navTriggered by remember { mutableStateOf(false) }
     
     // Reset navTriggered when returning to this screen
@@ -192,7 +183,6 @@ fun DashboardScreen(
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
     val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
@@ -224,131 +214,94 @@ fun DashboardScreen(
         )
     )
 
-    val starredTemplates by templateViewModel.starredTemplates.collectAsStateWithLifecycle()
-
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
-
-    // We no longer need this LaunchedEffect because AnalyticsViewModel
-    // now observes settingsDataStore.currency directly in its init block.
-    // However, we might still want to ensure it's synced if it was overridden by other screens.
-    // val settingsCurrency by settingsViewModel.currency.collectAsStateWithLifecycle()
-    // LaunchedEffect(settingsCurrency) {
-    //     analyticsViewModel.onCurrencySelected(settingsCurrency)
-    // }
+    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            modifier = Modifier.fillMaxSize(),
-            drawerContent = {
-                AppDrawerContent(
-                    currentProfile = currentProfile,
-                    nonArchivedAccounts = nonArchivedAccounts,
-                    starredTemplates = starredTemplates,
-                    selectedDestination = "dashboard",
-                    onDashboardClick = { scope.launch { drawerState.close() } },
-                    onAccountsViewClick = { navigate(onAccountsViewClick) },
-                    onRecordsClick = { navigate { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) } },
-                    onAnalyticsClick = { navigate(onAnalyticsClick) },
-                    onExchangeRatesClick = { navigate(onExchangeRatesClick) },
-                    onTemplatesClick = { navigate(onTemplatesClick) },
-                    onManageAccountsClick = { navigate(onManageAccountsClick) },
-                    onSettingsClick = { navigate(onSettingsClick) },
-                    onAccountClick = { id -> navigate { onAccountClick(id) } },
-                    onTemplateClick = { template -> navigate { onAddClick(template.transactionType, template.name) } },
-                    onCloseDrawer = { scope.launch { drawerState.close() } },
-                    onPlannedPaymentsClick = { navigate(onPlannedPaymentsClick) },
-                    onBudgetsClick = { navigate(onBudgetsClick) },
-                    onLoansClick = { navigate(onLoansClick) }
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onMenuClick) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    title = {
+                        Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
+                            Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
+                            Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                    }
                 )
             }
-        ) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
-                            }
-                        },
-                        title = {
-                            Column(modifier = Modifier.clickable { navigate(onSettingsClick) }) {
-                                Text(currentProfile?.name ?: "Intelligence", style = MaterialTheme.typography.titleLarge)
-                                Text("Personal Account", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            }
-                        }
-                    )
-                }
-            ) { innerPadding ->
-                // Context indicator banner (if view focus is applied)
-                if (initialViewContext != DashboardViewContext.None) {
-                    DashboardViewIndicator(
-                        context = initialViewContext,
-                        onReset = { dashboardViewModel.resetToInitialView() }
-                    )
-                }
+        ) { innerPadding ->
+            // Context indicator banner (if view focus is applied)
+            if (initialViewContext != DashboardViewContext.None) {
+                DashboardViewIndicator(
+                    context = initialViewContext,
+                    onReset = { dashboardViewModel.resetToInitialView() }
+                )
+            }
 
-                when (val state = dashboardUiState) {
-                    is DashboardUiState.Loading -> {
-                        AeonShimmer(innerPadding = innerPadding)
-                    }
-                    is DashboardUiState.Success -> {
-                            DashboardContent(
-                                innerPadding = innerPadding,
-                                pagerState = pagerState,
-                                tabs = tabs,
-                                state = state,
-                                currentTheme = currentTheme,
-                                onManageAccountsClick = { navigate(onManageAccountsClick) },
-                                onAccountsViewClick = { navigate(onAccountsViewClick) },
-                                onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                onRecordsClick = { context -> navigate { onRecordsClick(context) } },
-                                onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
-                                onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
-                                transactionViewModel = transactionViewModel,
-                                dashboardViewModel = dashboardViewModel,
-                                cardComputerRegistry = cardComputerRegistry,
-                                cardsConfig = cardsConfig,
-                                showAddCardDialog = showAddCardDialog,
-                                onShowAddCardDialogChange = { showAddCardDialog = it },
-                                cardAnimationEnabled = cardAnimationEnabled
-                            )
-                    }
-                    is DashboardUiState.Error -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(state.message)
-                        }
+            when (val state = dashboardUiState) {
+                is DashboardUiState.Loading -> {
+                    AeonShimmer(innerPadding = innerPadding)
+                }
+                is DashboardUiState.Success -> {
+                    DashboardContent(
+                        innerPadding = innerPadding,
+                        pagerState = pagerState,
+                        tabs = tabs,
+                        state = state,
+                        currentTheme = currentTheme,
+                        onManageAccountsClick = { navigate(onManageAccountsClick) },
+                        onAccountClick = { id -> navigate { onAccountClick(id) } },
+                        onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                        onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
+                        onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
+                        transactionViewModel = transactionViewModel,
+                        dashboardViewModel = dashboardViewModel,
+                        cardComputerRegistry = cardComputerRegistry,
+                        cardsConfig = cardsConfig,
+                        showAddCardDialog = showAddCardDialog,
+                        onShowAddCardDialogChange = { showAddCardDialog = it },
+                        cardAnimationEnabled = cardAnimationEnabled
+                    )
+                }
+                is DashboardUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(state.message)
                     }
                 }
             }
-
-            UnifiedPillNavigation(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index ->
-                    scope.launch { pagerState.animateScrollToPage(index) }
-                },
-                tabs = tabs,
-                isFabExpanded = isFabExpanded,
-                onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-                onFabClick = { 
-                    if (!expandableFabEnabled) {
-                        navigate { onAddClick(0, null) }
-                    }
-                },
-                fabMenu = if (expandableFabEnabled) {
-                    {
-                        TransactionFabMenu(
-                            isExpanded = isFabExpanded,
-                            templates = allTemplates,
-                            onAddClick = { type, name ->
-                                isFabExpanded = false
-                                navigate { onAddClick(type, name) }
-                            }
-                        )
-                    }
-                } else null
-            )
         }
+
+        UnifiedPillNavigation(
+            selectedTab = pagerState.currentPage,
+            onTabSelected = { index ->
+                scope.launch { pagerState.animateScrollToPage(index) }
+            },
+            tabs = tabs,
+            isFabExpanded = isFabExpanded,
+            onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+            onFabClick = { 
+                if (!expandableFabEnabled) {
+                    navigate { onAddClick(0, null) }
+                }
+            },
+            fabMenu = if (expandableFabEnabled) {
+                {
+                    TransactionFabMenu(
+                        isExpanded = isFabExpanded,
+                        templates = allTemplates,
+                        onAddClick = { type, name ->
+                            isFabExpanded = false
+                            navigate { onAddClick(type, name) }
+                        }
+                    )
+                }
+            } else null
+        )
     }
 }
 
@@ -362,7 +315,6 @@ fun DashboardContent(
     state: DashboardUiState.Success,
     currentTheme: String,
     onManageAccountsClick: () -> Unit,
-    onAccountsViewClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
@@ -442,7 +394,6 @@ fun DashboardContent(
                         allCategories = state.allCategories,
                         savedFilters = savedFilters,
                         onManageAccountsClick = onManageAccountsClick,
-                        onAccountsViewClick = onAccountsViewClick,
                         onAccountClick = onAccountClick,
                         onPlannedPaymentConfirm = { id -> dashboardViewModel.quickConfirmById(id) },
                         onPlannedPaymentSkip = { id -> dashboardViewModel.quickSkipById(id) }

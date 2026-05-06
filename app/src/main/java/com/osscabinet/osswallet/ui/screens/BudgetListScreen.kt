@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.*
@@ -37,11 +37,11 @@ private val RedWarning = Color(0xFFB3261E)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetListScreen(
+    onMenuClick: () -> Unit,
     viewModel: BudgetViewModel,
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
     onDetailClick: (Long) -> Unit,
-    onBackClick: () -> Unit,
     baseCurrency: String = "USD",
     precision: Int = 2
 ) {
@@ -61,8 +61,8 @@ fun BudgetListScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

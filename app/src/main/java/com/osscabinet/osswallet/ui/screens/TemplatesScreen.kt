@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,10 +31,10 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplatesScreen(
+    onMenuClick: () -> Unit,
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
-    onAddTemplateClick: (Long?) -> Unit,
-    onBackClick: () -> Unit
+    onAddTemplateClick: (Long?) -> Unit
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -77,10 +78,10 @@ fun TemplatesScreen(
             TopAppBar(
                 title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
                 navigationIcon = {
-                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { { navigate(onBackClick) } }) {
+                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { onMenuClick }) {
                         Icon(
-                            if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = if (isReorderMode) "Cancel" else "Back"
+                            if (isReorderMode) Icons.Rounded.Close else Icons.Default.Menu,
+                            contentDescription = if (isReorderMode) "Cancel" else "Menu"
                         )
                     }
                 },

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -19,6 +20,8 @@ fun TransactionListTopAppBar(
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     onBackClick: () -> Unit,
+    onMenuClick: () -> Unit = {},
+    isTopLevel: Boolean = true,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
 ) {
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -39,8 +42,14 @@ fun TransactionListTopAppBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            if (isTopLevel) {
+                IconButton(onClick = onMenuClick) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
+            } else {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
             }
         },
         actions = {

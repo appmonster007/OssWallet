@@ -174,7 +174,7 @@ private fun LoanSectionHeader(title: String, sectionColor: Color) {
             title,
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 letterSpacing = 1.5.sp
             ),
             color = sectionColor

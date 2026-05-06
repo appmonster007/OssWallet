@@ -146,7 +146,7 @@ fun RecentActivitiesScreen(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp,
-                            fontSize = 10.sp
+                            fontSize = 9.sp
                         )
                     )
                 }

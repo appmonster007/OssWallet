@@ -47,9 +47,9 @@ fun AppDrawerContent(
     onLoansClick: () -> Unit = {}
 ) {
     ModalDrawerSheet(
-        modifier = Modifier.width(320.dp),
+        modifier = Modifier.width(280.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
-        drawerShape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp)
+        drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
     ) {
         val scrollState = rememberScrollState()
         
@@ -66,10 +66,10 @@ fun AppDrawerContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp)
+                        .padding(16.dp)
                 ) {
                     Surface(
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.size(48.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
@@ -77,12 +77,12 @@ fun AppDrawerContent(
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         currentProfile?.name ?: "Intelligence",
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
@@ -95,11 +95,11 @@ fun AppDrawerContent(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 24.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Navigation Items
                 val navItems = listOf(
@@ -127,14 +127,14 @@ fun AppDrawerContent(
                             }
                             onCloseDrawer()
                         },
-                        icon = { Icon(icon, contentDescription = null) },
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                     )
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
 
@@ -145,7 +145,7 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
                 val planningItems = listOf(
@@ -171,15 +171,15 @@ fun AppDrawerContent(
                             }
                             onCloseDrawer()
                         },
-                        icon = { Icon(icon, contentDescription = null) },
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        icon = { Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                     )
                 }
 
                 if (starredTemplates.isNotEmpty()) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     )
 
@@ -190,7 +190,7 @@ fun AppDrawerContent(
                             letterSpacing = 1.sp
                         ),
                         color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
 
                     starredTemplates.forEach { template ->
@@ -209,18 +209,18 @@ fun AppDrawerContent(
                                         else -> Icons.Rounded.ArrowDownward
                                     },
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(14.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             },
-                            modifier = Modifier.padding(horizontal = 12.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp),
                             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                         )
                     }
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
 
@@ -231,7 +231,7 @@ fun AppDrawerContent(
                         letterSpacing = 1.sp
                     ),
                     color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
                 nonArchivedAccounts.sortedBy { it.name }.forEach { account ->
@@ -269,12 +269,12 @@ fun AppDrawerContent(
                             }
                             Box(
                                 modifier = Modifier
-                                    .size(12.dp)
+                                    .size(10.dp)
                                     .clip(CircleShape)
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
                         colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                     )
                 }
@@ -288,7 +288,7 @@ fun AppDrawerContent(
             ) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 NavigationDrawerItem(
                     label = {
@@ -302,8 +302,8 @@ fun AppDrawerContent(
                         onSettingsClick()
                         onCloseDrawer()
                     },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
             }

@@ -74,7 +74,7 @@ fun AeonExpressiveCard(
                     onClick = onClick
                 ) else Modifier
             ),
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -91,7 +91,7 @@ fun AeonExpressiveCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(16.dp)
         ) {
             // Header Composition (Icon + Title + Subtitle)
             Row(
@@ -99,11 +99,11 @@ fun AeonExpressiveCard(
                     .fillMaxWidth()
                     .then(headerModifier),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (icon != null) {
                     Surface(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(32.dp),
                         shape = CircleShape,
                         color = iconColor.copy(alpha = 0.15f)
                     ) {
@@ -111,7 +111,7 @@ fun AeonExpressiveCard(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(18.dp),
                                 tint = iconColor
                             )
                         }
@@ -123,7 +123,7 @@ fun AeonExpressiveCard(
                         text = title,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             letterSpacing = 0.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
@@ -133,7 +133,7 @@ fun AeonExpressiveCard(
                             text = subtitle,
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 12.sp
+                                fontSize = 11.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
@@ -150,7 +150,7 @@ fun AeonExpressiveCard(
                 }
             }
             
-            Spacer(modifier = Modifier.height(12.dp)) // Vertical Rhythm: 12dp gap
+            Spacer(modifier = Modifier.height(8.dp)) // Vertical Rhythm: 8dp gap
             
             content()
         }
@@ -172,7 +172,7 @@ fun AeonCardFilterButton(
     
     Surface(
         onClick = onClick,
-        modifier = modifier.size(32.dp),
+        modifier = modifier.size(28.dp),
         shape = CircleShape,
         color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) 
                 else Color.Transparent,
@@ -185,7 +185,7 @@ fun AeonCardFilterButton(
                 contentDescription = "Filter",
                 tint = if (isActive) MaterialTheme.colorScheme.primary 
                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }

@@ -29,8 +29,8 @@ fun AeonCardList(
     onDelete: (String) -> Unit,
     onRecordsClick: (RecordsFilterContext) -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
+    contentPadding: PaddingValues = PaddingValues(12.dp),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
     animateCards: Boolean = true,
     currentTheme: String = "light",
     accounts: List<Account> = emptyList(),
@@ -121,7 +121,7 @@ private fun CardWithCallbacks.copyWithRules(
 private fun CardErrorState(message: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
         ),
@@ -129,14 +129,15 @@ private fun CardErrorState(message: String?) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Rounded.ErrorOutline,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.size(20.dp)
             )
             Text(
                 text = message ?: "Failed to load card",

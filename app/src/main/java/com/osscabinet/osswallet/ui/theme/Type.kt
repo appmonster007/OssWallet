@@ -15,20 +15,12 @@ val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Bold,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp,
-        fontFeatureSettings = "tnum"
-    ),
-    displayMedium = TextStyle(
-        fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
         fontSize = 45.sp,
         lineHeight = 52.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    displaySmall = TextStyle(
+    displayMedium = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
@@ -36,15 +28,15 @@ val Typography = Typography(
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    headlineLarge = TextStyle(
+    displaySmall = TextStyle(
         fontFamily = Manrope,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    headlineMedium = TextStyle(
+    headlineLarge = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Normal,
         fontSize = 28.sp,
@@ -52,7 +44,7 @@ val Typography = Typography(
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    headlineSmall = TextStyle(
+    headlineMedium = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Normal,
         fontSize = 24.sp,
@@ -60,15 +52,15 @@ val Typography = Typography(
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    titleLarge = TextStyle(
+    headlineSmall = TextStyle(
         fontFamily = Manrope,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Normal,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
         fontFeatureSettings = "tnum"
     ),
-    titleMedium = TextStyle(
+    titleLarge = TextStyle(
         fontFamily = Manrope,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
@@ -76,23 +68,23 @@ val Typography = Typography(
         letterSpacing = 0.15.sp,
         fontFeatureSettings = "tnum"
     ),
-    titleSmall = TextStyle(
+    titleMedium = TextStyle(
         fontFamily = Manrope,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
-        fontFeatureSettings = "tnum"
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
     ),
-    bodyMedium = TextStyle(
+    titleSmall = TextStyle(
+        fontFamily = Manrope,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.4.sp,
+        fontFeatureSettings = "tnum"
+    ),
+    bodyLarge = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
@@ -100,7 +92,7 @@ val Typography = Typography(
         letterSpacing = 0.25.sp,
         fontFeatureSettings = "tnum"
     ),
-    bodySmall = TextStyle(
+    bodyMedium = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
@@ -108,15 +100,15 @@ val Typography = Typography(
         letterSpacing = 0.4.sp,
         fontFeatureSettings = "tnum"
     ),
-    labelLarge = TextStyle(
+    bodySmall = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
     ),
-    labelMedium = TextStyle(
+    labelLarge = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
@@ -124,15 +116,23 @@ val Typography = Typography(
         letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
     ),
-    labelSmall = TextStyle(
+    labelMedium = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
         fontFeatureSettings = "tnum"
+    ),
+    labelSmall = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.sp,
+        lineHeight = 14.sp,
+        letterSpacing = 0.5.sp,
+        fontFeatureSettings = "tnum"
     )
 )
 
 val Typography.labelExtraSmall: TextStyle
-    get() = labelSmall.copy(fontSize = 10.sp)
+    get() = labelSmall.copy(fontSize = 9.sp)

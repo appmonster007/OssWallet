@@ -24,7 +24,15 @@ interface CardUpdateHandler {
             }
         }
     }
-    
+
+    fun updateCardNetWorthShowComparison(cardId: String, showComparison: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(showComparison = showComparison) else config
+            }
+        }
+    }
+
     fun updateCardNetWorthFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->

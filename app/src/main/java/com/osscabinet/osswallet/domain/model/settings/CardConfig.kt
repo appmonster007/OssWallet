@@ -105,6 +105,7 @@ data class NetWorthCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
+    val showComparison: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(),
     val profileId: Int? = null
 ) : CardConfig() {

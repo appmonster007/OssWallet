@@ -29,6 +29,7 @@ import kotlinx.serialization.json.Json
 @Composable
 fun TransactionListScreen(
     onMenuClick: () -> Unit,
+    isTopLevelParam: Boolean = false,
     viewModel: TransactionViewModel,
     accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
@@ -90,17 +91,7 @@ fun TransactionListScreen(
     // Only clear filters when explicitly navigating back (not when navigating within records context)
     // Removed automatic filter clearing on screen disposal
 
-    val isTopLevel = remember(filterContext) {
-        filterContext == null || run {
-            try {
-                val decoded = java.net.URLDecoder.decode(filterContext, "UTF-8")
-                val context = Json.decodeFromString<RecordsFilterContext>(decoded)
-                context == RecordsFilterContext.None
-            } catch (e: Exception) {
-                true
-            }
-        }
-    }
+    val isTopLevel = isTopLevelParam
 
     TransactionListContent(
         transactionsWithBalance = transactionsWithBalance,

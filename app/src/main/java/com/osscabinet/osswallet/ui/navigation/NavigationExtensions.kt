@@ -14,25 +14,27 @@ import java.nio.charset.StandardCharsets
 /**
  * Navigate to TransactionListScreen with a filter context
  * @param context The filter context to apply (encoded as JSON)
+ * @param topLevel Whether to treat this as a top-level navigation (hamburger menu instead of back)
  */
-fun NavHostController.navigateToRecords(context: RecordsFilterContext) {
+fun NavHostController.navigateToRecords(context: RecordsFilterContext, topLevel: Boolean = false) {
     val encodedContext = URLEncoder.encode(
         Json.encodeToString(context),
         StandardCharsets.UTF_8.toString()
     )
-    navigate(Screen.TransactionList.createRoute(encodedContext))
+    navigate(Screen.TransactionList.createRoute(encodedContext, topLevel))
 }
 
 /**
  * Navigate to DashboardScreen with a view context
  * @param context The view context to apply (encoded as JSON)
+ * @param topLevel Whether to treat this as a top-level navigation (hamburger menu instead of back)
  */
-fun NavHostController.navigateToDashboard(context: DashboardViewContext) {
+fun NavHostController.navigateToDashboard(context: DashboardViewContext, topLevel: Boolean = false) {
     val encodedContext = URLEncoder.encode(
         Json.encodeToString(context),
         StandardCharsets.UTF_8.toString()
     )
-    navigate(Screen.Dashboard.createRoute(encodedContext))
+    navigate(Screen.Dashboard.createRoute(encodedContext, topLevel))
 }
 
 // Note: FilterStack navigation extensions removed as part of filter system cleanup

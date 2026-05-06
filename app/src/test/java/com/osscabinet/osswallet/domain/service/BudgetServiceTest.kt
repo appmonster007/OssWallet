@@ -150,9 +150,9 @@ class BudgetServiceTest {
         val outOfPeriod = epochOf(2024, 2, 10)
 
         val transactions = listOf(
-            makeTransaction(BigDecimal("200"), timestamp = inPeriod),
-            makeTransaction(BigDecimal("300"), timestamp = inPeriod),
-            makeTransaction(BigDecimal("100"), timestamp = outOfPeriod)
+            makeTransaction(BigDecimal("-200"), timestamp = inPeriod),
+            makeTransaction(BigDecimal("-300"), timestamp = inPeriod),
+            makeTransaction(BigDecimal("-100"), timestamp = outOfPeriod)
         )
 
         val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)
@@ -166,7 +166,7 @@ class BudgetServiceTest {
         val inPeriod = epochOf(2024, 3, 10)
 
         val transactions = listOf(
-            makeTransaction(BigDecimal("200"), transactionType = "expense", timestamp = inPeriod),
+            makeTransaction(BigDecimal("-200"), transactionType = "expense", timestamp = inPeriod),
             makeTransaction(BigDecimal("500"), transactionType = "income", timestamp = inPeriod)
         )
 
@@ -181,8 +181,8 @@ class BudgetServiceTest {
         val inPeriod = epochOf(2024, 3, 10)
 
         val transactions = listOf(
-            makeTransaction(BigDecimal("200"), categoryId = 1L, timestamp = inPeriod),
-            makeTransaction(BigDecimal("300"), categoryId = 2L, timestamp = inPeriod)
+            makeTransaction(BigDecimal("-200"), categoryId = 1L, timestamp = inPeriod),
+            makeTransaction(BigDecimal("-300"), categoryId = 2L, timestamp = inPeriod)
         )
 
         val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", 2, now)

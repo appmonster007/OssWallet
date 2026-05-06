@@ -134,23 +134,32 @@ fun OssWalletNavGraph(
     } else if (isOnboardingCompleted == true) {
         NavHost(
             navController = navController,
-            startDestination = Screen.Dashboard.route
+            startDestination = Screen.Dashboard.createRoute(topLevel = true)
         ) {
             composable(
                 route = Screen.Dashboard.route,
-                arguments = listOf(navArgument("viewContext") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }),
+                arguments = listOf(
+                    navArgument("viewContext") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("topLevel") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                ),
                 enterTransition = { FadeEnterTransitionSpec },
                 exitTransition = { FadeExitTransitionSpec },
                 popEnterTransition = { FadeEnterTransitionSpec },
                 popExitTransition = { FadeExitTransitionSpec }
             ) { backStackEntry ->
                 val viewContext = backStackEntry.arguments?.getString("viewContext")
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
                 DashboardScreen(
                     onMenuClick = onOpenDrawer,
+                    onBackClick = { navController.popBackStack() },
+                    isTopLevelParam = topLevel,
                     onRecordsClick = { context -> navController.navigateToRecords(context) },
                     onAddClick = { type, template -> 
                         navController.navigate(Screen.AddTransaction.createRoute(type = type, template = template)) 
@@ -194,19 +203,27 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.TransactionList.route,
-                arguments = listOf(navArgument("filterContext") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }),
+                arguments = listOf(
+                    navArgument("filterContext") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("topLevel") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                ),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterContext = backStackEntry.arguments?.getString("filterContext")
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
                 TransactionListScreen(
                     onMenuClick = onOpenDrawer,
+                    isTopLevelParam = topLevel,
                     viewModel = transactionViewModel,
                     accountViewModel = accountViewModel,
                     analyticsViewModel = analyticsViewModel,

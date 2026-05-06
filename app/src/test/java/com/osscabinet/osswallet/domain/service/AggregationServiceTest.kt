@@ -18,7 +18,8 @@ class AggregationServiceTest {
         id: Long = 0,
         amount: BigDecimal,
         currency: String,
-        accountId: String = "acc1"
+        accountId: String = "acc1",
+        categoryId: Long? = null
     ) = Transaction(
         id = id,
         title = "Test",
@@ -28,6 +29,7 @@ class AggregationServiceTest {
         currency = currency,
         transactionType = if (amount.signum() >= 0) "income" else "expense",
         accountId = accountId,
+        categoryId = categoryId,
         status = TransactionStatus.CLEARED
     )
 
@@ -69,10 +71,6 @@ class AggregationServiceTest {
         // Income: 100 (USD) + 200 (from EUR) = 300
         // Expense: 50 (USD) + 100 (from EUR) = 150
         // Net: 300 - 150 = 150
-        println("Actual Income: ${result.totalIncomeInBase}")
-        println("Actual Expense: ${result.totalExpensesInBase}")
-        println("Actual Net: ${result.netInBase}")
-        
         assertEquals("Income should be 300", 0, BigDecimal("300.00").compareTo(result.totalIncomeInBase))
         assertEquals("Expense should be 150 (abs)", 0, BigDecimal("150.00").abs().compareTo(result.totalExpensesInBase.abs()))
         assertEquals("Net should be 150", 0, BigDecimal("150.00").compareTo(result.netInBase))
@@ -153,22 +151,26 @@ class AggregationServiceTest {
         )
 
         val transactions = listOf(
-            createTransaction(amount = BigDecimal("-50"), currency = "USD").copy(category = "Food"),
-            createTransaction(amount = BigDecimal("-85"), currency = "EUR").copy(category = "Groceries") // -100 USD
+            createTransaction(amount = BigDecimal("-50"), currency = "USD", categoryId = 1).copy(category = "Food"),
+            createTransaction(amount = BigDecimal("-85"), currency = "EUR", categoryId = 2).copy(category = "Groceries") // -100 USD
         )
 
         val tree = AggregationService.buildCategoryTree(
             transactions = transactions,
             allCategories = categories,
             exchangeRates = exchangeRates,
-            baseCurrency = "USD",
-            onlyExpenses = true
+            baseCurrency = "USD"
         )
 
         // Root "Food" should have total of 50 + 100 = 150
         val foodRoot = tree.find { it.category == "Food" }
         assertEquals(0, BigDecimal("150").compareTo(foodRoot?.expense?.abs()))
-        assertEquals(1, foodRoot?.subcategoryData?.size)
+        assertEquals(2, foodRoot?.subcategoryData?.size)
+        // First subcategory is "Groceries" (100 in base)
+        assertEquals("Groceries", foodRoot?.subcategoryData?.get(0)?.category)
         assertEquals(0, BigDecimal("100").compareTo(foodRoot?.subcategoryData?.get(0)?.expense?.abs()))
+        // Second subcategory is pseudo-child for direct "Food" transactions (50 in base)
+        assertEquals("Food", foodRoot?.subcategoryData?.get(1)?.category)
+        assertEquals(0, BigDecimal("50").compareTo(foodRoot?.subcategoryData?.get(1)?.expense?.abs()))
     }
 }

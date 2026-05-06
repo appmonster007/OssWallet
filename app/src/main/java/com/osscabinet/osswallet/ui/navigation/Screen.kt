@@ -1,15 +1,21 @@
 package com.osscabinet.ossWallet.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Dashboard : Screen("dashboard?viewContext={viewContext}") {
-        fun createRoute(viewContext: String? = null): String {
-            return if (viewContext != null) "dashboard?viewContext=$viewContext" else "dashboard"
+    object Dashboard : Screen("dashboard?viewContext={viewContext}&topLevel={topLevel}") {
+        fun createRoute(viewContext: String? = null, topLevel: Boolean = false): String {
+            val params = mutableListOf<String>()
+            viewContext?.let { params.add("viewContext=$it") }
+            if (topLevel) params.add("topLevel=true")
+            return if (params.isEmpty()) "dashboard" else "dashboard?${params.joinToString("&")}"
         }
     }
     object Settings : Screen("settings")
-    object TransactionList : Screen("list?filterContext={filterContext}") {
-        fun createRoute(filterContext: String? = null): String {
-            return if (filterContext != null) "list?filterContext=$filterContext" else "list"
+    object TransactionList : Screen("list?filterContext={filterContext}&topLevel={topLevel}") {
+        fun createRoute(filterContext: String? = null, topLevel: Boolean = false): String {
+            val params = mutableListOf<String>()
+            filterContext?.let { params.add("filterContext=$it") }
+            if (topLevel) params.add("topLevel=true")
+            return if (params.isEmpty()) "list" else "list?${params.joinToString("&")}"
         }
     }
     object AddTransaction : Screen("add") {

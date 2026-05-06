@@ -63,7 +63,7 @@ class OssWalletWidget : GlanceAppWidget() {
         ) as CardRenderData.NetWorth
 
         provideContent {
-            WidgetContent(renderData.value.toString(), baseCurrency)
+            WidgetContent(renderData.currentMetrics.netWorth.toString(), baseCurrency)
         }
     }
 

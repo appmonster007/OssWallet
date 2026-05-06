@@ -13,6 +13,14 @@ import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import java.math.BigDecimal
 
 /**
+ * Metrics specifically for Net Worth card rendering.
+ */
+data class NetWorthMetrics(
+    val netWorth: BigDecimal,
+    val cashFlow: CashFlowResult
+)
+
+/**
  * Sealed class hierarchy for unified card rendering data.
  * Every card computation returns a subtype of this class.
  */
@@ -20,10 +28,10 @@ sealed class CardRenderData {
     
     data class NetWorth(
         val config: NetWorthCardConfig,
-        val value: BigDecimal,
-        val cashFlowResult: CashFlowResult,
+        val currentMetrics: NetWorthMetrics,
         val baseCurrency: String,
-        val precision: Int
+        val precision: Int,
+        val previousMetrics: NetWorthMetrics? = null
     ) : CardRenderData()
 
     data class CurrencyBalances(

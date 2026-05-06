@@ -25,7 +25,7 @@ class NetWorthWidget : BaseOssWalletWidget() {
         renderData: CardRenderData?,
         config: WidgetConfig
     ) {
-        val netWorth = (renderData as? CardRenderData.NetWorth)?.value ?: BigDecimal.ZERO
+        val netWorth = (renderData as? CardRenderData.NetWorth)?.currentMetrics?.netWorth ?: BigDecimal.ZERO
         val currency = data.baseCurrency
         val precision = data.precision
         provideContent { NetWorthWidgetContent(netWorth, currency, precision) }

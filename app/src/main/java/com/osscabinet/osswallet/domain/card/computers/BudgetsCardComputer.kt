@@ -5,8 +5,8 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.service.BudgetService
-import com.osscabinet.ossWallet.domain.service.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.lifecycle.BudgetService
 
 class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
     override val supportedType = CardType.BUDGETS
@@ -23,7 +23,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
         // Step 3: Compute all values from filteredTx
         // BudgetService applies its own period/category/account rules on top of filteredTx.
         val budgets = if (config.showArchived) input.budgets
-                      else input.budgets.filter { !it.isArchived }
+        else input.budgets.filter { !it.isArchived }
 
         val items = budgets.take(config.maxItems).map { budget ->
             val rollover = BudgetService.calculateRollover(

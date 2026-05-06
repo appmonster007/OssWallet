@@ -2,23 +2,50 @@ package com.osscabinet.ossWallet.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.*
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.repository.*
-import com.osscabinet.ossWallet.domain.model.Budget
-import com.osscabinet.ossWallet.domain.model.Loan
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.service.*
-import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.data.local.DashboardSettings
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BudgetRepository
+import com.osscabinet.ossWallet.domain.repository.CardRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.LoanRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.lifecycle.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 enum class DashboardSection {
     NET_WORTH,
@@ -44,13 +71,15 @@ class DashboardViewModel(
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.DASHBOARD
 
-    val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, DashboardCardsConfig())
+    val cardsConfig: StateFlow<DashboardCardsConfig> =
+        cardRepository.getCardsConfig(cardScreenContext)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, DashboardCardsConfig())
 
     private val _sectionOrder = MutableStateFlow<List<DashboardSection>>(DashboardSection.entries)
     val sectionOrder: StateFlow<List<DashboardSection>> = _sectionOrder.asStateFlow()
 
-    private val _initialViewContext = MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
+    private val _initialViewContext =
+        MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
     val initialViewContext: StateFlow<DashboardViewContext> = _initialViewContext.asStateFlow()
 
     data class ViewFocus(
@@ -64,8 +93,12 @@ class DashboardViewModel(
     init {
         viewModelScope.launch {
             settingsRepository.dashboardSettings.collect { settings ->
-                _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull { 
-                    try { DashboardSection.valueOf(it) } catch (e: Exception) { null }
+                _sectionOrder.value = settings.layout.sectionOrder?.split(",")?.mapNotNull {
+                    try {
+                        DashboardSection.valueOf(it)
+                    } catch (e: Exception) {
+                        null
+                    }
                 } ?: DashboardSection.entries
             }
         }
@@ -73,7 +106,13 @@ class DashboardViewModel(
 
     fun updateSectionOrder(sections: List<DashboardSection>) {
         viewModelScope.launch {
-            settingsRepository.updateDashboardSettings { it.copy(layout = it.layout.copy(sectionOrder = sections.joinToString(","))) }
+            settingsRepository.updateDashboardSettings {
+                it.copy(
+                    layout = it.layout.copy(
+                        sectionOrder = sections.joinToString(",")
+                    )
+                )
+            }
         }
     }
 
@@ -83,9 +122,11 @@ class DashboardViewModel(
             is DashboardViewContext.FocusCard -> {
                 _viewFocus.value = ViewFocus(focusedCardId = viewContext.cardId)
             }
+
             is DashboardViewContext.FocusSection -> {
                 _viewFocus.value = ViewFocus(focusedSection = viewContext.section)
             }
+
             else -> {
                 _viewFocus.value = ViewFocus()
             }
@@ -138,22 +179,29 @@ class DashboardViewModel(
             ) { args: Array<Any> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
+
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
+
                 @Suppress("UNCHECKED_CAST")
                 val categories = args[2] as List<Category>
+
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 val use24Hour = args[7] as Boolean
+
                 @Suppress("UNUSED_VARIABLE")
                 val dashboardSettings = args[8] as DashboardSettings
+
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[9] as List<PlannedPayment>
+
                 @Suppress("UNCHECKED_CAST")
                 val budgets = args[10] as List<Budget>
+
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[11] as List<Loan>
 
@@ -186,8 +234,14 @@ class DashboardViewModel(
                             runningBalance = runningBalance.add(txAmountInAccountCurrency)
                             TransactionWithBalance(
                                 transaction = transaction,
-                                balanceBefore = balanceBefore.setScale(precision, RoundingMode.HALF_UP),
-                                balanceAfter = runningBalance.setScale(precision, RoundingMode.HALF_UP)
+                                balanceBefore = balanceBefore.setScale(
+                                    precision,
+                                    RoundingMode.HALF_UP
+                                ),
+                                balanceAfter = runningBalance.setScale(
+                                    precision,
+                                    RoundingMode.HALF_UP
+                                )
                             )
                         }
                     }
@@ -244,14 +298,21 @@ class DashboardViewModel(
             )
             val transactionId = manager.handleSaveTransaction(null, request, profileId)
             repo.upsertOccurrence(
-                occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId)
+                occurrence.copy(
+                    status = OccurrenceStatus.CONFIRMED,
+                    generatedTransactionId = transactionId
+                )
             )
-            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            val nextDue =
+                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
                 repo.update(
-                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                    payment.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = occurrence.scheduledDate
+                    )
                 )
             }
         }
@@ -268,12 +329,16 @@ class DashboardViewModel(
                 scheduledDate = payment.nextDueDate
             )
             repo.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
-            val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
+            val nextDue =
+                PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
             if (nextDue == null) {
                 repo.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
             } else {
                 repo.update(
-                    payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
+                    payment.copy(
+                        nextDueDate = nextDue,
+                        lastTriggeredDate = occurrence.scheduledDate
+                    )
                 )
             }
         }
@@ -304,5 +369,6 @@ sealed class DashboardUiState {
         val budgets: List<Budget> = emptyList(),
         val loans: List<Loan> = emptyList()
     ) : DashboardUiState()
+
     data class Error(val message: String) : DashboardUiState()
 }

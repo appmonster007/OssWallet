@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.TimelineService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import java.math.BigDecimal
 
@@ -18,10 +18,12 @@ fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
             accountIds = listOf(this.accountId),
             transactionType = if (this.isIncome) "income" else "expense"
         )
+
         is RecordsFilterContext.ByAccountAndCurrency -> TransactionFilter(
             accountIds = listOf(this.accountId),
             currencies = listOf(this.currency)
         )
+
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = this.accountIds,
             transactionType = this.transactionType,

@@ -1,9 +1,15 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.card.CardDataComputer
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
-import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.RoundingMode
 
 class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData.Accounts> {
@@ -24,7 +30,8 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
 
         val accountStats = input.accounts.associate { acc ->
             val summary = accountBreakdowns.find { it.key == acc.id }
-            val currSummary = summary?.currencyBreakdown?.get(acc.currencyCode) ?: FinancialSummary.EMPTY
+            val currSummary =
+                summary?.currencyBreakdown?.get(acc.currencyCode) ?: FinancialSummary.EMPTY
 
             val balanceInAccountCurrency = AggregationService.calculateAccountBalance(
                 accountId = acc.id,
@@ -42,16 +49,29 @@ class AccountsCardComputer : CardDataComputer<AccountsCardConfig, CardRenderData
 
             acc.id to AccountSummaryItem(
                 account = acc,
-                currencyBalances = summary?.currencyBreakdown?.mapValues { 
-                    it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP) 
+                currencyBalances = summary?.currencyBreakdown?.mapValues {
+                    it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP)
                 } ?: emptyMap(),
                 balance = balanceInAccountCurrency.setScale(input.precision, RoundingMode.HALF_UP),
                 balanceInBase = balanceInBase,
-                incomeInAccountCurrency = currSummary.income.setScale(input.precision, RoundingMode.HALF_UP),
-                expenseInAccountCurrency = currSummary.expense.setScale(input.precision, RoundingMode.HALF_UP)
+                incomeInAccountCurrency = currSummary.income.setScale(
+                    input.precision,
+                    RoundingMode.HALF_UP
+                ),
+                expenseInAccountCurrency = currSummary.expense.setScale(
+                    input.precision,
+                    RoundingMode.HALF_UP
+                )
             )
         }
 
-        return CardRenderData.Accounts(config, input.accounts, accountStats, input.baseCurrency, "light", input.precision)
+        return CardRenderData.Accounts(
+            config,
+            input.accounts,
+            accountStats,
+            input.baseCurrency,
+            "light",
+            input.precision
+        )
     }
 }

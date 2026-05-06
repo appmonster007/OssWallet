@@ -1,16 +1,38 @@
 package com.osscabinet.ossWallet.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -22,14 +44,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.service.CurrencyService
-import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanActionCards
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanDetailSection
 import com.osscabinet.ossWallet.ui.screens.loans.entry.components.LoanHeaderCard
@@ -54,11 +76,19 @@ fun LoanEntryScreen(
     }
 
     var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var principalText by remember(existing) { mutableStateOf(existing?.principalAmount?.toPlainString() ?: "") }
+    var principalText by remember(existing) {
+        mutableStateOf(
+            existing?.principalAmount?.toPlainString() ?: ""
+        )
+    }
     var currency by remember(existing) { mutableStateOf(existing?.currency ?: "USD") }
     var loanType by remember(existing) { mutableStateOf(existing?.loanType ?: LoanType.BORROWED) }
     var counterparty by remember(existing) { mutableStateOf(existing?.lenderOrBorrowerName ?: "") }
-    var interestText by remember(existing) { mutableStateOf(existing?.interestRate?.toString() ?: "") }
+    var interestText by remember(existing) {
+        mutableStateOf(
+            existing?.interestRate?.toString() ?: ""
+        )
+    }
     var note by remember(existing) { mutableStateOf(existing?.note ?: "") }
 
     var selectedCategoryIds by remember(existing) {
@@ -161,9 +191,16 @@ fun LoanEntryScreen(
                             contentColor = Color.White
                         )
                     ) {
-                        Icon(Icons.Rounded.Done, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            "Save",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -213,7 +250,9 @@ fun LoanEntryScreen(
                     title = "Select Account",
                     onBack = { showAccountSheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(horizontal = 24.dp)) {
                         Text(
                             text = "Choose the source/destination account for this loan",
                             style = MaterialTheme.typography.bodyMedium,
@@ -249,7 +288,9 @@ fun LoanEntryScreen(
                     title = "Categories",
                     onBack = { showCategorySheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(24.dp)) {
                         Box(modifier = Modifier.weight(1f, fill = false)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 AeonHierarchicalHybridSelector(
@@ -261,7 +302,11 @@ fun LoanEntryScreen(
                                     labelMapper = { it.name },
                                     parentIdMapper = { it.parentId },
                                     iconMapper = { AccountIconMap[it.iconName] },
-                                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
+                                    colorMapper = {
+                                        if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(
+                                            it.colorHex
+                                        )
+                                    }
                                 )
                             }
                         }

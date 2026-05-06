@@ -1,6 +1,7 @@
-package com.osscabinet.ossWallet.domain.service
+package com.osscabinet.ossWallet.domain.service.timeline
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.FinancialMetrics
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId

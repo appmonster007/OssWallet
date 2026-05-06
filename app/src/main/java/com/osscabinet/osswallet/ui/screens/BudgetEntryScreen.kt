@@ -1,16 +1,43 @@
 package com.osscabinet.ossWallet.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons.AutoMirrored.Rounded
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.rounded.TrendingDown
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Update
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -20,18 +47,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.service.CurrencyService
-import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
-import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
-import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
+import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
+import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetActionCards
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetDetailSection
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetHeaderCard
@@ -39,9 +65,6 @@ import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetTagSel
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.viewmodel.BudgetViewModel
 import java.math.BigDecimal
-import androidx.compose.material.icons.Icons.AutoMirrored.Rounded
-import androidx.compose.material.icons.automirrored.rounded.TrendingDown
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,13 +82,21 @@ fun BudgetEntryScreen(
     }
 
     var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var limitText by remember(existing) { mutableStateOf(existing?.limitAmount?.toPlainString() ?: "") }
+    var limitText by remember(existing) {
+        mutableStateOf(
+            existing?.limitAmount?.toPlainString() ?: ""
+        )
+    }
     var currency by remember(existing) { mutableStateOf(existing?.currency ?: "USD") }
     var period by remember(existing) { mutableStateOf(existing?.period ?: BudgetPeriod.MONTHLY) }
     var selectedTrackTypes by remember(existing) {
         mutableStateOf(existing?.trackTypes?.toSet() ?: setOf(BudgetTrackType.EXPENSE))
     }
-    var alertThreshold by remember(existing) { mutableFloatStateOf(existing?.alertThreshold ?: 0.8f) }
+    var alertThreshold by remember(existing) {
+        mutableFloatStateOf(
+            existing?.alertThreshold ?: 0.8f
+        )
+    }
     var rollover by remember(existing) { mutableStateOf(existing?.rollover ?: false) }
     var note by remember(existing) { mutableStateOf("") } // Placeholder until model updated
 
@@ -118,7 +149,7 @@ fun BudgetEntryScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -141,12 +172,14 @@ fun BudgetEntryScreen(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val limit = limitText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                             val budget = (existing ?: viewModel.buildDefault(profileId)).copy(
-                                id = budgetId ?: 0L, // Ensure ID is preserved during edit even if 'existing' is not yet loaded
+                                id = budgetId
+                                    ?: 0L, // Ensure ID is preserved during edit even if 'existing' is not yet loaded
                                 name = name,
                                 limitAmount = limit,
                                 currency = currency,
                                 period = period,
-                                trackTypes = selectedTrackTypes.toList().ifEmpty { listOf(BudgetTrackType.EXPENSE) },
+                                trackTypes = selectedTrackTypes.toList()
+                                    .ifEmpty { listOf(BudgetTrackType.EXPENSE) },
                                 alertThreshold = alertThreshold,
                                 rollover = rollover,
                                 categoryIds = selectedCategoryIds.toList(),
@@ -167,9 +200,16 @@ fun BudgetEntryScreen(
                             contentColor = Color.White
                         )
                     ) {
-                        Icon(Icons.Rounded.Done, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            "Save",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -210,7 +250,9 @@ fun BudgetEntryScreen(
                     title = "Select Accounts",
                     onBack = { showAccountSheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(horizontal = 24.dp)) {
                         Text(
                             text = "Choose which accounts to include in this budget",
                             style = MaterialTheme.typography.bodyMedium,
@@ -243,7 +285,9 @@ fun BudgetEntryScreen(
                     title = "Reset Period",
                     onBack = { showPeriodSheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(horizontal = 24.dp)) {
                         Text(
                             text = "How often should this budget reset?",
                             style = MaterialTheme.typography.bodyMedium,
@@ -258,7 +302,8 @@ fun BudgetEntryScreen(
                                     selectedIds = setOf(period.ordinal.toLong()),
                                     onSelectionChange = { ids ->
                                         ids.firstOrNull()?.let { ordinal ->
-                                            period = BudgetPeriod.entries.getOrNull(ordinal.toInt()) ?: period
+                                            period = BudgetPeriod.entries.getOrNull(ordinal.toInt())
+                                                ?: period
                                             if (period == BudgetPeriod.CUSTOM) {
                                                 showCustomStartPicker = true
                                             }
@@ -266,7 +311,9 @@ fun BudgetEntryScreen(
                                         }
                                     },
                                     idMapper = { it.ordinal.toLong() },
-                                    labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                                    labelMapper = {
+                                        it.name.lowercase().replaceFirstChar { c -> c.uppercase() }
+                                    },
                                     iconMapper = { Icons.Rounded.Update }
                                 )
                             }
@@ -282,7 +329,9 @@ fun BudgetEntryScreen(
                     title = "Track Types",
                     onBack = { showTrackTypeSheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(horizontal = 24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(horizontal = 24.dp)) {
                         Text(
                             text = "Should this budget track expenses, income, or both?",
                             style = MaterialTheme.typography.bodyMedium,
@@ -294,7 +343,8 @@ fun BudgetEntryScreen(
                                 AeonHybridSelector(
                                     items = BudgetTrackType.entries,
                                     mode = AeonSelectMode.MULTI,
-                                    selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }.toSet(),
+                                    selectedIds = selectedTrackTypes.map { it.ordinal.toLong() }
+                                        .toSet(),
                                     onSelectionChange = { ids ->
                                         if (ids.isNotEmpty()) {
                                             selectedTrackTypes = ids.mapNotNull { ordinal ->
@@ -303,7 +353,9 @@ fun BudgetEntryScreen(
                                         }
                                     },
                                     idMapper = { it.ordinal.toLong() },
-                                    labelMapper = { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } },
+                                    labelMapper = {
+                                        it.name.lowercase().replaceFirstChar { c -> c.uppercase() }
+                                    },
                                     iconMapper = {
                                         when (it) {
                                             BudgetTrackType.EXPENSE -> Rounded.TrendingDown
@@ -324,7 +376,9 @@ fun BudgetEntryScreen(
                     title = "Categories",
                     onBack = { showCategorySheet = false }
                 ) { padding ->
-                    Column(modifier = Modifier.padding(padding).padding(24.dp)) {
+                    Column(modifier = Modifier
+                        .padding(padding)
+                        .padding(24.dp)) {
                         Box(modifier = Modifier.weight(1f, fill = false)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 AeonHierarchicalHybridSelector(
@@ -336,7 +390,11 @@ fun BudgetEntryScreen(
                                     labelMapper = { it.name },
                                     parentIdMapper = { it.parentId },
                                     iconMapper = { AccountIconMap[it.iconName] },
-                                    colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
+                                    colorMapper = {
+                                        if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(
+                                            it.colorHex
+                                        )
+                                    }
                                 )
                             }
                         }
@@ -351,7 +409,7 @@ fun BudgetEntryScreen(
                 selectedTags = selectedTags,
                 onSelectionChanged = { selectedTags = it },
                 onAddTag = { /* ViewModel handles derive from transactions, but for quick UX: */
-                     selectedTags = selectedTags + it
+                    selectedTags = selectedTags + it
                 },
                 onDismiss = { showTagSheet = false }
             )

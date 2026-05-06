@@ -5,15 +5,18 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
 
-class PlannedPaymentsCardComputer : CardDataComputer<PlannedPaymentsCardConfig, CardRenderData.PlannedPayments> {
+class PlannedPaymentsCardComputer :
+    CardDataComputer<PlannedPaymentsCardConfig, CardRenderData.PlannedPayments> {
     override val supportedType = CardType.PLANNED_PAYMENTS
 
-    override fun compute(input: CardInput, config: PlannedPaymentsCardConfig): CardRenderData.PlannedPayments {
+    override fun compute(
+        input: CardInput,
+        config: PlannedPaymentsCardConfig
+    ): CardRenderData.PlannedPayments {
         val now = System.currentTimeMillis()
 
         val overdue = PlannedPaymentService.getOverdue(input.plannedPayments, now)

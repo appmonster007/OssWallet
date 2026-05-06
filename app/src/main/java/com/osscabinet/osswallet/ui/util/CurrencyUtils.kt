@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.util
 
-import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import java.math.BigDecimal
 
 /**

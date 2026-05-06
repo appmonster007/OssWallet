@@ -1,29 +1,93 @@
 package com.osscabinet.ossWallet.ui.screens
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoMode
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.EventBusy
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Title
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -34,12 +98,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.service.CurrencyService
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.lifecycle.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
@@ -78,7 +141,11 @@ fun PlannedPaymentEntryScreen(
     var title by remember(existing) { mutableStateOf(existing?.title ?: "") }
     var amountText by remember(existing) { mutableStateOf(existing?.amount?.toPlainString() ?: "") }
     var currency by remember(existing) { mutableStateOf(existing?.currency ?: "USD") }
-    var transactionType by remember(existing) { mutableStateOf(existing?.transactionType ?: "expense") }
+    var transactionType by remember(existing) {
+        mutableStateOf(
+            existing?.transactionType ?: "expense"
+        )
+    }
     var selectedAccountId by remember(existing) {
         mutableStateOf(existing?.accountId ?: accounts.firstOrNull()?.id ?: "")
     }
@@ -178,10 +245,18 @@ fun PlannedPaymentEntryScreen(
                         onClick = {
                             val amount = amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
                             val needsIntervalLocal = recurrenceType in listOf(
-                                RecurrenceType.EVERY_N_DAYS, RecurrenceType.EVERY_N_WEEKS, RecurrenceType.EVERY_N_MONTHS
+                                RecurrenceType.EVERY_N_DAYS,
+                                RecurrenceType.EVERY_N_WEEKS,
+                                RecurrenceType.EVERY_N_MONTHS
                             )
-                            val needsDayOfWeekLocal = recurrenceType in listOf(RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS)
-                            val needsDayOfMonthLocal = recurrenceType in listOf(RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS)
+                            val needsDayOfWeekLocal = recurrenceType in listOf(
+                                RecurrenceType.WEEKLY,
+                                RecurrenceType.EVERY_N_WEEKS
+                            )
+                            val needsDayOfMonthLocal = recurrenceType in listOf(
+                                RecurrenceType.MONTHLY,
+                                RecurrenceType.EVERY_N_MONTHS
+                            )
                             // For MONTHLY/EVERY_N_MONTHS, always record the intended day-of-month
                             // so that clamping logic in calculateNextDueDate restores the correct
                             // day after short months (e.g., Jan 31 → Feb 28 → Mar 31, not Mar 28).
@@ -191,14 +266,19 @@ fun PlannedPaymentEntryScreen(
                             } else null
                             val rule = RecurrenceRule(
                                 type = recurrenceType,
-                                interval = if (needsIntervalLocal) recurrenceInterval.coerceAtLeast(1) else 1,
+                                interval = if (needsIntervalLocal) recurrenceInterval.coerceAtLeast(
+                                    1
+                                ) else 1,
                                 dayOfWeek = if (needsDayOfWeekLocal) dayOfWeek else null,
                                 dayOfMonth = resolvedDayOfMonth
                             )
                             val resolvedAccountId = selectedAccountId.ifBlank {
                                 accounts.firstOrNull()?.id ?: ""
                             }
-                            val payment = (existing ?: viewModel.buildDefault(resolvedAccountId, profileId)).copy(
+                            val payment = (existing ?: viewModel.buildDefault(
+                                resolvedAccountId,
+                                profileId
+                            )).copy(
                                 title = title,
                                 amount = amount,
                                 currency = currency,
@@ -227,9 +307,16 @@ fun PlannedPaymentEntryScreen(
                             contentColor = Color.White
                         )
                     ) {
-                        Icon(Icons.Rounded.Done, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Rounded.Done,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            "Save",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -267,7 +354,9 @@ fun PlannedPaymentEntryScreen(
             TransactionCategorySelection(
                 categories = categories,
                 selectedCategoryId = selectedCategoryId,
-                onCategorySelected = { _, id -> selectedCategoryId = id; showCategorySheet = false },
+                onCategorySelected = { _, id ->
+                    selectedCategoryId = id; showCategorySheet = false
+                },
                 onDismiss = { showCategorySheet = false }
             )
         }
@@ -309,7 +398,10 @@ fun PlannedPaymentEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+                border = BorderStroke(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                ),
                 shadowElevation = 0.dp
             ) {
                 Column(
@@ -329,7 +421,9 @@ fun PlannedPaymentEntryScreen(
                     )
                     PaymentTypeSelector(
                         isIncome = transactionType == "income",
-                        onTypeSelected = { isIncome -> transactionType = if (isIncome) "income" else "expense" }
+                        onTypeSelected = { isIncome ->
+                            transactionType = if (isIncome) "income" else "expense"
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -373,7 +467,13 @@ fun PlannedPaymentEntryScreen(
             AeonEntryActionCard(
                 icon = Icons.Rounded.DateRange,
                 label = "SCHEDULE",
-                value = buildScheduleSummary(startDateMillis, recurrenceType, recurrenceInterval, dayOfWeek, dayOfMonth),
+                value = buildScheduleSummary(
+                    startDateMillis,
+                    recurrenceType,
+                    recurrenceInterval,
+                    dayOfWeek,
+                    dayOfMonth
+                ),
                 onClick = { showScheduleBuilder = true },
                 modifier = Modifier.fillMaxWidth(),
                 iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
@@ -409,7 +509,9 @@ fun PlannedPaymentEntryScreen(
                         accounts.forEach { account ->
                             DropdownMenuItem(
                                 text = { Text(account.name) },
-                                onClick = { selectedAccountId = account.id; accountExpanded = false }
+                                onClick = {
+                                    selectedAccountId = account.id; accountExpanded = false
+                                }
                             )
                         }
                     }
@@ -444,8 +546,8 @@ fun PlannedPaymentEntryScreen(
                     icon = Icons.Rounded.LocalOffer,
                     label = "TAGS",
                     value = if (selectedTagNames.isEmpty()) "None"
-                            else selectedTagNames.take(2).joinToString(", ") +
-                                 if (selectedTagNames.size > 2) " +${selectedTagNames.size - 2}" else "",
+                    else selectedTagNames.take(2).joinToString(", ") +
+                            if (selectedTagNames.size > 2) " +${selectedTagNames.size - 2}" else "",
                     onClick = { showTagSheet = true },
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
@@ -458,7 +560,10 @@ fun PlannedPaymentEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+                border = BorderStroke(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                ),
                 shadowElevation = 0.dp
             ) {
                 Column(
@@ -622,6 +727,7 @@ private fun ScheduleBuilderSheet(
 
     if (stage == 2) {
         data class Preset(val label: String, val type: RecurrenceType, val interval: Int)
+
         val presets = listOf(
             Preset("One Time", RecurrenceType.ONE_TIME, 1),
             Preset("Daily", RecurrenceType.DAILY, 1),
@@ -634,7 +740,8 @@ private fun ScheduleBuilderSheet(
         )
         var selectedTabIndex by remember { mutableIntStateOf(0) }
         var cronText by remember { mutableStateOf("") }
-        val parsedCronRule = remember(cronText) { if (cronText.isNotBlank()) parseCronToRule(cronText) else null }
+        val parsedCronRule =
+            remember(cronText) { if (cronText.isNotBlank()) parseCronToRule(cronText) else null }
 
         LaunchedEffect(parsedCronRule) {
             parsedCronRule?.let { rule ->
@@ -648,8 +755,10 @@ private fun ScheduleBuilderSheet(
         val needsIntervalLocal = localType in listOf(
             RecurrenceType.EVERY_N_DAYS, RecurrenceType.EVERY_N_WEEKS, RecurrenceType.EVERY_N_MONTHS
         )
-        val needsDayOfWeekLocal = localType in listOf(RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS)
-        val needsDayOfMonthLocal = localType in listOf(RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS)
+        val needsDayOfWeekLocal =
+            localType in listOf(RecurrenceType.WEEKLY, RecurrenceType.EVERY_N_WEEKS)
+        val needsDayOfMonthLocal =
+            localType in listOf(RecurrenceType.MONTHLY, RecurrenceType.EVERY_N_MONTHS)
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -698,7 +807,8 @@ private fun ScheduleBuilderSheet(
                         val primaryColor = MaterialTheme.colorScheme.primary
                         val errorColor = MaterialTheme.colorScheme.error
                         val outlineVariant = MaterialTheme.colorScheme.outlineVariant
-                        val surfaceContainerLowest = MaterialTheme.colorScheme.surfaceContainerLowest
+                        val surfaceContainerLowest =
+                            MaterialTheme.colorScheme.surfaceContainerLowest
 
                         Surface(
                             shape = RoundedCornerShape(12.dp),
@@ -745,7 +855,9 @@ private fun ScheduleBuilderSheet(
                             val previewText: String
                             val previewColor: Color
                             if (parsedCronRule != null) {
-                                previewText = "Interpreting as: ${PlannedPaymentService.formatRecurrenceHuman(parsedCronRule)}"
+                                previewText = "Interpreting as: ${
+                                    PlannedPaymentService.formatRecurrenceHuman(parsedCronRule)
+                                }"
                                 previewColor = primaryColor
                             } else {
                                 previewText = "Unrecognized pattern — using current settings"
@@ -770,7 +882,9 @@ private fun ScheduleBuilderSheet(
                                     modifier = Modifier.weight(1f)
                                 )
                                 FilledIconButton(
-                                    onClick = { localInterval = (localInterval - 1).coerceAtLeast(1) },
+                                    onClick = {
+                                        localInterval = (localInterval - 1).coerceAtLeast(1)
+                                    },
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                                     )
@@ -784,7 +898,9 @@ private fun ScheduleBuilderSheet(
                                     textAlign = TextAlign.Center
                                 )
                                 FilledIconButton(
-                                    onClick = { localInterval = (localInterval + 1).coerceAtLeast(1) },
+                                    onClick = {
+                                        localInterval = (localInterval + 1).coerceAtLeast(1)
+                                    },
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                                     )
@@ -806,12 +922,16 @@ private fun ScheduleBuilderSheet(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                                    val dayNames =
+                                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                                     dayNames.forEachIndexed { index, name ->
                                         val dayNum = index + 1
                                         FilterChip(
                                             selected = localDayOfWeek == dayNum,
-                                            onClick = { localDayOfWeek = if (localDayOfWeek == dayNum) null else dayNum },
+                                            onClick = {
+                                                localDayOfWeek =
+                                                    if (localDayOfWeek == dayNum) null else dayNum
+                                            },
                                             label = { Text(name) }
                                         )
                                     }
@@ -832,7 +952,9 @@ private fun ScheduleBuilderSheet(
                                     modifier = Modifier.weight(1f)
                                 )
                                 FilledIconButton(
-                                    onClick = { localDayOfMonth = (currentDay - 1).coerceIn(1, 31) },
+                                    onClick = {
+                                        localDayOfMonth = (currentDay - 1).coerceIn(1, 31)
+                                    },
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                                     )
@@ -846,7 +968,9 @@ private fun ScheduleBuilderSheet(
                                     textAlign = TextAlign.Center
                                 )
                                 FilledIconButton(
-                                    onClick = { localDayOfMonth = (currentDay + 1).coerceIn(1, 31) },
+                                    onClick = {
+                                        localDayOfMonth = (currentDay + 1).coerceIn(1, 31)
+                                    },
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                                     )
@@ -857,7 +981,8 @@ private fun ScheduleBuilderSheet(
                         }
                     }
 
-                    val previewRule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth)
+                    val previewRule =
+                        RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth)
                     Text(
                         text = PlannedPaymentService.formatRecurrenceHuman(previewRule),
                         style = MaterialTheme.typography.bodySmall,
@@ -875,7 +1000,8 @@ private fun ScheduleBuilderSheet(
     }
 
     if (stage == 3) {
-        val startFormatted = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(localStart))
+        val startFormatted =
+            SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(localStart))
         val rule = RecurrenceRule(localType, localInterval, localDayOfWeek, localDayOfMonth)
         val repeatsLabel = PlannedPaymentService.formatRecurrenceHuman(rule)
         val nextOccurrence = if (localType == RecurrenceType.ONE_TIME) {
@@ -891,6 +1017,7 @@ private fun ScheduleBuilderSheet(
                         candidate.withDayOfMonth(day.coerceAtMost(candidate.lengthOfMonth()))
                     } ?: candidate
                 }
+
                 RecurrenceType.YEARLY -> from.plusYears(rule.interval.toLong())
                 RecurrenceType.ONE_TIME -> from
             }
@@ -991,16 +1118,26 @@ private fun parseCronToRule(cron: String): RecurrenceRule? {
             val dow = weekday.toInt().let { if (it == 0 || it == 7) 7 else it }
             RecurrenceRule(RecurrenceType.WEEKLY, dayOfWeek = dow)
         }
+
         day.toIntOrNull() != null && month == "*" && weekday == "*" ->
             RecurrenceRule(RecurrenceType.MONTHLY, dayOfMonth = day.toInt())
+
         day.toIntOrNull() != null && month.toIntOrNull() != null && weekday == "*" ->
             RecurrenceRule(RecurrenceType.YEARLY)
+
         day.startsWith("*/") && month == "*" && weekday == "*" ->
-            day.removePrefix("*/").toIntOrNull()?.let { n -> RecurrenceRule(RecurrenceType.EVERY_N_DAYS, interval = n) }
+            day.removePrefix("*/").toIntOrNull()
+                ?.let { n -> RecurrenceRule(RecurrenceType.EVERY_N_DAYS, interval = n) }
+
         day.toIntOrNull() != null && month.startsWith("*/") && weekday == "*" ->
             month.removePrefix("*/").toIntOrNull()?.let { n ->
-                RecurrenceRule(RecurrenceType.EVERY_N_MONTHS, interval = n, dayOfMonth = day.toIntOrNull())
+                RecurrenceRule(
+                    RecurrenceType.EVERY_N_MONTHS,
+                    interval = n,
+                    dayOfMonth = day.toIntOrNull()
+                )
             }
+
         else -> null
     }
 }
@@ -1076,7 +1213,9 @@ private fun PaymentTypeSelector(
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.6f
+                        ),
                         modifier = Modifier
                             .size(20.dp)
                             .graphicsLayer(scaleX = scale, scaleY = scale)
@@ -1085,7 +1224,9 @@ private fun PaymentTypeSelector(
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = 0.6f
+                        ),
                         modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
                     )
                 }
@@ -1174,5 +1315,5 @@ private fun EntryDateCard(
 }
 
 private fun formatEntryDate(millis: Long): String {
-    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(java.util.Date(millis))
+    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))
 }

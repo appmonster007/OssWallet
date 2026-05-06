@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-import com.osscabinet.ossWallet.domain.service.LoanService
+import com.osscabinet.ossWallet.domain.service.lifecycle.LoanService
 
 class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans> {
     override val supportedType = CardType.LOANS

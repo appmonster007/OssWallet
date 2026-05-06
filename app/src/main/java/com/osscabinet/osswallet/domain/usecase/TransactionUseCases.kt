@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -19,7 +19,10 @@ class TransactionUseCases(
         return repository.getAllTransactions(profileId)
     }
 
-    fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> {
+    fun getFilteredTransactions(
+        profileId: Int,
+        filter: TransactionFilter
+    ): Flow<List<Transaction>> {
         return repository.getFilteredTransactions(profileId, filter)
     }
 
@@ -35,7 +38,11 @@ class TransactionUseCases(
         return repository.getTransactionById(id)
     }
 
-    suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int) {
+    suspend fun updateTransaction(
+        oldTransaction: Transaction,
+        newTransaction: Transaction,
+        profileId: Int
+    ) {
         repository.updateTransaction(oldTransaction, newTransaction, profileId)
     }
 
@@ -94,7 +101,8 @@ class TransactionUseCases(
 
         // Get transactions from last 7 days
         val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-        val transactionsFromLastDays = transactionsWithBalance.filter { it.transaction.timestamp >= cutoffTime }
+        val transactionsFromLastDays =
+            transactionsWithBalance.filter { it.transaction.timestamp >= cutoffTime }
 
         // Get last 20 transactions
         val lastLimitTransactions = transactionsWithBalance.take(limit)

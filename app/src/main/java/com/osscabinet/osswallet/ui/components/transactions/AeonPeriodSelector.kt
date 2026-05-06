@@ -7,16 +7,40 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,10 +54,12 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonDateRangePicker
-import com.osscabinet.ossWallet.domain.service.TimelineService
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AeonPeriodSelector(
@@ -53,8 +79,9 @@ fun AeonPeriodSelector(
     )
 
     // Mode handling
-    val initialTimelineRange = remember(filter.startDate, filter.endDate) { guessTimelineRange(filter) }
-    
+    val initialTimelineRange =
+        remember(filter.startDate, filter.endDate) { guessTimelineRange(filter) }
+
     val currentModePage = remember(initialTimelineRange) {
         when (initialTimelineRange) {
             is TimelineRange.AllTime -> 0
@@ -84,6 +111,7 @@ fun AeonPeriodSelector(
                         TimelineRange.CustomRange(now - 86400000 * 7, now)
                     }
                 }
+
                 else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
             }
             applyTimelineRange(newRange, onSetDateRange)
@@ -132,7 +160,7 @@ fun AeonPeriodSelector(
                         )
                     }
                 }
-                
+
                 // Indicators (Dots)
                 Row(
                     modifier = Modifier.padding(top = 8.dp),
@@ -145,7 +173,9 @@ fun AeonPeriodSelector(
                             modifier = Modifier
                                 .size(if (isSelected) 6.dp else 4.dp)
                                 .background(
-                                    if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                    if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface.copy(
+                                        alpha = 0.2f
+                                    ),
                                     CircleShape
                                 )
                         )
@@ -161,7 +191,7 @@ fun AeonPeriodSelector(
                     .align(Alignment.TopCenter)
                     .size(width = 90.dp, height = 24.dp)
                     .background(
-                        backgroundColor, 
+                        backgroundColor,
                         RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)
                     )
                     .clickable(
@@ -230,7 +260,7 @@ private fun PillNavigationRow(
                 .weight(0.64f)
                 .fillMaxHeight()
                 .background(accentColor)
-                .clickable { 
+                .clickable {
                     when (page) {
                         0 -> onToggleExpand()
                         3 -> showDatePicker = true
@@ -272,7 +302,10 @@ private fun PillNavigationRow(
                             DropdownMenuItem(
                                 text = { Text(type.label) },
                                 onClick = {
-                                    applyTimelineRange(TimelineRange.ThisPeriod(type), onSetDateRange)
+                                    applyTimelineRange(
+                                        TimelineRange.ThisPeriod(type),
+                                        onSetDateRange
+                                    )
                                     showDropdown = false
                                 }
                             )
@@ -282,7 +315,10 @@ private fun PillNavigationRow(
                             DropdownMenuItem(
                                 text = { Text(type.label) },
                                 onClick = {
-                                    applyTimelineRange(TimelineRange.LastPeriod(type), onSetDateRange)
+                                    applyTimelineRange(
+                                        TimelineRange.LastPeriod(type),
+                                        onSetDateRange
+                                    )
                                     showDropdown = false
                                 }
                             )
@@ -331,24 +367,28 @@ private fun applyTimelineRange(range: TimelineRange, onSetDateRange: (Long?, Lon
             val (start, end) = TimelineService.getRangeForThis(range.period)
             onSetDateRange(start, end)
         }
+
         is TimelineRange.LastPeriod -> {
             val (start, end) = TimelineService.getRangeForLast(range.period)
             onSetDateRange(start, end)
         }
+
         is TimelineRange.CustomRange -> onSetDateRange(range.start, range.end)
     }
 }
 
 private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
     if (filter.startDate == null && filter.endDate == null) return TimelineRange.AllTime
-    
+
     val start = filter.startDate!!
     val end = filter.endDate!!
 
     // Check ThisPeriod
     for (type in ThisPeriodType.entries) {
         val range = TimelineService.getRangeForThis(type)
-        if (Math.abs(range.first - start) < 2000 && Math.abs(range.second - end) < 2000) return TimelineRange.ThisPeriod(type)
+        if (Math.abs(range.first - start) < 2000 && Math.abs(range.second - end) < 2000) return TimelineRange.ThisPeriod(
+            type
+        )
     }
 
     // Check LastPeriod
@@ -356,19 +396,27 @@ private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
         val range = TimelineService.getRangeForLast(type)
         val expectedStart = range.first
         val expectedEnd = range.second
-        
+
         if (type == LastPeriodType.LAST_24H) {
             // For Last 24h, we check both start and end with a bit more tolerance
-            if (Math.abs(expectedStart - start) < 10000 && Math.abs(expectedEnd - end) < 10000) return TimelineRange.LastPeriod(type)
+            if (Math.abs(expectedStart - start) < 10000 && Math.abs(expectedEnd - end) < 10000) return TimelineRange.LastPeriod(
+                type
+            )
         } else {
-            if (Math.abs(expectedStart - start) < 5000 && Math.abs(expectedEnd - end) < 5000) return TimelineRange.LastPeriod(type)
+            if (Math.abs(expectedStart - start) < 5000 && Math.abs(expectedEnd - end) < 5000) return TimelineRange.LastPeriod(
+                type
+            )
         }
     }
 
     return TimelineRange.CustomRange(start, end)
 }
 
-private fun navigateMonth(filter: TransactionFilter, delta: Int, onSetDateRange: (Long?, Long?) -> Unit) {
+private fun navigateMonth(
+    filter: TransactionFilter,
+    delta: Int,
+    onSetDateRange: (Long?, Long?) -> Unit
+) {
     val calendar = Calendar.getInstance()
     filter.startDate?.let {
         calendar.timeInMillis = it
@@ -394,15 +442,17 @@ private fun getPeriodText(filter: TransactionFilter): String {
     return if (filter.startDate != null && filter.endDate != null) {
         val startCal = Calendar.getInstance().apply { timeInMillis = filter.startDate }
         val endCal = Calendar.getInstance().apply { timeInMillis = filter.endDate }
-        
-        if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) && 
+
+        if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
             startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
             startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
-            endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)) {
-            
+            endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        ) {
+
             val currentCal = Calendar.getInstance()
             if (startCal.get(Calendar.MONTH) == currentCal.get(Calendar.MONTH) &&
-                startCal.get(Calendar.YEAR) == currentCal.get(Calendar.YEAR)) {
+                startCal.get(Calendar.YEAR) == currentCal.get(Calendar.YEAR)
+            ) {
                 "This month"
             } else {
                 SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate))

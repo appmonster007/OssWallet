@@ -2,21 +2,27 @@ package com.osscabinet.ossWallet.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.usecase.*
-import com.osscabinet.ossWallet.domain.card.*
-import com.osscabinet.ossWallet.domain.model.settings.*
-import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -35,18 +41,31 @@ class AccountDetailViewModel(
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ACCOUNT_DETAIL
 
-    val cardsConfig: StateFlow<DashboardCardsConfig> = cardRepository.getCardsConfig(cardScreenContext)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+    val cardsConfig: StateFlow<DashboardCardsConfig> =
+        cardRepository.getCardsConfig(cardScreenContext)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     fun updateShowPlannedPayments(show: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(transactionsSection = it.transactionsSection.copy(showPlannedPayments = show)) }
+            settingsRepository.updateAccountDetailSettings {
+                it.copy(
+                    transactionsSection = it.transactionsSection.copy(
+                        showPlannedPayments = show
+                    )
+                )
+            }
         }
     }
 
     fun updateUseNoteAsHeader(use: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateAccountDetailSettings { it.copy(transactionsSection = it.transactionsSection.copy(useNoteAsHeader = use)) }
+            settingsRepository.updateAccountDetailSettings {
+                it.copy(
+                    transactionsSection = it.transactionsSection.copy(
+                        useNoteAsHeader = use
+                    )
+                )
+            }
         }
     }
 
@@ -67,10 +86,13 @@ class AccountDetailViewModel(
             ) { args: Array<*> ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
+
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
+
                 @Suppress("UNCHECKED_CAST")
                 val categories = args[2] as List<Category>
+
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
@@ -126,11 +148,23 @@ class AccountDetailViewModel(
     ): List<TransactionWithBalance> {
         val sorted = transactions.sortedByDescending { it.timestamp }
         val totalBalance = sorted.fold(BigDecimal.ZERO) { acc, tx ->
-            acc + CurrencyService.convertAmount(tx.amount, tx.currency, accountCurrency, exchangeRates, 10)
+            acc + CurrencyService.convertAmount(
+                tx.amount,
+                tx.currency,
+                accountCurrency,
+                exchangeRates,
+                10
+            )
         }
         var currentBalance = totalBalance
         return sorted.map { tx ->
-            val converted = CurrencyService.convertAmount(tx.amount, tx.currency, accountCurrency, exchangeRates, 10)
+            val converted = CurrencyService.convertAmount(
+                tx.amount,
+                tx.currency,
+                accountCurrency,
+                exchangeRates,
+                10
+            )
             val balanceAfter = currentBalance
             val balanceBefore = currentBalance - converted
             currentBalance = balanceBefore
@@ -153,5 +187,6 @@ sealed class AccountDetailUiState {
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false
     ) : AccountDetailUiState()
+
     data class Error(val message: String) : AccountDetailUiState()
 }

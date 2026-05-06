@@ -4,7 +4,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -13,8 +19,26 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -25,16 +49,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
-import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
-import com.osscabinet.ossWallet.domain.service.PlannedPaymentService
-import com.osscabinet.ossWallet.domain.service.TransactionManager
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.util.formatAmount
 import java.math.BigDecimal
@@ -237,19 +254,31 @@ private fun PlannedPaymentsSettingsSheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Look-ahead window", style = MaterialTheme.typography.bodyMedium)
-                            Text("${config.daysAhead} days", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "${config.daysAhead} days",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(7, 14, 30, 60).forEach { days ->
                                 FilterChip(
                                     selected = config.daysAhead == days,
                                     onClick = { onUpdate(config.copy(daysAhead = days)) },
-                                    label = { Text("${days}d", style = MaterialTheme.typography.labelSmall) }
+                                    label = {
+                                        Text(
+                                            "${days}d",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                 )
                             }
                         }
                     }
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -261,7 +290,12 @@ private fun PlannedPaymentsSettingsSheet(
                                 FilterChip(
                                     selected = config.maxItems == n,
                                     onClick = { onUpdate(config.copy(maxItems = n)) },
-                                    label = { Text("$n", style = MaterialTheme.typography.labelSmall) }
+                                    label = {
+                                        Text(
+                                            "$n",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                 )
                             }
                         }
@@ -318,7 +352,7 @@ private fun PlannedPaymentRow(
             },
         shape = RoundedCornerShape(20.dp),
         color = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
+        else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f),
         border = BorderStroke(
             0.5.dp,
             if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
@@ -345,7 +379,7 @@ private fun PlannedPaymentRow(
                         fontSize = 9.sp,
                         letterSpacing = 0.5.sp,
                         color = if (isOverdue) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 )
             }
@@ -355,7 +389,7 @@ private fun PlannedPaymentRow(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = if (isOverdue) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurface
                 )
             )
             if (onConfirm != null || onSkip != null) {

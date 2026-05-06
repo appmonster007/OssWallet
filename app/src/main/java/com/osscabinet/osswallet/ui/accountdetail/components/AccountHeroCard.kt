@@ -3,13 +3,30 @@ package com.osscabinet.ossWallet.ui.accountdetail.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.TrendingDown
+import androidx.compose.material.icons.rounded.TrendingUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,13 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.service.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AccountIconMap
-import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -66,7 +81,7 @@ fun AccountHeroCard(
     } catch (e: Exception) {
         MaterialTheme.colorScheme.primary
     }
-    
+
     val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     val balanceInBase = CurrencyService.convertAmount(
@@ -112,7 +127,10 @@ fun AccountHeroCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
 
-                val balanceParts = formatCurrencyRight(balance, account.currencyCode, precision = precision).split(" ")
+                val balanceParts =
+                    formatCurrencyRight(balance, account.currencyCode, precision = precision).split(
+                        " "
+                    )
                 val amountText = balanceParts.dropLast(1).joinToString(" ")
                 val symbolText = balanceParts.lastOrNull() ?: ""
 
@@ -120,11 +138,13 @@ fun AccountHeroCard(
                     text = buildAnnotatedString {
                         append(amountText)
                         append(" ")
-                        withStyle(SpanStyle(
-                            fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            fontSize = 24.sp
-                        )) {
+                        withStyle(
+                            SpanStyle(
+                                fontWeight = FontWeight.Light,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                fontSize = 24.sp
+                            )
+                        ) {
                             append(symbolText)
                         }
                     },
@@ -138,7 +158,13 @@ fun AccountHeroCard(
 
                 if (account.currencyCode != baseCurrency) {
                     Text(
-                        text = "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision = precision)}",
+                        text = "≈ ${
+                            formatCurrencyRight(
+                                balanceInBase,
+                                baseCurrency,
+                                precision = precision
+                            )
+                        }",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -181,7 +207,7 @@ fun AccountHeroCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
                     )
-                    
+
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -190,10 +216,16 @@ fun AccountHeroCard(
                             Surface(
                                 color = MaterialTheme.colorScheme.surfaceContainer,
                                 shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                                border = BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                )
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 10.dp
+                                    ),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -234,13 +266,22 @@ fun AccountHeroCard(
             baseFilter = baseFilter,
             settingsContent = {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Multi-Currency", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
-                        Text("Show breakdown of holdings", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                        Text(
+                            "Multi-Currency",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                        Text(
+                            "Show breakdown of holdings",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
                     }
                     Switch(
                         checked = showCurrencyBadges,
@@ -304,7 +345,8 @@ private fun FlowSummaryItem(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun AccountHeroCardPreview() {
-    val account = Account("1", "Wealth Fund", "USD", "Investment", "#004D40", "AccountBalance", emptyList())
+    val account =
+        Account("1", "Wealth Fund", "USD", "Investment", "#004D40", "AccountBalance", emptyList())
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         Box(modifier = Modifier.padding(24.dp)) {
             AccountHeroCard(
@@ -314,7 +356,11 @@ fun AccountHeroCardPreview() {
                 expense = BigDecimal("4200.00"),
                 baseCurrency = "USD",
                 exchangeRates = emptyMap(),
-                currencyBalances = mapOf("USD" to BigDecimal("180000.00"), "EUR" to BigDecimal("45000.00"), "GBP" to BigDecimal("12000.00"))
+                currencyBalances = mapOf(
+                    "USD" to BigDecimal("180000.00"),
+                    "EUR" to BigDecimal("45000.00"),
+                    "GBP" to BigDecimal("12000.00")
+                )
             )
         }
     }

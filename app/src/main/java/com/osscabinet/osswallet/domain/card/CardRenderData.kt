@@ -18,7 +18,14 @@ import java.math.BigDecimal
 data class NetWorthMetrics(
     val netWorth: BigDecimal,
     val cashFlow: CashFlowResult
-)
+) {
+    companion object {
+        fun empty() = NetWorthMetrics(
+            netWorth = BigDecimal.ZERO,
+            cashFlow = CashFlowResult.empty()
+        )
+    }
+}
 
 /**
  * Sealed class hierarchy for unified card rendering data.

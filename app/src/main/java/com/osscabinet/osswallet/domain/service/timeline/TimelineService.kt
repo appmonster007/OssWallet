@@ -79,17 +79,16 @@ object TimelineService {
      */
     fun getRangeForLast(period: LastPeriodType): Pair<Long, Long> {
         val now = ZonedDateTime.now(systemZoneId)
-        val end = now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
         val start: ZonedDateTime = when (period) {
             LastPeriodType.LAST_24H -> now.minusHours(24)
-            LastPeriodType.LAST_7_DAYS -> now.minusDays(7).toLocalDate().atStartOfDay(now.zone)
-            LastPeriodType.LAST_30_DAYS -> now.minusDays(30).toLocalDate().atStartOfDay(now.zone)
-            LastPeriodType.LAST_12_WEEKS -> now.minusWeeks(12).toLocalDate().atStartOfDay(now.zone)
-            LastPeriodType.LAST_6_MONTHS -> now.minusMonths(6).toLocalDate().atStartOfDay(now.zone)
-            LastPeriodType.LAST_1_YEAR -> now.minusYears(1).toLocalDate().atStartOfDay(now.zone)
-            LastPeriodType.LAST_5_YEARS -> now.minusYears(5).toLocalDate().atStartOfDay(now.zone)
+            LastPeriodType.LAST_7_DAYS -> now.minusDays(7)
+            LastPeriodType.LAST_30_DAYS -> now.minusDays(30)
+            LastPeriodType.LAST_12_WEEKS -> now.minusWeeks(12)
+            LastPeriodType.LAST_6_MONTHS -> now.minusMonths(6)
+            LastPeriodType.LAST_1_YEAR -> now.minusYears(1)
+            LastPeriodType.LAST_5_YEARS -> now.minusYears(5)
         }
-        return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
+        return Pair(start.toInstant().toEpochMilli(), now.toInstant().toEpochMilli())
     }
 
     /**
@@ -134,7 +133,7 @@ object TimelineService {
             }
             else -> {
                 val duration = currentEnd - currentStart
-                Pair(currentStart - duration - 1000, currentStart - 1000)
+                Pair(currentStart - duration, currentStart)
             }
         }
     }

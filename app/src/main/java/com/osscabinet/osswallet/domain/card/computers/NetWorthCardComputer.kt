@@ -17,25 +17,21 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
     override val supportedType = CardType.NET_WORTH
 
     override fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-        // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
-        val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
-
-        // Step 2: Compute current period values
-        val currentMetrics = computeMetrics(baseTx, config.filter, input)
+        // Step 1: Create a combined filter that merges the screen context and card-specific filters.
+        // This ensures that criteria like account selection are honored from both.
+        val currentFilter = combineFilters(input.filter, config.filter)
+        
+        // Step 2: Compute current period values using the combined filter on ALL transactions.
+        // We use input.transactions instead of pre-filtered baseTx to ensure we have enough
+        // data for the previous period comparison.
+        val currentMetrics = computeMetrics(input.transactions, currentFilter, input)
 
         // Step 3: Compute previous period values if timeline is not AllTime
         var previousMetrics: NetWorthMetrics? = null
 
-        if (config.filter.timelineRange != TimelineRange.AllTime) {
-            val (prevStart, prevEnd) = TimelineService.getPreviousRange(config.filter.timelineRange)
-            if (prevStart != null && prevEnd != null) {
-                val prevFilter = config.filter.copy(
-                    timelineRange = TimelineRange.CustomRange(prevStart, prevEnd),
-                    startDate = null, // Clear explicit dates to use range
-                    endDate = null
-                )
-                previousMetrics = computeMetrics(baseTx, prevFilter, input)
-            }
+        if (currentFilter.timelineRange != TimelineRange.AllTime) {
+            val previousFilter = TransactionFilterService.getPreviousPeriodFilter(currentFilter)
+            previousMetrics = computeMetrics(input.transactions, previousFilter, input)
         }
 
         return CardRenderData.NetWorth(
@@ -47,12 +43,48 @@ class NetWorthCardComputer : CardDataComputer<NetWorthCardConfig, CardRenderData
         )
     }
 
+    private fun combineFilters(
+        base: com.osscabinet.ossWallet.domain.model.TransactionFilter,
+        card: com.osscabinet.ossWallet.domain.model.TransactionFilter
+    ): com.osscabinet.ossWallet.domain.model.TransactionFilter {
+        // Timeline: Card overrides base if it's not AllTime, otherwise keep base
+        val effectiveTimeline = if (card.timelineRange != TimelineRange.AllTime) {
+            card.timelineRange
+        } else {
+            base.timelineRange
+        }
+
+        return base.copy(
+            timelineRange = effectiveTimeline,
+            startDate = card.startDate ?: base.startDate,
+            endDate = card.endDate ?: base.endDate,
+            // For lists, we intersect if both are present to honor the narrowest scope
+            accountIds = intersectLists(base.accountIds, card.accountIds),
+            categoryIds = intersectLists(base.categoryIds, card.categoryIds),
+            currencies = intersectLists(base.currencies, card.currencies),
+            tags = intersectLists(base.tags, card.tags),
+            // For single values, card overrides if specified
+            transactionType = card.transactionType ?: base.transactionType,
+            minAmount = card.minAmount ?: base.minAmount,
+            maxAmount = card.maxAmount ?: base.maxAmount,
+            excludeFuture = card.excludeFuture && base.excludeFuture
+        )
+    }
+
+    private fun <T> intersectLists(base: List<T>, card: List<T>): List<T> {
+        return when {
+            base.isEmpty() -> card
+            card.isEmpty() -> base
+            else -> base.intersect(card.toSet()).toList()
+        }
+    }
+
     private fun computeMetrics(
-        baseTransactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
+        transactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
         filter: com.osscabinet.ossWallet.domain.model.TransactionFilter,
         input: CardInput
     ): NetWorthMetrics {
-        val filteredTx = TransactionFilterService.filter(baseTransactions, filter)
+        val filteredTx = TransactionFilterService.filter(transactions, filter)
         val totalsByCurrency = AggregationService.calculateTotalByCurrency(filteredTx)
         val netWorth = CurrencyService.calculateTotalInCurrency(
             currencyTotals = totalsByCurrency,

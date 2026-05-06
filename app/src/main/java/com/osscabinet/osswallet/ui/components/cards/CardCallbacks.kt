@@ -78,7 +78,6 @@ sealed class CardCallbacks {
         val onFilterChange: (String, TransactionFilter) -> Unit,
         val onShowAddAccountCardChange: (String, Boolean) -> Unit,
         val onManageClick: () -> Unit = {},
-        val onHeaderClick: () -> Unit = {},
         val onAccountClick: (String) -> Unit = {},
         val onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit = {},
         val onDelete: () -> Unit = {}

@@ -6,11 +6,6 @@ sealed class Screen(val route: String) {
             return if (viewContext != null) "dashboard?viewContext=$viewContext" else "dashboard"
         }
     }
-    object AccountsView : Screen("accounts_view?filterContext={filterContext}") {
-        fun createRoute(filterContext: String? = null): String {
-            return if (filterContext != null) "accounts_view?filterContext=$filterContext" else "accounts_view"
-        }
-    }
     object Settings : Screen("settings")
     object TransactionList : Screen("list?filterContext={filterContext}") {
         fun createRoute(filterContext: String? = null): String {

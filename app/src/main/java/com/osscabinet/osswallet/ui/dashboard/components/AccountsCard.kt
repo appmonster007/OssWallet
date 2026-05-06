@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.dashboard.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,7 +82,6 @@ fun AccountsCard(
     filter: TransactionFilter = TransactionFilter(),
     onLayoutChange: (String, String) -> Unit = { _, _ -> },
     onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
-    onHeaderClick: (() -> Unit)? = null,
     settingsTitle: String = "Accounts View",
     showAddAccountCard: Boolean = true,
     onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> },
@@ -112,7 +110,7 @@ fun AccountsCard(
         title = "Accounts",
         subtitle = timelineLabel,
         icon = Icons.Rounded.AccountBalanceWallet,
-        modifier = if (onHeaderClick != null) modifier.clickable(onClick = onHeaderClick) else modifier,
+        modifier = modifier,
         headerModifier = headerModifier,
         filter = filter,
         baseFilter = baseFilter,

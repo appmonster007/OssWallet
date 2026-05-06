@@ -68,6 +68,8 @@ fun TransactionListContent(
     onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
+    onMenuClick: () -> Unit = {},
+    isTopLevel: Boolean = true,
     onAccountDetailClick: (String) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
     onSetDateRange: (Long?, Long?) -> Unit,
@@ -109,6 +111,8 @@ fun TransactionListContent(
                 filter = filter,
                 recordsSettings = recordsSettings,
                 onBackClick = onBackClick,
+                onMenuClick = onMenuClick,
+                isTopLevel = isTopLevel,
                 onUpdateRecordsSettings = onUpdateRecordsSettings
             )
         },

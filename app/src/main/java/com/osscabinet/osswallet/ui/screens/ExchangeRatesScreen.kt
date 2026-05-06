@@ -34,8 +34,8 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExchangeRatesScreen(
-    viewModel: CurrencyViewModel,
-    onBackClick: () -> Unit
+    onMenuClick: () -> Unit,
+    viewModel: CurrencyViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagerState = remember {
@@ -46,13 +46,7 @@ fun ExchangeRatesScreen(
     val scope = rememberCoroutineScope()
     val tabs = listOf("Rates", "Converter")
 
-    var navTriggered by remember { mutableStateOf(false) }
-    val navigateBack = {
-        if (!navTriggered) {
-            navTriggered = true
-            onBackClick()
-        }
-    }
+    // navigateBack removed
 
     if (uiState.pendingResponse != null) {
         AlertDialog(
@@ -129,8 +123,8 @@ fun ExchangeRatesScreen(
                 TopAppBar(
                     title = { Text("Exchange Rates") },
                     navigationIcon = {
-                        IconButton(onClick = navigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        IconButton(onClick = onMenuClick) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
                     },
                     actions = {

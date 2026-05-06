@@ -25,24 +25,16 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
+    onMenuClick: () -> Unit,
     viewModel: AnalyticsViewModel,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     templateViewModel: TemplateViewModel,
     settingsViewModel: SettingsViewModel,
-    onBackClick: () -> Unit,
-    onAccountsViewClick: () -> Unit,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
-    onExchangeRatesClick: () -> Unit,
-    onTemplatesClick: () -> Unit,
-    onManageAccountsClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onAddClick: (Int?, String?) -> Unit,
-    cardComputerRegistry: CardComputerRegistry,
-    onPlannedPaymentsClick: () -> Unit = {},
-    onBudgetsClick: () -> Unit = {},
-    onLoansClick: () -> Unit = {}
+    cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
@@ -56,57 +48,30 @@ fun AnalyticsScreen(
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val coroutineScope = rememberCoroutineScope()
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            AppDrawerContent(
-                currentProfile = currentProfile,
-                nonArchivedAccounts = nonArchivedAccounts,
-                starredTemplates = starredTemplates,
-                selectedDestination = "analytics",
-                onDashboardClick = { onBackClick() },
-                onAccountsViewClick = { onAccountsViewClick() },
-                onRecordsClick = { onRecordsClick(com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext.None) },
-                onAnalyticsClick = { coroutineScope.launch { drawerState.close() } },
-                onExchangeRatesClick = { onExchangeRatesClick() },
-                onTemplatesClick = { onTemplatesClick() },
-                onManageAccountsClick = { onManageAccountsClick() },
-                onSettingsClick = { onSettingsClick() },
-                onAccountClick = { id -> onAccountClick(id) },
-                onTemplateClick = { template -> onAddClick(template.transactionType, template.name) },
-                onCloseDrawer = { coroutineScope.launch { drawerState.close() } },
-                onPlannedPaymentsClick = onPlannedPaymentsClick,
-                onBudgetsClick = onBudgetsClick,
-                onLoansClick = onLoansClick
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
+                navigationIcon = {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showAddCardDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add card",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
         }
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
-                    navigationIcon = {
-                        IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { showAddCardDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add card",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                )
-            }
-        ) { innerPadding ->
+    ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 when (val state = uiState) {
                     is AnalyticsUiState.Loading -> {
@@ -136,7 +101,10 @@ fun AnalyticsScreen(
                                     categories = state.allCategories,
                                     exchangeRates = state.exchangeRates,
                                     baseCurrency = state.selectedCurrency,
-                                    precision = state.decimalPrecision
+                                    precision = state.decimalPrecision,
+                                    plannedPayments = state.plannedPayments,
+                                    budgets = state.budgets,
+                                    loans = state.loans
                                 ),
                                 cardComputerRegistry = cardComputerRegistry,
                                 cardUpdateHandler = viewModel,
@@ -182,7 +150,6 @@ fun AnalyticsScreen(
                 )
             }
         }
-    }
 
     if (showAddCardDialog) {
         val analyticsCardOptions = listOf(

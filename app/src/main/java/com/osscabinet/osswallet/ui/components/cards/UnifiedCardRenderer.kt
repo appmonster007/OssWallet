@@ -229,7 +229,6 @@ fun UnifiedCardRenderer(
 
             AccountsCard(
                 onManageClick = cb.onManageClick,
-                onHeaderClick = cb.onHeaderClick,
                 onAccountClick = cb.onAccountClick,
                 onRecordsClick = { cb.onRecordsClick(it) },
                 onGridColumnsChange = { id, cols -> cb.onGridColumnsChange(id, cols) },

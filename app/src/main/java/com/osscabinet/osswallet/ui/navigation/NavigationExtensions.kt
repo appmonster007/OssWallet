@@ -24,18 +24,6 @@ fun NavHostController.navigateToRecords(context: RecordsFilterContext) {
 }
 
 /**
- * Navigate to AccountsViewScreen with a filter context
- * @param context The filter context to apply (encoded as JSON)
- */
-fun NavHostController.navigateToAccountsView(context: AccountsFilterContext) {
-    val encodedContext = URLEncoder.encode(
-        Json.encodeToString(context),
-        StandardCharsets.UTF_8.toString()
-    )
-    navigate(Screen.AccountsView.createRoute(encodedContext))
-}
-
-/**
  * Navigate to DashboardScreen with a view context
  * @param context The view context to apply (encoded as JSON)
  */

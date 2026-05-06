@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
@@ -37,10 +37,10 @@ private val BorrowedColor = Color(0xFFE65100)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoansScreen(
+    onMenuClick: () -> Unit,
     viewModel: LoanViewModel,
     onAddClick: () -> Unit,
-    onLoanClick: (Long) -> Unit,
-    onBackClick: () -> Unit
+    onLoanClick: (Long) -> Unit
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val active = loans.filter { it.status == LoanStatus.ACTIVE }
@@ -57,8 +57,8 @@ fun LoansScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = onMenuClick) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

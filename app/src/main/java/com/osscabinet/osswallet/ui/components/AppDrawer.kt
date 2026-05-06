@@ -35,13 +35,10 @@ fun AppDrawerContent(
     starredTemplates: List<Template>,
     selectedDestination: String,
     onDashboardClick: () -> Unit,
-    onAccountsViewClick: () -> Unit,
     onRecordsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
-    onManageAccountsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onExchangeRatesClick: () -> Unit,
-    onTemplatesClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onTemplateClick: (Template) -> Unit,
     onCloseDrawer: () -> Unit,
@@ -107,11 +104,9 @@ fun AppDrawerContent(
                 // Navigation Items
                 val navItems = listOf(
                     Triple("DASHBOARD", "dashboard", Icons.Default.Dashboard),
-                    Triple("ACCOUNTS", "accounts_view", Icons.Default.Wallet),
                     Triple("RECORDS", "records", Icons.AutoMirrored.Filled.ListAlt),
                     Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
-                    Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange),
-                    Triple("TEMPLATES", "templates", Icons.Default.AutoAwesome)
+                    Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
                 )
 
                 navItems.forEach { (label, route, icon) ->
@@ -126,11 +121,9 @@ fun AppDrawerContent(
                         onClick = {
                             when (route) {
                                 "dashboard" -> onDashboardClick()
-                                "accounts_view" -> onAccountsViewClick()
                                 "records" -> onRecordsClick()
                                 "analytics" -> onAnalyticsClick()
                                 "exchange_rates" -> onExchangeRatesClick()
-                                "templates" -> onTemplatesClick()
                             }
                             onCloseDrawer()
                         },

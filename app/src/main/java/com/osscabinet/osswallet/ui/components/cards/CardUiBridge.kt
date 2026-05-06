@@ -135,6 +135,8 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
+                        onClickIncome = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
+                        onClickExpense = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -199,30 +201,8 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
-                        onClickIncome = { range ->
-                            val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(
-                                range
-                            )
-                            onRecordsClick(
-                                RecordsFilterContext.Custom(
-                                    transactionType = "income",
-                                    startDate = start,
-                                    endDate = end
-                                )
-                            )
-                        },
-                        onClickExpense = { range ->
-                            val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(
-                                range
-                            )
-                            onRecordsClick(
-                                RecordsFilterContext.Custom(
-                                    transactionType = "expense",
-                                    startDate = start,
-                                    endDate = end
-                                )
-                            )
-                        },
+                        onClickIncome = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
+                        onClickExpense = { filter -> onRecordsClick(filter.toRecordsFilterContext()) },
                         onDelete = { onDelete(config.cardId) }
                     ),
                     filterRules = config.filterRules,
@@ -416,4 +396,22 @@ fun rememberCardWithCallbacks(
             else -> null
         }
     }
+}
+
+private fun com.osscabinet.ossWallet.domain.model.TransactionFilter.toRecordsFilterContext(): RecordsFilterContext.Custom {
+    val (start, end) = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getDateRange(this.timelineRange)
+    return RecordsFilterContext.Custom(
+        accountIds = this.accountIds,
+        transactionType = this.transactionType,
+        startDate = this.startDate ?: start,
+        endDate = this.endDate ?: end,
+        categoryIds = this.categoryIds.map { it.toString() },
+        currencies = this.currencies,
+        paymentMethods = this.paymentMethods,
+        queryNote = this.queryNote,
+        minAmount = this.minAmount?.toDouble(),
+        maxAmount = this.maxAmount?.toDouble(),
+        queryPayee = this.queryPayee,
+        tags = this.tags
+    )
 }

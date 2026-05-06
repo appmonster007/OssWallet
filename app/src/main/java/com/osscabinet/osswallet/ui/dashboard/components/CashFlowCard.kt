@@ -56,8 +56,8 @@ fun CashFlowCard(
     onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
     onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
-    onClickIncome: (TimelineRange) -> Unit = {},
-    onClickExpense: (TimelineRange) -> Unit = {},
+    onClickIncome: (TransactionFilter) -> Unit = {},
+    onClickExpense: (TransactionFilter) -> Unit = {},
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
     baseFilter: TransactionFilter = TransactionFilter(),
     accounts: List<Account> = emptyList(),
@@ -122,7 +122,7 @@ fun CashFlowCard(
                 incomeColor = PositiveAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickIncome(filter.timelineRange) }
+                onClick = { onClickIncome(filter.copy(transactionType = "income")) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->
@@ -147,7 +147,7 @@ fun CashFlowCard(
                 expenseColor = NegativeAmountColor,
                 precision = precision,
                 modifier = Modifier.weight(1f),
-                onClick = { onClickExpense(filter.timelineRange) }
+                onClick = { onClickExpense(filter.copy(transactionType = "expense")) }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     cashFlowResult?.breakdown?.forEach { item ->

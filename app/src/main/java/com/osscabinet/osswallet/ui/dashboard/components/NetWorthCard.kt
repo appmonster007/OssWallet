@@ -76,8 +76,8 @@ fun NetWorthCard(
     onShowComparisonChange: (String, Boolean) -> Unit,
     onFilterChange: (String, TransactionFilter) -> Unit,
     onDelete: () -> Unit = {},
-    onClickIncome: (TimelineRange) -> Unit = {},
-    onClickExpense: (TimelineRange) -> Unit = {},
+    onClickIncome: (TransactionFilter) -> Unit = {},
+    onClickExpense: (TransactionFilter) -> Unit = {},
     modifier: Modifier = Modifier,
     @Suppress("UNUSED_PARAMETER") headerModifier: Modifier = Modifier,
     filterRules: CardFilterRules = CardFilterRules.DEFAULT,
@@ -194,7 +194,7 @@ fun NetWorthCard(
                     color = PositiveAmountColor,
                     isIncome = true,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickIncome(filter.timelineRange) },
+                    onClick = { onClickIncome(filter.copy(transactionType = "income")) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
                 FlowBadge(
@@ -205,7 +205,7 @@ fun NetWorthCard(
                     color = NegativeAmountColor,
                     isIncome = false,
                     modifier = Modifier.weight(1f),
-                    onClick = { onClickExpense(filter.timelineRange) },
+                    onClick = { onClickExpense(filter.copy(transactionType = "expense")) },
                     previousAmount = if (showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }

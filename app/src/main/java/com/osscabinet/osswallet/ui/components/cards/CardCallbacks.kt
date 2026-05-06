@@ -26,6 +26,8 @@ sealed class CardCallbacks {
         val onFontSizeChange: (String, String) -> Unit,
         val onShowComparisonChange: (String, Boolean) -> Unit,
         val onFilterChange: (String, TransactionFilter) -> Unit,
+        val onClickIncome: ((TransactionFilter) -> Unit)? = null,
+        val onClickExpense: ((TransactionFilter) -> Unit)? = null,
         val onDelete: () -> Unit
     ) : CardCallbacks()
     
@@ -46,8 +48,8 @@ sealed class CardCallbacks {
     data class CashFlow(
         val onShowBaseConversionChange: (String, Boolean) -> Unit,
         val onFilterChange: (String, TransactionFilter) -> Unit,
-        val onClickIncome: (TimelineRange) -> Unit = {},
-        val onClickExpense: (TimelineRange) -> Unit = {},
+        val onClickIncome: ((TransactionFilter) -> Unit)? = null,
+        val onClickExpense: ((TransactionFilter) -> Unit)? = null,
         val onDelete: () -> Unit
     ) : CardCallbacks()
     

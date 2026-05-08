@@ -6,7 +6,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.AggregationFunction
 import com.osscabinet.ossWallet.domain.model.query.MetricConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 
 /**
  * Generates type-safe, parameterized SQLite queries for complex aggregations.
@@ -18,76 +20,109 @@ class TransactionQueryBuilder {
         filter: TransactionFilter,
         plan: AggregationPlanner.AggregationPlan
     ): SupportSQLiteQuery {
+        return buildQuery(profileId, filter, plan = plan)
+    }
+
+    fun buildListQuery(
+        profileId: Int,
+        filter: TransactionFilter,
+        limit: Int? = null
+    ): SupportSQLiteQuery {
+        return buildQuery(profileId, filter, limit = limit)
+    }
+
+    private fun buildQuery(
+        profileId: Int,
+        filter: TransactionFilter,
+        plan: AggregationPlanner.AggregationPlan? = null,
+        limit: Int? = null
+    ): SupportSQLiteQuery {
         val select = StringBuilder("SELECT ")
         val group = StringBuilder("GROUP BY ")
         val args = mutableListOf<Any>()
 
-        // 1. Dimensions (d1 - d4)
-        plan.sqlDimensions.forEachIndexed { index, dim ->
-            val alias = "d${index + 1}"
-            val expression = if (dim == AggregationDimension.TIME && plan.timeGranularity != null) {
-                "strftime('${plan.timeGranularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
-            } else {
-                dim.column
+        if (plan != null) {
+            // 1. Dimensions (d1 - d4)
+            plan.sqlDimensions.forEachIndexed { index, dim ->
+                val alias = "d${index + 1}"
+                val expression = if (dim == AggregationDimension.TIME && plan.timeGranularity != null) {
+                    "strftime('${plan.timeGranularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
+                } else {
+                    dim.column
+                }
+                select.append("$expression AS $alias, ")
+                group.append("$alias, ")
             }
-            select.append("$expression AS $alias, ")
-            group.append("$alias, ")
-        }
-        
-        // Pad dimensions
-        for (i in (plan.sqlDimensions.size + 1)..4) {
-            select.append("NULL AS d$i, ")
-        }
-
-        // 2. Metrics (m1 - m4)
-        plan.metrics.take(4).forEachIndexed { index, metric ->
-            val alias = "m${index + 1}"
-            val func = when (metric.function) {
-                AggregationFunction.SUM -> "SUM"
-                AggregationFunction.AVG -> "AVG"
-                AggregationFunction.MIN -> "MIN"
-                AggregationFunction.MAX -> "MAX"
-                AggregationFunction.COUNT -> "COUNT"
+            
+            // Pad dimensions
+            for (i in (plan.sqlDimensions.size + 1)..4) {
+                select.append("NULL AS d$i, ")
             }
 
-            // Handle Metric Filters
-            val filterExpr = when (metric.filter) {
-                MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
-                MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
-                MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
-                MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
-                MetricConfig.MetricFilter.NONE -> metric.column
+            // 2. Metrics (m1 - m4)
+            plan.metrics.take(4).forEachIndexed { index, metric ->
+                val alias = "m${index + 1}"
+                val func = when (metric.function) {
+                    AggregationFunction.SUM -> "SUM"
+                    AggregationFunction.AVG -> "AVG"
+                    AggregationFunction.MIN -> "MIN"
+                    AggregationFunction.MAX -> "MAX"
+                    AggregationFunction.COUNT -> "COUNT"
+                }
+
+                // Handle Metric Filters
+                val filterExpr = when (metric.filter) {
+                    MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.NONE -> metric.column
+                }
+
+                // Handle Metric Transforms
+                val finalExpr = when (metric.transform) {
+                    MetricConfig.MetricTransform.ABS -> "ABS($filterExpr)"
+                    MetricConfig.MetricTransform.NEGATE -> "-($filterExpr)"
+                    MetricConfig.MetricTransform.NONE -> filterExpr
+                }
+
+                select.append("$func($finalExpr) AS $alias, ")
             }
 
-            // Handle Metric Transforms
-            val finalExpr = when (metric.transform) {
-                MetricConfig.MetricTransform.ABS -> "ABS($filterExpr)"
-                MetricConfig.MetricTransform.NEGATE -> "-($filterExpr)"
-                MetricConfig.MetricTransform.NONE -> filterExpr
+            // Pad metrics
+            for (i in (plan.metrics.size + 1)..4) {
+                select.append("0 AS m$i, ")
             }
 
-            select.append("$func($finalExpr) AS $alias, ")
+            select.append("COUNT(*) AS count")
+        } else {
+            select.append("*")
         }
-
-        // Pad metrics
-        for (i in (plan.metrics.size + 1)..4) {
-            select.append("0 AS m$i, ")
-        }
-
-        select.append("COUNT(*) AS count")
 
         // 3. FROM & WHERE
         val where = StringBuilder(" FROM transactions WHERE profileId = ? AND status != 'DELETED'")
         args.add(profileId)
 
-        // Apply filters
-        if (filter.startDate != null) {
-            where.append(" AND timestamp >= ?")
-            args.add(filter.startDate)
+        // Resolve timelineRange to timestamp bounds when not explicitly overridden by startDate/endDate
+        val (resolvedStart, resolvedEnd) = if (filter.timelineRange !is TimelineRange.AllTime) {
+            TimelineService.getDateRange(filter.timelineRange)
+        } else {
+            Pair(null, null)
         }
-        if (filter.endDate != null) {
+        val effectiveStartDate = filter.startDate ?: resolvedStart
+        val effectiveEndDate = filter.endDate ?: resolvedEnd
+
+        if (effectiveStartDate != null) {
+            where.append(" AND timestamp >= ?")
+            args.add(effectiveStartDate)
+        }
+        if (effectiveEndDate != null) {
             where.append(" AND timestamp <= ?")
-            args.add(filter.endDate)
+            args.add(effectiveEndDate)
+        }
+        if (filter.excludeFuture) {
+            where.append(" AND timestamp <= ?")
+            args.add(System.currentTimeMillis())
         }
         if (filter.accountIds.isNotEmpty()) {
             val placeholders = filter.accountIds.joinToString(",") { "?" }
@@ -166,8 +201,16 @@ class TransactionQueryBuilder {
         }
 
         // 4. Combine
-        val finalQuery = select.toString() + where.toString() + 
-            (if (plan.sqlDimensions.isNotEmpty()) " " + group.removeSuffix(", ") else "")
+        var finalQuery = select.toString() + where.toString()
+        
+        if (plan != null && plan.sqlDimensions.isNotEmpty()) {
+            finalQuery += " " + group.removeSuffix(", ")
+        } else if (plan == null) {
+            finalQuery += " ORDER BY timestamp DESC"
+            if (limit != null) {
+                finalQuery += " LIMIT $limit"
+            }
+        }
         
         return SimpleSQLiteQuery(finalQuery, args.toTypedArray())
     }

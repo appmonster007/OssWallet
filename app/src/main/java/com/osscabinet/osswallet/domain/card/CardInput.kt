@@ -18,7 +18,8 @@ import java.math.BigDecimal
  * This filter is applied BEFORE the card-specific user-adjustable filter.
  */
 data class CardInput(
-    val transactions: List<Transaction>,
+    val profileId: Int = 0,
+    val transactions: List<Transaction> = emptyList(),
     val accounts: List<Account>,
     val categories: List<Category>,
     val exchangeRates: Map<String, BigDecimal>,

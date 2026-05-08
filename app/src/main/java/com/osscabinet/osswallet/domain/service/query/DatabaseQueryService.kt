@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.query
 
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregatedData
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
@@ -36,4 +37,13 @@ interface DatabaseQueryService {
         timeGranularity: TimeGranularity? = null,
         useCase: AggregationPlanner.UseCase = AggregationPlanner.UseCase.STANDARD_REPORT
     ): Flow<Result<List<AggregatedData>>>
+
+    /**
+     * Fetches a list of filtered transactions with a limit.
+     */
+    fun observeFilteredTransactions(
+        profileId: Int,
+        filter: TransactionFilter,
+        limit: Int? = null
+    ): Flow<List<Transaction>>
 }

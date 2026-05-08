@@ -1,7 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -20,8 +24,6 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
-
-// PlannedPaymentsCardConfig is included via domain.model.settings.* wildcard import
 
 /**
  * Bridge that maps CardConfig to CardWithCallbacks.
@@ -47,8 +49,28 @@ fun rememberCardWithCallbacks(
     onDeleteTransaction: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
     onFullSwipeRight: (Long) -> Unit = {},
-    currentTheme: String = "light"
+    currentTheme: String = "light",
+    preComputedData: CardRenderData? = null
 ): CardWithCallbacks? {
+    // If preComputedData provided (dashboard path), use it immediately.
+    // Otherwise trigger async computation via LaunchedEffect using the registry
+    // (which has queryService injected in the computers).
+    var renderDataState by remember(config, input, preComputedData) {
+        mutableStateOf(preComputedData)
+    }
+
+    if (preComputedData == null) {
+        LaunchedEffect(config, input) {
+            try {
+                renderDataState = registry.compute(config.cardType, input, config)
+            } catch (e: Exception) {
+                android.util.Log.e("CardUiBridge", "Card compute failed [${config.cardId}]", e)
+            }
+        }
+    }
+
+    val renderData = renderDataState ?: return null
+
     return remember(
         config,
         input,
@@ -68,50 +90,9 @@ fun rememberCardWithCallbacks(
         onDeleteTransaction,
         onSplit,
         onFullSwipeRight,
-        currentTheme
+        currentTheme,
+        renderData
     ) {
-        val renderData = try {
-            when (config) {
-                is NetWorthCardConfig -> registry.compute(CardType.NET_WORTH, input, config)
-                is CurrencyBalancesCardConfig -> registry.compute(
-                    CardType.CURRENCY_BALANCES,
-                    input,
-                    config
-                )
-
-                is CashFlowCardConfig -> registry.compute(CardType.CASH_FLOW, input, config)
-                is AccountsCardConfig -> registry.compute(CardType.ACCOUNTS, input, config)
-                is CategoryPieChartCardConfig -> registry.compute(
-                    CardType.CATEGORY_PIE_CHART,
-                    input,
-                    config
-                )
-
-                is CategoryTreemapCardConfig -> registry.compute(
-                    CardType.CATEGORY_TREEMAP,
-                    input,
-                    config
-                )
-
-                is AccountHeroCardConfig -> registry.compute(CardType.ACCOUNT_HERO, input, config)
-                is PlannedPaymentsCardConfig -> registry.compute(
-                    CardType.PLANNED_PAYMENTS,
-                    input,
-                    config
-                )
-
-                is BudgetsCardConfig -> registry.compute(CardType.BUDGETS, input, config)
-                is LoansCardConfig -> registry.compute(CardType.LOANS, input, config)
-                is RecentActivitiesCardConfig -> registry.compute(CardType.RECENT_ACTIVITIES, input, config)
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("CardUiBridge", "Card compute failed [${config.cardId}]", e)
-            return@remember CardWithCallbacks.ComputeError(
-                cardId = config.cardId,
-                message = e.localizedMessage
-            )
-        }
-
         when {
             config is NetWorthCardConfig && renderData is CardRenderData.NetWorth -> {
                 CardWithCallbacks.NetWorth(

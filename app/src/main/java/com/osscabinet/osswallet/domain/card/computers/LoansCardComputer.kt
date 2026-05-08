@@ -11,7 +11,7 @@ import com.osscabinet.ossWallet.domain.service.management.LoanService
 class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans> {
     override val supportedType = CardType.LOANS
 
-    override fun compute(input: CardInput, config: LoansCardConfig): CardRenderData.Loans {
+    override suspend fun compute(input: CardInput, config: LoansCardConfig): CardRenderData.Loans {
         val now = System.currentTimeMillis()
         val filtered = when (config.showType) {
             "LENT" -> input.loans.filter { it.loanType == LoanType.LENT }

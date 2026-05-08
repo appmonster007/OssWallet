@@ -50,7 +50,8 @@ fun AeonCardList(
     onFullSwipeRight: (Long) -> Unit = {},
     baseFilter: TransactionFilter = TransactionFilter(),
     forceDisableAccountSelection: Boolean = false,
-    header: @Composable (LazyItemScope.() -> Unit)? = null
+    header: @Composable (LazyItemScope.() -> Unit)? = null,
+    cardDataMap: Map<String, CardRenderData> = emptyMap()
 ) {
     CardReorderableList(
         items = cards.sortedBy { it.order },
@@ -62,6 +63,8 @@ fun AeonCardList(
         animateCards = animateCards,
         header = header
     ) { cardConfig, isDragging, dragModifier ->
+
+        val preComputedData = cardDataMap[cardConfig.cardId]
 
         // cardInput.filter is the screen's base scope. Card computers apply config.filter on top
         // of that in their own two-step logic — do NOT overwrite input.filter here.
@@ -84,7 +87,8 @@ fun AeonCardList(
             onDeleteTransaction = onDeleteTransaction,
             onSplit = onSplit,
             onFullSwipeRight = onFullSwipeRight,
-            currentTheme = currentTheme
+            currentTheme = currentTheme,
+            preComputedData = preComputedData
         )
 
         when (val card = cardWithCallbacks) {

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 
 data class WidgetData(
+    val profileId: Int = 0,
     val accounts: List<Account>,
     val transactions: List<Transaction>,
     val categories: List<Category>,
@@ -58,6 +59,7 @@ object WidgetDataLoader {
         }
 
         return WidgetData(
+            profileId = profileId,
             accounts = accounts,
             transactions = transactions,
             categories = categories,

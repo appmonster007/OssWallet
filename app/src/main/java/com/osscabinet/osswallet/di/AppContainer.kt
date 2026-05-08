@@ -25,6 +25,17 @@ import com.osscabinet.ossWallet.data.repository.TagRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.TemplateRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.TransactionRepositoryImpl
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.computers.AccountHeroCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.AccountsCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.BudgetsCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.CashFlowCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.CategoryPieChartCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.CategoryTreemapCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.CurrencyBalancesCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.LoansCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
+import com.osscabinet.ossWallet.domain.card.computers.RecentActivitiesCardComputer
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
@@ -41,11 +52,14 @@ import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
+import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.widget.WorkManagerWidgetRefreshTrigger
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +117,27 @@ class AppContainer(private val context: Context) {
     }
 
     val cardComputerRegistry: CardComputerRegistry by lazy {
-        CardComputerRegistry.DEFAULT
+        CardComputerRegistry(listOf(
+            NetWorthCardComputer(databaseQueryService),
+            CashFlowCardComputer(databaseQueryService),
+            CurrencyBalancesCardComputer(databaseQueryService),
+            AccountsCardComputer(databaseQueryService),
+            AccountHeroCardComputer(databaseQueryService),
+            RecentActivitiesCardComputer(databaseQueryService),
+            BudgetsCardComputer(),
+            LoansCardComputer(),
+            PlannedPaymentsCardComputer(),
+            CategoryPieChartCardComputer(),
+            CategoryTreemapCardComputer()
+        ))
+    }
+
+    val computeCardUseCase: ComputeCardUseCase by lazy {
+        ComputeCardUseCase(cardComputerRegistry)
+    }
+
+    val widgetRefreshTrigger: WidgetRefreshTrigger by lazy {
+        WorkManagerWidgetRefreshTrigger(context)
     }
 
     // Repositories
@@ -178,6 +212,6 @@ class AppContainer(private val context: Context) {
 
     // Services
     val transactionManager: TransactionManager by lazy {
-        TransactionManager(transactionUseCases)
+        TransactionManager(transactionUseCases, widgetRefreshTrigger)
     }
 }

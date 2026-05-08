@@ -11,7 +11,7 @@ import com.osscabinet.ossWallet.domain.service.management.BudgetService
 class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
     override val supportedType = CardType.BUDGETS
 
-    override fun compute(input: CardInput, config: BudgetsCardConfig): CardRenderData.Budgets {
+    override suspend fun compute(input: CardInput, config: BudgetsCardConfig): CardRenderData.Budgets {
         val now = System.currentTimeMillis()
 
         // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)

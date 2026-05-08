@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.service.management
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import java.math.BigDecimal
 
@@ -11,7 +12,8 @@ import java.math.BigDecimal
  * Reduces logic duplication across ViewModels.
  */
 class TransactionManager(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val widgetRefreshTrigger: WidgetRefreshTrigger? = null
 ) {
 
     /**
@@ -23,11 +25,13 @@ class TransactionManager(
         request: TransactionRequest,
         profileId: Int
     ): Long {
-        if (request.isTransfer) {
-            return handleTransferSave(existingTransaction, request, profileId)
+        val result = if (request.isTransfer) {
+            handleTransferSave(existingTransaction, request, profileId)
         } else {
-            return handleNormalSave(existingTransaction, request, profileId)
+            handleNormalSave(existingTransaction, request, profileId)
         }
+        widgetRefreshTrigger?.trigger()
+        return result
     }
 
     private suspend fun handleNormalSave(
@@ -183,6 +187,7 @@ class TransactionManager(
         // Optionally link cloned transactions in the future
         // transactionUseCases.addTransactionLink(newId, transactionId)
 
+        widgetRefreshTrigger?.trigger()
         return newId
     }
 
@@ -200,7 +205,7 @@ class TransactionManager(
 
         val updatedTransaction = transaction.copy(status = newStatus)
         transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)
-
+        widgetRefreshTrigger?.trigger()
         return newStatus
     }
 
@@ -215,6 +220,7 @@ class TransactionManager(
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
         val updatedTransaction = transaction.copy(status = newStatus)
         transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)
+        widgetRefreshTrigger?.trigger()
         return true
     }
 }

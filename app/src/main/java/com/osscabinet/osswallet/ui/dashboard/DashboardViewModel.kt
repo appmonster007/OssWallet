@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.DashboardSettings
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -41,7 +40,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flattenConcat
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -61,7 +65,7 @@ class DashboardViewModel(
     private val computationRepository: ComputationRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
-    @Suppress("UNUSED_PARAMETER") private val registry: CardComputerRegistry,
+    private val computeCardUseCase: ComputeCardUseCase,
     private val plannedPaymentRepository: PlannedPaymentRepository? = null,
     private val budgetRepository: BudgetRepository? = null,
     private val loanRepository: LoanRepository? = null,
@@ -172,97 +176,112 @@ class DashboardViewModel(
                 computationRepository.hasLoadedExchangeRates,
                 settingsRepository.decimalPrecision,
                 settingsRepository.use24HourFormat,
-                settingsRepository.dashboardSettings,
+                cardsConfig,
                 plannedPaymentsFlow,
                 budgetsFlow,
                 loansFlow
-            ) { args: Array<Any> ->
+            ) { args: Array<Any> -> args }
+            .flatMapLatest { args ->
                 @Suppress("UNCHECKED_CAST")
                 val accounts = args[0] as List<Account>
-
                 @Suppress("UNCHECKED_CAST")
                 val allTransactions = args[1] as List<Transaction>
-
                 @Suppress("UNCHECKED_CAST")
                 val categories = args[2] as List<Category>
-
                 @Suppress("UNCHECKED_CAST")
                 val rates = args[3] as Map<String, BigDecimal>
                 val baseCurrency = args[4] as String
                 val hasLoadedExchangeRates = args[5] as Boolean
                 val precision = args[6] as Int
                 val use24Hour = args[7] as Boolean
-
-                @Suppress("UNUSED_VARIABLE")
-                val dashboardSettings = args[8] as DashboardSettings
-
+                val cardsCfg = args[8] as DashboardCardsConfig
                 @Suppress("UNCHECKED_CAST")
                 val plannedPayments = args[9] as List<PlannedPayment>
-
                 @Suppress("UNCHECKED_CAST")
                 val budgets = args[10] as List<Budget>
-
                 @Suppress("UNCHECKED_CAST")
                 val loans = args[11] as List<Loan>
 
                 if (!hasLoadedExchangeRates) {
-                    return@combine DashboardUiState.Loading
+                    return@flatMapLatest flowOf(DashboardUiState.Loading)
                 }
 
-                val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                val now = System.currentTimeMillis()
-                val transactionsWithBalance = allTransactions
-                    .asSequence()
-                    .filter { it.timestamp <= now }
-                    .sortedBy { it.timestamp }
-                    .groupBy { it.accountId }
-                    .flatMap { (accId, accountTransactions) ->
-                        val account = accounts.find { it.id == accId }
-                        val accountCurrency = account?.currencyCode ?: "USD"
-
-                        var runningBalance = BigDecimal.ZERO
-                        accountTransactions.map { transaction ->
-                            val txAmountInAccountCurrency = CurrencyService.convertAmount(
-                                amount = transaction.amount,
-                                fromCurrency = transaction.currency,
-                                toCurrency = accountCurrency,
-                                exchangeRates = rates,
-                                precision = precision + 4
-                            )
-
-                            val balanceBefore = runningBalance
-                            runningBalance = runningBalance.add(txAmountInAccountCurrency)
-                            TransactionWithBalance(
-                                transaction = transaction,
-                                balanceBefore = balanceBefore.setScale(
-                                    precision,
-                                    RoundingMode.HALF_UP
-                                ),
-                                balanceAfter = runningBalance.setScale(
-                                    precision,
-                                    RoundingMode.HALF_UP
-                                )
-                            )
-                        }
-                    }
-                    .filter { it.transaction.accountId in activeAccountIds }
-                    .sortedByDescending { it.transaction.timestamp }
-                    .toList()
-
-                DashboardUiState.Success(
-                    accounts = accounts.filter { !it.isArchived },
-                    allTransactions = allTransactions,
-                    allTransactionsWithBalance = transactionsWithBalance,
-                    allCategories = categories,
-                    baseCurrency = baseCurrency,
+                val baseInput = CardInput(
+                    profileId = profileId,
+                    transactions = allTransactions,
+                    accounts = accounts,
+                    categories = categories,
                     exchangeRates = rates,
-                    decimalPrecision = precision,
-                    use24HourFormat = use24Hour,
+                    baseCurrency = baseCurrency,
+                    precision = precision,
                     plannedPayments = plannedPayments,
                     budgets = budgets,
                     loans = loans
                 )
-            }.flowOn(Dispatchers.Default)
+
+                flow<DashboardUiState> {
+                    val cardDataMap = computeCardUseCase.computeAll(
+                        configs = cardsCfg.cards,
+                        input = baseInput
+                    )
+
+                    // Compute transactionsWithBalance
+                    val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                    val now = System.currentTimeMillis()
+                    val transactionsWithBalance = allTransactions
+                        .asSequence()
+                        .filter { it.timestamp <= now }
+                        .sortedBy { it.timestamp }
+                        .groupBy { it.accountId }
+                        .flatMap { (accId, accountTransactions) ->
+                            val account = accounts.find { it.id == accId }
+                            val accountCurrency = account?.currencyCode ?: "USD"
+
+                            var runningBalance = BigDecimal.ZERO
+                            accountTransactions.map { transaction ->
+                                val txAmountInAccountCurrency = CurrencyService.convertAmount(
+                                    amount = transaction.amount,
+                                    fromCurrency = transaction.currency,
+                                    toCurrency = accountCurrency,
+                                    exchangeRates = rates,
+                                    precision = precision + 4
+                                )
+
+                                val balanceBefore = runningBalance
+                                runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                                TransactionWithBalance(
+                                    transaction = transaction,
+                                    balanceBefore = balanceBefore.setScale(
+                                        precision,
+                                        RoundingMode.HALF_UP
+                                    ),
+                                    balanceAfter = runningBalance.setScale(
+                                        precision,
+                                        RoundingMode.HALF_UP
+                                    )
+                                )
+                            }
+                        }
+                        .filter { it.transaction.accountId in activeAccountIds }
+                        .sortedByDescending { it.transaction.timestamp }
+                        .toList()
+
+                    emit(DashboardUiState.Success(
+                        accounts = accounts.filter { !it.isArchived },
+                        cardDataMap = cardDataMap,
+                        allTransactions = allTransactions,
+                        allTransactionsWithBalance = transactionsWithBalance,
+                        allCategories = categories,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = rates,
+                        decimalPrecision = precision,
+                        use24HourFormat = use24Hour,
+                        plannedPayments = plannedPayments,
+                        budgets = budgets,
+                        loans = loans
+                    ))
+                }
+            }
         }
         .stateIn(
             scope = viewModelScope,
@@ -358,6 +377,7 @@ sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
         val accounts: List<Account>,
+        val cardDataMap: Map<String, CardRenderData>,
         val allTransactions: List<Transaction>,
         val allTransactionsWithBalance: List<TransactionWithBalance>,
         val allCategories: List<Category>,

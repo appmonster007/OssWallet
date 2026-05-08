@@ -374,6 +374,7 @@ fun DashboardContent(
 
                     AeonCardList(
                         cards = cardsConfig.cards,
+                        cardDataMap = state.cardDataMap,
                         cardInput = CardInput(
                             transactions = state.allTransactions,
                             accounts = state.accounts,

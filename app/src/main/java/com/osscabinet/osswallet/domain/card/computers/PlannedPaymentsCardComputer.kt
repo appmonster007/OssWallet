@@ -13,10 +13,7 @@ class PlannedPaymentsCardComputer :
     CardDataComputer<PlannedPaymentsCardConfig, CardRenderData.PlannedPayments> {
     override val supportedType = CardType.PLANNED_PAYMENTS
 
-    override fun compute(
-        input: CardInput,
-        config: PlannedPaymentsCardConfig
-    ): CardRenderData.PlannedPayments {
+    override suspend fun compute(input: CardInput, config: PlannedPaymentsCardConfig): CardRenderData.PlannedPayments {
         val now = System.currentTimeMillis()
 
         val overdue = PlannedPaymentService.getOverdue(input.plannedPayments, now)

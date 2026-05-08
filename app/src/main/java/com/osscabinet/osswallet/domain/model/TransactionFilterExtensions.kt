@@ -10,6 +10,34 @@ import java.math.BigDecimal
  * These functions make it easier to create filters for common use cases.
  */
 
+/**
+ * Merges two TransactionFilters. The `other` filter's values take precedence where non-default.
+ * For list fields, intersects both lists to honor the narrowest scope.
+ */
+fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
+    return this.copy(
+        timelineRange = if (other.timelineRange != TimelineRange.AllTime) other.timelineRange else this.timelineRange,
+        startDate = other.startDate ?: this.startDate,
+        endDate = other.endDate ?: this.endDate,
+        accountIds = if (other.accountIds.isNotEmpty()) {
+            if (this.accountIds.isEmpty()) other.accountIds else this.accountIds.intersect(other.accountIds.toSet()).toList()
+        } else this.accountIds,
+        categoryIds = if (other.categoryIds.isNotEmpty()) {
+            if (this.categoryIds.isEmpty()) other.categoryIds else this.categoryIds.intersect(other.categoryIds.toSet()).toList()
+        } else this.categoryIds,
+        currencies = if (other.currencies.isNotEmpty()) {
+            if (this.currencies.isEmpty()) other.currencies else this.currencies.intersect(other.currencies.toSet()).toList()
+        } else this.currencies,
+        tags = if (other.tags.isNotEmpty()) {
+            if (this.tags.isEmpty()) other.tags else this.tags.intersect(other.tags.toSet()).toList()
+        } else this.tags,
+        transactionType = other.transactionType ?: this.transactionType,
+        minAmount = other.minAmount ?: this.minAmount,
+        maxAmount = other.maxAmount ?: this.maxAmount,
+        excludeFuture = other.excludeFuture && this.excludeFuture
+    )
+}
+
 fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
     return when (this) {
         is RecordsFilterContext.None -> TransactionFilter()

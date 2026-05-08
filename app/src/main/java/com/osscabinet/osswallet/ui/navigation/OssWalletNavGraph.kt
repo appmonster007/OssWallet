@@ -97,7 +97,7 @@ fun OssWalletNavGraph(
                 appContainer.computationRepository,
                 appContainer.cardRepository,
                 appContainer.categoryRepository,
-                appContainer.cardComputerRegistry,
+                appContainer.computeCardUseCase,
                 appContainer.plannedPaymentRepository,
                 appContainer.budgetRepository,
                 appContainer.loanRepository,

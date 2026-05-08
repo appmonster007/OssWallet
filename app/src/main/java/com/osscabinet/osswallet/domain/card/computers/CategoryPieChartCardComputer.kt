@@ -12,10 +12,7 @@ class CategoryPieChartCardComputer :
     CardDataComputer<CategoryPieChartCardConfig, CardRenderData.CategoryPieChart> {
     override val supportedType = CardType.CATEGORY_PIE_CHART
 
-    override fun compute(
-        input: CardInput,
-        config: CategoryPieChartCardConfig
-    ): CardRenderData.CategoryPieChart {
+    override suspend fun compute(input: CardInput, config: CategoryPieChartCardConfig): CardRenderData.CategoryPieChart {
         // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
 

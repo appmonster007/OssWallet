@@ -59,6 +59,8 @@ sealed class CardConfig : BaseCardConfig {
     abstract override val isEnabled: Boolean
     abstract override val order: Int
     abstract override val screenContext: ScreenContext
+    
+    abstract val cardType: CardType
 
     /**
      * Transaction filter for this card instance.
@@ -109,6 +111,7 @@ data class NetWorthCardConfig(
     override val filter: TransactionFilter = TransactionFilter(),
     val profileId: Int? = null
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.NET_WORTH
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -127,6 +130,7 @@ data class CurrencyBalancesCardConfig(
     val showBaseConversion: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.CURRENCY_BALANCES
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -144,6 +148,7 @@ data class CashFlowCardConfig(
     val showBaseConversion: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.CASH_FLOW
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -163,6 +168,7 @@ data class AccountsCardConfig(
     val showAddAccountCard: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.ACCOUNTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -182,6 +188,7 @@ data class CategoryPieChartCardConfig(
     val rounded: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
@@ -201,6 +208,7 @@ data class CategoryTreemapCardConfig(
     val rounded: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
     override val filterRules: CardFilterRules get() = CardFilterRules.INCOME_OR_EXPENSE_ONLY
 }
 
@@ -218,6 +226,7 @@ data class AccountHeroCardConfig(
     val showCurrencyBadges: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.ACCOUNT_HERO
     override val filterRules: CardFilterRules get() = CardFilterRules(allowFutureTransactionsToggle = false)
 }
 
@@ -243,6 +252,7 @@ data class PlannedPaymentsCardConfig(
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -261,6 +271,7 @@ data class BudgetsCardConfig(
     val maxItems: Int = 5,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.BUDGETS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -279,6 +290,7 @@ data class LoansCardConfig(
     val maxItems: Int = 5,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.LOANS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 
@@ -296,6 +308,7 @@ data class RecentActivitiesCardConfig(
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY,
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
+    override val cardType: CardType get() = CardType.RECENT_ACTIVITIES
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT
 }
 

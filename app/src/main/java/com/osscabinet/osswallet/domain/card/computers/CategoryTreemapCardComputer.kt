@@ -12,10 +12,7 @@ class CategoryTreemapCardComputer :
     CardDataComputer<CategoryTreemapCardConfig, CardRenderData.CategoryTreemap> {
     override val supportedType = CardType.CATEGORY_TREEMAP
 
-    override fun compute(
-        input: CardInput,
-        config: CategoryTreemapCardConfig
-    ): CardRenderData.CategoryTreemap {
+    override suspend fun compute(input: CardInput, config: CategoryTreemapCardConfig): CardRenderData.CategoryTreemap {
         // Step 1: Apply base scope filter (screen-level: profile, account group, etc.)
         val baseTx = TransactionFilterService.filter(input.transactions, input.filter)
 

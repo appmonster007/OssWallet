@@ -15,31 +15,25 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.osscabinet.ossWallet.data.local.AppDatabase
-import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
-import com.osscabinet.ossWallet.data.mapper.toDomain
-import com.osscabinet.ossWallet.domain.card.*
+import com.osscabinet.ossWallet.OssWalletApp
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import kotlinx.coroutines.flow.first
-import java.math.BigDecimal
 
 class OssWalletWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val settingsDataStore = SettingsDataStore(context)
+        val container = (context.applicationContext as OssWalletApp).container
+        val settingsDataStore = container.settingsDataStore
         val profileId = settingsDataStore.currentProfileId.first()
         val baseCurrency = settingsDataStore.currency.first()
         val precision = settingsDataStore.decimalPrecision.first()
 
-        val db = AppDatabase.getDatabase(context, SecurePassphraseManager(context).getOrGeneratePassphrase())
-        val accounts = db.accountDao().getAllAccountsSync(profileId).map { it.toDomain() }
-        val transactions = db.transactionDao().getAllTransactionsSync(profileId).map { it.toDomain() }
-        val categories = db.categoryDao().getAllCategoriesSync().map { it.toDomain() }
-        val rates = db.currencyDao().getAllRates()
-        
-        val exchangeRates = rates.associate { it.currencyCode to BigDecimal.valueOf(it.rate) }
+        val accounts = container.accountRepository.getAllAccounts(profileId).first()
+        val categories = container.categoryRepository.categories.first()
+        val rates = container.computationRepository.exchangeRates.first()
 
         val netWorthConfig = NetWorthCardConfig(
             cardId = "widget_net_worth",
@@ -48,22 +42,20 @@ class OssWalletWidget : GlanceAppWidget() {
         )
 
         val input = CardInput(
-            transactions = transactions,
-            accounts = accounts,
+            profileId = profileId,
+            accounts = accounts.filter { !it.isArchived },
             categories = categories,
-            exchangeRates = exchangeRates,
+            exchangeRates = rates,
             baseCurrency = baseCurrency,
             precision = precision
         )
 
-        val renderData = CardComputerRegistry.DEFAULT.compute(
-            type = CardType.NET_WORTH,
-            input = input,
-            config = netWorthConfig
-        ) as CardRenderData.NetWorth
+        val renderData = container.computeCardUseCase.computeAll(
+            listOf(netWorthConfig), input
+        )["widget_net_worth"] as? CardRenderData.NetWorth
 
         provideContent {
-            WidgetContent(renderData.currentMetrics.netWorth.toString(), baseCurrency)
+            WidgetContent(renderData?.currentMetrics?.netWorth?.toString() ?: "—", baseCurrency)
         }
     }
 
@@ -86,7 +78,7 @@ class OssWalletWidget : GlanceAppWidget() {
             )
             Spacer(modifier = GlanceModifier.height(8.dp))
             Text(
-                text = " ",
+                text = "$amount $currency",
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,

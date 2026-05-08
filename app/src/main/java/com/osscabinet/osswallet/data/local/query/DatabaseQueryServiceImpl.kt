@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.data.local.query
 
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.mapper.toDomain
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.*
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
@@ -60,6 +62,17 @@ class DatabaseQueryServiceImpl(
         return transactionDao.aggregateTransactions(query)
             .map { raw -> Result.success(processResults(raw, plan)) }
             .catch { e -> emit(Result.failure(e)) }
+    }
+
+    override fun observeFilteredTransactions(
+        profileId: Int,
+        filter: TransactionFilter,
+        limit: Int?
+    ): Flow<List<Transaction>> {
+        val query = queryBuilder.buildListQuery(profileId, filter, limit)
+        return transactionDao.getFilteredTransactions(query).map { entities ->
+            entities.map { it.toDomain() }
+        }
     }
 
     private fun processResults(

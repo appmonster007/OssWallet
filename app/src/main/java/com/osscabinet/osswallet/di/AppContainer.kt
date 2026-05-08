@@ -5,6 +5,9 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.remote.RetrofitClient
+import com.osscabinet.ossWallet.data.local.query.DatabaseQueryServiceImpl
+import com.osscabinet.ossWallet.data.local.query.QueryCache
+import com.osscabinet.ossWallet.data.local.query.TransactionQueryBuilder
 import com.osscabinet.ossWallet.data.repository.AccountRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BackupRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
@@ -39,9 +42,14 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-
+import com.osscabinet.ossWallet.data.seed.SeedingConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 /**
  * Dependency container for the application.
  * Follows the Dependency Injection pattern manually to keep the app lightweight
@@ -55,6 +63,15 @@ class AppContainer(private val context: Context) {
 
     val db: AppDatabase by lazy {
         AppDatabase.getDatabase(context, securePassphraseManager.getOrGeneratePassphrase())
+    }
+
+    init {
+        // Run database seeding if enabled (debug builds only)
+        if (SeedingConfig.shouldSeed()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                SeedingConfig.createSeeder(db, settingsDataStore, context)?.seed()
+            }
+        }
     }
 
     val settingsDataStore: SettingsDataStore by lazy {
@@ -139,6 +156,15 @@ class AppContainer(private val context: Context) {
 
     val loanRepository: LoanRepository by lazy {
         LoanRepositoryImpl(db.loanDao(), db.loanPaymentDao())
+    }
+
+    val databaseQueryService: DatabaseQueryService by lazy {
+        DatabaseQueryServiceImpl(
+            db.transactionDao(),
+            TransactionQueryBuilder(),
+            AggregationPlanner(),
+            QueryCache()
+        )
     }
 
     // Consolidated Use Cases

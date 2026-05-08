@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.local.dao
 import androidx.room.*
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.domain.model.query.RawAggregateResult
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
@@ -82,4 +83,10 @@ abstract class TransactionDao {
 
     @Delete
     abstract suspend fun deleteTransaction(transaction: TransactionEntity)
+
+    @RawQuery
+    abstract suspend fun aggregateTransactionsSync(query: SupportSQLiteQuery): List<RawAggregateResult>
+
+    @RawQuery(observedEntities = [TransactionEntity::class])
+    abstract fun aggregateTransactions(query: SupportSQLiteQuery): Flow<List<RawAggregateResult>>
 }

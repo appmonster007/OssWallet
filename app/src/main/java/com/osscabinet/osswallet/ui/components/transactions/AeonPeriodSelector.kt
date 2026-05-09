@@ -53,8 +53,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -220,6 +223,8 @@ private fun PillNavigationRow(
 ) {
     var showDropdown by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var boxWidth by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
 
     Row(
         modifier = Modifier
@@ -294,6 +299,9 @@ private fun PillNavigationRow(
             modifier = Modifier
                 .weight(0.7f)
                 .fillMaxHeight()
+                .onGloballyPositioned { coordinates ->
+                    boxWidth = coordinates.size.width
+                }
                 .clickable {
                     when (page) {
                         0 -> onToggleExpand()
@@ -337,12 +345,14 @@ private fun PillNavigationRow(
             if (showDropdown) {
                 DropdownMenu(
                     expanded = showDropdown,
-                    onDismissRequest = { showDropdown = false }
+                    onDismissRequest = { showDropdown = false },
+                    offset = DpOffset(0.dp, 0.dp),
+                    modifier = Modifier.width(with(density) { boxWidth.toDp() })
                 ) {
                     if (page == 1) {
                         ThisPeriodType.entries.forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.label) },
+                                text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
                                 onClick = {
                                     onSetDateRange(TimelineRange.ThisPeriod(type))
                                     showDropdown = false
@@ -352,7 +362,7 @@ private fun PillNavigationRow(
                     } else if (page == 2) {
                         LastPeriodType.entries.forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.label) },
+                                text = { Text(type.label, style = MaterialTheme.typography.labelMedium) },
                                 onClick = {
                                     onSetDateRange(TimelineRange.LastPeriod(type))
                                     showDropdown = false

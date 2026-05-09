@@ -33,10 +33,8 @@ object TransactionFilterService {
             if (filter.excludeFuture && tx.timestamp > now) return@filter false
 
             // 1. Timeline check
-            val effectiveStart = filter.startDate ?: startTime
-            val effectiveEnd = filter.endDate ?: endTime
-            val inTimeRange = (effectiveStart == null || tx.timestamp >= effectiveStart) &&
-                    (effectiveEnd == null || tx.timestamp <= effectiveEnd)
+            val inTimeRange = (startTime == null || tx.timestamp >= startTime) &&
+                    (endTime == null || tx.timestamp <= endTime)
             if (!inTimeRange) return@filter false
 
             // 2. Attribute checks
@@ -93,9 +91,7 @@ object TransactionFilterService {
             timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
                 start = prevStart ?: 0L,
                 end = prevEnd ?: System.currentTimeMillis()
-            ),
-            startDate = null,
-            endDate = null
+            )
         )
     }
 

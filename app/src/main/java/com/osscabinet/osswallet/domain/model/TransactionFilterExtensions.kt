@@ -17,8 +17,6 @@ import java.math.BigDecimal
 fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
     return this.copy(
         timelineRange = if (other.timelineRange != TimelineRange.AllTime) other.timelineRange else this.timelineRange,
-        startDate = other.startDate ?: this.startDate,
-        endDate = other.endDate ?: this.endDate,
         accountIds = if (other.accountIds.isNotEmpty()) {
             if (this.accountIds.isEmpty()) other.accountIds else this.accountIds.intersect(other.accountIds.toSet()).toList()
         } else this.accountIds,
@@ -55,8 +53,7 @@ fun RecordsFilterContext.toTransactionFilter(): TransactionFilter {
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = this.accountIds,
             transactionType = this.transactionType,
-            startDate = this.startDate,
-            endDate = this.endDate,
+            timelineRange = TimelineRange.CustomRange(this.startDate, this.endDate),
             categoryIds = this.categoryIds.map { it.toLong() },
             currencies = this.currencies,
             paymentMethods = this.paymentMethods,
@@ -110,8 +107,7 @@ fun TransactionFilter.forExpense(): TransactionFilter =
  * Uses TimelineService.getDateRange() to convert TimelineRange to start/end timestamps.
  */
 fun TransactionFilter.withTimeline(timelineRange: TimelineRange): TransactionFilter {
-    val (start, end) = TimelineService.getDateRange(timelineRange)
-    return copy(startDate = start, endDate = end)
+    return copy(timelineRange = timelineRange)
 }
 
 /**
@@ -130,7 +126,7 @@ fun TransactionFilter.withCurrencies(currencies: List<String>): TransactionFilte
  * Creates a filter with a specific date range.
  */
 fun TransactionFilter.withDateRange(start: Long?, end: Long?): TransactionFilter =
-    copy(startDate = start, endDate = end)
+    copy(timelineRange = TimelineRange.CustomRange(start, end))
 
 /**
  * Creates a filter with a specific amount range.

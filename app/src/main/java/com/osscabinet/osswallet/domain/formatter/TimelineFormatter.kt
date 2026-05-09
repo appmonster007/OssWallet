@@ -18,8 +18,8 @@ object TimelineFormatter {
         is TimelineRange.ThisPeriod -> range.period.label
         is TimelineRange.LastPeriod -> range.period.label
         is TimelineRange.CustomRange -> {
-            val start = formatDate(range.start)
-            val end = formatDate(range.end)
+            val start = range.start?.let { formatDate(it) } ?: "..."
+            val end = range.end?.let { formatDate(it) } ?: "..."
             "$start - $end"
         }
     }

@@ -102,7 +102,7 @@ class FilterManager {
         if (filters.isEmpty()) return TransactionFilter()
         
         return TransactionFilter(
-            timelineRange = filters.map { it.timelineRange }.lastOrNull { it != com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime } 
+            timelineRange = filters.lastOrNull { it.timelineRange != com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime }?.timelineRange
                 ?: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
             queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
             isNoteRegex = filters.any { it.isNoteRegex },
@@ -110,8 +110,6 @@ class FilterManager {
             isPayeeRegex = filters.any { it.isPayeeRegex },
             categoryIds = filters.flatMap { it.categoryIds }.distinct(),
             accountIds = filters.flatMap { it.accountIds }.distinct(),
-            startDate = filters.mapNotNull { it.startDate }.maxOrNull(),
-            endDate = filters.mapNotNull { it.endDate }.minOrNull(),
             paymentMethods = filters.flatMap { it.paymentMethods }.distinct(),
             hasWarranty = filters.mapNotNull { it.hasWarranty }.lastOrNull(),
             warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.maxOrNull(),

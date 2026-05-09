@@ -81,7 +81,7 @@ fun AeonPeriodSelector(
 
     // Mode handling
     val initialTimelineRange =
-        remember(filter.startDate, filter.endDate) { guessTimelineRange(filter) }
+        remember(filter.timelineRange) { guessTimelineRange(filter) }
 
     val currentModePage = remember(initialTimelineRange) {
         when (initialTimelineRange) {
@@ -210,7 +210,7 @@ private fun PillNavigationRow(
     Row(
         modifier = Modifier
             .fillMaxWidth(0.92f)
-            .height(32.dp)
+            .height(30.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(if (page == 0) MaterialTheme.colorScheme.surfaceVariant else accentColor),
         verticalAlignment = Alignment.CenterVertically
@@ -221,7 +221,16 @@ private fun PillNavigationRow(
                 .weight(0.15f)
                 .fillMaxHeight()
                 .clickable(enabled = page > 0) {
-                    onSetDateRange(TimelineService.shiftRange(filter.timelineRange, -1))
+                    val currentRange = when (page) {
+                        1 -> if (filter.timelineRange is TimelineRange.ThisPeriod) filter.timelineRange else TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                        2 -> if (filter.timelineRange is TimelineRange.LastPeriod) filter.timelineRange else TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+                        3 -> if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange else {
+                            val now = System.currentTimeMillis()
+                            TimelineRange.CustomRange(now - 86400000 * 7, now)
+                        }
+                        else -> filter.timelineRange
+                    }
+                    onSetDateRange(TimelineService.shiftRange(currentRange, -1))
                 },
             contentAlignment = Alignment.Center
         ) {
@@ -262,7 +271,7 @@ private fun PillNavigationRow(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (page == 0) "All Time" else getPeriodText(filter),
+                    text = if (page == 0) "All Time" else getPeriodTextForPage(page, filter),
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
@@ -332,7 +341,16 @@ private fun PillNavigationRow(
                 .weight(0.15f)
                 .fillMaxHeight()
                 .clickable(enabled = page > 0) {
-                    onSetDateRange(TimelineService.shiftRange(filter.timelineRange, 1))
+                    val currentRange = when (page) {
+                        1 -> if (filter.timelineRange is TimelineRange.ThisPeriod) filter.timelineRange else TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+                        2 -> if (filter.timelineRange is TimelineRange.LastPeriod) filter.timelineRange else TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+                        3 -> if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange else {
+                            val now = System.currentTimeMillis()
+                            TimelineRange.CustomRange(now - 86400000 * 7, now)
+                        }
+                        else -> filter.timelineRange
+                    }
+                    onSetDateRange(TimelineService.shiftRange(currentRange, 1))
                 },
             contentAlignment = Alignment.Center
         ) {
@@ -364,10 +382,17 @@ private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
     return filter.timelineRange
 }
 
-private fun getPeriodText(filter: TransactionFilter): String {
-    val (resolvedStart, resolvedEnd) = TimelineService.getDateRange(filter.timelineRange)
-    val start = filter.startDate ?: resolvedStart
-    val end = filter.endDate ?: resolvedEnd
+private fun getPeriodTextForPage(page: Int, filter: TransactionFilter): String {
+    val currentRange = when (page) {
+        1 -> if (filter.timelineRange is TimelineRange.ThisPeriod) filter.timelineRange else TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
+        2 -> if (filter.timelineRange is TimelineRange.LastPeriod) filter.timelineRange else TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
+        3 -> if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange else return "Custom"
+        else -> filter.timelineRange
+    }
+    
+    val (resolvedStart, resolvedEnd) = TimelineService.getDateRange(currentRange)
+    val start = resolvedStart
+    val end = resolvedEnd
 
     if (start == null || end == null) return "All Time"
     

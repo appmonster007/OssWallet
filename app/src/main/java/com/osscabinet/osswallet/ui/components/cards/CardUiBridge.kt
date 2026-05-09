@@ -384,8 +384,8 @@ private fun com.osscabinet.ossWallet.domain.model.TransactionFilter.toRecordsFil
     return RecordsFilterContext.Custom(
         accountIds = this.accountIds,
         transactionType = this.transactionType,
-        startDate = this.startDate ?: start,
-        endDate = this.endDate ?: end,
+        startDate = start,
+        endDate = end,
         categoryIds = this.categoryIds.map { it.toString() },
         currencies = this.currencies,
         paymentMethods = this.paymentMethods,

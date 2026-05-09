@@ -113,8 +113,10 @@ fun TimelineFilterBar(
                                         ),
                                         color = MaterialTheme.colorScheme.primary
                                     )
+                                    val startText = currentRange.start?.let { formatter.format(Date(it)) } ?: "..."
+                                    val endText = currentRange.end?.let { formatter.format(Date(it)) } ?: "..."
                                     Text(
-                                        "${formatter.format(Date(currentRange.start))} - ${formatter.format(Date(currentRange.end))}",
+                                        "$startText - $endText",
                                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                                     )
                                 }

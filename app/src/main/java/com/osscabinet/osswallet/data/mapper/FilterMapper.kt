@@ -4,21 +4,26 @@ import com.osscabinet.ossWallet.data.local.entity.FilterEntity
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 
 fun FilterEntity.toDomain(): Filter {
+    val resolvedTimelineRange = if (timelineRange is TimelineRange.AllTime && (startDate != null || endDate != null)) {
+        TimelineRange.CustomRange(startDate, endDate)
+    } else {
+        timelineRange
+    }
+
     return Filter(
         id = id,
         name = name,
         filter = TransactionFilter(
-            timelineRange = timelineRange,
+            timelineRange = resolvedTimelineRange,
             queryNote = queryNote,
             isNoteRegex = isNoteRegex,
             queryPayee = queryPayee,
             isPayeeRegex = isPayeeRegex,
             categoryIds = if (categoryIds.isEmpty()) emptyList() else categoryIds.split(",").map { it.toLong() },
             accountIds = if (accountIds.isEmpty()) emptyList() else accountIds.split(","),
-            startDate = startDate,
-            endDate = endDate,
             paymentMethods = if (paymentMethods.isEmpty()) emptyList() else paymentMethods.split(","),
             hasWarranty = hasWarranty,
             warrantyExpirationStart = warrantyExpirationStart,
@@ -33,6 +38,12 @@ fun FilterEntity.toDomain(): Filter {
 }
 
 fun Filter.toEntity(): FilterEntity {
+    val (entityStart, entityEnd) = if (filter.timelineRange is TimelineRange.CustomRange) {
+        Pair(filter.timelineRange.start, filter.timelineRange.end)
+    } else {
+        Pair(null, null)
+    }
+
     return FilterEntity(
         id = id,
         name = name,
@@ -43,8 +54,8 @@ fun Filter.toEntity(): FilterEntity {
         isPayeeRegex = filter.isPayeeRegex,
         categoryIds = filter.categoryIds.joinToString(","),
         accountIds = filter.accountIds.joinToString(","),
-        startDate = filter.startDate,
-        endDate = filter.endDate,
+        startDate = entityStart,
+        endDate = entityEnd,
         paymentMethods = filter.paymentMethods.joinToString(","),
         hasWarranty = filter.hasWarranty,
         warrantyExpirationStart = filter.warrantyExpirationStart,

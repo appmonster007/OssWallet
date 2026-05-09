@@ -148,7 +148,7 @@ fun OssWalletNavGraph(
                     },
                     navArgument("topLevel") {
                         type = NavType.BoolType
-                        defaultValue = false
+                        defaultValue = true
                     }
                 ),
                 enterTransition = { FadeEnterTransitionSpec },
@@ -157,7 +157,7 @@ fun OssWalletNavGraph(
                 popExitTransition = { FadeExitTransitionSpec }
             ) { backStackEntry ->
                 val viewContext = backStackEntry.arguments?.getString("viewContext")
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
                 DashboardScreen(
                     onMenuClick = onOpenDrawer,
                     onBackClick = { navController.popBackStack() },
@@ -229,7 +229,7 @@ fun OssWalletNavGraph(
                     },
                     navArgument("topLevel") {
                         type = NavType.BoolType
-                        defaultValue = false
+                        defaultValue = true
                     }
                 ),
                 enterTransition = { EnterTransitionSpec },
@@ -238,7 +238,7 @@ fun OssWalletNavGraph(
                 popExitTransition = { PopExitTransitionSpec }
             ) { backStackEntry ->
                 val filterContext = backStackEntry.arguments?.getString("filterContext")
-                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: false
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
                 TransactionListScreen(
                     onMenuClick = onOpenDrawer,
                     isTopLevelParam = topLevel,
@@ -304,13 +304,22 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.Analytics.route,
+                arguments = listOf(
+                    navArgument("topLevel") {
+                        type = NavType.BoolType
+                        defaultValue = true
+                    }
+                ),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
-            ) {
+            ) { backStackEntry ->
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
                 AnalyticsScreen(
                     onMenuClick = onOpenDrawer,
+                    onBackClick = { navController.popBackStack() },
+                    isTopLevel = topLevel,
                     viewModel = analyticsViewModel,
                     accountViewModel = accountViewModel,
                     transactionViewModel = transactionViewModel,
@@ -370,14 +379,23 @@ fun OssWalletNavGraph(
 
             composable(
                 route = Screen.ExchangeRates.route,
+                arguments = listOf(
+                    navArgument("topLevel") {
+                        type = NavType.BoolType
+                        defaultValue = true
+                    }
+                ),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
-            ) {
+            ) { backStackEntry ->
+                val topLevel = backStackEntry.arguments?.getBoolean("topLevel") ?: true
                 ExchangeRatesScreen(
-                    viewModel = currencyViewModel,
-                    onMenuClick = onOpenDrawer
+                    onMenuClick = onOpenDrawer,
+                    onBackClick = { navController.popBackStack() },
+                    isTopLevel = topLevel,
+                    viewModel = currencyViewModel
                 )
             }
 
@@ -392,7 +410,7 @@ fun OssWalletNavGraph(
                     viewModel = templateViewModel,
                     accountViewModel = accountViewModel,
                     onAddTemplateClick = { id -> navController.navigate(Screen.AddTemplate.createRoute(id)) },
-                    onMenuClick = onOpenDrawer
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -614,7 +632,7 @@ fun OssWalletNavGraph(
                     onAddClick = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.PlannedPaymentEntry.createRoute(id)) },
                     onDetailClick = { id -> navController.navigate(Screen.PlannedPaymentDetail.createRoute(id)) },
-                    onMenuClick = onOpenDrawer
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -643,7 +661,7 @@ fun OssWalletNavGraph(
                     onAddClick = { navController.navigate(Screen.BudgetEntry.createRoute()) },
                     onEditClick = { id -> navController.navigate(Screen.BudgetEntry.createRoute(id)) },
                     onDetailClick = { id -> navController.navigate(Screen.BudgetDetail.createRoute(id)) },
-                    onMenuClick = onOpenDrawer,
+                    onBackClick = { navController.popBackStack() },
                     baseCurrency = baseCurrency,
                     precision = precision
                 )
@@ -735,7 +753,7 @@ fun OssWalletNavGraph(
                     viewModel = loanViewModel,
                     onAddClick = { navController.navigate(Screen.LoanEntry.createRoute()) },
                     onLoanClick = { id -> navController.navigate(Screen.LoanDetail.createRoute(id)) },
-                    onMenuClick = onOpenDrawer
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 

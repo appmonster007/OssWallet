@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.analytics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,8 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 @Composable
 fun AnalyticsScreen(
     onMenuClick: () -> Unit,
+    onBackClick: () -> Unit = {},
+    isTopLevel: Boolean = false,
     viewModel: AnalyticsViewModel,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
@@ -57,8 +60,14 @@ fun AnalyticsScreen(
             TopAppBar(
                 title = { Text("Intelligence", style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    if (isTopLevel) {
+                        IconButton(onClick = onMenuClick) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    } else {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
                 actions = {

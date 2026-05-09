@@ -2,20 +2,20 @@ package com.osscabinet.ossWallet.ui.navigation
 
 sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard?viewContext={viewContext}&topLevel={topLevel}") {
-        fun createRoute(viewContext: String? = null, topLevel: Boolean = false): String {
+        fun createRoute(viewContext: String? = null, topLevel: Boolean = true): String {
             val params = mutableListOf<String>()
             viewContext?.let { params.add("viewContext=$it") }
-            if (topLevel) params.add("topLevel=true")
-            return if (params.isEmpty()) "dashboard" else "dashboard?${params.joinToString("&")}"
+            params.add("topLevel=$topLevel")
+            return "dashboard?${params.joinToString("&")}"
         }
     }
     object Settings : Screen("settings")
     object TransactionList : Screen("list?filterContext={filterContext}&topLevel={topLevel}") {
-        fun createRoute(filterContext: String? = null, topLevel: Boolean = false): String {
+        fun createRoute(filterContext: String? = null, topLevel: Boolean = true): String {
             val params = mutableListOf<String>()
             filterContext?.let { params.add("filterContext=$it") }
-            if (topLevel) params.add("topLevel=true")
-            return if (params.isEmpty()) "list" else "list?${params.joinToString("&")}"
+            params.add("topLevel=$topLevel")
+            return "list?${params.joinToString("&")}"
         }
     }
     object AddTransaction : Screen("add") {
@@ -27,11 +27,15 @@ sealed class Screen(val route: String) {
             return if (params.isEmpty()) "add" else "add?${params.joinToString("&")}"
         }
     }
-    object Analytics : Screen("analytics")
+    object Analytics : Screen("analytics?topLevel={topLevel}") {
+        fun createRoute(topLevel: Boolean = true) = "analytics?topLevel=$topLevel"
+    }
     object SharedWallet : Screen("shared")
     object AccountSetup : Screen("account_setup")
     object AccountManagement : Screen("manage_accounts")
-    object ExchangeRates : Screen("exchange_rates")
+    object ExchangeRates : Screen("exchange_rates?topLevel={topLevel}") {
+        fun createRoute(topLevel: Boolean = true) = "exchange_rates?topLevel=$topLevel"
+    }
     object Templates : Screen("templates")
     object AddTemplate : Screen("add_template?templateId={templateId}") {
         fun createRoute(templateId: Long? = null) = if (templateId != null) "add_template?templateId=$templateId" else "add_template"

@@ -35,6 +35,8 @@ import java.util.*
 @Composable
 fun ExchangeRatesScreen(
     onMenuClick: () -> Unit,
+    onBackClick: () -> Unit = {},
+    isTopLevel: Boolean = false,
     viewModel: CurrencyViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -123,8 +125,14 @@ fun ExchangeRatesScreen(
                 TopAppBar(
                     title = { Text("Exchange Rates") },
                     navigationIcon = {
-                        IconButton(onClick = onMenuClick) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        if (isTopLevel) {
+                            IconButton(onClick = onMenuClick) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        } else {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
                         }
                     },
                     actions = {

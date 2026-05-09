@@ -41,9 +41,7 @@ fun BudgetEntryPreview() {
                 onTrackTypeClick = {},
                 selectedCategoryIds = emptySet(),
                 categories = emptyList(),
-                onCategoryClick = {},
-                selectedTags = emptySet(),
-                onTagClick = {}
+                onCategoryClick = {}
             )
 
             BudgetDetailSection(
@@ -52,7 +50,10 @@ fun BudgetEntryPreview() {
                 alertThreshold = 0.8f,
                 onAlertThresholdChange = {},
                 rollover = true,
-                onRolloverChange = {}
+                onRolloverChange = {},
+                selectedTags = setOf("Grocery", "Monthly"),
+                onShowTagSheet = {},
+                onRemoveTag = {}
             )
         }
     }

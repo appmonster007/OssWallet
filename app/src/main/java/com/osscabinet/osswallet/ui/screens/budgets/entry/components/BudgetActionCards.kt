@@ -12,7 +12,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 
 @Composable
 fun BudgetActionCards(
@@ -25,16 +25,14 @@ fun BudgetActionCards(
     onTrackTypeClick: () -> Unit,
     selectedCategoryIds: Set<Long>,
     categories: List<Category>,
-    onCategoryClick: () -> Unit,
-    selectedTags: Set<String>,
-    onTagClick: () -> Unit
+    onCategoryClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Row 1: Period (Full Width as per MD)
-        AeonEntryActionCard(
+        EntryActionCard(
             icon = Icons.Rounded.DateRange,
             label = "PERIOD",
             value = period.name.lowercase().replaceFirstChar { it.uppercase() },
@@ -49,7 +47,7 @@ fun BudgetActionCards(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.AccountBalance,
                 label = "ACCOUNT",
                 value = when {
@@ -63,7 +61,7 @@ fun BudgetActionCards(
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.ShowChart,
                 label = "TRACKS",
                 value = if (selectedTrackTypes.size == BudgetTrackType.entries.size) "All Types"
@@ -76,7 +74,7 @@ fun BudgetActionCards(
         }
 
         // Row 3: Filters / Categories (Full Width)
-        AeonEntryActionCard(
+        EntryActionCard(
             icon = Icons.Rounded.FilterList,
             label = "FILTERS",
             value = when {
@@ -88,21 +86,6 @@ fun BudgetActionCards(
             modifier = Modifier.fillMaxWidth(),
             iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             iconTint = MaterialTheme.colorScheme.primary
-        )
-
-        // Row 4: Tags (Full Width)
-        AeonEntryActionCard(
-            icon = Icons.Rounded.Label,
-            label = "TAGS",
-            value = when {
-                selectedTags.isEmpty() -> "All Tags"
-                selectedTags.size == 1 -> selectedTags.first()
-                else -> "${selectedTags.size} Tags"
-            },
-            onClick = onTagClick,
-            modifier = Modifier.fillMaxWidth(),
-            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.secondary
         )
     }
 }

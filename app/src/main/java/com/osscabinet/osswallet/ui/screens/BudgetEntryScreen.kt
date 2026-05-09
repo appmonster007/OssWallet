@@ -445,9 +445,7 @@ fun BudgetEntryScreen(
                 onTrackTypeClick = { showTrackTypeSheet = true },
                 selectedCategoryIds = selectedCategoryIds,
                 categories = categories,
-                onCategoryClick = { showCategorySheet = true },
-                selectedTags = selectedTags,
-                onTagClick = { showTagSheet = true }
+                onCategoryClick = { showCategorySheet = true }
             )
 
             // Detail Section
@@ -457,7 +455,10 @@ fun BudgetEntryScreen(
                 alertThreshold = alertThreshold,
                 onAlertThresholdChange = { alertThreshold = it },
                 rollover = rollover,
-                onRolloverChange = { rollover = it }
+                onRolloverChange = { rollover = it },
+                selectedTags = selectedTags,
+                onShowTagSheet = { showTagSheet = true },
+                onRemoveTag = { tag -> selectedTags = selectedTags - tag }
             )
         }
     }

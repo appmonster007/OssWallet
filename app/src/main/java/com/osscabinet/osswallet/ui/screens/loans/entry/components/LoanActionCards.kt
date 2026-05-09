@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -27,9 +27,7 @@ fun LoanActionCards(
     onSettlementClick: () -> Unit,
     selectedCategoryIds: Set<Long>,
     categories: List<Category>,
-    onCategoryClick: () -> Unit,
-    selectedTags: Set<String>,
-    onTagClick: () -> Unit
+    onCategoryClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -40,7 +38,7 @@ fun LoanActionCards(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.CalendarToday,
                 label = "START DATE",
                 value = formatLoanDate(startDateMillis),
@@ -50,7 +48,7 @@ fun LoanActionCards(
                 iconTint = MaterialTheme.colorScheme.secondary
             )
 
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.Percent,
                 label = "INT. RATE %",
                 value = if (interestRate.isEmpty()) "0.00 %" else "$interestRate %",
@@ -66,21 +64,21 @@ fun LoanActionCards(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.AccountBalance,
                 label = "ACCOUNT",
                 value = accounts.find { it.id == linkedAccountId }?.name ?: "Select",
-                onClick = onAccountClick,
+                onClick = { onAccountClick() },
                 modifier = Modifier.weight(1f),
                 iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.EventAvailable,
                 label = "SETTLEMENT",
                 value = if (hasSettlementDate) formatLoanDate(settlementDateMillis) else "Not set",
-                onClick = onSettlementClick,
+                onClick = { if (hasSettlementDate) onSettlementClick() },
                 modifier = Modifier.weight(1f),
                 iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
                 iconTint = MaterialTheme.colorScheme.secondary
@@ -88,7 +86,7 @@ fun LoanActionCards(
         }
 
         // Row 3: Filters / Categories (Full Width)
-        AeonEntryActionCard(
+        EntryActionCard(
             icon = Icons.Rounded.FilterList,
             label = "FILTERS",
             value = when {
@@ -100,21 +98,6 @@ fun LoanActionCards(
             modifier = Modifier.fillMaxWidth(),
             iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             iconTint = MaterialTheme.colorScheme.primary
-        )
-
-        // Row 4: Tags (Full Width)
-        AeonEntryActionCard(
-            icon = Icons.Rounded.Label,
-            label = "TAGS",
-            value = when {
-                selectedTags.isEmpty() -> "All Tags"
-                selectedTags.size == 1 -> selectedTags.first()
-                else -> "${selectedTags.size} Tags"
-            },
-            onClick = onTagClick,
-            modifier = Modifier.fillMaxWidth(),
-            iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colorScheme.secondary
         )
     }
 }

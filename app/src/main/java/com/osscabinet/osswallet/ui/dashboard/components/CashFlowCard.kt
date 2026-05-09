@@ -132,7 +132,15 @@ fun CashFlowCard(
                             inBase = item.incomeInBase,
                             baseCurrency = baseCurrency,
                             precision = precision,
-                            showBaseConversion = showBaseConversion
+                            showBaseConversion = showBaseConversion,
+                            onClick = {
+                                onClickIncome(
+                                    filter.copy(
+                                        transactionType = "income",
+                                        currencies = listOf(item.currency)
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -157,7 +165,15 @@ fun CashFlowCard(
                             inBase = item.expenseInBase,
                             baseCurrency = baseCurrency,
                             precision = precision,
-                            showBaseConversion = showBaseConversion
+                            showBaseConversion = showBaseConversion,
+                            onClick = {
+                                onClickExpense(
+                                    filter.copy(
+                                        transactionType = "expense",
+                                        currencies = listOf(item.currency)
+                                    )
+                                )
+                            }
                         )
                     }
                 }
@@ -254,10 +270,13 @@ internal fun AeonFlowBreakdownItem(
     inBase: BigDecimal,
     baseCurrency: String,
     precision: Int = 2,
-    showBaseConversion: Boolean = true
+    showBaseConversion: Boolean = true,
+    onClick: () -> Unit = {}
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

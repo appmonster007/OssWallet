@@ -1,12 +1,14 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -227,97 +229,126 @@ private fun <T, ID> HybridSelectItem(
     onAddChildClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    val backgroundColor by animateColorAsState(
+        if (isSelected && mode != AeonSelectMode.MANAGEMENT) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        else MaterialTheme.colorScheme.surfaceContainerLowest,
+        label = "bgColor"
+    )
+
+    val borderColor by animateColorAsState(
+        if (isSelected && mode != AeonSelectMode.MANAGEMENT) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+        label = "borderColor"
+    )
+
+    Surface(
+        onClick = {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
+        shape = RoundedCornerShape(20.dp),
+        color = backgroundColor,
+        border = BorderStroke(if (isSelected && mode != AeonSelectMode.MANAGEMENT) 1.5.dp else 0.5.dp, borderColor),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Left side: Expansion Control
-        if (hasChildren) {
-            IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline
-                )
-            }
-        } else {
-            Spacer(modifier = Modifier.width(24.dp))
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Item Icon
-        val icon = iconMapper(item)
-        val color = colorMapper(item) ?: MaterialTheme.colorScheme.primary
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = CircleShape,
-            color = color.copy(alpha = 0.2f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (icon != null) {
+            // Left side: Expansion Control
+            if (hasChildren) {
+                IconButton(onClick = onToggleExpand, modifier = Modifier.size(32.dp)) {
                     Icon(
-                        icon,
+                        if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = color
+                        tint = MaterialTheme.colorScheme.outline
                     )
                 }
+            } else {
+                Spacer(modifier = Modifier.width(32.dp))
             }
-        }
 
-        Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-        // Item Label
-        Text(
-            labelMapper(item),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-
-        // Right side: Selection Indicator / Management Controls
-        when (mode) {
-            AeonSelectMode.SINGLE, AeonSelectMode.PARENT -> {
-                if (isSelected) {
-                    Icon(
-                        Icons.Rounded.Check,
-                        contentDescription = "Selected",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            AeonSelectMode.MULTI -> {
-                Switch(
-                    checked = isSelected,
-                    onCheckedChange = { onClick() },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.primary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                )
-            }
-            AeonSelectMode.MANAGEMENT -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onAddChildClick, modifier = Modifier.size(24.dp)) {
+            // Item Icon
+            val icon = iconMapper(item)
+            val color = colorMapper(item) ?: MaterialTheme.colorScheme.primary
+            Surface(
+                modifier = Modifier.size(36.dp),
+                shape = CircleShape,
+                color = color.copy(alpha = 0.15f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (icon != null) {
                         Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Add child",
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = color
                         )
                     }
-                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Item Label
+            Text(
+                labelMapper(item),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
+                ),
+                color = if (isSelected && mode != AeonSelectMode.MANAGEMENT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+
+            // Right side: Selection Indicator / Management Controls
+            when (mode) {
+                AeonSelectMode.SINGLE, AeonSelectMode.PARENT -> {
+                    if (isSelected) {
                         Icon(
-                            Icons.Rounded.Edit,
-                            contentDescription = "Edit",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            Icons.Rounded.CheckCircle,
+                            contentDescription = "Selected",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
                         )
+                    }
+                }
+                AeonSelectMode.MULTI -> {
+                    Switch(
+                        checked = isSelected,
+                        onCheckedChange = { 
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onClick() 
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+                AeonSelectMode.MANAGEMENT -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(onClick = onAddChildClick, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                Icons.Rounded.Add,
+                                contentDescription = "Add child",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = onEditClick, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                Icons.Rounded.Edit,
+                                contentDescription = "Edit",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 }
             }

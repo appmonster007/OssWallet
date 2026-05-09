@@ -26,9 +26,10 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.util.splitByComma
-import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
+import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.TagSelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
@@ -208,7 +209,7 @@ fun AddTemplateScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -216,147 +217,172 @@ fun AddTemplateScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
-                        .clickable { isNumpadVisible = true },
-                    shape = RoundedCornerShape(40.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(32.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+                    shadowElevation = 0.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Transaction Type Row
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(32.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            val types = listOf(
-                                Icons.Rounded.RemoveCircleOutline,
-                                Icons.Rounded.AddCircleOutline
-                            )
-                            types.forEachIndexed { index, icon ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(if (transactionType == index) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                        .clickable { transactionType = index },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        icon,
-                                        contentDescription = null,
-                                        tint = if (transactionType == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
+                        EntryTypeSelector(
+                            selectedType = transactionType,
+                            onTypeSelected = { transactionType = it },
+                            types = listOf(
+                                Triple(Icons.Rounded.Remove, "Expense", 0),
+                                Triple(Icons.Rounded.Add, "Income", 1)
+                            ),
+                            selectedColor = if (transactionType == 1) Color(0xFF004D40) else Color(0xFFB3261E),
+                            itemWidth = 120.dp
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         // Amount & Currency Area
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { isNumpadVisible = true }
+                                .padding(vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Text(
-                                    text = if (amount.isEmpty()) "0.".padEnd(decimalPrecision + 2, '0') else amount,
-                                    style = TextStyle(
-                                        fontSize = 56.sp,
-                                        fontWeight = FontWeight.Black,
-                                        textAlign = TextAlign.Center,
-                                        color = if (isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                                    )
-                                )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
                                 CurrencySelector(
                                     selectedCurrency = currency,
                                     onCurrencySelected = { currency = it },
                                     supportedCurrencies = selectedAccount?.allowedCurrencies ?: listOf("USD")
                                 )
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                val amountTextValue = if (amount.isEmpty()) "0.00" else amount
+                                var multiplier by remember(amountTextValue) { mutableStateOf(1f) }
+
+                                Text(
+                                    text = amountTextValue,
+                                    style = MaterialTheme.typography.displayMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = (-1).sp,
+                                        fontSize = (MaterialTheme.typography.displayMedium.fontSize.value * multiplier).sp
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+                                    onTextLayout = { textLayoutResult ->
+                                        if (textLayoutResult.didOverflowWidth && multiplier > 0.3f) {
+                                            multiplier *= 0.8f
+                                        }
+                                    },
+                                    color = if (transactionType == 1) Color(0xFF004D40) else Color(0xFFB3261E),
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
                             }
                         }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                        )
+
+                        EntryEditorialInput(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = "TEMPLATE NAME",
+                            icon = Icons.Rounded.Bookmark
+                        )
                     }
                 }
 
-                EditorialInput(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Template Name",
-                    icon = Icons.Rounded.Label
-                )
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    RecordFieldCard(
+                    EntryActionCard(
                         icon = Icons.Rounded.AccountBalance,
                         label = "ACCOUNT",
                         value = selectedAccount?.name ?: "Select",
                         onClick = { showAccountSheet = true },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
+                        iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.primary
                     )
 
-                    RecordFieldCard(
-                        icon = categoryIcons[category] ?: Icons.Rounded.Category,
+                    EntryActionCard(
+                        icon = com.osscabinet.ossWallet.ui.components.categoryIcons[category] ?: Icons.Rounded.Category,
                         label = "CATEGORY",
                         value = category,
                         onClick = { showCategorySheet = true },
                         modifier = Modifier.weight(1f),
-                        iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                        isSlim = true
+                        iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        iconTint = MaterialTheme.colorScheme.tertiary
                     )
                 }
 
-                EditorialInput(
-                    value = payee,
-                    onValueChange = { payee = it },
-                    label = "Payee",
-                    icon = Icons.Rounded.Person
-                )
+                EntrySection(
+                    title = "TEMPLATE DETAILS",
+                    icon = Icons.Rounded.MoreHoriz
+                ) {
+                    EntryEditorialInput(
+                        value = payee,
+                        onValueChange = { payee = it },
+                        label = "PAYEE",
+                        icon = Icons.Rounded.Person
+                    )
 
-                EditorialInput(
-                    value = paymentMethod,
-                    onValueChange = { paymentMethod = it },
-                    label = "Payment Method",
-                    icon = Icons.Rounded.Payment,
-                    readOnly = true,
-                    onClick = { showPaymentMethodSheet = true }
-                )
+                    EntryTagSection(
+                        selectedTags = tags,
+                        onShowTagSheet = { showTagSheet = true },
+                        onRemoveTag = { tag -> tags = tags - tag }
+                    )
 
-                EditorialInput(
-                    value = if (tags.isEmpty()) "None" else tags.joinToString(", "),
-                    onValueChange = { },
-                    label = "Tags",
-                    icon = Icons.Rounded.Label,
-                    readOnly = true,
-                    onClick = { showTagSheet = true }
-                )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val methods = listOf(
+                            "Cash" to Icons.Rounded.Payments,
+                            "Credit Card" to Icons.Rounded.CreditCard,
+                            "Debit Card" to Icons.Rounded.CreditCard,
+                            "Bank Transfer" to Icons.Rounded.AccountBalance,
+                            "Digital Wallet" to Icons.Rounded.Wallet,
+                            "Mobile Payment" to Icons.Rounded.Contactless,
+                            "Check" to Icons.Rounded.Description,
+                            "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                            "Other" to Icons.Rounded.MoreHoriz
+                        )
+                        val paymentIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
 
-                EditorialInput(
-                    value = location,
-                    onValueChange = { location = it },
-                    label = "Location",
-                    icon = Icons.Rounded.LocationOn
-                )
+                        EntryActionChip(
+                            icon = paymentIcon,
+                            label = paymentMethod,
+                            onClick = { showPaymentMethodSheet = true },
+                            modifier = Modifier.weight(1f)
+                        )
 
-                EditorialInput(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = "Note",
-                    icon = Icons.AutoMirrored.Rounded.Notes
-                )
+                        // Placeholder for another chip if needed
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    EntryEditorialInput(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = "LOCATION",
+                        icon = Icons.Rounded.LocationOn
+                    )
+
+                    EntryEditorialInput(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = "NOTE",
+                        icon = Icons.AutoMirrored.Rounded.Notes
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(80.dp))
             }

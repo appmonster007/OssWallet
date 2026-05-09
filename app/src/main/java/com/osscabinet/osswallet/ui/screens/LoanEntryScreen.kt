@@ -322,7 +322,7 @@ fun LoanEntryScreen(
                 selectedTags = selectedTags,
                 onSelectionChanged = { selectedTags = it },
                 onAddTag = { tag ->
-                    // Tag will be added to selection via onSelectionChanged callback
+                    selectedTags = selectedTags + tag
                 },
                 onDismiss = { showTagSheet = false }
             )
@@ -363,9 +363,7 @@ fun LoanEntryScreen(
                 onSettlementClick = { showSettlementDatePicker = true },
                 selectedCategoryIds = selectedCategoryIds,
                 categories = categories,
-                onCategoryClick = { showCategorySheet = true },
-                selectedTags = selectedTags,
-                onTagClick = { showTagSheet = true }
+                onCategoryClick = { showCategorySheet = true }
             )
 
             // Detail Section
@@ -376,7 +374,10 @@ fun LoanEntryScreen(
                 note = note,
                 onNoteChange = { note = it },
                 hasSettlementDate = hasSettlementDate,
-                onHasSettlementDateChange = { hasSettlementDate = it }
+                onHasSettlementDateChange = { hasSettlementDate = it },
+                selectedTags = selectedTags,
+                onShowTagSheet = { showTagSheet = true },
+                onRemoveTag = { tag -> selectedTags = selectedTags - tag }
             )
         }
     }

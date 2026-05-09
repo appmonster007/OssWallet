@@ -81,9 +81,10 @@ class MainActivity : FragmentActivity() {
                 LaunchedEffect(pendingWidgetRoute) {
                     pendingWidgetRoute?.let { route ->
                         when (route) {
-                            "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None)
-                            "analytics" -> navController.navigate(Screen.Analytics.route)
-                            // Add more routes as needed
+                            "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None, topLevel = true)
+                            "records" -> navController.navigateToRecords(RecordsFilterContext.None, topLevel = true)
+                            "analytics" -> navController.navigate(Screen.Analytics.createRoute(topLevel = true))
+                            "exchange_rates" -> navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true))
                         }
                         pendingWidgetRoute = null
                     }
@@ -126,7 +127,7 @@ class MainActivity : FragmentActivity() {
                                 }
                             },
                             onAnalyticsClick = {
-                                navController.navigate(Screen.Analytics.route) {
+                                navController.navigate(Screen.Analytics.createRoute(topLevel = true)) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -135,7 +136,7 @@ class MainActivity : FragmentActivity() {
                                 }
                             },
                             onExchangeRatesClick = {
-                                navController.navigate(Screen.ExchangeRates.route) {
+                                navController.navigate(Screen.ExchangeRates.createRoute(topLevel = true)) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }

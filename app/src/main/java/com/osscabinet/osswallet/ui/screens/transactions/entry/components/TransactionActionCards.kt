@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 
@@ -38,7 +38,7 @@ fun TransactionActionCards(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!state.isEditMode) {
-                ActionCard(
+                EntryActionCard(
                     icon = Icons.Rounded.Bookmark,
                     label = "TEMPLATE",
                     value = state.selectedTemplateName ?: "None",
@@ -49,7 +49,7 @@ fun TransactionActionCards(
                 )
             }
 
-            ActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.CalendarToday,
                 label = "DATE",
                 value = formatDate(state.selectedDateMillis),
@@ -66,7 +66,7 @@ fun TransactionActionCards(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.AccountBalance,
                 label = if (state.isTransfer) "FROM" else "ACCOUNT",
                 value = state.selectedAccount?.name ?: "Select",
@@ -81,7 +81,7 @@ fun TransactionActionCards(
                     state.targetAccount != null -> state.targetAccount.name
                     else -> "Outside Wallet"
                 }
-                ActionCard(
+                EntryActionCard(
                     icon = Icons.Rounded.AccountBalance,
                     label = "TO",
                     value = targetDisplay,
@@ -95,9 +95,9 @@ fun TransactionActionCards(
                     state.categories.find { it.id == state.selectedCategoryId }?.name ?: state.category
                 } else state.category
 
-                val categoryIcon = categoryIcons[displayCategory] ?: Icons.Rounded.Category
+                val categoryIcon = com.osscabinet.ossWallet.ui.components.categoryIcons[displayCategory] ?: Icons.Rounded.Category
 
-                ActionCard(
+                EntryActionCard(
                     icon = categoryIcon,
                     label = "CATEGORY",
                     value = displayCategory,
@@ -111,59 +111,6 @@ fun TransactionActionCards(
     }
 }
 
-@Composable
-private fun ActionCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    iconContainerColor: Color = MaterialTheme.colorScheme.surface,
-    iconTint: Color = MaterialTheme.colorScheme.primary
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        shadowElevation = 0.dp,
-        modifier = modifier.height(72.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = iconContainerColor,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = iconTint)
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(verticalArrangement = Arrangement.Center) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    maxLines = 1
-                )
-            }
-        }
-    }
-}
 
 private fun formatDate(millis: Long): String {
     val formatter = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())

@@ -63,7 +63,7 @@ fun TransactionListFilteredPreview() {
             onBackClick = {},
             onAccountDetailClick = {},
             onUpdateFilter = {},
-            onSetDateRange = { _, _ -> },
+            onUpdateTimelineRange = {},
             onUpdateRecordsSettings = {},
             expandableFabEnabled = true
         )

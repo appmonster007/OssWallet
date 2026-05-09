@@ -138,11 +138,13 @@ class AppContainer(private val context: Context) {
     }
 
     val widgetRefreshTrigger: WidgetRefreshTrigger by lazy {
-        WorkManagerWidgetRefreshTrigger(context)
+        WorkManagerWidgetRefreshTrigger(context, queryCache)
     }
 
+    private var widgetInvalidationObserver: WidgetInvalidationObserver? = null
+
     fun startWidgetObserver() {
-        WidgetInvalidationObserver(db, queryCache, widgetRefreshTrigger).start()
+        widgetInvalidationObserver = WidgetInvalidationObserver(db, queryCache, widgetRefreshTrigger).also { it.start() }
     }
 
     // Repositories
@@ -220,6 +222,6 @@ class AppContainer(private val context: Context) {
 
     // Services
     val transactionManager: TransactionManager by lazy {
-        TransactionManager(transactionUseCases)
+        TransactionManager(transactionUseCases, widgetRefreshTrigger)
     }
 }

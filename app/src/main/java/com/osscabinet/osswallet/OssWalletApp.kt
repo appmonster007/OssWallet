@@ -6,14 +6,13 @@ import android.app.NotificationManager
 import android.os.Build
 import com.osscabinet.ossWallet.di.AppContainer
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
-import com.osscabinet.ossWallet.widget.WidgetRefreshWorker
 
 class OssWalletApp : Application() {
     lateinit var container: AppContainer
 
     override fun onCreate() {
         super.onCreate()
-        
+
         // Initialize osmdroid
         org.osmdroid.config.Configuration.getInstance().load(
             this,
@@ -21,10 +20,16 @@ class OssWalletApp : Application() {
         )
 
         container = AppContainer(this)
+        // Start the Room InvalidationTracker observer so any DB write (including seeder,
+        // backup restore, or direct DAO calls that bypass TransactionManager) still triggers
+        // a widget refresh via WidgetRefreshTrigger.
         container.startWidgetObserver()
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
-        WidgetRefreshWorker.schedule(this)
+        // Note: widget refresh is event-driven via WorkManagerWidgetRefreshTrigger and
+        // WidgetInvalidationObserver. No periodic WorkManager schedule is needed here —
+        // the widget XML sets updatePeriodMillis for system-periodic updates, and the
+        // NetWorthWidgetProvider.onReceive() forwards those to WidgetRefreshWorker.
     }
 
     private fun createNotificationChannels() {

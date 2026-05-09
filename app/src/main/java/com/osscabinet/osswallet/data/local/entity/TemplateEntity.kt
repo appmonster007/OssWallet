@@ -1,14 +1,25 @@
 package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import java.math.BigDecimal
 
-@Entity(tableName = "templates")
+@Entity(
+    tableName = "templates",
+    foreignKeys = [
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoryId"],
+            onDelete = ForeignKey.RESTRICT
+        )
+    ]
+)
 data class TemplateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val category: String,
+    val categoryId: Long,
     val amount: BigDecimal,
     val transactionType: Int, // 0: Expense, 1: Income, 2: Transfer
     val icon: String? = null,

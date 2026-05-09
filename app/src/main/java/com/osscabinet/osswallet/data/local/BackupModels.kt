@@ -57,12 +57,11 @@ data class TransactionBackup(
     val title: String,
     @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
-    val category: String,
     val timestamp: Long,
     val currency: String,
     val transactionType: String,
     val accountId: String,
-    val categoryId: Long?,
+    val categoryId: Long,
     val tags: String,
     val paymentMethod: String = "Cash",
     val payee: String = "",
@@ -83,7 +82,7 @@ data class TransactionLinkBackup(
 data class TemplateBackup(
     val id: Long,
     val name: String,
-    val category: String,
+    val categoryId: Long,
     @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
     val transactionType: Int,

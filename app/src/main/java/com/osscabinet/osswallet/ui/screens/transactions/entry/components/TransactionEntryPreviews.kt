@@ -83,7 +83,7 @@ fun TransactionFormBodyPreview() {
             state = TransactionEntryState(
                 amount = "42.50",
                 transactionType = 0,
-                category = "Dining",
+                selectedCategoryId = 1L,
                 note = "Dinner with friends"
             ),
             onEvent = {}

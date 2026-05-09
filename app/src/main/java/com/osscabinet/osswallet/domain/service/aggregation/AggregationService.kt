@@ -247,7 +247,7 @@ object AggregationService {
 
         val categoryBreakdowns = createBreakdown(
             transactions = transactions,
-            selector = { it.categoryId ?: 0L },
+            selector = { it.categoryId },
             mapper = { categoryId, summaries ->
                 FinancialMetrics(
                     key = categoryId,

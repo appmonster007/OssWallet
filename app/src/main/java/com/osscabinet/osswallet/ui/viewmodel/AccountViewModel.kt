@@ -58,11 +58,11 @@ class AccountViewModel(
                 val initialTransaction = Transaction(
                     title = "Initial Balance",
                     amount = initialBalance.abs(),
-                    category = "Adjustment",
                     timestamp = System.currentTimeMillis(),
                     currency = currencyCode,
                     transactionType = transactionType,
                     accountId = accountId,
+                    categoryId = 1002L,
                     note = "Initial balance for $name",
                     paymentMethod = structureType,
                     payee = "System"
@@ -111,11 +111,11 @@ class AccountViewModel(
                     val initialTransaction = Transaction(
                         title = "Initial Balance",
                         amount = balance.abs(),
-                        category = "Adjustment",
                         timestamp = System.currentTimeMillis(),
                         currency = currencyCode,
                         transactionType = transactionType,
                         accountId = accountId,
+                        categoryId = 1002L,
                         note = "Initial balance for $name in $currencyCode",
                         paymentMethod = structureType,
                         payee = "System"

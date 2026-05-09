@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.widget
 
 import android.content.Context
 import com.osscabinet.ossWallet.OssWalletApp
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
@@ -12,7 +13,8 @@ object WidgetDataLoader {
         val baseCurrency: String,
         val precision: Int,
         val exchangeRates: Map<String, BigDecimal>,
-        val databaseQueryService: DatabaseQueryService
+        val databaseQueryService: DatabaseQueryService,
+        val categoryRepository: CategoryRepository
     )
 
     suspend fun loadCommon(context: Context): CommonData {
@@ -29,7 +31,8 @@ object WidgetDataLoader {
             baseCurrency = baseCurrency,
             precision = precision,
             exchangeRates = exchangeRates,
-            databaseQueryService = container.databaseQueryService
+            databaseQueryService = container.databaseQueryService,
+            categoryRepository = container.categoryRepository
         )
     }
 }

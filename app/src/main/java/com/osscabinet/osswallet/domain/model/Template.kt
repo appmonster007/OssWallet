@@ -5,7 +5,7 @@ import java.math.BigDecimal
 data class Template(
     val id: Long,
     val name: String,
-    val category: String,
+    val categoryId: Long,
     val amount: BigDecimal,
     val transactionType: Int,
     val icon: String?,

@@ -216,7 +216,6 @@ fun TransactionListContentPreview() {
         title = "Weekly Groceries",
         note = "Weekly groceries from supermarket",
         amount = BigDecimal("85.50"),
-        category = "Groceries",
         timestamp = System.currentTimeMillis(),
         currency = "USD",
         transactionType = "expense",

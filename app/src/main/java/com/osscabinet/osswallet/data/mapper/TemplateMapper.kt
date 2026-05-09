@@ -7,7 +7,7 @@ fun TemplateEntity.toDomain(): Template {
     return Template(
         id = id,
         name = name,
-        category = category,
+        categoryId = categoryId,
         amount = amount,
         transactionType = transactionType,
         icon = icon,
@@ -28,7 +28,7 @@ fun Template.toEntity(): TemplateEntity {
     return TemplateEntity(
         id = id,
         name = name,
-        category = category,
+        categoryId = categoryId,
         amount = amount,
         transactionType = transactionType,
         icon = icon,

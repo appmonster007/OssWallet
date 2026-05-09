@@ -126,7 +126,11 @@ val AccountIconMap = mapOf(
     "Schedule" to Icons.Rounded.Schedule,
     "Today" to Icons.Rounded.Today,
     "Event" to Icons.Rounded.Event,
-    "CalendarMonth" to Icons.Rounded.CalendarMonth
+    "CalendarMonth" to Icons.Rounded.CalendarMonth,
+    "Menu" to Icons.Rounded.Menu,
+    "MoreHoriz" to Icons.Rounded.MoreHoriz,
+    "QuestionMark" to Icons.Rounded.QuestionMark,
+    "SwapHoriz" to Icons.Rounded.SwapHoriz
 )
 
 val categoryIcons = AccountIconMap

@@ -28,7 +28,7 @@ class TransactionManager(
     ): Long {
         val updated = request.toNormalTransaction(existingTransaction)
         return if (existingTransaction != null) {
-            if (existingTransaction.category == "Transfer") {
+            if (existingTransaction.categoryId == 1003L) {
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
             transactionUseCases.updateTransaction(existingTransaction, updated, profileId)
@@ -45,17 +45,17 @@ class TransactionManager(
     ): Long {
         val targetAccountId = request.targetAccountId
         val sourceTransaction = (existingTransaction ?: Transaction(
-            title = "", amount = BigDecimal.ZERO, category = "Transfer",
+            title = "", amount = BigDecimal.ZERO,
             transactionType = "expense", accountId = request.accountId,
-            currency = request.currency, timestamp = request.timestamp
+            currency = request.currency, timestamp = request.timestamp,
+            categoryId = 1003L
         )).copy(
             title = request.title.ifBlank { "Transfer" },
             amount = request.amount.negate(),
-            category = "Transfer",
             transactionType = "expense",
             accountId = request.accountId,
             currency = request.currency,
-            categoryId = null,
+            categoryId = 1003L, // Transfer category ID
             tags = request.tags,
             timestamp = request.timestamp,
             payee = request.payee,
@@ -86,7 +86,7 @@ class TransactionManager(
             currency = request.targetCurrency ?: request.currency
         )
 
-        if (existingTransaction != null && existingTransaction.category == "Transfer") {
+        if (existingTransaction != null && existingTransaction.categoryId == 1003L) {
             transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
         }
 
@@ -122,13 +122,13 @@ class TransactionManager(
     // if provided so that updates preserve the original id and any unrelated fields.
     private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction =
         (base ?: Transaction(
-            title = "", amount = BigDecimal.ZERO, category = category,
+            title = "", amount = BigDecimal.ZERO,
             transactionType = transactionType, accountId = accountId,
-            currency = currency, timestamp = timestamp
+            currency = currency, timestamp = timestamp,
+            categoryId = categoryId
         )).copy(
-            title = title.ifBlank { category },
+            title = title,
             amount = amount,
-            category = category,
             transactionType = transactionType,
             accountId = accountId,
             currency = currency,

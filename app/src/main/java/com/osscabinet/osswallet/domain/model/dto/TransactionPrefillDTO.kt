@@ -12,8 +12,7 @@ import java.math.BigDecimal
 data class TransactionPrefillDTO(
     val title: String = "",
     val amount: String,
-    val category: String,
-    val categoryId: Long? = null,
+    val categoryId: Long,
     val transactionType: String, // "income", "expense", or "transfer"
     val accountId: String,
     val currency: String,
@@ -42,9 +41,8 @@ data class TransactionPrefillDTO(
             return TransactionPrefillDTO(
                 title = transaction.title,
                 amount = transaction.amount.abs().toPlainString(),
-                category = transaction.category,
                 categoryId = transaction.categoryId,
-                transactionType = if (transaction.category == "Transfer") "transfer" else transaction.transactionType,
+                transactionType = if (transaction.categoryId == 1003L) "transfer" else transaction.transactionType,
                 accountId = transaction.accountId,
                 currency = transaction.currency,
                 tags = transaction.tags,

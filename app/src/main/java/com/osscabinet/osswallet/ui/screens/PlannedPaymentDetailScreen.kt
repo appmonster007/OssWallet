@@ -119,7 +119,7 @@ fun PlannedPaymentDetailScreen(
         accounts.find { it.id == payment.accountId }?.name ?: payment.accountId.take(8)
     }
     val categoryName = remember(payment.categoryId, categories) {
-        payment.categoryId?.let { id -> categories.find { it.id == id }?.name }
+        categories.find { it.id == payment.categoryId }?.name ?: "Unknown"
     }
 
     Scaffold(

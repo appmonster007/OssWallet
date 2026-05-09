@@ -83,6 +83,8 @@ class TransactionEntryViewModel(
             // Set default account if provided
             val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
                 ?: accounts.firstOrNull()
+            
+            val defaultCategory = categories.find { it.id == 1002L } ?: categories.firstOrNull()
 
             _state.value = TransactionEntryState(
                 transactionId = transactionId,
@@ -101,7 +103,8 @@ class TransactionEntryViewModel(
                 selectedCurrency = selectedAccount?.currencyCode ?: "",
                 transactionType = initialType,
                 selectedTemplateName = initialTemplate,
-                selectedDateMillis = initialTimestamp
+                selectedDateMillis = initialTimestamp,
+                selectedCategoryId = defaultCategory?.id ?: 1002L
             )
 
             // Initialize from existing transaction or prefill DTO
@@ -119,7 +122,7 @@ class TransactionEntryViewModel(
         linkedTxs: List<Transaction>
     ) {
         val txType = when {
-            transaction.category == "Transfer" -> 2
+            transaction.categoryId == 1003L -> 2
             transaction.transactionType == "income" -> 1
             else -> 0
         }
@@ -130,7 +133,7 @@ class TransactionEntryViewModel(
         var targetAcc: Account? = null
         if (txType == 2) {
             val linkedTransfer = linkedTxs.find { tx ->
-                tx.category == "Transfer" &&
+                tx.categoryId == 1003L &&
                         tx.transactionType == "income" &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 1000
             }
@@ -140,7 +143,6 @@ class TransactionEntryViewModel(
         _state.value = _state.value.copy(
             title = transaction.title,
             amount = transaction.amount.abs().toPlainString(),
-            category = transaction.category,
             selectedCategoryId = transaction.categoryId,
             selectedTags = transaction.tags,
             paymentMethod = transaction.paymentMethod,
@@ -180,7 +182,6 @@ class TransactionEntryViewModel(
             title = prefillDto.title,
             amount = prefillDto.amount.toBigDecimalOrNull()?.abs()?.toPlainString()
                 ?: prefillDto.amount,
-            category = prefillDto.category,
             selectedCategoryId = prefillDto.categoryId,
             selectedTags = prefillDto.tags,
             paymentMethod = prefillDto.paymentMethod,
@@ -213,7 +214,7 @@ class TransactionEntryViewModel(
             is TransactionEntryEvent.SetTitle -> update { it.copy(title = event.title) }
             is TransactionEntryEvent.SetAmount -> update { it.copy(amount = event.amount) }
             is TransactionEntryEvent.SetCategory -> update {
-                it.copy(category = event.category, selectedCategoryId = event.categoryId)
+                it.copy(selectedCategoryId = event.categoryId)
             }
 
             is TransactionEntryEvent.SetTags -> update { it.copy(selectedTags = event.tags) }
@@ -365,13 +366,9 @@ class TransactionEntryViewModel(
 
     private fun applyTemplate(template: Template) {
         viewModelScope.launch {
-            val categories = categoryRepository.categories.first()
-            val categoryId = categories.find { it.name == template.category }?.id
-
             _state.value = _state.value.copy(
                 title = template.name,
-                category = template.category,
-                selectedCategoryId = categoryId,
+                selectedCategoryId = template.categoryId,
                 selectedTags = template.tags,
                 paymentMethod = template.paymentMethod ?: "Cash",
                 payee = template.payee ?: "",
@@ -443,13 +440,14 @@ class TransactionEntryViewModel(
         }
 
         return TransactionRequest(
-            title = currentState.title.ifBlank { currentState.category },
+            title = currentState.title.ifBlank {
+                currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction"
+            },
             amount = if (currentState.isIncome || currentState.isTransfer) {
                 currentState.amountValue
             } else {
                 currentState.amountValue.negate()
             },
-            category = currentState.category,
             transactionType = when {
                 currentState.isIncome -> "income"
                 currentState.isTransfer -> "expense" // Transfer is stored as expense with link

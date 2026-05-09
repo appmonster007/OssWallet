@@ -191,7 +191,7 @@ fun RecentActivitiesScreen(
 
                     items(groupTransactions, key = { it.transaction.id }) { item ->
                         val transaction = item.transaction
-                        val category = transaction.categoryId?.let { categoryMap[it] }
+                        val category = categoryMap[transaction.categoryId]
                         val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
 
                         SwipeableTransactionItem(
@@ -207,7 +207,7 @@ fun RecentActivitiesScreen(
                             onSplit = { onSplit(transaction.id) }
                         ) {
                             AeonTransactionItem(
-                                category = transaction.category,
+                                category = category?.name ?: "Unknown",
                                 account = accountNamesMap[transaction.accountId] ?: "Unknown",
                                 amount = formatCurrencyRight(
                                     transaction.amount,

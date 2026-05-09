@@ -83,13 +83,13 @@ fun LinkedTransactionSelection(
                         ) { tx ->
                             val isSelected = tx.id in selectedIds
                             val account = accounts.find { it.id == tx.accountId }
-                            val category = categories.find { it.name == tx.category }
-                            val icon = categoryIcons[category?.iconName] ?: categoryIcons[tx.category] ?: Icons.Rounded.Category
+                            val category = categories.find { it.id == tx.categoryId }
+                            val icon = categoryIcons[category?.iconName] ?: Icons.Rounded.Category
                             val iconBg = category?.colorHex?.let { Color(it) }
 
                             Box {
                                 AeonTransactionItem(
-                                    category = tx.category,
+                                    category = category?.name ?: "Unknown",
                                     account = account?.name ?: "Unknown",
                                     amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
                                     balanceBefore = formatCurrencyRight(BigDecimal.ZERO, tx.currency, precision = 2),

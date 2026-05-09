@@ -132,7 +132,9 @@ fun BudgetEntryScreen(
     var showPeriodSheet by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = name.isNotBlank() && limitText.toBigDecimalOrNull() != null
+    val canSave = name.isNotBlank() && 
+                 limitText.toBigDecimalOrNull() != null && 
+                 selectedCategoryIds.isNotEmpty()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

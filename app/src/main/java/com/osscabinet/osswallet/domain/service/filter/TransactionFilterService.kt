@@ -136,19 +136,19 @@ object TransactionFilterService {
         transactions.filter { it.currency in currencies }
 
     /**
-     * Filters transactions by a single category name.
+     * Filters transactions by a single category ID.
      */
-    fun filterByCategory(transactions: List<Transaction>, category: String): List<Transaction> =
-        transactions.filter { it.category == category }
+    fun filterByCategoryId(transactions: List<Transaction>, categoryId: Long): List<Transaction> =
+        transactions.filter { it.categoryId == categoryId }
 
     /**
-     * Filters transactions by multiple category names.
+     * Filters transactions by multiple category IDs.
      */
-    fun filterByCategories(
+    fun filterByCategoryIds(
         transactions: List<Transaction>,
-        categories: Set<String>
+        categoryIds: Set<Long>
     ): List<Transaction> =
-        transactions.filter { it.category in categories }
+        transactions.filter { it.categoryId in categoryIds }
 
     /**
      * Filters transactions by a single account ID.

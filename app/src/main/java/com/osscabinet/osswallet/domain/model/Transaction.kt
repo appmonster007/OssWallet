@@ -10,12 +10,11 @@ data class Transaction(
     val id: Long = 0,
     val title: String,
     val amount: BigDecimal,
-    val category: String,
     override val timestamp: Long,
     val currency: String,
     val transactionType: String, // "income" or "expense"
     val accountId: String,
-    val categoryId: Long? = null,
+    val categoryId: Long,
     val tags: List<String> = emptyList(),
     val paymentMethod: String = "Cash",
     val payee: String = "",

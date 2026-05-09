@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 @Composable
 fun TemplateSelection(
     templates: List<Template>,
+    categories: List<Category>,
     onTemplateSelected: (Template) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -66,7 +68,10 @@ fun TemplateSelection(
                                 },
                                 idMapper = { it.id.toString() },
                                 labelMapper = { it.name },
-                                detailMapper = { "${it.category} • ${it.note ?: "No note"}" },
+                                detailMapper = { template ->
+                                    val categoryName = categories.find { it.id == template.categoryId }?.name ?: "Unknown"
+                                    "$categoryName • ${template.note ?: "No note"}"
+                                },
                                 iconMapper = { Icons.Rounded.Bookmark }
                             )
                         }

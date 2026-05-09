@@ -32,7 +32,7 @@ data class PlannedPayment(
     val transactionType: String,       // "income" or "expense"
     val accountId: String,
     val targetAccountId: String? = null,
-    val categoryId: Long? = null,
+    val categoryId: Long,
     val paymentMethod: String = "Cash",
     val tags: List<String> = emptyList(),
     val note: String = "",

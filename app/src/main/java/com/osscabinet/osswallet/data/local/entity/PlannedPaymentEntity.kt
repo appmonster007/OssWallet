@@ -14,6 +14,12 @@ import java.math.BigDecimal
             parentColumns = ["id"],
             childColumns = ["accountId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = CategoryEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoryId"],
+            onDelete = ForeignKey.RESTRICT
         )
     ],
     indices = [
@@ -31,7 +37,7 @@ data class PlannedPaymentEntity(
     val transactionType: String,
     val accountId: String,
     val targetAccountId: String? = null,
-    val categoryId: Long? = null,
+    val categoryId: Long,
     val paymentMethod: String = "Cash",
     val tags: String = "",
     val note: String = "",

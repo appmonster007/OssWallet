@@ -184,7 +184,7 @@ private fun LinkedTransactionsSection(
             LinkedTransactionItem(
                 tx = tx,
                 account = accounts.find { it.id == tx.accountId },
-                category = categories.find { it.name == tx.category },
+                category = categories.find { it.id == tx.categoryId },
                 is24Hour = is24Hour,
                 onRemove = { onRemoveLink(tx.id) }
             )
@@ -200,14 +200,15 @@ private fun LinkedTransactionItem(
     is24Hour: Boolean,
     onRemove: () -> Unit
 ) {
+    val categoryName = category?.name ?: "Unknown"
     val icon: ImageVector = category?.iconName?.let { categoryIcons[it] }
-        ?: categoryIcons[tx.category]
+        ?: categoryIcons[categoryName]
         ?: Icons.Rounded.Category
     val iconBg = category?.colorHex?.let { Color(it) }
 
     Box {
         com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem(
-            category = tx.category,
+            category = categoryName,
             account = account?.name ?: "Unknown",
             amount = formatCurrencyRight(tx.amount, tx.currency, precision = 2),
             balanceBefore = java.math.BigDecimal.ZERO.toPlainString(),

@@ -33,12 +33,16 @@ fun CategoryEditSheet(
     category: Category?,
     parentCategories: List<Category>,
     onDismiss: () -> Unit,
-    onSave: (String, String, Int, Long?) -> Unit
+    onSave: (String, String, Int, Long?) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
     var selectedIcon by remember { mutableStateOf(category?.iconName ?: "Other") }
     var selectedColorHex by remember { mutableStateOf(category?.colorHex?.toHex() ?: "#9E9E9E") }
     var selectedParentId by remember { mutableStateOf(category?.parentId) }
+
+    val isMandatory = category != null && category.id >= 1000L && category.id <= 1003L
+    val isEditMode = category != null && category.id != 0L
 
     val displayColorHex = if (selectedParentId != null) {
         parentCategories.find { it.id == selectedParentId }?.colorHex?.toHex() ?: selectedColorHex
@@ -48,12 +52,18 @@ fun CategoryEditSheet(
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
-            title = if (category == null || category.id == 0L) "New Category" else "Edit Category",
+            title = if (!isEditMode) "New Category" else "Edit Category",
             onBack = onDismiss,
             actions = {
+                if (isEditMode && !isMandatory && onDelete != null) {
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+                
                 TextButton(
                     onClick = { onSave(name, selectedIcon, displayColorHex.toColorInt(), selectedParentId) },
-                    enabled = name.isNotBlank()
+                    enabled = name.isNotBlank() && !isMandatory
                 ) {
                     Text("SAVE", fontWeight = FontWeight.Bold)
                 }
@@ -68,6 +78,32 @@ fun CategoryEditSheet(
                     .padding(bottom = 40.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                if (isMandatory) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Rounded.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "This is a system category and cannot be modified or deleted.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
                 // Preview Header
                 AeonHeroHeader(
                     title = name,
@@ -91,9 +127,10 @@ fun CategoryEditSheet(
                     
                     EditorialInput(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = { if (!isMandatory) name = it },
                         label = "CATEGORY NAME",
-                        icon = Icons.Rounded.Category
+                        icon = Icons.Rounded.Category,
+                        readOnly = isMandatory
                     )
 
                     val parentCategory = parentCategories.find { it.id == selectedParentId }
@@ -103,12 +140,12 @@ fun CategoryEditSheet(
                         icon = Icons.Rounded.AccountTree,
                         label = "PARENT CATEGORY",
                         value = parentCategory?.name ?: "None",
-                        onClick = { showParentPicker = true },
-                        trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        onClick = { if (!isMandatory) showParentPicker = true },
+                        trailingIcon = if (!isMandatory) Icons.AutoMirrored.Rounded.KeyboardArrowRight else null,
                         iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                     )
 
-                    if (showParentPicker) {
+                    if (showParentPicker && !isMandatory) {
                         AeonFullScreenDialog(onDismissRequest = { showParentPicker = false }) {
                             AeonSelectionScreen(
                                 title = "Select Parent Category",
@@ -174,14 +211,14 @@ fun CategoryEditSheet(
                 // Visual Identity Section
                 VisualIdentitySection(
                     selectedIconName = selectedIcon,
-                    onIconSelected = { selectedIcon = it },
+                    onIconSelected = { if (!isMandatory) selectedIcon = it },
                     accentColorHex = displayColorHex,
                     onColorSelected = { 
-                        if (selectedParentId == null) {
+                        if (selectedParentId == null && !isMandatory) {
                             selectedColorHex = it 
                         }
                     },
-                    isColorLocked = selectedParentId != null
+                    isColorLocked = selectedParentId != null || isMandatory
                 )
             }
         }

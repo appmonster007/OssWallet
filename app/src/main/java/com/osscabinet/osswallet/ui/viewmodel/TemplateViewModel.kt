@@ -26,7 +26,7 @@ class TemplateViewModel(
 
     fun addTemplate(
         name: String,
-        category: String,
+        categoryId: Long,
         amount: BigDecimal,
         transactionType: Int,
         icon: String? = null,
@@ -42,7 +42,7 @@ class TemplateViewModel(
                 Template(
                     id = 0,
                     name = name,
-                    category = category,
+                    categoryId = categoryId,
                     amount = amount,
                     transactionType = transactionType,
                     icon = icon,

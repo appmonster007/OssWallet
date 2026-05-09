@@ -438,9 +438,9 @@ private fun mockTransactionPreview() = Transaction(
     id = 1,
     title = "Mock Transaction",
     amount = BigDecimal("45.00"),
-    category = "Shopping",
     timestamp = System.currentTimeMillis(),
     currency = "USD",
     transactionType = "expense",
-    accountId = "acc_1"
+    accountId = "acc_1",
+    categoryId = 1002L
 )

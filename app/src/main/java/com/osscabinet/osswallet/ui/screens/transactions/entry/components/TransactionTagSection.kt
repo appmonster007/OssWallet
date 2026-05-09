@@ -19,10 +19,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 
 /**
  * Metadata section containing note, payee, linked transactions, tags, and other details.
@@ -33,139 +34,100 @@ fun TransactionTagSection(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        shadowElevation = 0.dp
+    EntrySection(
+        title = "ADDITIONAL DETAILS",
+        icon = Icons.Rounded.MoreHoriz
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            // Header for this section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Rounded.MoreHoriz,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                Text(
-                    text = "ADDITIONAL DETAILS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
+        // Note input
+        EntryEditorialInput(
+            value = state.note,
+            onValueChange = { onEvent(TransactionEntryEvent.SetNote(it)) },
+            label = "NOTE",
+            icon = Icons.AutoMirrored.Rounded.Notes
+        )
+
+        // Payee input
+        EntryEditorialInput(
+            value = state.payee,
+            onValueChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
+            label = "PAYEE",
+            icon = Icons.Rounded.Person
+        )
+
+        // Linked Transactions
+        LinkedTransactionsSection(
+            linkedTransactions = state.displayLinkedTxs,
+            accounts = state.accounts,
+            categories = state.categories,
+            is24Hour = state.use24HourFormat,
+            onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
+            onRemoveLink = { txId ->
+                state.transactionId?.let { onEvent(TransactionEntryEvent.RemoveLinkedTransaction(it, txId)) }
             }
+        )
 
-            // Note input
-            EditorialInput(
-                value = state.note,
-                onValueChange = { onEvent(TransactionEntryEvent.SetNote(it)) },
-                label = "NOTE",
-                icon = Icons.AutoMirrored.Rounded.Notes
+        // Tags
+        EntryTagSection(
+            selectedTags = state.selectedTags,
+            onShowTagSheet = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
+            onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) }
+        )
+
+        // Payment Method and Status row
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val methods = listOf(
+                "Cash" to Icons.Rounded.Payments,
+                "Credit Card" to Icons.Rounded.CreditCard,
+                "Debit Card" to Icons.Rounded.CreditCard,
+                "Bank Transfer" to Icons.Rounded.AccountBalance,
+                "Digital Wallet" to Icons.Rounded.Wallet,
+                "Mobile Payment" to Icons.Rounded.Contactless,
+                "Check" to Icons.Rounded.Description,
+                "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                "Other" to Icons.Rounded.MoreHoriz
+            )
+            val paymentIcon = methods.find { it.first == state.paymentMethod }?.second ?: Icons.Rounded.Contactless
+
+            EntryActionChip(
+                icon = paymentIcon,
+                label = state.paymentMethod,
+                onClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },
+                modifier = Modifier.weight(1f)
             )
 
-            // Payee input
-            EditorialInput(
-                value = state.payee,
-                onValueChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
-                label = "PAYEE",
-                icon = Icons.Rounded.Person
-            )
+            val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
+            val statusIcon = com.osscabinet.ossWallet.ui.components.AccountIconMap[state.status.iconName]
+                ?: Icons.Rounded.CheckCircle
 
-            // Linked Transactions
-            LinkedTransactionsSection(
-                linkedTransactions = state.displayLinkedTxs,
-                accounts = state.accounts,
-                categories = state.categories,
-                is24Hour = state.use24HourFormat,
-                onShowSheet = { onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(true)) },
-                onRemoveLink = { txId ->
-                    state.transactionId?.let { onEvent(TransactionEntryEvent.RemoveLinkedTransaction(it, txId)) }
-                }
-            )
-
-            // Tags
-            TagsSection(
-                tags = state.selectedTags,
-                allTags = state.allTags,
-                onShowSheet = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
-                onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) }
-            )
-
-            // Payment Method and Status row
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val methods = listOf(
-                    "Cash" to Icons.Rounded.Payments,
-                    "Credit Card" to Icons.Rounded.CreditCard,
-                    "Debit Card" to Icons.Rounded.CreditCard,
-                    "Bank Transfer" to Icons.Rounded.AccountBalance,
-                    "Digital Wallet" to Icons.Rounded.Wallet,
-                    "Mobile Payment" to Icons.Rounded.Contactless,
-                    "Check" to Icons.Rounded.Description,
-                    "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
-                    "Other" to Icons.Rounded.MoreHoriz
-                )
-                val paymentIcon = methods.find { it.first == state.paymentMethod }?.second ?: Icons.Rounded.Contactless
-
-                ActionChip(
-                    icon = paymentIcon,
-                    label = state.paymentMethod,
-                    onClick = { onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(true)) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
-                val statusIcon = com.osscabinet.ossWallet.ui.components.AccountIconMap[state.status.iconName]
-                    ?: Icons.Rounded.CheckCircle
-
-                ActionChip(
-                    icon = statusIcon,
-                    label = state.status.displayName,
-                    onClick = { onEvent(TransactionEntryEvent.ShowStatusSheet(true)) },
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = statusColor.copy(alpha = 0.1f),
-                    iconTint = statusColor
-                )
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 4.dp),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-            )
-
-            // Warranty
-            WarrantyRow(
-                isEnabled = state.isWarrantyEnabled,
-                expirationMillis = state.warrantyExpirationMillis,
-                onToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
-                onShowDatePicker = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) }
-            )
-
-            // Location
-            LocationRow(
-                coords = state.locationCoords,
-                onShowLocationSheet = { onEvent(TransactionEntryEvent.ShowLocationSheet(true)) }
+            EntryActionChip(
+                icon = statusIcon,
+                label = state.status.displayName,
+                onClick = { onEvent(TransactionEntryEvent.ShowStatusSheet(true)) },
+                modifier = Modifier.weight(1f),
+                iconContainerColor = statusColor.copy(alpha = 0.1f),
+                iconTint = statusColor
             )
         }
+
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 4.dp),
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+        )
+
+        // Warranty
+        WarrantyRow(
+            isEnabled = state.isWarrantyEnabled,
+            expirationMillis = state.warrantyExpirationMillis,
+            onToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
+            onShowDatePicker = { onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(true)) }
+        )
+
+        // Location
+        LocationRow(
+            coords = state.locationCoords,
+            onShowLocationSheet = { onEvent(TransactionEntryEvent.ShowLocationSheet(true)) }
+        )
     }
 }
 
@@ -282,64 +244,6 @@ private fun LinkedTransactionItem(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TagsSection(
-    tags: List<String>,
-    allTags: List<com.osscabinet.ossWallet.domain.model.Tag>,
-    onShowSheet: () -> Unit,
-    onRemoveTag: (String) -> Unit
-) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Surface(
-            onClick = onShowSheet,
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
-            modifier = Modifier.height(32.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.Label, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("ADD TAG", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-            }
-        }
-
-        tags.forEach { tag ->
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
-                modifier = Modifier.height(32.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(start = 12.dp, end = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(tag, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(
-                        onClick = { onRemoveTag(tag) },
-                        modifier = Modifier.size(20.dp)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Close,
-                            contentDescription = "Remove tag",
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun WarrantyRow(

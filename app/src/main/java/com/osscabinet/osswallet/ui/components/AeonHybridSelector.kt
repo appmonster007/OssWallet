@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
 
 /**
  * A unified selector for regular lists that supports single-select, multi-select, and management modes.
@@ -41,138 +43,62 @@ fun <T, ID> AeonHybridSelector(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             val id = idMapper(item)
             val isSelected = id in selectedIds
-            val backgroundColor = if (index % 2 == 0) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            } else {
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-            }
 
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = backgroundColor,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            when (mode) {
-                                AeonSelectMode.SINGLE -> onSelectionChange(setOf(id))
-                                AeonSelectMode.MULTI -> {
-                                    val newSelected = if (id in selectedIds) {
-                                        selectedIds - id
-                                    } else {
-                                        selectedIds + id
-                                    }
-                                    onSelectionChange(newSelected)
-                                }
-                                AeonSelectMode.MANAGEMENT -> onEditClick(item)
-                                else -> {}
-                            }
-                        }
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Left spacer for alignment with hierarchical selector
-                    Spacer(modifier = Modifier.width(32.dp))
-
-                    // Icon
-                    val icon = iconMapper(item)
-                    val color = colorMapper(item) ?: MaterialTheme.colorScheme.primary
-                    Surface(
-                        modifier = Modifier.size(40.dp),
-                        shape = CircleShape,
-                        color = color.copy(alpha = 0.2f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (icon != null) {
-                                Icon(
-                                    icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = color
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Labels
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            labelMapper(item),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                        val detail = detailMapper(item)
-                        if (detail != null) {
-                            Text(
-                                detail,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // Right side: Selection Indicator / Management Controls
+            EntrySelectionCard(
+                icon = iconMapper(item) ?: Icons.Rounded.Category,
+                label = labelMapper(item),
+                detail = detailMapper(item),
+                isSelected = isSelected,
+                iconColor = colorMapper(item) ?: MaterialTheme.colorScheme.primary,
+                onClick = {
                     when (mode) {
-                        AeonSelectMode.SINGLE -> {
-                            if (isSelected) {
+                        AeonSelectMode.SINGLE -> onSelectionChange(setOf(id))
+                        AeonSelectMode.MULTI -> {
+                            val newSelected = if (id in selectedIds) {
+                                selectedIds - id
+                            } else {
+                                selectedIds + id
+                            }
+                            onSelectionChange(newSelected)
+                        }
+                        AeonSelectMode.MANAGEMENT -> onEditClick(item)
+                        else -> {}
+                    }
+                },
+                selectionMode = when (mode) {
+                    AeonSelectMode.SINGLE -> EntrySelectionMode.SINGLE
+                    AeonSelectMode.MULTI -> EntrySelectionMode.MULTI
+                    AeonSelectMode.MANAGEMENT -> EntrySelectionMode.MANAGEMENT
+                    else -> EntrySelectionMode.SINGLE
+                },
+                trailingContent = if (mode == AeonSelectMode.MANAGEMENT) {
+                    {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            IconButton(onClick = { onAddChildClick(item) }, modifier = Modifier.size(32.dp)) {
                                 Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = "Selected",
+                                    Icons.Rounded.Add,
+                                    contentDescription = "Add",
+                                    modifier = Modifier.size(20.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
-                        }
-                        AeonSelectMode.MULTI -> {
-                            Switch(
-                                checked = isSelected,
-                                onCheckedChange = { 
-                                    val newSelected = if (id in selectedIds) {
-                                        selectedIds - id
-                                    } else {
-                                        selectedIds + id
-                                    }
-                                    onSelectionChange(newSelected)
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                            IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.outline
                                 )
-                            )
-                        }
-                        AeonSelectMode.MANAGEMENT -> {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                IconButton(onClick = { onAddChildClick(item) }, modifier = Modifier.size(24.dp)) {
-                                    Icon(
-                                        Icons.Rounded.Add,
-                                        contentDescription = "Add",
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                IconButton(onClick = { onEditClick(item) }, modifier = Modifier.size(24.dp)) {
-                                    Icon(
-                                        Icons.Rounded.Edit,
-                                        contentDescription = "Edit",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.outline
-                                    )
-                                }
                             }
                         }
-                        else -> {}
                     }
-                }
-            }
+                } else null
+            )
         }
     }
 }

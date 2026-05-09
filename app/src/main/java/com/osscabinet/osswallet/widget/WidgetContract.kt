@@ -45,7 +45,8 @@ fun buildComparisonText(
 object WidgetRegistry {
     private val fetchers = mapOf<Class<*>, WidgetDataFetcher>(
         NetWorthGlanceWidget::class.java to NetWorthWidgetFetcher(),
-        CashFlowGlanceWidget::class.java to CashFlowWidgetFetcher()
+        CashFlowGlanceWidget::class.java to CashFlowWidgetFetcher(),
+        RecentTransactionsGlanceWidget::class.java to RecentTransactionsWidgetFetcher()
     )
 
     fun getFetcher(widgetClass: Class<*>): WidgetDataFetcher? = fetchers[widgetClass]

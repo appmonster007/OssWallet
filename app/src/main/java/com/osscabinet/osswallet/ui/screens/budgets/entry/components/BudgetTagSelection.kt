@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
+import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
 
 /**
  * Full-screen selection for Tags in Budget Entry.
@@ -108,59 +110,15 @@ fun BudgetTagSelection(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(availableTags) { tag ->
-                        val isSelected = tag in currentSelection
-                        Surface(
+                        EntrySelectionCard(
+                            icon = Icons.AutoMirrored.Rounded.Label,
+                            label = tag,
+                            isSelected = tag in currentSelection,
                             onClick = {
-                                currentSelection = if (isSelected) currentSelection - tag else currentSelection + tag
+                                currentSelection = if (tag in currentSelection) currentSelection - tag else currentSelection + tag
                             },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceContainerLowest
-                            },
-                            border = BorderStroke(
-                                width = if (isSelected) 1.5.dp else 0.5.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.AutoMirrored.Rounded.Label, 
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (isSelected) {
-                                    Icon(
-                                        Icons.Rounded.CheckCircle,
-                                        contentDescription = "Selected",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
+                            selectionMode = EntrySelectionMode.MULTI
+                        )
                     }
                 }
 

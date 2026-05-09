@@ -34,23 +34,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.AutoMode
-import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.DateRange
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material.icons.rounded.EventBusy
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.LocalOffer
-import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.Title
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -97,16 +81,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
-import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
-import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
-import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.EditorialInput
+import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.PaymentMethodSelection
@@ -159,6 +138,7 @@ fun PlannedPaymentEntryScreen(
     var noteUserPart by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("Cash") }
     var selectedTagNames by remember { mutableStateOf(emptyList<String>()) }
+    var status by remember { mutableStateOf(PlannedPaymentStatus.ACTIVE) }
 
     LaunchedEffect(existing, prefill) {
         if (existing != null) {
@@ -181,6 +161,7 @@ fun PlannedPaymentEntryScreen(
             noteUserPart = if (existing.note.startsWith(prefix)) existing.note.removePrefix(prefix) else existing.note
             paymentMethod = existing.paymentMethod
             selectedTagNames = existing.tags
+            status = existing.status
         } else if (prefill != null) {
             title = prefill!!.title
             amountText = prefill!!.amount.abs().toPlainString()
@@ -200,6 +181,7 @@ fun PlannedPaymentEntryScreen(
             noteUserPart = prefill!!.note.removePrefix("${prefill!!.title} - ")
             paymentMethod = prefill!!.paymentMethod
             selectedTagNames = prefill!!.tags
+            status = PlannedPaymentStatus.ACTIVE
             
             transactionViewModel?.clearPlannedPaymentPrefill()
         } else {
@@ -211,7 +193,6 @@ fun PlannedPaymentEntryScreen(
         }
     }
     val derivedNote = if (noteUserPart.isBlank()) title else "$title - $noteUserPart"
-    LaunchedEffect(title) { }
 
     val isEditing = plannedPaymentId != null
 
@@ -220,6 +201,7 @@ fun PlannedPaymentEntryScreen(
     var showCategorySheet by remember { mutableStateOf(false) }
     var showPaymentMethodSheet by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
+    var showStatusSheet by remember { mutableStateOf(false) }
     var showNumpad by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
@@ -279,9 +261,6 @@ fun PlannedPaymentEntryScreen(
                                 RecurrenceType.MONTHLY,
                                 RecurrenceType.EVERY_N_MONTHS
                             )
-                            // For MONTHLY/EVERY_N_MONTHS, always record the intended day-of-month
-                            // so that clamping logic in calculateNextDueDate restores the correct
-                            // day after short months (e.g., Jan 31 → Feb 28 → Mar 31, not Mar 28).
                             val resolvedDayOfMonth = if (needsDayOfMonthLocal) {
                                 dayOfMonth ?: Instant.ofEpochMilli(startDateMillis)
                                     .atZone(ZoneOffset.UTC).toLocalDate().dayOfMonth
@@ -315,7 +294,8 @@ fun PlannedPaymentEntryScreen(
                                 autoConfirm = autoConfirm,
                                 startDate = startDateMillis,
                                 endDate = if (hasEndDate) endDateMillis else null,
-                                nextDueDate = existing?.nextDueDate ?: startDateMillis
+                                nextDueDate = existing?.nextDueDate ?: startDateMillis,
+                                status = status
                             )
                             viewModel.save(payment)
                             onBackClick()
@@ -398,6 +378,13 @@ fun PlannedPaymentEntryScreen(
                 onDismiss = { showTagSheet = false }
             )
         }
+        if (showStatusSheet) {
+            PlannedPaymentStatusSelection(
+                selectedStatus = status,
+                onStatusSelected = { status = it; showStatusSheet = false },
+                onDismiss = { showStatusSheet = false }
+            )
+        }
         if (showNumpad) {
             CalculatorSheet(
                 currentAmount = amountText,
@@ -430,7 +417,7 @@ fun PlannedPaymentEntryScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    EditorialInput(
+                    EntryEditorialInput(
                         value = title,
                         onValueChange = { title = it },
                         label = "PAYMENT NAME",
@@ -441,11 +428,17 @@ fun PlannedPaymentEntryScreen(
                         thickness = 0.5.dp,
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
                     )
-                    PaymentTypeSelector(
-                        isIncome = transactionType == "income",
+                    EntryTypeSelector(
+                        selectedType = transactionType == "income",
                         onTypeSelected = { isIncome ->
                             transactionType = if (isIncome) "income" else "expense"
-                        }
+                        },
+                        types = listOf(
+                            Triple(Icons.Rounded.Remove, "Expense", false),
+                            Triple(Icons.Rounded.Add, "Income", true)
+                        ),
+                        selectedColor = if (transactionType == "income") Color(0xFF004D40) else Color(0xFFB3261E),
+                        itemWidth = 120.dp
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -456,7 +449,7 @@ fun PlannedPaymentEntryScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        CurrencySelector(
+                        com.osscabinet.ossWallet.ui.components.CurrencySelector(
                             selectedCurrency = currency,
                             onCurrencySelected = { currency = it },
                             supportedCurrencies = allCurrencies
@@ -486,7 +479,7 @@ fun PlannedPaymentEntryScreen(
             }
 
             // Row 1: SCHEDULE card (full width)
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Rounded.DateRange,
                 label = "SCHEDULE",
                 value = buildScheduleSummary(
@@ -513,7 +506,7 @@ fun PlannedPaymentEntryScreen(
                     onExpandedChange = { accountExpanded = it },
                     modifier = Modifier.weight(1f)
                 ) {
-                    AeonEntryActionCard(
+                    EntryActionCard(
                         icon = Icons.Rounded.AccountBalance,
                         label = "ACCOUNT",
                         value = accounts.find { it.id == selectedAccountId }?.name ?: "Select",
@@ -539,7 +532,7 @@ fun PlannedPaymentEntryScreen(
                     }
                 }
 
-                AeonEntryActionCard(
+                EntryActionCard(
                     icon = Icons.Rounded.Category,
                     label = "CATEGORY",
                     value = categories.find { it.id == selectedCategoryId }?.name ?: "None",
@@ -550,151 +543,156 @@ fun PlannedPaymentEntryScreen(
                 )
             }
 
-            // Row 3: Payment Method + Tags
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AeonEntryActionCard(
-                    icon = Icons.Rounded.Payments,
-                    label = "PAYMENT METHOD",
-                    value = paymentMethod,
-                    onClick = { showPaymentMethodSheet = true },
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.primary
-                )
-                AeonEntryActionCard(
-                    icon = Icons.Rounded.LocalOffer,
-                    label = "TAGS",
-                    value = if (selectedTagNames.isEmpty()) "None"
-                    else selectedTagNames.take(2).joinToString(", ") +
-                            if (selectedTagNames.size > 2) " +${selectedTagNames.size - 2}" else "",
-                    onClick = { showTagSheet = true },
-                    modifier = Modifier.weight(1f),
-                    iconContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                    iconTint = MaterialTheme.colorScheme.secondary
-                )
-            }
-
             // Details card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(32.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(
-                    0.5.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
-                ),
-                shadowElevation = 0.dp
+            EntrySection(
+                title = "PAYMENT DETAILS",
+                icon = Icons.Rounded.MoreHoriz
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                EntryEditorialInput(
+                    value = payee,
+                    onValueChange = { payee = it },
+                    label = "PAYEE",
+                    icon = Icons.Rounded.Person
+                )
+                EntryEditorialInput(
+                    value = noteUserPart,
+                    onValueChange = { noteUserPart = it },
+                    label = "NOTES",
+                    icon = Icons.AutoMirrored.Rounded.Notes,
+                    maxLines = 4
+                )
+
+                EntryTagSection(
+                    selectedTags = selectedTagNames,
+                    onShowTagSheet = { showTagSheet = true },
+                    onRemoveTag = { tag -> selectedTagNames = selectedTagNames - tag }
+                )
+
+                // Row for Payment Method and Status
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val methods = listOf(
+                        "Cash" to Icons.Rounded.Payments,
+                        "Credit Card" to Icons.Rounded.CreditCard,
+                        "Debit Card" to Icons.Rounded.CreditCard,
+                        "Bank Transfer" to Icons.Rounded.AccountBalance,
+                        "Digital Wallet" to Icons.Rounded.Wallet,
+                        "Mobile Payment" to Icons.Rounded.Contactless,
+                        "Check" to Icons.Rounded.Description,
+                        "Cryptocurrency" to Icons.Rounded.CurrencyBitcoin,
+                        "Other" to Icons.Rounded.MoreHoriz
+                    )
+                    val paymentIcon = methods.find { it.first == paymentMethod }?.second ?: Icons.Rounded.Contactless
+
+                    EntryActionChip(
+                        icon = paymentIcon,
+                        label = paymentMethod,
+                        onClick = { showPaymentMethodSheet = true },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    val (statusIcon, statusColor) = when (status) {
+                        PlannedPaymentStatus.ACTIVE -> Icons.Rounded.CheckCircle to Color(0xFF4CAF50)
+                        PlannedPaymentStatus.PAUSED -> Icons.Rounded.PauseCircle to Color(0xFFFFC107)
+                        PlannedPaymentStatus.COMPLETED -> Icons.Rounded.CheckCircle to Color(0xFF2196F3)
+                        PlannedPaymentStatus.CANCELLED -> Icons.Rounded.Cancel to Color(0xFFF44336)
+                    }
+
+                    EntryActionChip(
+                        icon = statusIcon,
+                        label = status.name.lowercase().replaceFirstChar { it.uppercase() },
+                        onClick = { showStatusSheet = true },
+                        modifier = Modifier.weight(1f),
+                        iconContainerColor = statusColor.copy(alpha = 0.1f),
+                        iconTint = statusColor
+                    )
+                }
+
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                )
+
+                // End date toggle row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    EntrySectionHeader(icon = Icons.Rounded.MoreHoriz, label = "PAYMENT DETAILS")
-
-                    EditorialInput(
-                        value = payee,
-                        onValueChange = { payee = it },
-                        label = "PAYEE",
-                        icon = Icons.Rounded.Person
-                    )
-                    EditorialInput(
-                        value = noteUserPart,
-                        onValueChange = { noteUserPart = it },
-                        label = "NOTES",
-                        icon = Icons.AutoMirrored.Rounded.Notes,
-                        maxLines = 4
-                    )
-
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
-                    )
-
-                    // End date toggle row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(32.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.EventBusy,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.secondary
-                                )
-                            }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.EventBusy,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
                         }
+                    }
+                    Text(
+                        text = "Set end date",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = hasEndDate,
+                        onCheckedChange = { hasEndDate = it },
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = Color(0xFF004D40)
+                        )
+                    )
+                }
+
+                if (hasEndDate) {
+                    EntryDateCard(
+                        icon = Icons.Rounded.CalendarMonth,
+                        label = "END DATE",
+                        dateMillis = endDateMillis,
+                        onClick = { showEndDatePicker = true }
+                    )
+                }
+
+                // Auto-confirm toggle row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.AutoMode,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Set end date",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            modifier = Modifier.weight(1f)
+                            text = "Auto-confirm",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                         )
-                        Switch(
-                            checked = hasEndDate,
-                            onCheckedChange = { hasEndDate = it },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Color(0xFF004D40)
-                            )
+                        Text(
+                            text = "Automatically log when due",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     }
-
-                    if (hasEndDate) {
-                        EntryDateCard(
-                            icon = Icons.Rounded.CalendarMonth,
-                            label = "END DATE",
-                            dateMillis = endDateMillis,
-                            onClick = { showEndDatePicker = true }
+                    Switch(
+                        checked = autoConfirm,
+                        onCheckedChange = { autoConfirm = it },
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = Color(0xFF004D40)
                         )
-                    }
-
-                    // Auto-confirm toggle row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.AutoMode,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Auto-confirm",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                            Text(
-                                text = "Automatically log when due",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        }
-                        Switch(
-                            checked = autoConfirm,
-                            onCheckedChange = { autoConfirm = it },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Color(0xFF004D40)
-                            )
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -810,17 +808,29 @@ private fun ScheduleBuilderSheet(
                     }
 
                     if (selectedTabIndex == 0) {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
                             presets.forEach { preset ->
-                                FilterChip(
-                                    selected = localType == preset.type && localInterval == preset.interval,
+                                val isSelected = localType == preset.type && localInterval == preset.interval
+                                EntryActionChip(
+                                    icon = when(preset.type) {
+                                        RecurrenceType.ONE_TIME -> Icons.Rounded.Done
+                                        RecurrenceType.DAILY -> Icons.Rounded.Update
+                                        RecurrenceType.WEEKLY -> Icons.Rounded.DateRange
+                                        RecurrenceType.MONTHLY -> Icons.Rounded.CalendarMonth
+                                        RecurrenceType.YEARLY -> Icons.Rounded.EventAvailable
+                                        else -> Icons.Rounded.AutoMode
+                                    },
+                                    label = preset.label,
+                                    isSelected = isSelected,
                                     onClick = {
                                         localType = preset.type
                                         localInterval = preset.interval
                                         localDayOfWeek = null
                                         localDayOfMonth = null
-                                    },
-                                    label = { Text(preset.label) }
+                                    }
                                 )
                             }
                         }
@@ -943,18 +953,23 @@ private fun ScheduleBuilderSheet(
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     val dayNames =
                                         listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
                                     dayNames.forEachIndexed { index, name ->
                                         val dayNum = index + 1
-                                        FilterChip(
-                                            selected = localDayOfWeek == dayNum,
+                                        val isSelected = localDayOfWeek == dayNum
+                                        EntryActionChip(
+                                            icon = Icons.Rounded.Today,
+                                            label = name,
+                                            isSelected = isSelected,
                                             onClick = {
                                                 localDayOfWeek =
                                                     if (localDayOfWeek == dayNum) null else dayNum
-                                            },
-                                            label = { Text(name) }
+                                            }
                                         )
                                     }
                                 }
@@ -1165,177 +1180,67 @@ private fun parseCronToRule(cron: String): RecurrenceRule? {
 }
 
 @Composable
-private fun PaymentTypeSelector(
-    isIncome: Boolean,
-    onTypeSelected: (Boolean) -> Unit
+fun PlannedPaymentStatusSelection(
+    selectedStatus: PlannedPaymentStatus,
+    onStatusSelected: (PlannedPaymentStatus) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val expenseColor = Color(0xFFB3261E)
-    val incomeColor = Color(0xFF004D40)
+    val statuses = PlannedPaymentStatus.entries
 
-    val indicatorColor by animateColorAsState(
-        targetValue = if (isIncome) incomeColor else expenseColor,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "indicatorColor"
-    )
-
-    val indicatorOffset by animateDpAsState(
-        targetValue = if (isIncome) 120.dp else 0.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "indicatorOffset"
-    )
-
-    Box(
-        modifier = Modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(32.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                0.5.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
-                RoundedCornerShape(32.dp)
-            )
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .offset(x = indicatorOffset)
-                .width(120.dp)
-                .fillMaxHeight()
-                .clip(CircleShape)
-                .background(indicatorColor)
-        )
-
-        Row(modifier = Modifier.fillMaxHeight()) {
-            listOf(
-                false to (Icons.Rounded.Remove to "Expense"),
-                true to (Icons.Rounded.Add to "Income")
-            ).forEach { (typeIsIncome, iconLabel) ->
-                val (icon, label) = iconLabel
-                val isSelected = isIncome == typeIsIncome
-                val scale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.1f else 1.0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "scale"
+    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+        AeonSelectionScreen(
+            title = "Payment Status",
+            onBack = onDismiss
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Text(
+                    text = "Control the activity state of this payment schedule",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                Row(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .fillMaxHeight()
-                        .clip(CircleShape)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onTypeSelected(typeIsIncome) },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = 0.6f
-                        ),
-                        modifier = Modifier
-                            .size(20.dp)
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = 0.6f
-                        ),
-                        modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
-                    )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Box(modifier = Modifier.weight(1f, fill = false)) {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        AeonHybridSelector(
+                            items = statuses,
+                            mode = AeonSelectMode.SINGLE,
+                            selectedIds = setOf(selectedStatus.name),
+                            onSelectionChange = { ids ->
+                                ids.firstOrNull()?.let { name ->
+                                    statuses.find { it.name == name }?.let {
+                                        onStatusSelected(it)
+                                        onDismiss()
+                                    }
+                                }
+                            },
+                            idMapper = { it.name },
+                            labelMapper = { it.name.lowercase().replaceFirstChar { it.uppercase() } },
+                            iconMapper = {
+                                when (it) {
+                                    PlannedPaymentStatus.ACTIVE -> Icons.Rounded.CheckCircle
+                                    PlannedPaymentStatus.PAUSED -> Icons.Rounded.PauseCircle
+                                    PlannedPaymentStatus.COMPLETED -> Icons.Rounded.CheckCircle
+                                    PlannedPaymentStatus.CANCELLED -> Icons.Rounded.Cancel
+                                }
+                            },
+                            colorMapper = {
+                                when (it) {
+                                    PlannedPaymentStatus.ACTIVE -> Color(0xFF4CAF50)
+                                    PlannedPaymentStatus.PAUSED -> Color(0xFFFFC107)
+                                    PlannedPaymentStatus.COMPLETED -> Color(0xFF2196F3)
+                                    PlannedPaymentStatus.CANCELLED -> Color(0xFFF44336)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun EntrySectionHeader(icon: ImageVector, label: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            modifier = Modifier.size(32.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                fontSize = 10.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        )
-    }
-}
-
-@Composable
-private fun EntryDateCard(
-    icon: ImageVector,
-    label: String,
-    dateMillis: Long,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.secondary
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = formatEntryDate(dateMillis),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                )
-            }
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-        }
-    }
-}
-
-private fun formatEntryDate(millis: Long): String {
-    return SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))
 }

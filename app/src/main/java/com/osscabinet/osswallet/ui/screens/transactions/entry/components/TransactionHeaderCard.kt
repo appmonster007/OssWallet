@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
+import com.osscabinet.ossWallet.ui.components.entry.EntryTypeSelector
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import java.math.BigDecimal
@@ -52,9 +53,19 @@ fun TransactionHeaderCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Transaction Type Row
-            TransactionTypeSelector(
+            EntryTypeSelector(
                 selectedType = state.transactionType,
-                onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) }
+                onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
+                types = listOf(
+                    Triple(Icons.Rounded.Remove, "Expense", 0),
+                    Triple(Icons.Rounded.Add, "Income", 1),
+                    Triple(Icons.Rounded.SwapHoriz, "Transfer", 2)
+                ),
+                selectedColor = when (state.transactionType) {
+                    0 -> Color(0xFFB3261E)
+                    1 -> Color(0xFF004D40)
+                    else -> MaterialTheme.colorScheme.primary
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -183,94 +194,3 @@ fun TransactionHeaderCard(
     }
 }
 
-@Composable
-private fun TransactionTypeSelector(
-    selectedType: Int,
-    onTypeSelected: (Int) -> Unit
-) {
-    val types = listOf(
-        Icons.Rounded.Remove to "Expense",
-        Icons.Rounded.Add to "Income",
-        Icons.Rounded.SwapHoriz to "Transfer"
-    )
-
-    val expenseColor = Color(0xFFB3261E)
-    val incomeColor = Color(0xFF004D40)
-    val transferColor = MaterialTheme.colorScheme.primary
-
-    val indicatorColor by animateColorAsState(
-        targetValue = when (selectedType) {
-            0 -> expenseColor
-            1 -> incomeColor
-            else -> transferColor
-        },
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "indicatorColor"
-    )
-
-    val indicatorOffset by animateDpAsState(
-        targetValue = when (selectedType) {
-            0 -> 0.dp
-            1 -> 80.dp
-            else -> 160.dp
-        },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "indicatorOffset"
-    )
-
-    Box(
-        modifier = Modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(32.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .offset(x = indicatorOffset)
-                .width(80.dp)
-                .fillMaxHeight()
-                .clip(CircleShape)
-                .background(indicatorColor)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxHeight(),
-            horizontalArrangement = Arrangement.spacedBy(0.dp)
-        ) {
-            types.forEachIndexed { index, (icon, label) ->
-                val isSelected = selectedType == index
-                val scale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.1f else 1.0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "iconScale"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .width(80.dp)
-                        .fillMaxHeight()
-                        .clip(CircleShape)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onTypeSelected(index) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier
-                            .size(26.dp)
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                    )
-                }
-            }
-        }
-    }
-}

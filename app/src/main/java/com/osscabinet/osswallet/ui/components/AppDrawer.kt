@@ -104,7 +104,7 @@ fun AppDrawerContent(
                 // Navigation Items
                 val navItems = listOf(
                     Triple("DASHBOARD", "dashboard", Icons.Default.Dashboard),
-                    Triple("RECORDS", "records", Icons.AutoMirrored.Filled.ListAlt),
+                    Triple("RECORDS", "list", Icons.AutoMirrored.Filled.ListAlt),
                     Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
                     Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
                 )
@@ -121,7 +121,7 @@ fun AppDrawerContent(
                         onClick = {
                             when (route) {
                                 "dashboard" -> onDashboardClick()
-                                "records" -> onRecordsClick()
+                                "list" -> onRecordsClick()
                                 "analytics" -> onAnalyticsClick()
                                 "exchange_rates" -> onExchangeRatesClick()
                             }

@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.EditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.*
 
 @Composable
 fun LoanHeaderCard(
@@ -55,9 +55,15 @@ fun LoanHeaderCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Type Selector at top
-            LoanTypeSelector(
-                loanType = loanType,
-                onTypeSelected = onTypeSelected
+            EntryTypeSelector(
+                selectedType = loanType,
+                onTypeSelected = onTypeSelected,
+                types = listOf(
+                    Triple(Icons.Rounded.ArrowUpward, "Lent", LoanType.LENT),
+                    Triple(Icons.Rounded.ArrowDownward, "Borrowed", LoanType.BORROWED)
+                ),
+                selectedColor = amountColor,
+                itemWidth = 120.dp
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -118,7 +124,7 @@ fun LoanHeaderCard(
             )
 
             // Entity Name at the bottom
-            EditorialInput(
+            EntryEditorialInput(
                 value = name,
                 onValueChange = onNameChange,
                 label = "LOAN NAME",
@@ -128,91 +134,3 @@ fun LoanHeaderCard(
     }
 }
 
-@Composable
-private fun LoanTypeSelector(
-    loanType: LoanType,
-    onTypeSelected: (LoanType) -> Unit
-) {
-    val tealColor = Color(0xFF004D40)
-    val orangeColor = Color(0xFFE65100)
-
-    val indicatorColor by animateColorAsState(
-        targetValue = if (loanType == LoanType.LENT) tealColor else orangeColor,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "indicatorColor"
-    )
-
-    val indicatorOffset by animateDpAsState(
-        targetValue = if (loanType == LoanType.LENT) 0.dp else 120.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "indicatorOffset"
-    )
-
-    Box(
-        modifier = Modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(32.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                0.5.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
-                RoundedCornerShape(32.dp)
-            )
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .offset(x = indicatorOffset)
-                .width(120.dp)
-                .fillMaxHeight()
-                .clip(CircleShape)
-                .background(indicatorColor)
-        )
-
-        Row(modifier = Modifier.fillMaxHeight()) {
-            listOf(
-                LoanType.LENT to (Icons.Rounded.ArrowUpward to "Lent"),
-                LoanType.BORROWED to (Icons.Rounded.ArrowDownward to "Borrowed")
-            ).forEach { (type, iconLabel) ->
-                val (icon, label) = iconLabel
-                val isSelected = loanType == type
-                val scale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.1f else 1.0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "scale"
-                )
-                Row(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .fillMaxHeight()
-                        .clip(CircleShape)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onTypeSelected(type) },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier
-                            .size(20.dp)
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
-                    )
-                }
-            }
-        }
-    }
-}

@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.EditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Title
 
@@ -101,7 +101,7 @@ fun BudgetHeaderCard(
             )
 
             // Entity Name at the bottom of the card
-            EditorialInput(
+            EntryEditorialInput(
                 value = name,
                 onValueChange = onNameChange,
                 label = "BUDGET NAME",

@@ -91,16 +91,15 @@ fun TransactionActionCards(
                     iconTint = MaterialTheme.colorScheme.tertiary
                 )
             } else {
-                val displayCategory = if (state.isEditMode) {
-                    state.categories.find { it.id == state.selectedCategoryId }?.name ?: state.category
-                } else state.category
+                val categoryObj = state.categories.find { it.id == state.selectedCategoryId }
+                val displayCategoryName = categoryObj?.name ?: "Unknown"
 
-                val categoryIcon = com.osscabinet.ossWallet.ui.components.categoryIcons[displayCategory] ?: Icons.Rounded.Category
+                val categoryIcon = com.osscabinet.ossWallet.ui.components.categoryIcons[displayCategoryName] ?: Icons.Rounded.Category
 
                 EntryActionCard(
                     icon = categoryIcon,
                     label = "CATEGORY",
-                    value = displayCategory,
+                    value = displayCategoryName,
                     onClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),

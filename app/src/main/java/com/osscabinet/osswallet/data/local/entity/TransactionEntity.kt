@@ -19,7 +19,7 @@ import java.math.BigDecimal
             entity = CategoryEntity::class,
             parentColumns = ["id"],
             childColumns = ["categoryId"],
-            onDelete = ForeignKey.SET_NULL
+            onDelete = ForeignKey.RESTRICT
         )
     ],
     indices = [
@@ -35,12 +35,11 @@ data class TransactionEntity(
     val id: Long = 0,
     val title: String,
     val amount: BigDecimal,
-    val category: String,
     val timestamp: Long,
     val currency: String,
     val transactionType: String, // "income" or "expense"
     val accountId: String,
-    val categoryId: Long? = null,
+    val categoryId: Long,
     val tags: String = "", // Comma-separated tags
     val paymentMethod: String = "Cash",
     val payee: String = "",

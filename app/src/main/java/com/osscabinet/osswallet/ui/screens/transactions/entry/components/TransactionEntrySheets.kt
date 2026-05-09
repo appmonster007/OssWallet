@@ -40,8 +40,8 @@ fun TransactionEntrySheets(
         TransactionCategorySelection(
             categories = state.categories,
             selectedCategoryId = state.selectedCategoryId,
-            onCategorySelected = { category, id ->
-                onEvent(TransactionEntryEvent.SetCategory(category, id))
+            onCategorySelected = { _, id ->
+                onEvent(TransactionEntryEvent.SetCategory(id))
                 onEvent(TransactionEntryEvent.ShowCategorySheet(false))
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowCategorySheet(false)) }
@@ -80,6 +80,7 @@ fun TransactionEntrySheets(
     if (state.showTemplateSheet) {
         TemplateSelection(
             templates = state.templates,
+            categories = state.categories,
             onTemplateSelected = { template ->
                 onEvent(TransactionEntryEvent.ApplyTemplate(template))
                 onEvent(TransactionEntryEvent.ShowTemplateSheet(false))

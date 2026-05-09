@@ -133,7 +133,7 @@ fun PlannedPaymentEntryScreen(
     var startDateMillis by remember { mutableLongStateOf(0L) }
     var hasEndDate by remember { mutableStateOf(false) }
     var endDateMillis by remember { mutableLongStateOf(0L) }
-    var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
+    var selectedCategoryId by remember { mutableLongStateOf(1002L) }
     var payee by remember { mutableStateOf("") }
     var noteUserPart by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("Cash") }

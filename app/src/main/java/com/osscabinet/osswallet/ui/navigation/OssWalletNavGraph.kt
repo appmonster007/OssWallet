@@ -406,9 +406,13 @@ fun OssWalletNavGraph(
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
             ) {
+                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
+                val categoryMap = remember(categories) { categories.associateBy { it.id } }
+                
                 TemplatesScreen(
                     viewModel = templateViewModel,
                     accountViewModel = accountViewModel,
+                    categoryMap = categoryMap,
                     onAddTemplateClick = { id -> navController.navigate(Screen.AddTemplate.createRoute(id)) },
                     onBackClick = { navController.popBackStack() }
                 )

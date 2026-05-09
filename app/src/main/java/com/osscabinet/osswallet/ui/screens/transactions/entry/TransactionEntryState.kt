@@ -17,8 +17,7 @@ data class TransactionEntryState(
     // Core form fields
     val title: String = "",
     val amount: String = "",
-    val category: String = "Shopping",
-    val selectedCategoryId: Long? = null,
+    val selectedCategoryId: Long = 1002L,
     val selectedTags: List<String> = emptyList(),
     val paymentMethod: String = "Cash",
     val status: TransactionStatus = TransactionStatus.CLEARED,
@@ -109,7 +108,7 @@ data class TransactionEntryState(
 sealed class TransactionEntryEvent {
     data class SetTitle(val title: String) : TransactionEntryEvent()
     data class SetAmount(val amount: String) : TransactionEntryEvent()
-    data class SetCategory(val category: String, val categoryId: Long?) : TransactionEntryEvent()
+    data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
     data class SetTags(val tags: List<String>) : TransactionEntryEvent()
     data class AddTag(val tag: String, val color: Int? = null) : TransactionEntryEvent()
     data class DeleteTag(val tag: Tag) : TransactionEntryEvent()

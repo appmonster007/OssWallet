@@ -78,7 +78,6 @@ class PlannedPaymentViewModel(
             val request = TransactionRequest(
                 title = payment.title,
                 amount = payment.amount,
-                category = "",
                 transactionType = payment.transactionType,
                 accountId = payment.accountId,
                 currency = payment.currency,
@@ -173,7 +172,7 @@ class PlannedPaymentViewModel(
             transactionType = "expense",
             accountId = accountId,
             targetAccountId = null,
-            categoryId = null,
+            categoryId = 1002L,
             paymentMethod = "Cash",
             tags = emptyList(),
             note = "",

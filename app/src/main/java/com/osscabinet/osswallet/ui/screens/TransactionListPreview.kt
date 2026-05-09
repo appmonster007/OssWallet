@@ -31,7 +31,6 @@ fun TransactionListFilteredPreview() {
                 id = 1,
                 title = "Lunch at Burger King",
                 amount = BigDecimal("15.50"),
-                category = "Food",
                 categoryId = 1,
                 timestamp = System.currentTimeMillis(),
                 currency = "USD",

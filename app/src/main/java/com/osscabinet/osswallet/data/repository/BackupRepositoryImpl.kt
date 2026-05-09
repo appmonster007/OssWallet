@@ -49,7 +49,6 @@ class BackupRepositoryImpl(
                     id = it.id,
                     title = it.title,
                     amount = it.amount,
-                    category = it.category,
                     timestamp = it.timestamp,
                     currency = it.currency,
                     transactionType = it.transactionType,
@@ -79,7 +78,7 @@ class BackupRepositoryImpl(
                 TemplateBackup(
                     id = it.id,
                     name = it.name,
-                    category = it.category,
+                    categoryId = it.categoryId,
                     amount = it.amount,
                     transactionType = it.transactionType,
                     accountId = it.accountId,
@@ -145,7 +144,6 @@ class BackupRepositoryImpl(
                     id = it.id,
                     title = it.title,
                     amount = it.amount,
-                    category = it.category,
                     timestamp = it.timestamp,
                     currency = it.currency,
                     transactionType = it.transactionType,
@@ -172,7 +170,7 @@ class BackupRepositoryImpl(
                 TemplateEntity(
                     id = it.id,
                     name = it.name,
-                    category = it.category,
+                    categoryId = it.categoryId,
                     amount = it.amount,
                     transactionType = it.transactionType,
                     accountId = it.accountId,

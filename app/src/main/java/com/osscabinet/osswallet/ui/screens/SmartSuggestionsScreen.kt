@@ -20,8 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
+import com.osscabinet.ossWallet.domain.model.Category
 import java.math.BigDecimal
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +32,7 @@ fun SmartSuggestionsScreen(
     onBackClick: () -> Unit
 ) {
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
     val visiblePatterns = patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
 
@@ -88,6 +89,7 @@ fun SmartSuggestionsScreen(
                 items(visiblePatterns) { pattern ->
                     SuggestionListItem(
                         pattern = pattern,
+                        categories = categories,
                         onAcceptAsTemplate = {
                             viewModel.saveTemplateFromPattern(it)
                             onAcceptAsTemplate()
@@ -109,6 +111,7 @@ fun SmartSuggestionsScreen(
 @Composable
 private fun SuggestionListItem(
     pattern: DiscoveredPattern,
+    categories: List<Category>,
     onAcceptAsTemplate: (DiscoveredPattern) -> Unit,
     onAcceptAsPlannedPayment: (DiscoveredPattern) -> Unit,
     onDismiss: () -> Unit
@@ -209,7 +212,8 @@ private fun SuggestionListItem(
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        DetailItem("Category", pattern.category, Modifier.weight(1f))
+                        val categoryName = categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
+                        DetailItem("Category", categoryName, Modifier.weight(1f))
                         DetailItem("Account", pattern.accountId, Modifier.weight(1f))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -295,7 +299,6 @@ private fun SmartSuggestionsScreenPreview() {
         DiscoveredPattern(
             title = "Netflix Subscription",
             payee = "Netflix",
-            category = "Entertainment",
             categoryId = 1,
             accountId = "Savings",
             averageAmount = BigDecimal("-15.99"),
@@ -315,7 +318,6 @@ private fun SmartSuggestionsScreenPreview() {
         DiscoveredPattern(
             title = "Weekly Groceries",
             payee = "Whole Foods",
-            category = "Food",
             categoryId = 2,
             accountId = "Checking",
             averageAmount = BigDecimal("-85.40"),
@@ -345,6 +347,7 @@ private fun SmartSuggestionsScreenPreview() {
                 items(patterns) { pattern ->
                     SuggestionListItem(
                         pattern = pattern,
+                        categories = emptyList(),
                         onAcceptAsTemplate = {},
                         onAcceptAsPlannedPayment = {},
                         onDismiss = {}

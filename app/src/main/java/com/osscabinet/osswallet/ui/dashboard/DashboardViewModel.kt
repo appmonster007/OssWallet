@@ -304,7 +304,6 @@ class DashboardViewModel(
             val request = TransactionRequest(
                 title = payment.title,
                 amount = payment.amount,
-                category = "",
                 transactionType = payment.transactionType,
                 accountId = payment.accountId,
                 currency = payment.currency,

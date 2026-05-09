@@ -17,8 +17,7 @@ import java.util.concurrent.TimeUnit
 data class DiscoveredPattern(
     val title: String,
     val payee: String,
-    val category: String,
-    val categoryId: Long?,
+    val categoryId: Long,
     val accountId: String,
     val averageAmount: BigDecimal,
     val currency: String,
@@ -97,7 +96,6 @@ object PatternDiscoveryService {
         return DiscoveredPattern(
             title = lastTx.title,
             payee = lastTx.payee,
-            category = lastTx.category,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,
             averageAmount = avgAmount,
@@ -185,7 +183,7 @@ object PatternDiscoveryService {
         return Template(
             id = 0,
             name = pattern.title,
-            category = pattern.category,
+            categoryId = pattern.categoryId,
             amount = pattern.averageAmount,
             transactionType = if (pattern.transactionType == "income") 1 else 0,
             icon = null,

@@ -146,7 +146,14 @@ fun CategoryManagementScreen(
                 )
                 showAddDialog = false
                 selectedCategoryForEdit = null
-            }
+            },
+            onDelete = if (editingCategory != null && editingCategory.id != 0L) {
+                {
+                    viewModel.deleteCategory(editingCategory)
+                    showAddDialog = false
+                    selectedCategoryForEdit = null
+                }
+            } else null
         )
     }
 }

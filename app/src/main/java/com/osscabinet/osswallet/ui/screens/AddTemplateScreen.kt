@@ -62,7 +62,15 @@ fun AddTemplateScreen(
     var name by remember { mutableStateOf("") }
     var transactionType by remember { mutableIntStateOf(0) } // 0: Expense, 1: Income
     var amount by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("Shopping") }
+    var categoryId by remember { mutableLongStateOf(1002L) }
+    var categoryName by remember { mutableStateOf("Unknown") }
+
+    LaunchedEffect(categoriesList, categoryId) {
+        val cat = categoriesList.find { it.id == categoryId }
+        if (cat != null) {
+            categoryName = cat.name
+        }
+    }
     var accountId by remember { mutableStateOf<String?>(null) }
     var currency by remember { mutableStateOf("USD") }
     var note by remember { mutableStateOf("") }
@@ -76,7 +84,7 @@ fun AddTemplateScreen(
             name = template.name
             transactionType = template.transactionType
             amount = template.amount.toPlainString()
-            category = template.category
+            categoryId = template.categoryId
             accountId = template.accountId
             currency = template.currency ?: "USD"
             note = template.note ?: ""
@@ -88,7 +96,7 @@ fun AddTemplateScreen(
             name = prefill!!.name
             transactionType = prefill!!.transactionType
             amount = prefill!!.amount.abs().toPlainString()
-            category = prefill!!.category
+            categoryId = prefill!!.categoryId
             accountId = prefill!!.accountId
             currency = prefill!!.currency ?: "USD"
             note = prefill!!.note ?: ""
@@ -156,7 +164,7 @@ fun AddTemplateScreen(
                                         val domainTemplate = Template(
                                             id = templateId ?: 0,
                                             name = name,
-                                            category = category,
+                                            categoryId = categoryId,
                                             amount = amount.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                                             transactionType = transactionType,
                                             icon = template?.icon,
@@ -174,7 +182,7 @@ fun AddTemplateScreen(
                                         if (templateId == null) {
                                             templateViewModel.addTemplate(
                                                 name = domainTemplate.name,
-                                                category = domainTemplate.category,
+                                                categoryId = domainTemplate.categoryId,
                                                 amount = domainTemplate.amount,
                                                 transactionType = domainTemplate.transactionType,
                                                 note = domainTemplate.note,
@@ -317,9 +325,9 @@ fun AddTemplateScreen(
                     )
 
                     EntryActionCard(
-                        icon = com.osscabinet.ossWallet.ui.components.categoryIcons[category] ?: Icons.Rounded.Category,
+                        icon = com.osscabinet.ossWallet.ui.components.categoryIcons[categoryName] ?: Icons.Rounded.Category,
                         label = "CATEGORY",
-                        value = category,
+                        value = categoryName,
                         onClick = { showCategorySheet = true },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
@@ -462,9 +470,10 @@ fun AddTemplateScreen(
     if (showCategorySheet) {
         TransactionCategorySelection(
             categories = categoriesList,
-            selectedCategoryId = categoriesList.find { it.name == category }?.id,
+            selectedCategoryId = categoryId,
             onCategorySelected = { name, id ->
-                category = name
+                categoryName = name
+                categoryId = id
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }

@@ -34,7 +34,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -513,6 +513,22 @@ abstract class AppDatabase : RoomDatabase() {
                     }
                 }
 
+                val MIGRATION_16_17 = object : Migration(16, 17) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        // Insert default "Others" structure
+                        database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1000, 'Others', 'Menu', -7829368, 1, NULL)")
+                        database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1001, 'Missing', 'MoreHoriz', -7829368, 1, 1000)")
+                        database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1002, 'Unknown', 'QuestionMark', -7829368, 1, 1000)")
+                        database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1003, 'Transfer', 'SwapHoriz', -7829368, 1, 1000)")
+
+                        // Update existing NULL or empty category names and IDs
+                        database.execSQL("UPDATE transactions SET categoryId = 1003 WHERE category = 'Transfer'")
+                        database.execSQL("UPDATE transactions SET categoryId = 1002, category = 'Unknown' WHERE categoryId IS NULL OR category = '' OR category = 'None'")
+                        database.execSQL("UPDATE planned_payments SET categoryId = 1002 WHERE categoryId IS NULL")
+                        database.execSQL("UPDATE templates SET category = 'Unknown' WHERE category = '' OR category = 'None'")
+                    }
+                }
+
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -541,6 +557,12 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (10, 'Personal Care', 'Spa', -16738680, 1, NULL)")
                             db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (11, 'Bills & Subscriptions', 'Receipt', -16724736, 1, NULL)")
                             db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (12, 'Investments', 'TrendingUp', -16711707, 1, NULL)")
+
+                            // Others Root structure
+                            db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1000, 'Others', 'Menu', -7829368, 1, NULL)")
+                            db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1001, 'Missing', 'MoreHoriz', -7829368, 1, 1000)")
+                            db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1002, 'Unknown', 'QuestionMark', -7829368, 1, 1000)")
+                            db.execSQL("INSERT INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1003, 'Transfer', 'SwapHoriz', -7829368, 1, 1000)")
 
                             // Food & Dining subcategories
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Groceries', 'LocalGroceryStore', -12627531, 1, 1)")
@@ -617,7 +639,7 @@ abstract class AppDatabase : RoomDatabase() {
                             db.execSQL("INSERT INTO categories (name, iconName, colorHex, isDefault, parentId) VALUES ('Real Estate', 'Domain', -16711707, 1, 12)")
                         }
                     })
-                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+                    .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
                     .build()
                 INSTANCE = instance
                 instance

@@ -70,6 +70,13 @@ class DatabaseSeeder @Inject constructor(
         categoryDao.clearAll()
         android.util.Log.d("DatabaseSeeder", "Cleared existing data")
 
+        // Re-insert mandatory categories
+        categoryDao.insertCategory(CategoryEntity(id = 1000, name = "Others", iconName = "Menu", colorHex = -7829368, isDefault = true, parentId = null))
+        categoryDao.insertCategory(CategoryEntity(id = 1001, name = "Missing", iconName = "MoreHoriz", colorHex = -7829368, isDefault = true, parentId = 1000))
+        categoryDao.insertCategory(CategoryEntity(id = 1002, name = "Unknown", iconName = "QuestionMark", colorHex = -7829368, isDefault = true, parentId = 1000))
+        categoryDao.insertCategory(CategoryEntity(id = 1003, name = "Transfer", iconName = "SwapHoriz", colorHex = -7829368, isDefault = true, parentId = 1000))
+        android.util.Log.d("DatabaseSeeder", "Re-inserted mandatory categories")
+
         // Load seed data from separate CSV files
         val accounts = loadAccountsFromCsv()
         android.util.Log.d("DatabaseSeeder", "Loaded ${accounts.size} accounts from CSV")
@@ -161,7 +168,7 @@ class DatabaseSeeder @Inject constructor(
                 }
 
                 val transactionWithCategoryId = transaction.copy(categoryId = categoryId)
-                transactionDao.insertTransaction(transactionWithCategoryId)
+                transactionDao.insertTransaction(transactionWithCategoryId.toTransactionEntity())
 
                 successfulTransactions++
             } catch (e: Exception) {
@@ -246,8 +253,8 @@ class DatabaseSeeder @Inject constructor(
         return accounts
     }
 
-    private fun loadTransactionsFromCsv(): List<TransactionEntity> {
-        val transactions = mutableListOf<TransactionEntity>()
+    private fun loadTransactionsFromCsv(): List<TransactionSeedRow> {
+        val transactions = mutableListOf<TransactionSeedRow>()
         try {
             val inputStream = context.assets.open("transactions.csv")
             val reader = BufferedReader(InputStreamReader(inputStream))
@@ -259,7 +266,7 @@ class DatabaseSeeder @Inject constructor(
                 lines.forEach { line ->
                     if (line.isNotBlank()) {
                         try {
-                            transactions.add(TransactionSeedRow.fromCsv(line).toTransactionEntity())
+                            transactions.add(TransactionSeedRow.fromCsv(line))
                         } catch (e: Exception) {
                             android.util.Log.e("DatabaseSeeder", "Failed to parse transaction line: $line, error: ${e.message}")
                         }
@@ -390,12 +397,11 @@ class DatabaseSeeder @Inject constructor(
             return TransactionEntity(
                 title = title,
                 amount = amount,
-                category = category,
                 timestamp = timestamp ?: System.currentTimeMillis(),
                 currency = currency,
                 transactionType = transactionType,
                 accountId = accountId,
-                categoryId = categoryId,
+                categoryId = categoryId ?: 1002L,
                 paymentMethod = paymentMethod,
                 payee = payee,
                 note = note,

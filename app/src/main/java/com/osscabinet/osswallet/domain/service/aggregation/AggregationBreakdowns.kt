@@ -50,7 +50,7 @@ fun List<Transaction>.breakdownByCategory(
     exchangeRates: Map<String, BigDecimal>? = null,
     baseCurrency: String? = null
 ): List<CategoryBreakdown> =
-    AggregationService.createMetricsBreakdown(this, { it.category }, exchangeRates, baseCurrency)
+    AggregationService.createMetricsBreakdown(this, { it.categoryId.toString() }, exchangeRates, baseCurrency)
         .sortedByDescending { it.totalAmount.abs() }
 
 /**
@@ -149,7 +149,7 @@ fun List<Transaction>.breakdownByCategoryForAccount(
     filter { it.accountId == accountId }.breakdownByCategory(exchangeRates, baseCurrency)
 
 fun List<Transaction>.breakdownByCategoryAndAccount(accounts: List<Account>): Map<String, List<AccountBreakdown>> =
-    groupBy { it.category }.mapValues { (_, txs) -> txs.breakdownByAccount() }
+    groupBy { it.categoryId.toString() }.mapValues { (_, txs) -> txs.breakdownByAccount() }
 
 fun List<Transaction>.breakdownByAccountAndCategory(): Map<String, List<CategoryBreakdown>> =
     groupBy { it.accountId }.mapValues { (_, txs) -> txs.breakdownByCategory() }

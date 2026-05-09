@@ -500,7 +500,7 @@ class TransactionViewModel(
         val template = PatternDiscoveryService.toTemplate(pattern)
         _templatePrefill.value = TemplatePrefillDTO(
             name = template.name,
-            category = template.category,
+            categoryId = template.categoryId,
             amount = template.amount,
             transactionType = template.transactionType,
             accountId = template.accountId,

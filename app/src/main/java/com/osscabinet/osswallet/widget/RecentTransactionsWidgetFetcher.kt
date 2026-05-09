@@ -44,6 +44,8 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             .observeFilteredTransactions(common.profileId, filter, limit = config.limit)
             .first()
 
+        val categoryMap = common.categoryRepository.categories.first().associateBy { it.id }
+
         val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
         val dateFormatter = SimpleDateFormat("MMM dd", Locale.getDefault())
 
@@ -54,7 +56,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
                 amount = formatCurrencyRight(tx.amount, tx.currency, common.precision),
                 currency = tx.currency,
                 type = tx.transactionType,
-                category = tx.category,
+                category = categoryMap[tx.categoryId]?.name ?: "Unknown",
                 timestamp = if (isSameDay(tx.timestamp, System.currentTimeMillis())) {
                     timeFormatter.format(Date(tx.timestamp))
                 } else {

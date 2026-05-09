@@ -22,8 +22,8 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 @Composable
 fun TransactionCategorySelection(
     categories: List<Category>,
-    selectedCategoryId: Long?,
-    onCategorySelected: (String, Long?) -> Unit,
+    selectedCategoryId: Long,
+    onCategorySelected: (String, Long) -> Unit,
     onDismiss: () -> Unit
 ) {
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
@@ -49,7 +49,7 @@ fun TransactionCategorySelection(
                         AeonHierarchicalHybridSelector(
                             items = categories,
                             mode = AeonSelectMode.SINGLE,
-                            selectedIds = if (selectedCategoryId != null) setOf(selectedCategoryId) else emptySet(),
+                            selectedIds = setOf(selectedCategoryId),
                             onSelectionChange = { ids ->
                                 val selectedId = ids.firstOrNull()
                                 val category = categories.find { it.id == selectedId }

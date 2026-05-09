@@ -125,7 +125,9 @@ fun LoanEntryScreen(
     var showTagSheet by remember { mutableStateOf(false) }
 
     val allCurrencies = remember { CurrencyService.getAllCurrencies() }
-    val canSave = name.isNotBlank() && principalText.toBigDecimalOrNull() != null
+    val canSave = name.isNotBlank() && 
+                 principalText.toBigDecimalOrNull() != null && 
+                 selectedCategoryIds.isNotEmpty()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

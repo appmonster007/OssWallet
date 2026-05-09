@@ -185,7 +185,7 @@ class BudgetViewModel(
         currency = "USD",
         limitAmount = BigDecimal.ZERO,
         period = BudgetPeriod.MONTHLY,
-        categoryIds = emptyList(),
+        categoryIds = listOf(1002L),
         accountIds = emptyList(),
         alertThreshold = 0.8f,
         rollover = false,

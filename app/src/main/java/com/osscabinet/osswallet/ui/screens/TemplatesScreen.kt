@@ -35,6 +35,7 @@ fun TemplatesScreen(
     onBackClick: () -> Unit,
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
+    categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
     onAddTemplateClick: (Long?) -> Unit
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
@@ -139,6 +140,7 @@ fun TemplatesScreen(
                 items(templates, key = { it.id }) { template ->
                     TemplateItem(
                         template = template,
+                        categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
                         onEdit = { navigate { onAddTemplateClick(template.id) } },
                         onDelete = { templateToDelete = template },
                         onToggleStar = { viewModel.toggleStar(template) }
@@ -184,6 +186,7 @@ fun ReorderTemplateItem(
 @Composable
 fun TemplateItem(
     template: Template,
+    categoryName: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleStar: () -> Unit
@@ -220,7 +223,7 @@ fun TemplateItem(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(template.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text(template.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                Text(categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             }
             IconButton(onClick = onToggleStar) {
                 Icon(
@@ -242,10 +245,10 @@ fun TemplateDialog(
     template: Template?,
     accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Double, Int, String?, String?) -> Unit
+    onConfirm: (String, Long, Double, Int, String?, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(template?.name ?: "") }
-    var category by remember { mutableStateOf(template?.category ?: "Shopping") }
+    var categoryId by remember { mutableLongStateOf(template?.categoryId ?: 1002L) }
     var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
     var type by remember { mutableIntStateOf(template?.transactionType ?: 0) }
     var note by remember { mutableStateOf(template?.note ?: "") }
@@ -265,10 +268,11 @@ fun TemplateDialog(
                     label = { Text("Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                // Note: Simplified for now, real implementation should use a category picker
                 OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Category") },
+                    value = categoryId.toString(),
+                    onValueChange = { categoryId = it.toLongOrNull() ?: 1002L },
+                    label = { Text("Category ID") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -320,7 +324,7 @@ fun TemplateDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(name, category, amount.toDoubleOrNull() ?: 0.0, type, note.ifBlank { null }, accountId) }) {
+            Button(onClick = { onConfirm(name, categoryId, amount.toDoubleOrNull() ?: 0.0, type, note.ifBlank { null }, accountId) }) {
                 Text("Save")
             }
         },

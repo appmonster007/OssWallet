@@ -22,8 +22,8 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.util.formatAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 
 @Composable

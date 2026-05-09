@@ -35,7 +35,7 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date

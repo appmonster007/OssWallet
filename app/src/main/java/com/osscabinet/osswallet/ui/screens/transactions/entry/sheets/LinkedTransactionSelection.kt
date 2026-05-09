@@ -23,7 +23,7 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.categoryIcons
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*

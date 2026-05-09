@@ -56,7 +56,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
 import kotlinx.serialization.Contextual

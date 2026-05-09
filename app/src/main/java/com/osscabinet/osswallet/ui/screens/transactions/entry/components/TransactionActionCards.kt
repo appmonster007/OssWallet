@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
@@ -66,8 +68,9 @@ fun TransactionActionCards(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val accountIcon = getAccountIconByName(state.selectedAccount?.icon)
             EntryActionCard(
-                icon = Icons.Rounded.AccountBalance,
+                icon = accountIcon,
                 label = if (state.isTransfer) "FROM" else "ACCOUNT",
                 value = state.selectedAccount?.name ?: "Select",
                 onClick = { onEvent(TransactionEntryEvent.ShowAccountSheet(true)) },
@@ -81,8 +84,9 @@ fun TransactionActionCards(
                     state.targetAccount != null -> state.targetAccount.name
                     else -> "Outside Wallet"
                 }
+                val targetIcon = getAccountIconByName(state.targetAccount?.icon)
                 EntryActionCard(
-                    icon = Icons.Rounded.AccountBalance,
+                    icon = targetIcon,
                     label = "TO",
                     value = targetDisplay,
                     onClick = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(true)) },
@@ -94,7 +98,7 @@ fun TransactionActionCards(
                 val categoryObj = state.categories.find { it.id == state.selectedCategoryId }
                 val displayCategoryName = categoryObj?.name ?: "Unknown"
 
-                val categoryIcon = com.osscabinet.ossWallet.ui.components.categoryIcons[displayCategoryName] ?: Icons.Rounded.Category
+                val categoryIcon = getIconByName(categoryObj?.iconName)
 
                 EntryActionCard(
                     icon = categoryIcon,

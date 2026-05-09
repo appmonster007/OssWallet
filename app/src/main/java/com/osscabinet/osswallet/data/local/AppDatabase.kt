@@ -515,17 +515,128 @@ abstract class AppDatabase : RoomDatabase() {
 
                 val MIGRATION_16_17 = object : Migration(16, 17) {
                     override fun migrate(database: SupportSQLiteDatabase) {
-                        // Insert default "Others" structure
+                        // 1. Seed mandatory categories
                         database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1000, 'Others', 'Menu', -7829368, 1, NULL)")
                         database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1001, 'Missing', 'MoreHoriz', -7829368, 1, 1000)")
                         database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1002, 'Unknown', 'QuestionMark', -7829368, 1, 1000)")
                         database.execSQL("INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId) VALUES (1003, 'Transfer', 'SwapHoriz', -7829368, 1, 1000)")
 
-                        // Update existing NULL or empty category names and IDs
+                        // 2. Data cleanup for transactions
                         database.execSQL("UPDATE transactions SET categoryId = 1003 WHERE category = 'Transfer'")
-                        database.execSQL("UPDATE transactions SET categoryId = 1002, category = 'Unknown' WHERE categoryId IS NULL OR category = '' OR category = 'None'")
+                        database.execSQL("UPDATE transactions SET categoryId = 1002 WHERE categoryId IS NULL")
+
+                        // 3. Recreate transactions table (Remove 'category' column, categoryId NOT NULL)
+                        database.execSQL("""
+                            CREATE TABLE transactions_v17 (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL,
+                                amount TEXT NOT NULL,
+                                timestamp INTEGER NOT NULL,
+                                currency TEXT NOT NULL,
+                                transactionType TEXT NOT NULL,
+                                accountId TEXT NOT NULL,
+                                categoryId INTEGER NOT NULL,
+                                tags TEXT NOT NULL,
+                                paymentMethod TEXT NOT NULL,
+                                payee TEXT NOT NULL,
+                                note TEXT NOT NULL,
+                                recurring TEXT,
+                                profileId INTEGER NOT NULL,
+                                latitude REAL,
+                                longitude REAL,
+                                warrantyExpiration INTEGER,
+                                status TEXT NOT NULL,
+                                FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE,
+                                FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE RESTRICT
+                            )
+                        """)
+                        database.execSQL("""
+                            INSERT INTO transactions_v17 (id, title, amount, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, profileId, latitude, longitude, warrantyExpiration, status)
+                            SELECT id, title, amount, timestamp, currency, transactionType, accountId, categoryId, tags, paymentMethod, payee, note, recurring, profileId, latitude, longitude, warrantyExpiration, status
+                            FROM transactions
+                        """)
+                        database.execSQL("DROP TABLE transactions")
+                        database.execSQL("ALTER TABLE transactions_v17 RENAME TO transactions")
+                        database.execSQL("CREATE INDEX index_transactions_accountId ON transactions (accountId)")
+                        database.execSQL("CREATE INDEX index_transactions_categoryId ON transactions (categoryId)")
+                        database.execSQL("CREATE INDEX index_transactions_profileId ON transactions (profileId)")
+                        database.execSQL("CREATE INDEX index_transactions_timestamp ON transactions (timestamp)")
+                        database.execSQL("CREATE INDEX index_transactions_status ON transactions (status)")
+
+                        // 4. Data cleanup for planned_payments
                         database.execSQL("UPDATE planned_payments SET categoryId = 1002 WHERE categoryId IS NULL")
-                        database.execSQL("UPDATE templates SET category = 'Unknown' WHERE category = '' OR category = 'None'")
+
+                        // 5. Recreate planned_payments table (Remove 'category' column, categoryId NOT NULL)
+                        database.execSQL("""
+                            CREATE TABLE planned_payments_v17 (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL,
+                                amount TEXT NOT NULL,
+                                currency TEXT NOT NULL,
+                                transactionType TEXT NOT NULL,
+                                accountId TEXT NOT NULL,
+                                targetAccountId TEXT,
+                                categoryId INTEGER NOT NULL,
+                                paymentMethod TEXT NOT NULL,
+                                tags TEXT NOT NULL,
+                                note TEXT NOT NULL,
+                                payee TEXT NOT NULL,
+                                recurrenceType TEXT NOT NULL,
+                                recurrenceInterval INTEGER NOT NULL,
+                                recurrenceDayOfWeek INTEGER,
+                                recurrenceDayOfMonth INTEGER,
+                                startDate INTEGER NOT NULL,
+                                endDate INTEGER,
+                                nextDueDate INTEGER NOT NULL,
+                                lastTriggeredDate INTEGER,
+                                autoConfirm INTEGER NOT NULL,
+                                status TEXT NOT NULL,
+                                profileId INTEGER NOT NULL,
+                                FOREIGN KEY(accountId) REFERENCES accounts(id) ON DELETE CASCADE,
+                                FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE RESTRICT
+                            )
+                        """)
+                        database.execSQL("""
+                            INSERT INTO planned_payments_v17 (id, title, amount, currency, transactionType, accountId, targetAccountId, categoryId, paymentMethod, tags, note, payee, recurrenceType, recurrenceInterval, recurrenceDayOfWeek, recurrenceDayOfMonth, startDate, endDate, nextDueDate, lastTriggeredDate, autoConfirm, status, profileId)
+                            SELECT id, title, amount, currency, transactionType, accountId, targetAccountId, categoryId, paymentMethod, tags, note, payee, recurrenceType, recurrenceInterval, recurrenceDayOfWeek, recurrenceDayOfMonth, startDate, endDate, nextDueDate, lastTriggeredDate, autoConfirm, status, profileId
+                            FROM planned_payments
+                        """)
+                        database.execSQL("DROP TABLE planned_payments")
+                        database.execSQL("ALTER TABLE planned_payments_v17 RENAME TO planned_payments")
+                        database.execSQL("CREATE INDEX index_planned_payments_profileId ON planned_payments (profileId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_accountId ON planned_payments (accountId)")
+                        database.execSQL("CREATE INDEX index_planned_payments_nextDueDate ON planned_payments (nextDueDate)")
+                        database.execSQL("CREATE INDEX index_planned_payments_status ON planned_payments (status)")
+
+                        // 6. Recreate templates table (Add 'categoryId', Remove 'category')
+                        database.execSQL("""
+                            CREATE TABLE templates_v17 (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                name TEXT NOT NULL,
+                                categoryId INTEGER NOT NULL,
+                                amount TEXT NOT NULL,
+                                transactionType INTEGER NOT NULL,
+                                icon TEXT,
+                                colorHex TEXT,
+                                accountId TEXT,
+                                note TEXT,
+                                payee TEXT,
+                                location TEXT,
+                                paymentMethod TEXT,
+                                currency TEXT,
+                                tags TEXT NOT NULL,
+                                isStarred INTEGER NOT NULL,
+                                displayOrder INTEGER NOT NULL,
+                                FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE RESTRICT
+                            )
+                        """)
+                        database.execSQL("""
+                            INSERT INTO templates_v17 (id, name, categoryId, amount, transactionType, icon, colorHex, accountId, note, payee, location, paymentMethod, currency, tags, isStarred, displayOrder)
+                            SELECT id, name, 1002, amount, transactionType, icon, colorHex, accountId, note, payee, location, paymentMethod, currency, tags, isStarred, displayOrder
+                            FROM templates
+                        """)
+                        database.execSQL("DROP TABLE templates")
+                        database.execSQL("ALTER TABLE templates_v17 RENAME TO templates")
                     }
                 }
 

@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -64,10 +66,11 @@ fun LoanActionCards(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val selectedAccount = accounts.find { it.id == linkedAccountId }
             EntryActionCard(
-                icon = Icons.Rounded.AccountBalance,
+                icon = getAccountIconByName(selectedAccount?.icon),
                 label = "ACCOUNT",
-                value = accounts.find { it.id == linkedAccountId }?.name ?: "Select",
+                value = selectedAccount?.name ?: "Select",
                 onClick = { onAccountClick() },
                 modifier = Modifier.weight(1f),
                 iconContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
@@ -86,12 +89,13 @@ fun LoanActionCards(
         }
 
         // Row 3: Filters / Categories (Full Width)
+        val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
         EntryActionCard(
-            icon = Icons.Rounded.FilterList,
+            icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.FilterList,
             label = "FILTERS",
             value = when {
                 selectedCategoryIds.isEmpty() -> "All Categories"
-                selectedCategoryIds.size == 1 -> categories.find { it.id == selectedCategoryIds.first() }?.name ?: "1 Category"
+                categoryObj != null -> categoryObj.name
                 else -> "${selectedCategoryIds.size} Categories"
             },
             onClick = onCategoryClick,

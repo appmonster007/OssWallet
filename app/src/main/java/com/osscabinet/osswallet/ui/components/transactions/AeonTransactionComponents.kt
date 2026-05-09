@@ -44,7 +44,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -117,8 +117,7 @@ fun AeonTransactionList(
 
             items(groupTransactions, key = { it.transaction.id }) { item ->
                 val category = categoryMap[item.transaction.categoryId]
-                val icon = categoryIcons[category?.iconName] ?: categoryIcons[category?.name]
-                ?: Icons.Rounded.Category
+                val icon = getIconByName(category?.iconName)
                 val iconBg = category?.colorHex?.let { Color(it) }
                     ?: MaterialTheme.colorScheme.primaryContainer
 

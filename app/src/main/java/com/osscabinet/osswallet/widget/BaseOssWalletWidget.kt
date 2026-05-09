@@ -65,7 +65,7 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.surface)
-                .cornerRadius(24.dp)
+                .cornerRadius(32.dp)
                 .padding(horizontal = 12.dp, vertical = 10.dp)
                 .clickable(
                     actionStartActivity(

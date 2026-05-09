@@ -41,7 +41,7 @@ fun AeonBudgetProgress(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "${formatCurrencyRight(current, baseCurrency, precision)} / ${formatCurrencyRight(total, baseCurrency, precision)}",
+                    "${formatCurrencyRight(current, baseCurrency, precision, shorten = true)} / ${formatCurrencyRight(total, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = MaterialTheme.colorScheme.outline
                     )

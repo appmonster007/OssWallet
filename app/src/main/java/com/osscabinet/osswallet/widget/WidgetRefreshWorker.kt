@@ -104,11 +104,11 @@ class WidgetRefreshWorker(
                                 currentPrefs.toMutablePreferences().apply {
                                     this[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
                                     this[NetWorthGlanceWidget.Keys.NET_WORTH] =
-                                        formatCurrencyRight(netWorth, common.baseCurrency, common.precision)
+                                        formatCurrencyRight(netWorth, common.baseCurrency, common.precision, shorten = true)
                                     this[NetWorthGlanceWidget.Keys.INCOME] =
-                                        formatCurrencyRight(income, common.baseCurrency, common.precision)
+                                        formatCurrencyRight(income, common.baseCurrency, common.precision, shorten = true)
                                     this[NetWorthGlanceWidget.Keys.EXPENSE] =
-                                        formatCurrencyRight(expense, common.baseCurrency, common.precision)
+                                        formatCurrencyRight(expense, common.baseCurrency, common.precision, shorten = true)
                                     this[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
                                         buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
                                     this[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =
@@ -171,8 +171,8 @@ class WidgetRefreshWorker(
                             val expenseInBase = result?.totalExpensesInBase ?: BigDecimal.ZERO
                             val netInBase = result?.netInBase ?: BigDecimal.ZERO
 
-                            val incomeFormatted = formatCurrencyRight(incomeInBase, common.baseCurrency, common.precision)
-                            val expenseFormatted = formatCurrencyRight(expenseInBase, common.baseCurrency, common.precision)
+                            val incomeFormatted = formatCurrencyRight(incomeInBase, common.baseCurrency, common.precision, shorten = true)
+                            val expenseFormatted = formatCurrencyRight(expenseInBase, common.baseCurrency, common.precision, shorten = true)
 
                             // Comparison: net flow vs previous period (computed on demand)
                             val prevNetInBase: BigDecimal? = if (config.showComparison) {
@@ -213,10 +213,10 @@ class WidgetRefreshWorker(
                                     arr.put(
                                         JSONObject().apply {
                                             put("code", item.currency)
-                                            put("income", formatCurrencyRight(item.income, item.currency, common.precision))
-                                            put("incomeBase", formatCurrencyRight(item.incomeInBase, common.baseCurrency, common.precision))
-                                            put("expense", formatCurrencyRight(item.expense, item.currency, common.precision))
-                                            put("expenseBase", formatCurrencyRight(item.expenseInBase, common.baseCurrency, common.precision))
+                                            put("income", formatCurrencyRight(item.income, item.currency, common.precision, shorten = true))
+                                            put("incomeBase", formatCurrencyRight(item.incomeInBase, common.baseCurrency, common.precision, shorten = true))
+                                            put("expense", formatCurrencyRight(item.expense, item.currency, common.precision, shorten = true))
+                                            put("expenseBase", formatCurrencyRight(item.expenseInBase, common.baseCurrency, common.precision, shorten = true))
                                         }
                                     )
                                 }

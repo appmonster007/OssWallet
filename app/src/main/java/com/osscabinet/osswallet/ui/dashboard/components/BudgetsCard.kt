@@ -183,9 +183,9 @@ private fun BudgetProgressRow(
                     )
                     Text(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, precision)
+                            formatCurrencyRight(progress.spent.subtract(progress.limit), progress.budget.currency, precision, shorten = true)
                         } else {
-                            formatCurrencyRight(progress.remaining, progress.budget.currency, precision)
+                            formatCurrencyRight(progress.remaining, progress.budget.currency, precision, shorten = true)
                         },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.ExtraBold,

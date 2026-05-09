@@ -128,7 +128,7 @@ fun AccountHeroCard(
                 )
 
                 val balanceParts =
-                    formatCurrencyRight(balance, account.currencyCode, precision = precision).split(
+                    formatCurrencyRight(balance, account.currencyCode, precision = precision, shorten = true).split(
                         " "
                     )
                 val amountText = balanceParts.dropLast(1).joinToString(" ")
@@ -162,7 +162,8 @@ fun AccountHeroCard(
                             formatCurrencyRight(
                                 balanceInBase,
                                 baseCurrency,
-                                precision = precision
+                                precision = precision,
+                                shorten = true
                             )
                         }",
                         style = MaterialTheme.typography.bodyMedium.copy(

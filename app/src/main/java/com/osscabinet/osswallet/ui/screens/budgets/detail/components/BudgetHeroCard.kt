@@ -75,7 +75,7 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount = formatCurrencyRight(displayAmount, budget.currency, precision = precision)
+                        val amount = formatCurrencyRight(displayAmount, budget.currency, precision = precision, shorten = true)
                         val amountParts = amount.split(" ")
                         val amountText = amountParts.dropLast(1).joinToString(" ")
                         val symbolText = amountParts.lastOrNull() ?: ""
@@ -129,7 +129,7 @@ fun BudgetHeroCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, precision)}",
+                        text = "Limit: ${formatCurrencyRight(budget.limitAmount, budget.currency, precision, shorten = true)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )

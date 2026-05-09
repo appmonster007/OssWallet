@@ -90,13 +90,13 @@ fun AeonAccountCardSmall(
                 )
                 Column {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, precision),
+                        formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
+                        "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
@@ -172,13 +172,13 @@ fun AeonAccountCardMedium(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    formatCurrencyRight(balance, account.currencyCode, precision),
+                    formatCurrencyRight(balance, account.currencyCode, precision, shorten = true),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision)}",
+                    "≈ ${formatCurrencyRight(balanceInBase, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     color = contentColor.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -287,7 +287,7 @@ fun AeonAccountCardLarge(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        formatCurrencyRight(balance, account.currencyCode, precision = precision),
+                        formatCurrencyRight(balance, account.currencyCode, precision = precision, shorten = true),
                         style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
                         color = contentColor
                     )

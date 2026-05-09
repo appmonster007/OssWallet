@@ -223,9 +223,8 @@ fun TransactionHeader(
                                         color = negativeColor.copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
                                     )
-                                    val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
                                     Text(
-                                        netSign + formatCurrencyRight(net, curr, precision, shorten = true),
+                                        formatCurrencyRight(net, curr, precision, shorten = true),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 9.sp

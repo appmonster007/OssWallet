@@ -154,53 +154,38 @@ fun AnalyticsScreen(
         }
 
     if (showAddCardDialog) {
-        val analyticsCardOptions = listOf(
-            CardTypeOptionData(
-                title = "Category Pie Chart",
-                description = "View spending by category",
-                icon = Icons.Default.PieChart,
-                onClick = {
-                    viewModel.addCard(
+        CardTypeSelectionDialog(
+            screenContext = ScreenContext.ANALYTICS,
+            onDismiss = { showAddCardDialog = false },
+            onCardTypeSelected = { cardType ->
+                val defaultFilter = TransactionFilter(
+                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
+                    transactionType = "expense"
+                )
+                when (cardType) {
+                    CardType.CATEGORY_PIE_CHART -> viewModel.addCard(
                         CategoryPieChartCardConfig(
                             cardId = "analytics_category_breakdown_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY PIE CHART",
-                            filter = TransactionFilter(
-                                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                                transactionType = "expense"
-                            ),
+                            filter = defaultFilter,
                             showLabels = true,
                             showLegend = true
                         )
                     )
-                    showAddCardDialog = false
-                }
-            ),
-            CardTypeOptionData(
-                title = "Category Treemap",
-                description = "Expense distribution treemap",
-                icon = Icons.Default.BarChart,
-                onClick = {
-                    viewModel.addCard(
+                    CardType.CATEGORY_TREEMAP -> viewModel.addCard(
                         CategoryTreemapCardConfig(
                             cardId = "analytics_category_expense_treemap_${System.currentTimeMillis()}",
                             order = cardsConfig.cards.size,
                             title = "CATEGORY TREEMAP",
-                            filter = TransactionFilter(
-                                timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                                transactionType = "expense"
-                            ),
+                            filter = defaultFilter,
                             showLabels = true
                         )
                     )
-                    showAddCardDialog = false
+                    else -> viewModel.addCard(cardType)
                 }
-            )
-        )
-
-        GenericAddCardDialog(
-            onDismiss = { showAddCardDialog = false },
-            cardOptions = analyticsCardOptions
+                showAddCardDialog = false
+            }
         )
     }
 }

@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -17,11 +16,9 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
-import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
+import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
+import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetDragHandle
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -65,7 +62,6 @@ fun TransactionListContent(
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     savedFilters: List<Filter> = emptyList(),
-    templates: List<Template> = emptyList(),
     onAddTransactionClick: (Int?, String?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
@@ -85,7 +81,6 @@ fun TransactionListContent(
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
     onFullSwipeRight: (Long) -> Unit = {},
-    expandableFabEnabled: Boolean = true,
     is24Hour: Boolean = false
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState(
@@ -95,18 +90,31 @@ fun TransactionListContent(
         )
     )
     val scope = rememberCoroutineScope()
-    var isFabExpanded by remember { mutableStateOf(false) }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         modifier = Modifier.background(Color.Transparent),
-        sheetPeekHeight = 120.dp,
+        sheetPeekHeight = 90.dp,
         sheetContainerColor = Color.Transparent,
         sheetContentColor = MaterialTheme.colorScheme.onSurface,
         sheetTonalElevation = 0.dp,
         sheetShadowElevation = 0.dp,
         sheetShape = RectangleShape,
-        sheetDragHandle = null,
+        sheetDragHandle = {
+            FilterSheetDragHandle(
+                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+                onClick = {
+                    scope.launch {
+                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+                            scaffoldState.bottomSheetState.expand()
+                        } else {
+                            scaffoldState.bottomSheetState.partialExpand()
+                        }
+                    }
+                },
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+        },
         topBar = {
             TransactionListTopAppBar(
                 filter = filter,
@@ -118,104 +126,65 @@ fun TransactionListContent(
             )
         },
         sheetContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
-            ) {
-                TransactionFilterSheet(
-                    filter = filter,
-                    accounts = accounts,
-                    categories = categories,
-                    savedFilters = savedFilters,
-                    onUpdateTimelineRange = onUpdateTimelineRange,
-                    onUpdateFilter = onUpdateFilter,
-                    onToggleExpand = {
-                        scope.launch {
-                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                                scaffoldState.bottomSheetState.expand()
-                            } else {
-                                scaffoldState.bottomSheetState.partialExpand()
-                            }
+            FilterSheetContent(
+                filter = filter,
+                accounts = accounts,
+                allCategories = categories,
+                savedFilters = savedFilters,
+                onUpdateTimelineRange = onUpdateTimelineRange,
+                onApplyFilter = onUpdateFilter,
+                onToggleExpand = {
+                    scope.launch {
+                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
+                            scaffoldState.bottomSheetState.expand()
+                        } else {
+                            scaffoldState.bottomSheetState.partialExpand()
                         }
-                    },
-                    onClose = {
-                        scope.launch { scaffoldState.bottomSheetState.partialExpand() }
-                    },
-                    isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
-//                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
-//                backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                    backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    accountNames = accountNames,
-                    onResetToInitial = onResetToInitial
-                )
-            }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerPadding.calculateTopPadding())
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                if (transactionsWithBalance.isEmpty()) {
-                    TransactionListEmptyState()
-                } else {
-                    AeonTransactionList(
-                        transactions = transactionsWithBalance,
-                        accountMap = accountMap,
-                        categoryMap = categoryMap,
-                        onTransactionClick = { onEditTransactionClick(it.id) },
-                        contentPadding = PaddingValues(
-                            bottom = calculateScrollBottomPadding()
-                        ),
-                        precision = decimalPrecision,
-                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                        showOpeningBalance = recordsSettings.showOpeningBalance,
-                        showClosingBalance = recordsSettings.showClosingBalance,
-                        groupBy = recordsSettings.groupBy,
-                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                        exchangeRates = (analyticsState as? AnalyticsUiState.Success)?.exchangeRates ?: emptyMap(),
-                        accountCurrencyMap = accountCurrencyMap,
-                        filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null,
-                        revealedCardIds = revealedCardIds,
-                        onItemExpanded = onItemExpanded,
-                        onItemCollapsed = onItemCollapsed,
-                        onStatusChange = onStatusChange,
-                        onClone = onClone,
-                        onDelete = onDelete,
-                        onSplit = onSplit,
-                        onFullSwipeRight = onFullSwipeRight,
-                        is24Hour = is24Hour
-                    )
-                }
-            }
-
-            UnifiedPillNavigation(
-                selectedTab = 0,
-                onTabSelected = {},
-                tabs = emptyList(),
-                isFabExpanded = isFabExpanded,
-                onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-                onFabClick = {
-                    if (!expandableFabEnabled) {
-                        onAddTransactionClick(0, null)
                     }
                 },
-                fabMenu = if (expandableFabEnabled) {
-                    {
-                        TransactionFabMenu(
-                            isExpanded = isFabExpanded,
-                            templates = templates,
-                            onAddClick = { type, name ->
-                                isFabExpanded = false
-                                onAddTransactionClick(type, name)
-                            }
-                        )
-                    }
-                } else null
+                onClose = { scope.launch { scaffoldState.bottomSheetState.partialExpand() } },
+                isExpanded = scaffoldState.bottomSheetState.targetValue == SheetValue.Expanded,
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                accountNames = accountNames,
+                onResetToInitial = onResetToInitial
             )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            if (transactionsWithBalance.isEmpty()) {
+                TransactionListEmptyState()
+            } else {
+                AeonTransactionList(
+                    transactions = transactionsWithBalance,
+                    accountMap = accountMap,
+                    categoryMap = categoryMap,
+                    onTransactionClick = { onEditTransactionClick(it.id) },
+                    contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
+                    precision = decimalPrecision,
+                    useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                    showOpeningBalance = recordsSettings.showOpeningBalance,
+                    showClosingBalance = recordsSettings.showClosingBalance,
+                    groupBy = recordsSettings.groupBy,
+                    baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
+                    exchangeRates = (analyticsState as? AnalyticsUiState.Success)?.exchangeRates ?: emptyMap(),
+                    accountCurrencyMap = accountCurrencyMap,
+                    filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null,
+                    revealedCardIds = revealedCardIds,
+                    onItemExpanded = onItemExpanded,
+                    onItemCollapsed = onItemCollapsed,
+                    onStatusChange = onStatusChange,
+                    onClone = onClone,
+                    onDelete = onDelete,
+                    onSplit = onSplit,
+                    onFullSwipeRight = onFullSwipeRight,
+                    is24Hour = is24Hour
+                )
+            }
         }
     }
 }
@@ -261,15 +230,15 @@ fun TransactionListContentPreview() {
                 id = i.toLong(),
                 title = "Transaction $i",
                 note = "Weekly expense \nNote $i",
-                timestamp = System.currentTimeMillis() - (i * 86400000L) // One day apart
+                timestamp = System.currentTimeMillis() - (i * 86400000L)
             ),
             balanceBefore = BigDecimal("1500.00"),
             balanceAfter = BigDecimal("1414.50")
         )
     }
 
+    var theme by remember { mutableStateOf("System") }
     Column {
-        var theme by remember { mutableStateOf("System") }
         Row(
             modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -296,8 +265,7 @@ fun TransactionListContentPreview() {
                 onAccountDetailClick = {},
                 onUpdateFilter = {},
                 onUpdateTimelineRange = { },
-                onUpdateRecordsSettings = {},
-                expandableFabEnabled = true
+                onUpdateRecordsSettings = {}
             )
         }
     }

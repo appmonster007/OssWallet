@@ -153,9 +153,9 @@ fun AeonPeriodSelector(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
+                .then(if (showArcTab) Modifier.padding(top = 16.dp) else Modifier)
                 .background(backgroundColor)
-                .padding(top = 16.dp, bottom = 8.dp),
+                .padding(top = if (showArcTab) 16.dp else 8.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Swipeable Navigation Row

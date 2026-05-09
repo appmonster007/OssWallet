@@ -55,10 +55,8 @@ fun TransactionListScreen(
     val filter by viewModel.recordsFilter.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
-    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -105,7 +103,6 @@ fun TransactionListScreen(
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
-        templates = allTemplates,
         onAddTransactionClick = { type, template -> navigate { onAddTransactionClick(type, template) } },
         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
         onBackClick = {
@@ -130,7 +127,6 @@ fun TransactionListScreen(
         onDelete = { viewModel.quickDeleteTransaction(it) },
         onSplit = { viewModel.quickSplitTransaction(it) },
         onFullSwipeRight = { viewModel.toggleStatusClearedUncleared(it) },
-        expandableFabEnabled = expandableFabEnabled,
         is24Hour = use24HourFormat
     )
 }

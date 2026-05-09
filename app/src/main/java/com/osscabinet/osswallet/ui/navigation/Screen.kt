@@ -80,4 +80,5 @@ sealed class Screen(val route: String) {
     object BudgetDetail : Screen("budget_detail/{budgetId}") {
         fun createRoute(budgetId: Long) = "budget_detail/$budgetId"
     }
+    object SmartSuggestions : Screen("smart_suggestions")
 }

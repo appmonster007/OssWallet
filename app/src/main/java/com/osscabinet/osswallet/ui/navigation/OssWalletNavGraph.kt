@@ -58,7 +58,9 @@ fun OssWalletNavGraph(
             appContainer.accountRepository,
             appContainer.filterRepository,
             appContainer.computationRepository,
-            appContainer.transactionManager
+            appContainer.transactionManager,
+            appContainer.plannedPaymentRepository,
+            appContainer.templateRepository
         )
     )
     
@@ -197,6 +199,20 @@ fun OssWalletNavGraph(
                     onManageCategoriesClick = { navController.navigate(Screen.ManageCategories.route) },
                     onTemplatesClick = { navController.navigate(Screen.Templates.route) },
                     onManageFiltersClick = { navController.navigate(Screen.ManageFilters.route) },
+                    onSmartSuggestionsClick = { navController.navigate(Screen.SmartSuggestions.route) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.SmartSuggestions.route,
+                enterTransition = { EnterTransitionSpec },
+                exitTransition = { ExitTransitionSpec },
+                popEnterTransition = { PopEnterTransitionSpec },
+                popExitTransition = { PopExitTransitionSpec }
+            ) {
+                SmartSuggestionsScreen(
+                    viewModel = transactionViewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }

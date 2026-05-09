@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -268,10 +269,21 @@ internal fun FilterSheetDragHandle(
         animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "handle_rotation"
     )
-    // BottomSheetScaffold with topBar already constrains the sheet to start
-    // below the app bar — no inset spacer needed here.
+    // When fully expanded the sheet top can reach the status bar area.
+    // Animate a top padding equal to the status bar height so the visible
+    // pull tab always stays below the system status bar.
+    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        .plus(64.dp) // title bar height
+        .minus(20.dp) // pull tab height
+    val topPadding by animateDpAsState(
+        targetValue = if (isExpanded) statusBarTopPadding else 0.dp,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "handle_top_padding"
+    )
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = topPadding),
         contentAlignment = Alignment.TopCenter
     ) {
         // Flat bookmark-style pull tab: wide, short, gently rounded top corners only.
@@ -280,7 +292,7 @@ internal fun FilterSheetDragHandle(
                 .size(width = 88.dp, height = 20.dp)
                 .background(
                     backgroundColor,
-                    RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
+                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                 )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },

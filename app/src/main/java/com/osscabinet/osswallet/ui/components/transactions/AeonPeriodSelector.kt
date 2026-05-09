@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -141,7 +140,7 @@ fun AeonPeriodSelector(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 8.dp),
+                    .padding(top = 8.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Swipeable Navigation Row (Integrated Segmented Pill)
@@ -160,27 +159,8 @@ fun AeonPeriodSelector(
                         )
                     }
                 }
-
-                // Indicators (Dots)
-                Row(
-                    modifier = Modifier.padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(4) { i ->
-                        val isSelected = pagerState.currentPage == i
-                        Box(
-                            modifier = Modifier
-                                .size(if (isSelected) 6.dp else 4.dp)
-                                .background(
-                                    if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface.copy(
-                                        alpha = 0.2f
-                                    ),
-                                    CircleShape
-                                )
-                        )
-                    }
-                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
 
@@ -439,30 +419,36 @@ private fun navigateMonth(
 }
 
 private fun getPeriodText(filter: TransactionFilter): String {
-    return if (filter.startDate != null && filter.endDate != null) {
-        val startCal = Calendar.getInstance().apply { timeInMillis = filter.startDate }
-        val endCal = Calendar.getInstance().apply { timeInMillis = filter.endDate }
+    if (filter.startDate == null || filter.endDate == null) return "All Time"
+    
+    val start = filter.startDate
+    val end = filter.endDate
+    
+    // Check for "Today"
+    val todayRange = TimelineService.getRangeForThis(ThisPeriodType.TODAY)
+    if (Math.abs(todayRange.first - start) < 2000) return "Today"
+    
+    // Check for "This Month"
+    val monthRange = TimelineService.getRangeForThis(ThisPeriodType.MONTH)
+    if (Math.abs(monthRange.first - start) < 2000 && Math.abs(monthRange.second - end) < 2000) return "This month"
 
-        if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
-            startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
-            startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
-            endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-        ) {
+    val startCal = Calendar.getInstance().apply { timeInMillis = start }
+    val endCal = Calendar.getInstance().apply { timeInMillis = end }
 
-            val currentCal = Calendar.getInstance()
-            if (startCal.get(Calendar.MONTH) == currentCal.get(Calendar.MONTH) &&
-                startCal.get(Calendar.YEAR) == currentCal.get(Calendar.YEAR)
-            ) {
-                "This month"
-            } else {
-                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(filter.startDate))
-            }
-        } else {
-            val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-            "${dateFormat.format(Date(filter.startDate))} - ${dateFormat.format(Date(filter.endDate))}"
-        }
+    return if (startCal.get(Calendar.MONTH) == endCal.get(Calendar.MONTH) &&
+        startCal.get(Calendar.YEAR) == endCal.get(Calendar.YEAR) &&
+        startCal.get(Calendar.DAY_OF_MONTH) == 1 &&
+        endCal.get(Calendar.DAY_OF_MONTH) == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    ) {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(start))
     } else {
-        "This month"
+        val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
+        val yearFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+        
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val displayFormat = if (startCal.get(Calendar.YEAR) == currentYear) dateFormat else yearFormat
+        
+        "${displayFormat.format(Date(start))} - ${displayFormat.format(Date(end))}"
     }
 }
 

@@ -56,18 +56,50 @@ fun AddTemplateScreen(
     val decimalPrecision by settingsViewModel.decimalPrecision.collectAsStateWithLifecycle()
     val allTags by tagViewModel.tags.collectAsStateWithLifecycle()
     val template = remember(templateId, templates) { templates.find { it.id == templateId } }
+    val prefill by transactionViewModel.templatePrefill.collectAsStateWithLifecycle()
 
-    var name by remember { mutableStateOf(template?.name ?: "") }
-    var transactionType by remember { mutableIntStateOf(template?.transactionType ?: 0) } // 0: Expense, 1: Income
-    var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
-    var category by remember { mutableStateOf(template?.category ?: "Shopping") }
-    var accountId by remember { mutableStateOf(template?.accountId) }
-    var currency by remember { mutableStateOf(template?.currency ?: "USD") }
-    var note by remember { mutableStateOf(template?.note ?: "") }
-    var payee by remember { mutableStateOf(template?.payee ?: "") }
-    var location by remember { mutableStateOf(template?.location ?: "") }
-    var paymentMethod by remember { mutableStateOf(template?.paymentMethod ?: "Cash") }
-    var tags by remember { mutableStateOf(template?.tags ?: emptyList<String>()) }
+    var name by remember { mutableStateOf("") }
+    var transactionType by remember { mutableIntStateOf(0) } // 0: Expense, 1: Income
+    var amount by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Shopping") }
+    var accountId by remember { mutableStateOf<String?>(null) }
+    var currency by remember { mutableStateOf("USD") }
+    var note by remember { mutableStateOf("") }
+    var payee by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var paymentMethod by remember { mutableStateOf("Cash") }
+    var tags by remember { mutableStateOf(emptyList<String>()) }
+
+    LaunchedEffect(template, prefill) {
+        if (template != null) {
+            name = template.name
+            transactionType = template.transactionType
+            amount = template.amount.toPlainString()
+            category = template.category
+            accountId = template.accountId
+            currency = template.currency ?: "USD"
+            note = template.note ?: ""
+            payee = template.payee ?: ""
+            location = template.location ?: ""
+            paymentMethod = template.paymentMethod ?: "Cash"
+            tags = template.tags
+        } else if (prefill != null) {
+            name = prefill!!.name
+            transactionType = prefill!!.transactionType
+            amount = prefill!!.amount.abs().toPlainString()
+            category = prefill!!.category
+            accountId = prefill!!.accountId
+            currency = prefill!!.currency ?: "USD"
+            note = prefill!!.note ?: ""
+            payee = prefill!!.payee ?: ""
+            location = prefill!!.location ?: ""
+            paymentMethod = prefill!!.paymentMethod ?: "Cash"
+            tags = prefill!!.tags
+            
+            // Clear prefill once applied
+            transactionViewModel.clearTemplatePrefill()
+        }
+    }
 
     val selectedAccount = remember(accountId, accounts) { accounts.find { it.id == accountId } }
     

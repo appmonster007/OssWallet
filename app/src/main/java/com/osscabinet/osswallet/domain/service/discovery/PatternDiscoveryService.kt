@@ -17,16 +17,24 @@ import java.util.concurrent.TimeUnit
 data class DiscoveredPattern(
     val title: String,
     val payee: String,
+    val category: String,
     val categoryId: Long?,
     val accountId: String,
     val averageAmount: BigDecimal,
     val currency: String,
     val transactionType: String,
+    val paymentMethod: String,
+    val note: String,
+    val tags: List<String>,
+    val latitude: Double?,
+    val longitude: Double?,
+    val warrantyExpiration: Long?,
     val recurrenceRule: RecurrenceRule?,
     val confidence: Float,
     val occurrences: Int,
     val lastDate: Long,
-    val tags: List<String>
+    val existsAsTemplate: Boolean = false,
+    val existsAsPlannedPayment: Boolean = false
 )
 
 /**
@@ -89,16 +97,22 @@ object PatternDiscoveryService {
         return DiscoveredPattern(
             title = lastTx.title,
             payee = lastTx.payee,
+            category = lastTx.category,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,
             averageAmount = avgAmount,
             currency = lastTx.currency,
             transactionType = lastTx.transactionType,
+            paymentMethod = lastTx.paymentMethod,
+            note = lastTx.note,
+            tags = lastTx.tags,
+            latitude = lastTx.latitude,
+            longitude = lastTx.longitude,
+            warrantyExpiration = lastTx.warrantyExpiration,
             recurrenceRule = recurrenceResult.rule,
             confidence = totalConfidence,
             occurrences = txs.size,
-            lastDate = lastTx.timestamp,
-            tags = lastTx.tags
+            lastDate = lastTx.timestamp
         )
     }
 
@@ -164,19 +178,23 @@ object PatternDiscoveryService {
      * Converts a discovered pattern into a Template.
      */
     fun toTemplate(pattern: DiscoveredPattern): Template {
+        val locationString = if (pattern.latitude != null && pattern.longitude != null) {
+            "${pattern.latitude},${pattern.longitude}"
+        } else null
+
         return Template(
             id = 0,
             name = pattern.title,
-            category = "", // Should be resolved from categoryId in UI or Repository
+            category = pattern.category,
             amount = pattern.averageAmount,
             transactionType = if (pattern.transactionType == "income") 1 else 0,
             icon = null,
             colorHex = null,
             accountId = pattern.accountId,
-            note = null,
+            note = pattern.note,
             payee = pattern.payee,
-            location = null,
-            paymentMethod = "Cash",
+            location = locationString,
+            paymentMethod = pattern.paymentMethod,
             currency = pattern.currency,
             tags = pattern.tags,
             isStarred = false,
@@ -187,7 +205,7 @@ object PatternDiscoveryService {
     /**
      * Converts a discovered pattern into a Planned Payment.
      */
-    fun toPlannedPayment(pattern: DiscoveredPattern): PlannedPayment? {
+    fun toPlannedPayment(pattern: DiscoveredPattern, autoConfirm: Boolean = true): PlannedPayment? {
         val rule = pattern.recurrenceRule ?: return null
         
         return PlannedPayment(
@@ -197,11 +215,14 @@ object PatternDiscoveryService {
             transactionType = pattern.transactionType,
             accountId = pattern.accountId,
             categoryId = pattern.categoryId,
+            paymentMethod = pattern.paymentMethod,
             recurrenceRule = rule,
             startDate = pattern.lastDate, // Start from the last known occurrence
             nextDueDate = calculateNextDueDate(pattern.lastDate, rule),
             payee = pattern.payee,
-            tags = pattern.tags
+            note = pattern.note,
+            tags = pattern.tags,
+            autoConfirm = autoConfirm
         )
     }
 

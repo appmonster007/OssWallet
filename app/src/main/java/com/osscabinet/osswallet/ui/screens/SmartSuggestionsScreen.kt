@@ -27,6 +27,8 @@ import java.util.*
 @Composable
 fun SmartSuggestionsScreen(
     viewModel: TransactionViewModel,
+    onAcceptAsTemplate: () -> Unit,
+    onAcceptAsPlannedPayment: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
@@ -88,11 +90,11 @@ fun SmartSuggestionsScreen(
                         pattern = pattern,
                         onAcceptAsTemplate = {
                             viewModel.saveTemplateFromPattern(it)
-                            dismissedPatterns = dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
+                            onAcceptAsTemplate()
                         },
                         onAcceptAsPlannedPayment = {
                             viewModel.savePlannedPaymentFromPattern(it)
-                            dismissedPatterns = dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
+                            onAcceptAsPlannedPayment()
                         },
                         onDismiss = {
                             dismissedPatterns = dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
@@ -169,6 +171,33 @@ private fun SuggestionListItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // Detailed Preview Section
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            DetailItem("Category", pattern.category, Modifier.weight(1f))
+                            DetailItem("Account", pattern.accountId, Modifier.weight(1f))
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            DetailItem("Method", pattern.paymentMethod, Modifier.weight(1f))
+                            if (pattern.note.isNotEmpty()) {
+                                DetailItem("Note", pattern.note, Modifier.weight(1f))
+                            }
+                        }
+                        if (pattern.tags.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            DetailItem("Tags", pattern.tags.joinToString(", "), Modifier.fillMaxWidth())
+                        }
+                    }
+                }
                 
                 Text(
                     text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
@@ -182,23 +211,118 @@ private fun SuggestionListItem(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (pattern.recurrenceRule != null) {
-                        Button(
-                            onClick = { onAcceptAsPlannedPayment(pattern) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Track Automatically")
+                    if (pattern.recurrenceRule != null && !pattern.existsAsPlannedPayment) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Button(
+                                onClick = { onAcceptAsPlannedPayment(pattern) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Track Automatically", style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(
+                                "Auto-creates records for future occurrences",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
                         }
                     }
                     
-                    FilledTonalButton(
-                        onClick = { onAcceptAsTemplate(pattern) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Save Template")
+                    if (!pattern.existsAsTemplate) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            FilledTonalButton(
+                                onClick = { onAcceptAsTemplate(pattern) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Save Template", style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(
+                                "Shortcut for one-tap manual entry",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        Text(value, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+private fun SmartSuggestionsScreenPreview() {
+    val patterns = listOf(
+        DiscoveredPattern(
+            title = "Netflix Subscription",
+            payee = "Netflix",
+            category = "Entertainment",
+            categoryId = 1,
+            accountId = "Savings",
+            averageAmount = BigDecimal("-15.99"),
+            currency = "USD",
+            transactionType = "expense",
+            paymentMethod = "Credit Card",
+            note = "Monthly plan",
+            tags = listOf("subscription", "streaming"),
+            latitude = null,
+            longitude = null,
+            warrantyExpiration = null,
+            recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY),
+            confidence = 0.95f,
+            occurrences = 5,
+            lastDate = System.currentTimeMillis()
+        ),
+        DiscoveredPattern(
+            title = "Weekly Groceries",
+            payee = "Whole Foods",
+            category = "Food",
+            categoryId = 2,
+            accountId = "Checking",
+            averageAmount = BigDecimal("-85.40"),
+            currency = "USD",
+            transactionType = "expense",
+            paymentMethod = "Debit Card",
+            note = "",
+            tags = emptyList(),
+            latitude = null,
+            longitude = null,
+            warrantyExpiration = null,
+            recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(com.osscabinet.ossWallet.domain.model.RecurrenceType.WEEKLY),
+            confidence = 0.8f,
+            occurrences = 12,
+            lastDate = System.currentTimeMillis()
+        )
+    )
+
+    MaterialTheme {
+        // Mock UI state for preview
+        Surface(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(patterns) { pattern ->
+                    SuggestionListItem(
+                        pattern = pattern,
+                        onAcceptAsTemplate = {},
+                        onAcceptAsPlannedPayment = {},
+                        onDismiss = {}
+                    )
                 }
             }
         }

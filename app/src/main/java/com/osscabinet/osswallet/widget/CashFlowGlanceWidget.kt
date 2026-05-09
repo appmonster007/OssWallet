@@ -228,28 +228,52 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
 
-        // ── Title row: "CASH FLOW" left  ·  period/comparison right ──────────
+        // ── Header: label+period left · totals right (when showTotals) ────────
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "CASH FLOW",
-                style = TextStyle(
-                    fontSize = TextUnit(headerSp, TextUnitType.Sp),
-                    fontWeight = FontWeight.Bold,
-                    color = GlanceTheme.colors.onSurfaceVariant
-                )
-            )
-            if (subText != null) {
-                Spacer(modifier = GlanceModifier.defaultWeight())
+            // Left: title + period stacked
+            Column(horizontalAlignment = Alignment.Start) {
                 Text(
-                    text = subText,
+                    text = "CASH FLOW",
                     style = TextStyle(
                         fontSize = TextUnit(headerSp, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
                         color = GlanceTheme.colors.onSurfaceVariant
                     )
                 )
+                if (subText != null) {
+                    Text(
+                        text = subText,
+                        style = TextStyle(
+                            fontSize = TextUnit(headerSp * 0.85f, TextUnitType.Sp),
+                            color = GlanceTheme.colors.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+            // Right: income + expense totals when enabled
+            if (showTotals) {
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = incomeTotal,
+                        style = TextStyle(
+                            fontSize = TextUnit(totalSp, TextUnitType.Sp),
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(R.color.widget_income_color)
+                        )
+                    )
+                    Text(
+                        text = expenseTotal,
+                        style = TextStyle(
+                            fontSize = TextUnit(totalSp, TextUnitType.Sp),
+                            fontWeight = FontWeight.Bold,
+                            color = ColorProvider(R.color.widget_expense_color)
+                        )
+                    )
+                }
             }
         }
 
@@ -317,53 +341,6 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
                 }
             }
 
-            // ── Totals footer (optional) ──────────────────────────────────────
-            if (showTotals) {
-                Spacer(modifier = GlanceModifier.height(2.dp))
-                TableDivider()
-                Spacer(modifier = GlanceModifier.height(3.dp))
-
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "TOTAL",
-                        style = TextStyle(
-                            fontSize = TextUnit(totalSp, TextUnitType.Sp),
-                            fontWeight = FontWeight.Bold,
-                            color = GlanceTheme.colors.onSurface
-                        ),
-                        modifier = GlanceModifier.width(codeColWidth)
-                    )
-                    Column(
-                        modifier = GlanceModifier.defaultWeight(),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = incomeTotal,
-                            style = TextStyle(
-                                fontSize = TextUnit(totalSp, TextUnitType.Sp),
-                                fontWeight = FontWeight.Bold,
-                                color = ColorProvider(R.color.widget_income_color)
-                            )
-                        )
-                    }
-                    Column(
-                        modifier = GlanceModifier.defaultWeight(),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = expenseTotal,
-                            style = TextStyle(
-                                fontSize = TextUnit(totalSp, TextUnitType.Sp),
-                                fontWeight = FontWeight.Bold,
-                                color = ColorProvider(R.color.widget_expense_color)
-                            )
-                        )
-                    }
-                }
-            }
         }
     }
 }

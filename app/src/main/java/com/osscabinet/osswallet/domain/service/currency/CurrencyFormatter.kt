@@ -9,14 +9,15 @@ import java.util.Locale
 
 /**
  * Domain service for currency and number formatting.
- * Separated from conversion logic to maintain SRP.
+ * Handles localized grouping, decimal separators, and smart shortening.
  */
 object CurrencyFormatter {
 
     /**
      * Formats an amount with localized grouping and decimal separators.
      */
-    fun formatAmount(amount: BigDecimal, precision: Int = 2): String {
+    fun formatAmount(amount: BigDecimal?, precision: Int = 2): String {
+        val validAmount = amount ?: BigDecimal.ZERO
         val symbols = DecimalFormatSymbols(Locale.getDefault())
         val pattern = buildString {
             append("#,##0")
@@ -26,7 +27,7 @@ object CurrencyFormatter {
             }
         }
         val format = DecimalFormat(pattern, symbols)
-        return format.format(amount)
+        return format.format(validAmount)
     }
 
     /**
@@ -67,28 +68,27 @@ object CurrencyFormatter {
      * Shortens large numbers for UI display (e.g., 1.234M, 10.50K).
      * Keeps at least 4 digits total and respects requested precision.
      */
-    fun formatShortNumber(value: BigDecimal, precision: Int = 2): String {
-        val absValue = value.abs()
+    fun formatShortNumber(value: BigDecimal?, precision: Int = 2): String {
+        val validValue = value ?: BigDecimal.ZERO
+        val absValue = validValue.abs()
         val (divisor, suffix) = when {
             absValue >= BigDecimal("1000000000000") -> BigDecimal("1000000000000") to "T"
             absValue >= BigDecimal("1000000000") -> BigDecimal("1000000000") to "B"
             absValue >= BigDecimal("1000000") -> BigDecimal("1000000") to "M"
             absValue >= BigDecimal("10000") -> BigDecimal("1000") to "K"
-            else -> return formatAmount(value, precision)
+            else -> return formatAmount(validValue, precision)
         }
 
-        val shortened = value.divide(divisor, 8, RoundingMode.HALF_UP)
+        val shortened = validValue.divide(divisor, 8, RoundingMode.HALF_UP)
         val integerPart = shortened.toBigInteger().abs().toString()
         val integerDigits = if (integerPart == "0") 0 else integerPart.length
         
         // Keep at least 4 digits total (integer + decimal)
-        // e.g., 1.234M (1 int + 3 dec), 12.34M (2 int + 2 dec), 123.4M (3 int + 1 dec)
         val adaptiveDecimals = (4 - integerDigits).coerceAtLeast(1)
         val finalScale = maxOf(adaptiveDecimals, precision)
 
         val result = shortened.setScale(finalScale, RoundingMode.HALF_UP)
         
-        // Use localized decimal separator but no grouping for shortened numbers
         val symbols = DecimalFormatSymbols(Locale.getDefault())
         val pattern = buildString {
             append("0")
@@ -104,35 +104,45 @@ object CurrencyFormatter {
     /**
      * Formats a currency amount in a shortened form (e.g., "$1.234M", "10.50K €").
      */
-    fun formatShortCurrency(amount: BigDecimal, currency: String, precision: Int = 2, symbolOnLeft: Boolean = true): String {
+    fun formatShortCurrency(amount: BigDecimal?, currency: String?, precision: Int = 2, symbolOnLeft: Boolean = true): String {
         val shortNumber = formatShortNumber(amount, precision)
         val symbol = getCurrencySymbol(currency)
         return if (symbolOnLeft) "$symbol$shortNumber" else "$shortNumber $symbol"
     }
 
     /**
-     * Formats a currency amount with the given currency code and precision.
+     * Main UI entry point for formatting currency with symbol on the right.
      */
-    fun format(amount: BigDecimal, currency: String, precision: Int): String {
-        val formattedAmount = formatAmount(amount, precision)
-        return "$formattedAmount $currency"
+    fun formatCurrencyRight(
+        amount: BigDecimal?,
+        currencyCode: String?,
+        precision: Int = 2,
+        shorten: Boolean = false
+    ): String {
+        return if (shorten) {
+            formatShortCurrency(amount, currencyCode, precision, symbolOnLeft = false)
+        } else {
+            val formattedAmount = formatAmount(amount, precision)
+            val symbol = getCurrencySymbol(currencyCode)
+            "$formattedAmount $symbol"
+        }
     }
 
     /**
-     * Formats with symbol on the right (e.g., "1,000 $")
+     * Main UI entry point for formatting currency with symbol on the left.
      */
-    fun formatRight(amount: BigDecimal, currency: String, precision: Int): String {
-        val formattedAmount = formatAmount(amount, precision)
-        val symbol = getCurrencySymbol(currency)
-        return "$formattedAmount $symbol"
-    }
-
-    /**
-     * Formats with symbol on the left (e.g., "$1,000")
-     */
-    fun formatLeft(amount: BigDecimal, currency: String, precision: Int): String {
-        val formattedAmount = formatAmount(amount, precision)
-        val symbol = getCurrencySymbol(currency)
-        return "$symbol$formattedAmount"
+    fun formatCurrencyLeft(
+        amount: BigDecimal?,
+        currencyCode: String?,
+        precision: Int = 2,
+        shorten: Boolean = false
+    ): String {
+        return if (shorten) {
+            formatShortCurrency(amount, currencyCode, precision, symbolOnLeft = true)
+        } else {
+            val formattedAmount = formatAmount(amount, precision)
+            val symbol = getCurrencySymbol(currencyCode)
+            "$symbol$formattedAmount"
+        }
     }
 }

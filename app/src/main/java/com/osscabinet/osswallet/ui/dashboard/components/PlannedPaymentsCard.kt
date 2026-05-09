@@ -53,7 +53,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.util.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate

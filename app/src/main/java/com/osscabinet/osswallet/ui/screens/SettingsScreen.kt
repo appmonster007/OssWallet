@@ -26,6 +26,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.getAllCurrencies
 import com.osscabinet.ossWallet.ui.util.*
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext

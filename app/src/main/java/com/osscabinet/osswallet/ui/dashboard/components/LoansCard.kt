@@ -22,8 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import androidx.compose.ui.unit.sp
 
-import com.osscabinet.ossWallet.ui.util.formatAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 import java.math.RoundingMode
 

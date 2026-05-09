@@ -47,8 +47,8 @@ import com.osscabinet.ossWallet.ui.components.AccountIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.util.formatAmount
-import com.osscabinet.ossWallet.ui.util.formatCurrencyRight
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
 
 @Composable
@@ -358,7 +358,7 @@ fun AccountHeroCardPreview() {
                 baseCurrency = "USD",
                 exchangeRates = emptyMap(),
                 currencyBalances = mapOf(
-                    "USD" to BigDecimal("180000.00"),
+                    "USD" to BigDecimal("1800000.00"),
                     "EUR" to BigDecimal("45000.00"),
                     "GBP" to BigDecimal("12000.00")
                 )

@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
-import com.osscabinet.ossWallet.ui.util.formatShortCurrency
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatShortCurrency
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.math.BigDecimal
 import java.util.*

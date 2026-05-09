@@ -35,7 +35,7 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartS
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.toChartColor
 import com.osscabinet.ossWallet.ui.util.generateShade
-import com.osscabinet.ossWallet.ui.util.formatAmount
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAmount
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import java.math.BigDecimal

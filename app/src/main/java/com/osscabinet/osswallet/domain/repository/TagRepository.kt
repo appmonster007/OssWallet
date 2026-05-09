@@ -8,4 +8,6 @@ interface TagRepository {
     suspend fun insertTag(tag: Tag)
     suspend fun deleteTag(tag: Tag)
     suspend fun deleteTagAndRemoveFromTransactions(tag: Tag)
+    suspend fun getTransactionCountForTag(tagName: String): Int
+    suspend fun updateTag(oldName: String, newTag: Tag)
 }

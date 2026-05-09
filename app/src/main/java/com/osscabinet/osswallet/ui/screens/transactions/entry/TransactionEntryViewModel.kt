@@ -217,8 +217,18 @@ class TransactionEntryViewModel(
             }
 
             is TransactionEntryEvent.SetTags -> update { it.copy(selectedTags = event.tags) }
-            is TransactionEntryEvent.AddTag -> update {
-                it.copy(selectedTags = it.selectedTags + event.tag)
+            is TransactionEntryEvent.AddTag -> {
+                update { it.copy(selectedTags = it.selectedTags + event.tag) }
+                viewModelScope.launch {
+                    tagRepository.insertTag(Tag(name = event.tag, colorHex = event.color ?: -1))
+                }
+            }
+
+            is TransactionEntryEvent.DeleteTag -> {
+                update { it.copy(selectedTags = it.selectedTags - event.tag.name) }
+                viewModelScope.launch {
+                    tagRepository.deleteTagAndRemoveFromTransactions(event.tag)
+                }
             }
 
             is TransactionEntryEvent.RemoveTag -> update {
@@ -536,9 +546,9 @@ class TransactionEntryViewModel(
     /**
      * Add a new tag to the repository.
      */
-    fun addTag(name: String) {
+    fun addTag(name: String, color: Int? = null) {
         viewModelScope.launch {
-            tagRepository.insertTag(Tag(name = name))
+            tagRepository.insertTag(Tag(name = name, colorHex = color ?: -1))
         }
     }
 

@@ -374,7 +374,9 @@ fun PlannedPaymentEntryScreen(
                 tags = availableTags,
                 selectedTags = selectedTagNames,
                 onTagsSelected = { selectedTagNames = it; showTagSheet = false },
-                onAddTag = { },
+                onAddTag = { _, _ -> },
+                onEditTag = { },
+                onDeleteTag = { },
                 onDismiss = { showTagSheet = false }
             )
         }

@@ -1,0 +1,69 @@
+package com.osscabinet.ossWallet.widget
+
+import android.content.Context
+import androidx.datastore.preferences.core.MutablePreferences
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
+import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
+import java.math.BigDecimal
+
+class NetWorthWidgetFetcher : WidgetDataFetcher {
+    override suspend fun updateState(
+        context: Context,
+        widgetId: Int,
+        common: CommonData,
+        prefs: MutablePreferences
+    ) {
+        val config = runCatching {
+            NetWorthWidgetPrefsStore(context).load(widgetId)
+        }.getOrElse { NetWorthWidgetConfig() }
+
+        val renderData = runCatching {
+            CardAggregationService.computeNetWorthCard(
+                queryService = common.databaseQueryService,
+                profileId = common.profileId,
+                input = CardInput(
+                    profileId = common.profileId,
+                    baseCurrency = common.baseCurrency,
+                    exchangeRates = common.exchangeRates,
+                    precision = common.precision,
+                    filter = TransactionFilter(
+                        timelineRange = config.timelineRange,
+                        excludeFuture = true
+                    ),
+                    accounts = emptyList(),
+                    categories = emptyList()
+                ),
+                config = NetWorthCardConfig(
+                    cardId = "nw_widget_$widgetId",
+                    fontSize = config.fontSize,
+                    showComparison = config.showComparison
+                )
+            )
+        }.getOrNull()
+
+        val netWorth = renderData?.currentMetrics?.netWorth ?: BigDecimal.ZERO
+        val income = renderData?.currentMetrics?.cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO
+        val expense = renderData?.currentMetrics?.cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO
+        val prev = renderData?.previousMetrics
+
+        prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
+        prefs[NetWorthGlanceWidget.Keys.NET_WORTH] =
+            formatCurrencyRight(netWorth, common.baseCurrency, common.precision, shorten = true)
+        prefs[NetWorthGlanceWidget.Keys.INCOME] =
+            formatCurrencyRight(income, common.baseCurrency, common.precision, shorten = true)
+        prefs[NetWorthGlanceWidget.Keys.EXPENSE] =
+            formatCurrencyRight(expense, common.baseCurrency, common.precision, shorten = true)
+        prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
+            buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
+        prefs[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =
+            buildComparisonText(income, prev?.cashFlow?.totalIncomeInBase, config.showComparison) ?: ""
+        prefs[NetWorthGlanceWidget.Keys.EXPENSE_COMPARISON] =
+            buildComparisonText(expense, prev?.cashFlow?.totalExpensesInBase, config.showComparison) ?: ""
+        prefs[NetWorthGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
+        prefs[NetWorthGlanceWidget.Keys.FONT_SIZE] = config.fontSize
+    }
+}

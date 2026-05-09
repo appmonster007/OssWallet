@@ -1,10 +1,6 @@
 package com.osscabinet.ossWallet.widget
 
-import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.Intent
-import android.util.Log
-import androidx.annotation.ColorRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
@@ -12,21 +8,11 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.LocalSize
-import androidx.glance.action.clickable
-import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
-import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
@@ -36,60 +22,22 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
-import androidx.glance.state.GlanceStateDefinition
-import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.osscabinet.ossWallet.MainActivity
 import com.osscabinet.ossWallet.R
 import org.json.JSONArray
 import org.json.JSONException
 
 /**
  * Cash Flow Glance widget — table layout showing income + expense per currency.
- *
- * Layout: title row → column headers → scrollable LazyColumn of currency rows → totals footer.
- * Each row: currency code | income amount | expense amount.
- * Base conversion shown as a smaller ≈ line under each amount for foreign currencies.
- *
- * Data flow: WidgetRefreshWorker writes pre-formatted strings to GlanceState.
- * No async IO in provideContent — state changes trigger immediate recomposition.
  */
-class CashFlowGlanceWidget : GlanceAppWidget() {
+class CashFlowGlanceWidget : BaseOssWalletWidget() {
 
-    override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
-    override val sizeMode: SizeMode = SizeMode.Exact
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val rawId = GlanceAppWidgetManager(context).getAppWidgetId(id)
-        val opts = AppWidgetManager.getInstance(context).getAppWidgetOptions(rawId)
-        val optMaxW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH).dp
-        val optMaxH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).dp
-        Log.d("CashFlowGlanceWidget", buildString {
-            append("raw options → ")
-            append("minW=${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)} ")
-            append("maxW=$optMaxW ")
-            append("minH=${opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)} ")
-            append("maxH=$optMaxH")
-        })
-        provideContent {
-            GlanceTheme {
-                val prefs = currentState<Preferences>()
-                val localSize = LocalSize.current
-                val correctedSize = DpSize(
-                    width = if (optMaxW > localSize.width) optMaxW else localSize.width,
-                    height = if (optMaxH > localSize.height) optMaxH else localSize.height,
-                )
-                Log.d("CashFlowGlanceWidget", "LocalSize=$localSize  corrected=$correctedSize")
-                CashFlowWidgetContent(
-                    context = context,
-                    prefs = prefs,
-                    widgetSize = correctedSize,
-                )
-            }
-        }
+    @Composable
+    override fun RenderContent(context: Context, prefs: Preferences, size: DpSize) {
+        CashFlowWidgetContent(context, prefs, size)
     }
 
     object Keys {
@@ -101,10 +49,6 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
         val BASE_CURRENCY = stringPreferencesKey("cf_base_currency")
         val SHOW_BASE_CONVERSION = stringPreferencesKey("cf_show_base_conversion")
         val SHOW_TOTALS = stringPreferencesKey("cf_show_totals")
-        /**
-         * JSON array: [{"code":"USD","income":"5,000.00 $","incomeBase":"5,000.00 $",
-         *               "expense":"3,500.00 $","expenseBase":"3,500.00 $"}, ...]
-         */
         val CURRENCY_LIST = stringPreferencesKey("cf_currency_list")
     }
 }
@@ -155,29 +99,11 @@ internal fun CashFlowWidgetContent(context: Context, prefs: Preferences, widgetS
     }
     val isCompact = widgetSize.height < 100.dp
 
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .background(GlanceTheme.colors.surface)
-            .cornerRadius(24.dp)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .clickable(
-                actionStartActivity(
-                    Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        putExtra(MainActivity.EXTRA_WIDGET_NAV, "dashboard")
-                    }
-                )
-            ),
-        verticalAlignment = Alignment.Top,
-        horizontalAlignment = Alignment.Start
-    ) {
-        val isLoaded = prefs[CashFlowGlanceWidget.Keys.IS_LOADED] == "true"
-        if (!isLoaded) {
-            CashFlowPlaceholder(scale)
-        } else {
-            CashFlowBody(prefs, scale, isCompact)
-        }
+    val isLoaded = prefs[CashFlowGlanceWidget.Keys.IS_LOADED] == "true"
+    if (!isLoaded) {
+        CashFlowPlaceholder(scale)
+    } else {
+        CashFlowBody(prefs, scale, isCompact)
     }
 }
 
@@ -215,7 +141,6 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
     val showTotals = prefs[keys.SHOW_TOTALS] != "false"
     val rows = parseCurrencyList(prefs[keys.CURRENCY_LIST])
 
-    // Font sizes — same scale system as NetWorth widget subtitles/badges
     val headerSp = 10f * scale
     val colHeaderSp = 8f * scale
     val codeSp = 8f * scale
@@ -223,17 +148,14 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
     val baseSp = 8f * scale
     val totalSp = 10f * scale
 
-    // Fixed currency code column width — ISO codes are always 3 chars
     val codeColWidth = 36.dp
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-
-        // ── Header: label+period left · totals right (when showTotals) ────────
+        // Header
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: title + period stacked
             Column(horizontalAlignment = Alignment.Start) {
                 Text(
                     text = "CASH FLOW",
@@ -253,7 +175,6 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
                     )
                 }
             }
-            // Right: income + expense totals when enabled
             if (showTotals) {
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 Column(horizontalAlignment = Alignment.End) {
@@ -280,14 +201,8 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
         Spacer(modifier = GlanceModifier.height(5.dp))
 
         if (isCompact) {
-            // Compact: just show totals side-by-side
-            CompactTotalsRow(
-                incomeTotal = incomeTotal,
-                expenseTotal = expenseTotal,
-                scale = scale
-            )
+            CompactTotalsRow(incomeTotal, expenseTotal, scale)
         } else {
-            // ── Column headers: (gap) | INCOME | EXPENSE ─────────────────────
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -325,7 +240,6 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
             TableDivider()
             Spacer(modifier = GlanceModifier.height(2.dp))
 
-            // ── Currency rows — LazyColumn scrolls through all currencies ────
             LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                 items(rows) { row ->
                     CurrencyTableRow(
@@ -340,12 +254,9 @@ internal fun CashFlowBody(prefs: Preferences, scale: Float, isCompact: Boolean =
                     )
                 }
             }
-
         }
     }
 }
-
-// ── One currency row ──────────────────────────────────────────────────────────
 
 @Composable
 private fun CurrencyTableRow(
@@ -362,7 +273,6 @@ private fun CurrencyTableRow(
     val showConversion = showBaseConversion && isForeign
 
     Column(modifier = GlanceModifier.fillMaxWidth()) {
-        // Main row: code | income (right) | expense (right)
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -421,12 +331,9 @@ private fun CurrencyTableRow(
                 }
             }
         }
-
         Spacer(modifier = GlanceModifier.height((3f * scale).dp))
     }
 }
-
-// ── Compact summary (height < 100dp) ─────────────────────────────────────────
 
 @Composable
 private fun CompactTotalsRow(incomeTotal: String, expenseTotal: String, scale: Float) {
@@ -472,8 +379,6 @@ private fun CompactTotalsRow(incomeTotal: String, expenseTotal: String, scale: F
         )
     }
 }
-
-// ── Thin table divider ────────────────────────────────────────────────────────
 
 @Composable
 private fun TableDivider() {

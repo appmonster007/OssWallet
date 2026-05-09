@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.widget
 
 import android.appwidget.AppWidgetManager
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -90,7 +91,10 @@ class NetWorthWidgetConfigActivity : ComponentActivity() {
                             } else {
                                 NetWorthGlanceWidget().updateAll(applicationContext)
                             }
-                            setResult(RESULT_OK, intent)
+                            val resultValue = Intent().putExtra(
+                                AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId
+                            )
+                            setResult(RESULT_OK, resultValue)
                             finish()
                         }
                     },

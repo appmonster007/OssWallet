@@ -3,29 +3,22 @@ package com.osscabinet.ossWallet.domain.service.management
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import java.math.BigDecimal
 
-/**
- * Service for centralizing transaction lifecycle logic.
- * Reduces logic duplication across ViewModels.
- * Widget refresh is handled entirely by WidgetInvalidationObserver watching the
- * transactions table, so no explicit trigger calls are needed here.
- */
 class TransactionManager(
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val widgetRefreshTrigger: WidgetRefreshTrigger
 ) {
 
     suspend fun handleSaveTransaction(
         existingTransaction: Transaction?,
         request: TransactionRequest,
         profileId: Int
-    ): Long {
-        return if (request.isTransfer) {
-            handleTransferSave(existingTransaction, request, profileId)
-        } else {
-            handleNormalSave(existingTransaction, request, profileId)
-        }
+    ): Long = andRefresh {
+        if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
+        else handleNormalSave(existingTransaction, request, profileId)
     }
 
     private suspend fun handleNormalSave(
@@ -33,51 +26,15 @@ class TransactionManager(
         request: TransactionRequest,
         profileId: Int
     ): Long {
-        if (existingTransaction != null) {
-            val wasTransfer = existingTransaction.category == "Transfer"
-            if (wasTransfer) {
+        val updated = request.toNormalTransaction(existingTransaction)
+        return if (existingTransaction != null) {
+            if (existingTransaction.category == "Transfer") {
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
-            val updatedTransaction = existingTransaction.copy(
-                title = request.title.ifBlank { request.category },
-                amount = request.amount,
-                category = request.category,
-                transactionType = request.transactionType,
-                accountId = request.accountId,
-                currency = request.currency,
-                categoryId = request.categoryId,
-                tags = request.tags,
-                paymentMethod = request.paymentMethod,
-                timestamp = request.timestamp,
-                payee = request.payee,
-                note = request.note,
-                latitude = request.latitude,
-                longitude = request.longitude,
-                warrantyExpiration = request.warrantyExpiration,
-                status = request.status
-            )
-            transactionUseCases.updateTransaction(existingTransaction, updatedTransaction, profileId)
-            return existingTransaction.id
+            transactionUseCases.updateTransaction(existingTransaction, updated, profileId)
+            existingTransaction.id
         } else {
-            val newTransaction = Transaction(
-                title = request.title.ifBlank { request.category },
-                amount = request.amount,
-                category = request.category,
-                transactionType = request.transactionType,
-                accountId = request.accountId,
-                currency = request.currency,
-                categoryId = request.categoryId,
-                tags = request.tags,
-                paymentMethod = request.paymentMethod,
-                timestamp = request.timestamp,
-                payee = request.payee,
-                note = request.note,
-                latitude = request.latitude,
-                longitude = request.longitude,
-                warrantyExpiration = request.warrantyExpiration,
-                status = request.status
-            )
-            return transactionUseCases.insertTransaction(newTransaction, profileId)
+            transactionUseCases.insertTransaction(updated, profileId)
         }
     }
 
@@ -87,15 +44,10 @@ class TransactionManager(
         profileId: Int
     ): Long {
         val targetAccountId = request.targetAccountId
-
         val sourceTransaction = (existingTransaction ?: Transaction(
-            title = "",
-            amount = BigDecimal.ZERO,
-            category = "Transfer",
-            transactionType = "expense",
-            accountId = request.accountId,
-            currency = request.currency,
-            timestamp = request.timestamp
+            title = "", amount = BigDecimal.ZERO, category = "Transfer",
+            transactionType = "expense", accountId = request.accountId,
+            currency = request.currency, timestamp = request.timestamp
         )).copy(
             title = request.title.ifBlank { "Transfer" },
             amount = request.amount.negate(),
@@ -124,36 +76,28 @@ class TransactionManager(
             }
         }
 
-        val targetTransaction = Transaction(
-            title = request.title.ifBlank { "Transfer" },
+        // Target inherits all shared metadata from source; only the amount, direction,
+        // account, and currency differ — and id must be 0 since it is always a new row.
+        val targetTransaction = sourceTransaction.copy(
+            id = 0,
             amount = request.amount.multiply(request.transferRate),
-            category = "Transfer",
             transactionType = "income",
             accountId = targetAccountId,
-            currency = request.targetCurrency ?: request.currency,
-            categoryId = null,
-            tags = request.tags,
-            timestamp = request.timestamp,
-            payee = request.payee,
-            note = request.note,
-            latitude = request.latitude,
-            longitude = request.longitude,
-            warrantyExpiration = request.warrantyExpiration,
-            status = request.status
+            currency = request.targetCurrency ?: request.currency
         )
 
         if (existingTransaction != null && existingTransaction.category == "Transfer") {
             transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
         }
 
-        val pair = transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
-        return pair.first
+        return transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId).first
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return null
-        val clonedTransaction = transaction.copy(id = 0, timestamp = System.currentTimeMillis())
-        return transactionUseCases.insertTransaction(clonedTransaction, profileId)
+        return transactionUseCases.insertTransaction(
+            transaction.copy(id = 0, timestamp = System.currentTimeMillis()), profileId
+        ).also { widgetRefreshTrigger.trigger() }
     }
 
     suspend fun toggleStatus(transactionId: Long, profileId: Int): TransactionStatus? {
@@ -164,12 +108,42 @@ class TransactionManager(
             TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
         }
         transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
-        return newStatus
+        return newStatus.also { widgetRefreshTrigger.trigger() }
     }
 
     suspend fun updateStatus(transactionId: Long, newStatus: TransactionStatus, profileId: Int): Boolean {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
         transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
+        widgetRefreshTrigger.trigger()
         return true
     }
+
+    // Maps a TransactionRequest onto a Transaction, reusing an existing row's identity
+    // if provided so that updates preserve the original id and any unrelated fields.
+    private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction =
+        (base ?: Transaction(
+            title = "", amount = BigDecimal.ZERO, category = category,
+            transactionType = transactionType, accountId = accountId,
+            currency = currency, timestamp = timestamp
+        )).copy(
+            title = title.ifBlank { category },
+            amount = amount,
+            category = category,
+            transactionType = transactionType,
+            accountId = accountId,
+            currency = currency,
+            categoryId = categoryId,
+            tags = tags,
+            paymentMethod = paymentMethod,
+            timestamp = timestamp,
+            payee = payee,
+            note = note,
+            latitude = latitude,
+            longitude = longitude,
+            warrantyExpiration = warrantyExpiration,
+            status = status
+        )
+
+    private suspend fun <T> andRefresh(block: suspend () -> T): T =
+        block().also { widgetRefreshTrigger.trigger() }
 }

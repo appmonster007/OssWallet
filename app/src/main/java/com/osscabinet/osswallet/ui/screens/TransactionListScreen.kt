@@ -56,7 +56,6 @@ fun TransactionListScreen(
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val filterInitialized by viewModel.recordsFilterInitialized.collectAsStateWithLifecycle()
     val use24HourFormat by viewModel.use24HourFormat.collectAsStateWithLifecycle()
     val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
 
@@ -74,9 +73,9 @@ fun TransactionListScreen(
         }
     }
 
-    // Initialize filter from context when screen opens (only if not already initialized)
+    // Initialize filter from context when screen opens
     LaunchedEffect(filterContext) {
-        if (!filterInitialized && filterContext != null) {
+        if (filterContext != null) {
             try {
                 val context = Json.decodeFromString<RecordsFilterContext>(
                     java.net.URLDecoder.decode(filterContext, "UTF-8")

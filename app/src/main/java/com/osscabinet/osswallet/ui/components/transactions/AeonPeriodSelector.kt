@@ -131,50 +131,71 @@ fun AeonPeriodSelector(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // Main Bar
-        Surface(
-            color = backgroundColor,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Swipeable Navigation Row (Integrated Segmented Pill)
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxWidth()
-                ) { page ->
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        PillNavigationRow(
-                            page = page,
-                            filter = filter,
-                            accentColor = accentColor,
-                            onSetDateRange = onSetDateRange,
-                            onToggleExpand = onClick
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-        }
-
         // The Pull Tab "Hump"
         if (showArcTab) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .size(width = 90.dp, height = 24.dp)
+                    .size(width = 72.dp, height = 38.dp)
                     .background(
                         backgroundColor,
-                        RoundedCornerShape(topStart = 45.dp, topEnd = 45.dp)
+                        RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
                     )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClick
+                    )
+            )
+        }
+
+        // Main Content Container
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                // Use a slightly larger radius for the main body to overlap smoothly
+                .background(backgroundColor, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .padding(top = 16.dp, bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Swipeable Navigation Row
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    PillNavigationRow(
+                        page = page,
+                        filter = filter,
+                        accentColor = accentColor,
+                        onSetDateRange = onSetDateRange,
+                        onToggleExpand = onClick
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        // SEAM FILLER: A small rectangle that bridges the hump and the main body
+        // to eliminate the "notch" or sub-pixel line caused by overlapping rounded shapes.
+        if (showArcTab) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 15.dp) // Exactly on the seam (16dp padding - 1dp overlap)
+                    .size(width = 64.dp, height = 4.dp)
+                    .background(backgroundColor)
+            )
+        }
+
+        // The Arrow Icon - Drawn last (on top)
+        if (showArcTab) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .size(width = 72.dp, height = 24.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -186,10 +207,10 @@ fun AeonPeriodSelector(
                     imageVector = Icons.Default.KeyboardArrowUp,
                     contentDescription = null,
                     modifier = Modifier
-                        .padding(top = 1.dp)
-                        .size(18.dp)
+                        .padding(top = 8.dp)
+                        .size(20.dp)
                         .graphicsLayer { rotationZ = rotation },
-                    tint = accentColor
+                    tint = accentColor.copy(alpha = 0.7f)
                 )
             }
         }
@@ -209,10 +230,13 @@ private fun PillNavigationRow(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth(0.92f)
-            .height(30.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (page == 0) MaterialTheme.colorScheme.surfaceVariant else accentColor),
+            .fillMaxWidth(0.9f)
+            .height(36.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (page == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f) 
+                else accentColor
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left Arrow (Shift Previous)

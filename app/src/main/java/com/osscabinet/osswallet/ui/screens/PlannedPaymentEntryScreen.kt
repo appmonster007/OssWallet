@@ -127,6 +127,7 @@ fun PlannedPaymentEntryScreen(
     plannedPaymentId: Long?,
     viewModel: PlannedPaymentViewModel,
     accountViewModel: AccountViewModel,
+    transactionViewModel: com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel? = null,
     categories: List<Category> = emptyList(),
     availableTags: List<Tag> = emptyList(),
     onBackClick: () -> Unit
@@ -137,59 +138,80 @@ fun PlannedPaymentEntryScreen(
     val existing = remember(plannedPaymentId, payments) {
         plannedPaymentId?.let { id -> payments.find { it.id == id } }
     }
+    
+    val prefill by transactionViewModel?.plannedPaymentPrefill?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
 
-    var title by remember(existing) { mutableStateOf(existing?.title ?: "") }
-    var amountText by remember(existing) { mutableStateOf(existing?.amount?.toPlainString() ?: "") }
-    var currency by remember(existing) { mutableStateOf(existing?.currency ?: "USD") }
-    var transactionType by remember(existing) {
-        mutableStateOf(
-            existing?.transactionType ?: "expense"
-        )
-    }
-    var selectedAccountId by remember(existing) {
-        mutableStateOf(existing?.accountId ?: accounts.firstOrNull()?.id ?: "")
-    }
-    var recurrenceType by remember(existing) {
-        mutableStateOf(existing?.recurrenceRule?.type ?: RecurrenceType.MONTHLY)
-    }
-    var recurrenceInterval by remember(existing) {
-        mutableIntStateOf(existing?.recurrenceRule?.interval ?: 1)
-    }
-    var dayOfWeek by remember(existing) {
-        mutableStateOf(existing?.recurrenceRule?.dayOfWeek)
-    }
-    var dayOfMonth by remember(existing) {
-        mutableStateOf(existing?.recurrenceRule?.dayOfMonth)
-    }
-    var autoConfirm by remember(existing) { mutableStateOf(existing?.autoConfirm ?: false) }
+    var title by remember { mutableStateOf("") }
+    var amountText by remember { mutableStateOf("") }
+    var currency by remember { mutableStateOf("USD") }
+    var transactionType by remember { mutableStateOf("expense") }
+    var selectedAccountId by remember { mutableStateOf("") }
+    var recurrenceType by remember { mutableStateOf(RecurrenceType.MONTHLY) }
+    var recurrenceInterval by remember { mutableIntStateOf(1) }
+    var dayOfWeek by remember { mutableStateOf<Int?>(null) }
+    var dayOfMonth by remember { mutableStateOf<Int?>(null) }
+    var autoConfirm by remember { mutableStateOf(false) }
+    var startDateMillis by remember { mutableLongStateOf(0L) }
+    var hasEndDate by remember { mutableStateOf(false) }
+    var endDateMillis by remember { mutableLongStateOf(0L) }
+    var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
+    var payee by remember { mutableStateOf("") }
+    var noteUserPart by remember { mutableStateOf("") }
+    var paymentMethod by remember { mutableStateOf("Cash") }
+    var selectedTagNames by remember { mutableStateOf(emptyList<String>()) }
 
-    val nowEpoch = remember {
-        LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-    }
-    var startDateMillis by remember(existing) {
-        mutableLongStateOf(existing?.startDate ?: nowEpoch)
-    }
-    var hasEndDate by remember(existing) {
-        mutableStateOf(existing?.endDate != null)
-    }
-    var endDateMillis by remember(existing) {
-        mutableLongStateOf(existing?.endDate ?: nowEpoch)
-    }
-    var selectedCategoryId by remember(existing) {
-        mutableStateOf(existing?.categoryId)
-    }
-    var payee by remember(existing) { mutableStateOf(existing?.payee ?: "") }
-    var noteUserPart by remember(existing) {
-        val raw = existing?.note ?: ""
-        val prefix = "${existing?.title ?: ""} - "
-        mutableStateOf(if (raw.startsWith(prefix)) raw.removePrefix(prefix) else raw)
+    LaunchedEffect(existing, prefill) {
+        if (existing != null) {
+            title = existing.title
+            amountText = existing.amount.toPlainString()
+            currency = existing.currency
+            transactionType = existing.transactionType
+            selectedAccountId = existing.accountId
+            recurrenceType = existing.recurrenceRule.type
+            recurrenceInterval = existing.recurrenceRule.interval
+            dayOfWeek = existing.recurrenceRule.dayOfWeek
+            dayOfMonth = existing.recurrenceRule.dayOfMonth
+            autoConfirm = existing.autoConfirm
+            startDateMillis = existing.startDate
+            hasEndDate = existing.endDate != null
+            endDateMillis = existing.endDate ?: existing.startDate
+            selectedCategoryId = existing.categoryId
+            payee = existing.payee
+            val prefix = "${existing.title} - "
+            noteUserPart = if (existing.note.startsWith(prefix)) existing.note.removePrefix(prefix) else existing.note
+            paymentMethod = existing.paymentMethod
+            selectedTagNames = existing.tags
+        } else if (prefill != null) {
+            title = prefill!!.title
+            amountText = prefill!!.amount.abs().toPlainString()
+            currency = prefill!!.currency
+            transactionType = prefill!!.transactionType
+            selectedAccountId = prefill!!.accountId
+            recurrenceType = prefill!!.recurrenceRule.type
+            recurrenceInterval = prefill!!.recurrenceRule.interval
+            dayOfWeek = prefill!!.recurrenceRule.dayOfWeek
+            dayOfMonth = prefill!!.recurrenceRule.dayOfMonth
+            autoConfirm = true // Smart suggestions default to auto-confirm
+            startDateMillis = prefill!!.startDate
+            hasEndDate = false
+            endDateMillis = prefill!!.startDate
+            selectedCategoryId = prefill!!.categoryId
+            payee = prefill!!.payee
+            noteUserPart = prefill!!.note.removePrefix("${prefill!!.title} - ")
+            paymentMethod = prefill!!.paymentMethod
+            selectedTagNames = prefill!!.tags
+            
+            transactionViewModel?.clearPlannedPaymentPrefill()
+        } else {
+            // Default values for new entry
+            val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            startDateMillis = now
+            endDateMillis = now
+            selectedAccountId = accounts.firstOrNull()?.id ?: ""
+        }
     }
     val derivedNote = if (noteUserPart.isBlank()) title else "$title - $noteUserPart"
     LaunchedEffect(title) { }
-    var paymentMethod by remember(existing) { mutableStateOf(existing?.paymentMethod ?: "Cash") }
-    var selectedTagNames by remember(existing) {
-        mutableStateOf(existing?.tags ?: emptyList<String>())
-    }
 
     val isEditing = plannedPaymentId != null
 

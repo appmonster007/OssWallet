@@ -213,6 +213,8 @@ fun OssWalletNavGraph(
             ) {
                 SmartSuggestionsScreen(
                     viewModel = transactionViewModel,
+                    onAcceptAsTemplate = { navController.navigate(Screen.AddTemplate.createRoute()) },
+                    onAcceptAsPlannedPayment = { navController.navigate(Screen.PlannedPaymentEntry.createRoute()) },
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -707,6 +709,7 @@ fun OssWalletNavGraph(
                     plannedPaymentId = if (plannedPaymentId == -1L) null else plannedPaymentId,
                     viewModel = plannedPaymentViewModel,
                     accountViewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
                     categories = categories,
                     availableTags = allTags,
                     onBackClick = { navController.popBackStack() }

@@ -9,6 +9,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
+import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
@@ -77,6 +79,12 @@ class TransactionViewModel(
     private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
     val prefillDto: StateFlow<TransactionPrefillDTO?> = _prefillDto.asStateFlow()
 
+    private val _templatePrefill = MutableStateFlow<TemplatePrefillDTO?>(null)
+    val templatePrefill = _templatePrefill.asStateFlow()
+
+    private val _plannedPaymentPrefill = MutableStateFlow<PlannedPaymentPrefillDTO?>(null)
+    val plannedPaymentPrefill = _plannedPaymentPrefill.asStateFlow()
+
     val savedFilters = filterRepository.getAllFilters()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -140,14 +148,35 @@ class TransactionViewModel(
     /**
      * Smart discovery of recurring patterns based on all historical transactions.
      * Runs completely offline using heuristic analysis.
+     * Filters out patterns that already exist as both Template and Planned Payment.
      */
     val discoveredPatterns: StateFlow<List<DiscoveredPattern>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
-            transactionUseCases.getFilteredTransactions(
-                profileId, 
-                TransactionFilter(timelineRange = TimelineRange.AllTime)
-            ).map { transactions ->
-                PatternDiscoveryService.discoverPatterns(transactions)
+            combine(
+                transactionUseCases.getFilteredTransactions(
+                    profileId,
+                    TransactionFilter(timelineRange = TimelineRange.AllTime)
+                ),
+                templateRepository.getAllTemplates(),
+                plannedPaymentRepository.getAllPlannedPayments(profileId)
+            ) { transactions, templates, plannedPayments ->
+                val rawPatterns = PatternDiscoveryService.discoverPatterns(transactions)
+                
+                rawPatterns.map { pattern ->
+                    val existsAsTemplate = templates.any { 
+                        it.name.equals(pattern.title, ignoreCase = true) || 
+                        it.payee?.equals(pattern.payee, ignoreCase = true) == true
+                    }
+                    val existsAsPlannedPayment = plannedPayments.any { 
+                        it.title.equals(pattern.title, ignoreCase = true) || 
+                        it.payee.equals(pattern.payee, ignoreCase = true)
+                    }
+                    
+                    pattern.copy(
+                        existsAsTemplate = existsAsTemplate,
+                        existsAsPlannedPayment = existsAsPlannedPayment
+                    )
+                }.filter { !it.existsAsTemplate || !it.existsAsPlannedPayment }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -468,21 +497,48 @@ class TransactionViewModel(
     }
 
     fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
-        viewModelScope.launch {
-            val template = PatternDiscoveryService.toTemplate(pattern)
-            templateRepository.insertTemplate(template)
-        }
+        val template = PatternDiscoveryService.toTemplate(pattern)
+        _templatePrefill.value = TemplatePrefillDTO(
+            name = template.name,
+            category = template.category,
+            amount = template.amount,
+            transactionType = template.transactionType,
+            accountId = template.accountId,
+            note = template.note,
+            payee = template.payee,
+            location = template.location,
+            paymentMethod = template.paymentMethod,
+            currency = template.currency,
+            tags = template.tags
+        )
+    }
+
+    fun clearTemplatePrefill() {
+        _templatePrefill.value = null
     }
 
     fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
-        viewModelScope.launch {
-            withProfile { profileId ->
-                val payment = PatternDiscoveryService.toPlannedPayment(pattern)?.copy(profileId = profileId)
-                if (payment != null) {
-                    plannedPaymentRepository.insert(payment)
-                }
-            }
+        val payment = PatternDiscoveryService.toPlannedPayment(pattern)
+        if (payment != null) {
+            _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
+                title = payment.title,
+                amount = payment.amount,
+                currency = payment.currency,
+                transactionType = payment.transactionType,
+                accountId = payment.accountId,
+                categoryId = payment.categoryId,
+                paymentMethod = payment.paymentMethod,
+                tags = payment.tags,
+                note = payment.note,
+                payee = payment.payee,
+                recurrenceRule = payment.recurrenceRule,
+                startDate = payment.startDate
+            )
         }
+    }
+
+    fun clearPlannedPaymentPrefill() {
+        _plannedPaymentPrefill.value = null
     }
 }
 

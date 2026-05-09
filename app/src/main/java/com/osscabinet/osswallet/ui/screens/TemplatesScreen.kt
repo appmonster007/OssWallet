@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.rounded.*
@@ -31,7 +32,7 @@ import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplatesScreen(
-    onMenuClick: () -> Unit,
+    onBackClick: () -> Unit,
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
     onAddTemplateClick: (Long?) -> Unit
@@ -78,10 +79,10 @@ fun TemplatesScreen(
             TopAppBar(
                 title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
                 navigationIcon = {
-                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { onMenuClick }) {
+                    IconButton(onClick = if (isReorderMode) { { isReorderMode = false } } else { onBackClick }) {
                         Icon(
-                            if (isReorderMode) Icons.Rounded.Close else Icons.Default.Menu,
-                            contentDescription = if (isReorderMode) "Cancel" else "Menu"
+                            if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = if (isReorderMode) "Cancel" else "Back"
                         )
                     }
                 },

@@ -2,17 +2,19 @@ package com.osscabinet.ossWallet.domain.calculator
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.CardDataComputer
+import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
@@ -21,7 +23,34 @@ class CardComputationTest {
 
     private val baseCurrency = "USD"
     private val exchangeRates = mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.85"))
-    private val registry = CardComputerRegistry.DEFAULT
+    
+    private val registry = CardComputerRegistry(listOf(
+        object : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
+            override val supportedType = CardType.NET_WORTH
+            override suspend fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
+                val totals = AggregationService.calculateTotalByCurrency(input.transactions)
+                val netWorth = CurrencyService.calculateTotalInCurrency(
+                    totals, input.baseCurrency, input.exchangeRates, input.precision
+                )
+                val cashFlow = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
+                return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.baseCurrency, input.precision)
+            }
+        },
+        object : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
+            override val supportedType = CardType.CASH_FLOW
+            override suspend fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
+                val result = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
+                return CardRenderData.CashFlow(config, result, input.baseCurrency, input.precision)
+            }
+        },
+        object : CardDataComputer<CurrencyBalancesCardConfig, CardRenderData.CurrencyBalances> {
+            override val supportedType = CardType.CURRENCY_BALANCES
+            override suspend fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
+                val items = AggregationService.calculateCurrencyBalances(input.transactions, input.baseCurrency, input.exchangeRates, input.precision)
+                return CardRenderData.CurrencyBalances(config, items, input.baseCurrency, input.precision)
+            }
+        }
+    ))
     
     private val accounts = listOf(
         Account(id = "1", name = "Cash", currencyCode = "USD", structureType = "wallet", colorHex = "#FFFFFF", icon = "wallet"),
@@ -45,7 +74,7 @@ class CardComputationTest {
     @Test
     fun `NetWorthCalculator computes correctly`() {
         val config = NetWorthCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
-        val result = registry.compute(CardType.NET_WORTH, input, config) as CardRenderData.NetWorth
+        val result = runBlocking { registry.compute(CardType.NET_WORTH, input, config) as CardRenderData.NetWorth }
         
         // 1000 USD + (-50 EUR converted to USD)
         // EUR to USD: -50 / 0.85 = -58.8235...
@@ -56,7 +85,7 @@ class CardComputationTest {
     @Test
     fun `CashFlowCalculator computes correctly`() {
         val config = CashFlowCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
-        val result = registry.compute(CardType.CASH_FLOW, input, config) as CardRenderData.CashFlow
+        val result = runBlocking { registry.compute(CardType.CASH_FLOW, input, config) as CardRenderData.CashFlow }
         
         assertEquals(BigDecimal("1000.00"), result.result.totalIncomeInBase)
         assertEquals(BigDecimal("-58.82"), result.result.totalExpensesInBase)
@@ -66,7 +95,7 @@ class CardComputationTest {
     @Test
     fun `CurrencyBalancesCalculator computes correctly`() {
         val config = CurrencyBalancesCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime))
-        val result = registry.compute(CardType.CURRENCY_BALANCES, input, config) as CardRenderData.CurrencyBalances
+        val result = runBlocking { registry.compute(CardType.CURRENCY_BALANCES, input, config) as CardRenderData.CurrencyBalances }
         
         assertEquals(2, result.items.size)
         val usd = result.items.find { it.currency == "USD" }!!
@@ -75,4 +104,6 @@ class CardComputationTest {
         assertEquals(0, BigDecimal("1000").compareTo(usd.amount))
         assertEquals(0, BigDecimal("-50").compareTo(eur.amount))
     }
+
+    private fun <T> runBlocking(block: suspend () -> T): T = kotlinx.coroutines.runBlocking { block() }
 }

@@ -39,6 +39,7 @@ fun SettingsScreen(
     onManageCategoriesClick: () -> Unit,
     onTemplatesClick: () -> Unit,
     onManageFiltersClick: () -> Unit,
+    onSmartSuggestionsClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
@@ -438,6 +439,13 @@ fun SettingsScreen(
                     subtitle = "Templates for quick transaction searching",
                     icon = Icons.Rounded.FilterList,
                     onClick = { navigate(onManageFiltersClick) }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsItem(
+                    title = "Smart Suggestions",
+                    subtitle = "Discover recurring transactions automatically",
+                    icon = Icons.Rounded.AutoAwesome,
+                    onClick = { navigate(onSmartSuggestionsClick) }
                 )
             }
 

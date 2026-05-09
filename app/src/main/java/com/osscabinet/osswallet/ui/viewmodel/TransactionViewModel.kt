@@ -16,8 +16,12 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
+import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,7 +45,9 @@ class TransactionViewModel(
     private val accountRepository: AccountRepository,
     private val filterRepository: FilterRepository,
     private val computationRepository: ComputationRepository,
-    private val transactionManager: TransactionManager
+    private val transactionManager: TransactionManager,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val templateRepository: TemplateRepository
 ) : BaseViewModel(settingsRepository) {
 
     // Replace multiple filter states with single FilterManager
@@ -130,6 +136,24 @@ class TransactionViewModel(
     val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
         .map { list -> list.map { it.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * Smart discovery of recurring patterns based on all historical transactions.
+     * Runs completely offline using heuristic analysis.
+     */
+    val discoveredPatterns: StateFlow<List<DiscoveredPattern>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId ->
+            transactionUseCases.getFilteredTransactions(
+                profileId, 
+                TransactionFilter(timelineRange = TimelineRange.AllTime)
+            ).map { transactions ->
+                PatternDiscoveryService.discoverPatterns(transactions)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun updateRecordsFilter(newFilter: TransactionFilter) {
         recordsFilterManager.setFilter("manual", newFilter)
@@ -442,6 +466,24 @@ class TransactionViewModel(
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
         return transactionUseCases.getLinkedTransactions(transactionId)
     }
+
+    fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
+        viewModelScope.launch {
+            val template = PatternDiscoveryService.toTemplate(pattern)
+            templateRepository.insertTemplate(template)
+        }
+    }
+
+    fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
+        viewModelScope.launch {
+            withProfile { profileId ->
+                val payment = PatternDiscoveryService.toPlannedPayment(pattern)?.copy(profileId = profileId)
+                if (payment != null) {
+                    plannedPaymentRepository.insert(payment)
+                }
+            }
+        }
+    }
 }
 
 class TransactionViewModelFactory(
@@ -451,7 +493,9 @@ class TransactionViewModelFactory(
     private val accountRepository: AccountRepository,
     private val filterRepository: FilterRepository,
     private val computationRepository: ComputationRepository,
-    private val transactionManager: TransactionManager
+    private val transactionManager: TransactionManager,
+    private val plannedPaymentRepository: PlannedPaymentRepository,
+    private val templateRepository: TemplateRepository
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -462,7 +506,9 @@ class TransactionViewModelFactory(
             accountRepository,
             filterRepository,
             computationRepository,
-            transactionManager
+            transactionManager,
+            plannedPaymentRepository,
+            templateRepository
         ) as T
     }
 }

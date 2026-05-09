@@ -4,3 +4,6 @@ acc_bank,Main Bank,USD,REGULAR,#2196F3,AccountBalance,"USD,INR,EUR",1
 acc_savings,Savings,USD,SAVINGS,#9C27B0,Savings,"USD,INR",1
 acc_credit,Credit Card,USD,CREDIT,#F44336,CreditCard,"USD",1
 acc_invest,Investment,USD,INVESTMENT,#FF9800,TrendingUp,"USD",1
+acc_jpy,Japan Travel Card,JPY,REGULAR,#FF5722,Payment,"JPY",1
+acc_sgd,DBS Bank,SGD,REGULAR,#E91E63,AccountBalance,"SGD",1
+acc_idr,GoPay IDR,IDR,REGULAR,#00C853,Wallet,"IDR",1

@@ -44,8 +44,30 @@
                 android:resource="@xml/net_worth_widget_info" />
         </receiver>
 
+        <!-- Cash Flow homescreen widget -->
+        <receiver
+            android:name=".widget.CashFlowWidgetProvider"
+            android:exported="true"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/cash_flow_widget_info" />
+        </receiver>
+
         <activity
             android:name=".widget.NetWorthWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.CashFlowWidgetConfigActivity"
             android:exported="true"
             android:theme="@style/Theme.OssWallet">
             <intent-filter>

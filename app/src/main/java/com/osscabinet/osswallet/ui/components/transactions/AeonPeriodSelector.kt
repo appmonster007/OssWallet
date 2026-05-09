@@ -137,23 +137,23 @@ fun AeonPeriodSelector(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        // The Pull Tab "Hump"
-        if (showArcTab) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .size(width = 72.dp, height = 38.dp)
-                    .background(
-                        backgroundColor,
-                        RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onClick
-                    )
-            )
-        }
+//        // The Pull Tab "Hump"
+//        if (showArcTab) {
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.TopCenter)
+//                    .size(width = 72.dp, height = 38.dp)
+//                    .background(
+//                        backgroundColor,
+//                        RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
+//                    )
+//                    .clickable(
+//                        interactionSource = remember { MutableInteractionSource() },
+//                        indication = null,
+//                        onClick = onClick
+//                    )
+//            )
+//        }
 
         // Main Content Container
         Column(
@@ -183,30 +183,30 @@ fun AeonPeriodSelector(
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-        // The Arrow Icon - Drawn last (on top)
-        if (showArcTab) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .size(width = 72.dp, height = 24.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onClick
-                    ),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .size(20.dp)
-                        .graphicsLayer { rotationZ = rotation },
-                    tint = accentColor.copy(alpha = 0.7f)
-                )
-            }
-        }
+//        // The Arrow Icon - Drawn last (on top)
+//        if (showArcTab) {
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.TopCenter)
+//                    .size(width = 72.dp, height = 24.dp)
+//                    .clickable(
+//                        interactionSource = remember { MutableInteractionSource() },
+//                        indication = null,
+//                        onClick = onClick
+//                    ),
+//                contentAlignment = Alignment.TopCenter
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.KeyboardArrowUp,
+//                    contentDescription = null,
+//                    modifier = Modifier
+//                        .padding(top = 8.dp)
+//                        .size(20.dp)
+//                        .graphicsLayer { rotationZ = rotation },
+//                    tint = accentColor.copy(alpha = 0.7f)
+//                )
+//            }
+//        }
     }
 }
 

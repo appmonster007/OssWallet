@@ -83,21 +83,38 @@ internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale:
     }
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        Text(
-            text = context.getString(R.string.recent_activities).uppercase(),
-            style = TextStyle(
-                fontSize = TextUnit(10f * scale, TextUnitType.Sp),
-                fontWeight = FontWeight.Bold,
-                color = GlanceTheme.colors.onSurfaceVariant
-            ),
-            modifier = GlanceModifier.padding(bottom = 8.dp)
-        )
+        Row(
+            modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = GlanceModifier
+                    .size((16f * scale).dp)
+                    .background(GlanceTheme.colors.primary)
+                    .cornerRadius((8f * scale).dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Dot icon
+            }
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            Text(
+                text = context.getString(R.string.recent_activities).uppercase(),
+                style = TextStyle(
+                    fontSize = TextUnit(9f * scale, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = GlanceTheme.colors.primary
+                )
+            )
+        }
 
         if (transactions.isEmpty()) {
             Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = context.getString(R.string.no_recent_activities),
-                    style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant)
+                    style = TextStyle(
+                        fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                        color = GlanceTheme.colors.onSurfaceVariant
+                    )
                 )
             }
         } else {
@@ -113,35 +130,40 @@ internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale:
 
 @Composable
 private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
-    val amountColor = if (tx.type == "income") {
+    val isIncome = tx.type == "income"
+    val amountColor = if (isIncome) {
         ColorProvider(R.color.widget_income_color)
     } else {
         ColorProvider(R.color.widget_expense_color)
     }
 
     Row(
-        modifier = GlanceModifier.fillMaxWidth(),
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .background(GlanceTheme.colors.surfaceVariant)
+            .cornerRadius((12f * scale).dp)
+            .padding((8f * scale).dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon Circle
+        // Category Icon Circle
         Box(
             modifier = GlanceModifier
-                .size((36f * scale).dp)
+                .size((32f * scale).dp)
                 .background(GlanceTheme.colors.secondaryContainer)
-                .cornerRadius((18f * scale).dp),
+                .cornerRadius((16f * scale).dp),
             contentAlignment = Alignment.Center
         ) {
             // Placeholder for category icon
         }
 
-        Spacer(modifier = GlanceModifier.width(12.dp))
+        Spacer(modifier = GlanceModifier.width(10.dp))
 
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = tx.title,
                 style = TextStyle(
-                    fontSize = TextUnit(11f * scale, TextUnitType.Sp),
-                    fontWeight = FontWeight.Medium,
+                    fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
                     color = GlanceTheme.colors.onSurface
                 ),
                 maxLines = 1
@@ -149,7 +171,7 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
             Text(
                 text = tx.category,
                 style = TextStyle(
-                    fontSize = TextUnit(9f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(8f * scale, TextUnitType.Sp),
                     color = GlanceTheme.colors.onSurfaceVariant
                 ),
                 maxLines = 1
@@ -158,9 +180,9 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
 
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = tx.amount,
+                text = (if (isIncome) "+" else "-") + tx.amount,
                 style = TextStyle(
-                    fontSize = TextUnit(11f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(10f * scale, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
                     color = amountColor
                 )
@@ -168,7 +190,7 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
             Text(
                 text = tx.timestamp,
                 style = TextStyle(
-                    fontSize = TextUnit(8f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(7f * scale, TextUnitType.Sp),
                     color = GlanceTheme.colors.onSurfaceVariant
                 )
             )

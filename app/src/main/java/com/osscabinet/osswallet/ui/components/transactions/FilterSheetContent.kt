@@ -106,7 +106,6 @@ fun FilterSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp)
     ) {
         LazyColumn(
@@ -132,134 +131,136 @@ fun FilterSheetContent(
 
             // Note: ActiveFiltersSummary removed as requested for low-profile sheet peek
 
-            item { HorizontalDivider(modifier = Modifier.padding(top = 8.dp)) }
-
-            // Filter fields content
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Header: Title and Reset
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Column(modifier = Modifier.fillMaxWidth().background(backgroundColor)) {
+                    HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                    
+                    // Filter fields content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            "Filter Transactions",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        TextButton(
-                            onClick = {
-                                onResetToInitial?.invoke()
-                                localFilter = TransactionFilter()
-                                selectedFilterIds = emptySet()
-                                applyFilterWithDebounce(localFilter, debounceMs = 0)
-                            },
-                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        // Header: Title and Reset
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Reset All", style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-
-                    // Saved Filters Dropdown
-                    if (savedFilters.isNotEmpty()) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                "FILTER PRESET",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                "Filter Transactions",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
-                            Box(
-                                modifier = Modifier.fillMaxWidth()
+                            TextButton(
+                                onClick = {
+                                    onResetToInitial?.invoke()
+                                    localFilter = TransactionFilter()
+                                    selectedFilterIds = emptySet()
+                                    applyFilterWithDebounce(localFilter, debounceMs = 0)
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
                             ) {
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp,
-                                        if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                Text("Reset All", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+
+                        // Saved Filters Dropdown
+                        if (savedFilters.isNotEmpty()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "FILTER PRESET",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.5.sp
                                     ),
-                                    onClick = { filtersExpanded = !filtersExpanded }
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                                Box(
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        ),
+                                        onClick = { filtersExpanded = !filtersExpanded }
                                     ) {
-                                        val selectedNames = savedFilters.filter { it.id in selectedFilterIds }.map { it.name }
-                                        val selectedName = if (selectedNames.isEmpty()) "Select presets..." else selectedNames.joinToString(", ")
-                                        Text(
-                                            text = selectedName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1
-                                        )
-                                        Icon(
-                                            Icons.Default.ArrowDropDown,
-                                            null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            val selectedNames = savedFilters.filter { it.id in selectedFilterIds }.map { it.name }
+                                            val selectedName = if (selectedNames.isEmpty()) "Select presets..." else selectedNames.joinToString(", ")
+                                            Text(
+                                                text = selectedName,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = if (selectedFilterIds.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1
+                                            )
+                                            Icon(
+                                                Icons.Default.ArrowDropDown,
+                                                null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
-                                }
 
-                                DropdownMenu(
-                                    expanded = filtersExpanded,
-                                    onDismissRequest = { filtersExpanded = false },
-                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                ) {
-                                    savedFilters.forEach { savedFilter ->
-                                        DropdownMenuItem(
-                                            text = { Text(savedFilter.name) },
-                                            onClick = {
-                                                selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
-                                                    selectedFilterIds - savedFilter.id
-                                                } else {
-                                                    selectedFilterIds + savedFilter.id
-                                                }
-                                                updateFilterFromSelectedPresets()
-                                            },
-                                            trailingIcon = if (savedFilter.id in selectedFilterIds) {
-                                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                                            } else null
-                                        )
+                                    DropdownMenu(
+                                        expanded = filtersExpanded,
+                                        onDismissRequest = { filtersExpanded = false },
+                                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    ) {
+                                        savedFilters.forEach { savedFilter ->
+                                            DropdownMenuItem(
+                                                text = { Text(savedFilter.name) },
+                                                onClick = {
+                                                    selectedFilterIds = if (savedFilter.id in selectedFilterIds) {
+                                                        selectedFilterIds - savedFilter.id
+                                                    } else {
+                                                        selectedFilterIds + savedFilter.id
+                                                    }
+                                                    updateFilterFromSelectedPresets()
+                                                },
+                                                trailingIcon = if (savedFilter.id in selectedFilterIds) {
+                                                    { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                                } else null
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        // Shared Filter Fields
+                        FilterFields(
+                            filter = localFilter,
+                            onFilterChange = {
+                                localFilter = it
+                                selectedFilterIds = emptySet()
+                                applyFilterWithDebounce(it, debounceMs = 300)
+                            },
+                            accounts = accounts,
+                            allCategories = allCategories,
+                            showAccountFilter = showAccountFilter,
+                            allAvailableCurrencies = accounts.flatMap { account ->
+                                if (account.allowedCurrencies.isEmpty()) {
+                                    listOf(account.currencyCode)
+                                } else {
+                                    account.allowedCurrencies
+                                }
+                            }.distinct().sorted(),
+                            onImmediateApply = { newFilter, debounceMs ->
+                                applyFilterWithDebounce(newFilter, debounceMs)
+                            }
+                        )
                     }
-
-                    // Shared Filter Fields
-                    FilterFields(
-                        filter = localFilter,
-                        onFilterChange = {
-                            localFilter = it
-                            selectedFilterIds = emptySet()
-                            applyFilterWithDebounce(it, debounceMs = 300)
-                        },
-                        accounts = accounts,
-                        allCategories = allCategories,
-                        showAccountFilter = showAccountFilter,
-                        allAvailableCurrencies = accounts.flatMap { account ->
-                            if (account.allowedCurrencies.isEmpty()) {
-                                listOf(account.currencyCode)
-                            } else {
-                                account.allowedCurrencies
-                            }
-                        }.distinct().sorted(),
-                        onImmediateApply = { newFilter, debounceMs ->
-                            applyFilterWithDebounce(newFilter, debounceMs)
-                        }
-                    )
                 }
             }
         }

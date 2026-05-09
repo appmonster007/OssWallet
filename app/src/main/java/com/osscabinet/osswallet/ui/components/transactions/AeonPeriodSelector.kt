@@ -154,8 +154,7 @@ fun AeonPeriodSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp)
-                // Use a slightly larger radius for the main body to overlap smoothly
-                .background(backgroundColor, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(backgroundColor)
                 .padding(top = 16.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -176,18 +175,6 @@ fun AeonPeriodSelector(
             }
             
             Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        // SEAM FILLER: A small rectangle that bridges the hump and the main body
-        // to eliminate the "notch" or sub-pixel line caused by overlapping rounded shapes.
-        if (showArcTab) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 15.dp) // Exactly on the seam (16dp padding - 1dp overlap)
-                    .size(width = 64.dp, height = 4.dp)
-                    .background(backgroundColor)
-            )
         }
 
         // The Arrow Icon - Drawn last (on top)

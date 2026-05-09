@@ -473,7 +473,8 @@ fun DynamicAccountDetailCards(
     }
 
     if (showAddCardDialog) {
-        AccountDetailCardTypeSelectionDialog(
+        CardTypeSelectionDialog(
+            screenContext = ScreenContext.ACCOUNT_DETAIL,
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
                 accountDetailViewModel.addCard(
@@ -496,25 +497,6 @@ fun DynamicAccountDetailCards(
             }
         )
     }
-}
-
-@Composable
-fun AccountDetailCardTypeSelectionDialog(
-    onDismiss: () -> Unit,
-    onCardTypeSelected: (CardType) -> Unit
-) {
-    GenericAddCardDialog(
-        onDismiss = onDismiss,
-        cardOptions = CardType.entries
-            .filter { it.isUserAddableOn(ScreenContext.ACCOUNT_DETAIL) }
-            .map { type ->
-                CardTypeOptionData(
-                    title = type.displayName,
-                    description = type.description,
-                    onClick = { onCardTypeSelected(type) }
-                )
-            }
-    )
 }
 
 @Composable

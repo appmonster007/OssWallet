@@ -17,14 +17,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
@@ -59,8 +53,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
-import com.osscabinet.ossWallet.ui.components.CardTypeOptionData
-import com.osscabinet.ossWallet.ui.components.GenericAddCardDialog
+import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
@@ -464,44 +457,16 @@ fun DashboardContent(
 
     // Add Card Dialog
     if (showAddCardDialog) {
-        AddCardDialog(
+        CardTypeSelectionDialog(
+            screenContext = ScreenContext.DASHBOARD,
             onDismiss = { onShowAddCardDialogChange(false) },
-            onAddCard = { cardType ->
-                val unifiedType = CardType.entries.find { it.serialName == cardType }
-                if (unifiedType != null) {
-                    dashboardViewModel.addCard(unifiedType)
-                }
+            onCardTypeSelected = { cardType ->
+                dashboardViewModel.addCard(cardType)
                 onShowAddCardDialogChange(false)
-            }
+            },
+            additionalFilter = { it != CardType.BUDGETS }
         )
     }
-}
-
-@Composable
-fun AddCardDialog(
-    onDismiss: () -> Unit,
-    onAddCard: (String) -> Unit
-) {
-    GenericAddCardDialog(
-        onDismiss = onDismiss,
-        cardOptions = CardType.entries.filter { it.isUserAddableOn(ScreenContext.DASHBOARD) && it != CardType.BUDGETS }
-            .map { type ->
-                CardTypeOptionData(
-                    title = type.displayName,
-                    description = "", // TODO: Add descriptions to CardType
-                    icon = when (type) {
-                        CardType.NET_WORTH -> Icons.Default.AccountBalance
-                        CardType.CURRENCY_BALANCES -> Icons.Default.AttachMoney
-                        CardType.CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
-                        CardType.ACCOUNTS -> Icons.Default.AccountBox
-                        CardType.CATEGORY_PIE_CHART -> Icons.Default.PieChart
-                        CardType.CATEGORY_TREEMAP -> Icons.Default.GridView
-                        else -> null
-                    },
-                    onClick = { onAddCard(type.serialName) }
-                )
-            }
-    )
 }
 
 @Composable

@@ -13,8 +13,6 @@ data class TransactionFilter(
     val isPayeeRegex: Boolean = false,
     val categoryIds: List<Long> = emptyList(),
     val accountIds: List<String> = emptyList(),
-    val startDate: Long? = null,
-    val endDate: Long? = null,
     val paymentMethods: List<String> = emptyList(),
     val hasWarranty: Boolean? = null, // null = any, true = has warranty, false = no warranty
     val warrantyExpirationStart: Long? = null,

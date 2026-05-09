@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -52,13 +53,15 @@ class TransactionRepositoryImpl(
         val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ?")
         val args = mutableListOf<Any>(profileId)
 
-        if (filter.startDate != null) {
+        val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
+
+        if (startTime != null) {
             queryBuilder.append(" AND timestamp >= ?")
-            args.add(filter.startDate)
+            args.add(startTime)
         }
-        if (filter.endDate != null) {
+        if (endTime != null) {
             queryBuilder.append(" AND timestamp <= ?")
-            args.add(filter.endDate)
+            args.add(endTime)
         }
         if (filter.accountIds.isNotEmpty()) {
             val placeholders = filter.accountIds.joinByComma { "?" }

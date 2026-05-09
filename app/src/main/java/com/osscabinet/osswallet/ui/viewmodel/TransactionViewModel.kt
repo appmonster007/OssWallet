@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.forAccount
@@ -156,11 +157,9 @@ class TransactionViewModel(
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        if (start != null || end != null) {
-            recordsFilterManager.setFilter("date", TransactionFilter(startDate = start, endDate = end))
-        } else {
-            recordsFilterManager.removeFilter("date")
-        }
+        recordsFilterManager.setFilter("date", TransactionFilter(
+            timelineRange = TimelineRange.CustomRange(start, end)
+        ))
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
@@ -178,7 +177,7 @@ class TransactionViewModel(
 
     fun setAccountDetailDateRangeFilter(start: Long?, end: Long?) {
         _accountDetailFilter.value =
-            _accountDetailFilter.value.copy(startDate = start, endDate = end)
+            _accountDetailFilter.value.copy(timelineRange = TimelineRange.CustomRange(start, end))
     }
 
     fun clearRecordsFilters() {
@@ -209,8 +208,7 @@ class TransactionViewModel(
         is RecordsFilterContext.Custom -> TransactionFilter(
             accountIds = accountIds,
             transactionType = transactionType,
-            startDate = startDate,
-            endDate = endDate,
+            timelineRange = TimelineRange.CustomRange(startDate, endDate),
             categoryIds = categoryIds.map { it.toLong() },
             currencies = currencies,
             paymentMethods = paymentMethods,

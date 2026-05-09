@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.AggregationFunction
 import com.osscabinet.ossWallet.domain.model.query.MetricConfig
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 
@@ -103,14 +102,8 @@ class TransactionQueryBuilder {
         val where = StringBuilder(" FROM transactions WHERE profileId = ? AND status != 'DELETED'")
         args.add(profileId)
 
-        // Resolve timelineRange to timestamp bounds when not explicitly overridden by startDate/endDate
-        val (resolvedStart, resolvedEnd) = if (filter.timelineRange !is TimelineRange.AllTime) {
-            TimelineService.getDateRange(filter.timelineRange)
-        } else {
-            Pair(null, null)
-        }
-        val effectiveStartDate = filter.startDate ?: resolvedStart
-        val effectiveEndDate = filter.endDate ?: resolvedEnd
+        // Resolve timelineRange to timestamp bounds
+        val (effectiveStartDate, effectiveEndDate) = TimelineService.getDateRange(filter.timelineRange)
 
         if (effectiveStartDate != null) {
             where.append(" AND timestamp >= ?")

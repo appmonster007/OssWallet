@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
@@ -228,13 +229,14 @@ fun CategoryPieChartCard(
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
                         
                         val currentType = config.filter.transactionType ?: "expense"
+                        val (start, end) = TimelineService.getDateRange(config.filter.timelineRange)
 
                         onRecordsClick(
                             RecordsFilterContext.Custom(
                             categoryIds = categoryIds,
                             accountIds = config.filter.accountIds,
-                            startDate = config.filter.startDate,
-                            endDate = config.filter.endDate,
+                            startDate = start,
+                            endDate = end,
                             transactionType = currentType
                         ))
                     }

@@ -97,8 +97,8 @@ fun NetWorthCard(
         is TimelineRange.LastPeriod -> tr.period.label
         is TimelineRange.CustomRange -> {
             val formatter = DateTimeFormatter.ofPattern("MMM d").withZone(ZoneId.systemDefault())
-            val start = formatter.format(Instant.ofEpochMilli(tr.start))
-            val end = formatter.format(Instant.ofEpochMilli(tr.end))
+            val start = tr.start?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
+            val end = tr.end?.let { formatter.format(Instant.ofEpochMilli(it)) } ?: "..."
             "$start - $end"
         }
     }

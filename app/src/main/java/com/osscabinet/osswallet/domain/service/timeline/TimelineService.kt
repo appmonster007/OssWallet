@@ -138,8 +138,10 @@ object TimelineService {
             is TimelineRange.ThisPeriod -> range.copy(offset = range.offset + delta)
             is TimelineRange.LastPeriod -> range.copy(offset = range.offset + delta)
             is TimelineRange.CustomRange -> {
-                val duration = range.end - range.start
-                TimelineRange.CustomRange(range.start + duration * delta, range.end + duration * delta)
+                val s = range.start ?: return range
+                val e = range.end ?: return range
+                val duration = e - s
+                TimelineRange.CustomRange(s + duration * delta, e + duration * delta)
             }
             else -> range
         }

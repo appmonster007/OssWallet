@@ -15,7 +15,7 @@ sealed class TimelineRange {
     @Serializable
     data class LastPeriod(val period: LastPeriodType, val offset: Int = 0) : TimelineRange()
     @Serializable
-    data class CustomRange(val start: Long, val end: Long) : TimelineRange()
+    data class CustomRange(val start: Long? = null, val end: Long? = null) : TimelineRange()
 }
 
 @Serializable

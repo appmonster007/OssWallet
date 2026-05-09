@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.BigDecimal
@@ -120,8 +121,7 @@ object BudgetService {
 
         // Utilize TransactionFilter for standard-compliant filtering
         val filter = TransactionFilter(
-            startDate = start,
-            endDate = end,
+            timelineRange = TimelineRange.CustomRange(start, end),
             accountIds = budget.accountIds,
             categoryIds = TransactionFilterService.expandCategoryIds(budget.categoryIds, allCategories),
             tags = budget.tags,

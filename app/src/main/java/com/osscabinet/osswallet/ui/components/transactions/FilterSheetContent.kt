@@ -70,8 +70,6 @@ fun FilterSheetContent(
             isPayeeRegex = filters.any { it.isPayeeRegex },
             categoryIds = filters.flatMap { it.categoryIds }.distinct(),
             accountIds = filters.flatMap { it.accountIds }.distinct(),
-            startDate = filters.mapNotNull { it.startDate }.minOrNull(),
-            endDate = filters.mapNotNull { it.endDate }.maxOrNull(),
             paymentMethods = filters.flatMap { it.paymentMethods }.distinct(),
             hasWarranty = if (filters.any { it.hasWarranty == null }) null else filters.any { it.hasWarranty == true },
             warrantyExpirationStart = filters.mapNotNull { it.warrantyExpirationStart }.minOrNull(),

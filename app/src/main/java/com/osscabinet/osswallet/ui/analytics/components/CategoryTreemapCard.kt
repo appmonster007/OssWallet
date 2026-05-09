@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.ui.util.toChartColor
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 
 @Composable
@@ -244,13 +245,14 @@ fun CategoryTreemapCard(
                         val categoryIds = clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
 
                         val currentType = config.filter.transactionType ?: "expense"
+                        val (start, end) = TimelineService.getDateRange(config.filter.timelineRange)
 
                         onRecordsClick(
                             RecordsFilterContext.Custom(
                             categoryIds = categoryIds,
                             accountIds = config.filter.accountIds,
-                            startDate = config.filter.startDate,
-                            endDate = config.filter.endDate,
+                            startDate = start,
+                            endDate = end,
                             transactionType = currentType
                         ))
                     }

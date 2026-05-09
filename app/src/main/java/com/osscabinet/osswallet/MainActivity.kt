@@ -102,7 +102,10 @@ class MainActivity : FragmentActivity() {
                             starredTemplates = starredTemplates,
                             selectedDestination = currentDestination,
                             onDashboardClick = {
-                                navController.navigate(Screen.Dashboard.createRoute(topLevel = true)) {
+                                navController.navigateToDashboard(
+                                    context = DashboardViewContext.None,
+                                    topLevel = true
+                                ) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -111,7 +114,10 @@ class MainActivity : FragmentActivity() {
                                 }
                             },
                             onRecordsClick = {
-                                navController.navigate(Screen.TransactionList.createRoute(topLevel = true)) {
+                                navController.navigateToRecords(
+                                    context = RecordsFilterContext.None,
+                                    topLevel = true
+                                ) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }

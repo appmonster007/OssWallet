@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.transactions
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +46,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -221,11 +227,31 @@ private fun PillNavigationRow(
             .height(36.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (page == 0) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f) 
+                if (page == 0) MaterialTheme.colorScheme.surfaceVariant
                 else accentColor
-            ),
+            )
+            .drawBehind {
+                val strokeWidthPx = 1.dp.toPx()
+                val dashPattern = floatArrayOf(10f, 10f)
+                val cornerRadiusPx = 12.dp.toPx()
+
+                // Inset the border so the 1dp stroke isn't cut off by the .clip()
+                val inset = strokeWidthPx / 2
+                val size = androidx.compose.ui.geometry.Size(size.width - strokeWidthPx, size.height - strokeWidthPx)
+
+                drawRoundRect(
+                    color = accentColor.copy(alpha = 0.5f),
+                    topLeft = Offset(inset, inset), // Start slightly inside
+                    size = size,
+                    style = Stroke(
+                        width = strokeWidthPx,
+                        pathEffect = PathEffect.dashPathEffect(dashPattern, 0f)
+                    ),
+                    cornerRadius = CornerRadius(cornerRadiusPx - inset)
+                )
+            },
         verticalAlignment = Alignment.CenterVertically
-    ) {
+    ){
         // Left Arrow (Shift Previous)
         Box(
             modifier = Modifier

@@ -20,8 +20,4 @@ class CardComputerRegistry(computers: List<CardDataComputer<*, *>>) {
         return (computer as CardDataComputer<C, CardRenderData>).compute(input, config)
     }
 
-    /**
-     * No-op for backward compatibility.
-     */
-    fun clearCache() {}
 }

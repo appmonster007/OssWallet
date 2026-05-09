@@ -3,35 +3,29 @@ package com.osscabinet.ossWallet.domain.service.management
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import java.math.BigDecimal
 
 /**
  * Service for centralizing transaction lifecycle logic.
  * Reduces logic duplication across ViewModels.
+ * Widget refresh is handled entirely by WidgetInvalidationObserver watching the
+ * transactions table, so no explicit trigger calls are needed here.
  */
 class TransactionManager(
-    private val transactionUseCases: TransactionUseCases,
-    private val widgetRefreshTrigger: WidgetRefreshTrigger? = null
+    private val transactionUseCases: TransactionUseCases
 ) {
 
-    /**
-     * Handles saving (creating or updating) a transaction.
-     * Centralizes logic for transfers, status updates, and type changes.
-     */
     suspend fun handleSaveTransaction(
         existingTransaction: Transaction?,
         request: TransactionRequest,
         profileId: Int
     ): Long {
-        val result = if (request.isTransfer) {
+        return if (request.isTransfer) {
             handleTransferSave(existingTransaction, request, profileId)
         } else {
             handleNormalSave(existingTransaction, request, profileId)
         }
-        widgetRefreshTrigger?.trigger()
-        return result
     }
 
     private suspend fun handleNormalSave(
@@ -42,10 +36,8 @@ class TransactionManager(
         if (existingTransaction != null) {
             val wasTransfer = existingTransaction.category == "Transfer"
             if (wasTransfer) {
-                // Changing from Transfer to Normal: Clear links
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
             }
-
             val updatedTransaction = existingTransaction.copy(
                 title = request.title.ifBlank { request.category },
                 amount = request.amount,
@@ -64,11 +56,7 @@ class TransactionManager(
                 warrantyExpiration = request.warrantyExpiration,
                 status = request.status
             )
-            transactionUseCases.updateTransaction(
-                existingTransaction,
-                updatedTransaction,
-                profileId
-            )
+            transactionUseCases.updateTransaction(existingTransaction, updatedTransaction, profileId)
             return existingTransaction.id
         } else {
             val newTransaction = Transaction(
@@ -100,7 +88,6 @@ class TransactionManager(
     ): Long {
         val targetAccountId = request.targetAccountId
 
-        // Build source transaction (outgoing)
         val sourceTransaction = (existingTransaction ?: Transaction(
             title = "",
             amount = BigDecimal.ZERO,
@@ -127,24 +114,16 @@ class TransactionManager(
             status = request.status
         )
 
-        // If no target account, this is an "Outside of wallet" transfer
-        // Only create the source transaction, no counterpart
         if (targetAccountId == null) {
             return if (existingTransaction != null) {
-                // Clear any existing links since this is now outside-wallet
                 transactionUseCases.clearTransactionLinks(existingTransaction.id)
-                transactionUseCases.updateTransaction(
-                    existingTransaction,
-                    sourceTransaction,
-                    profileId
-                )
+                transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
                 existingTransaction.id
             } else {
                 transactionUseCases.insertTransaction(sourceTransaction, profileId)
             }
         }
 
-        // Internal transfer: create counterpart transaction
         val targetTransaction = Transaction(
             title = request.title.ifBlank { "Transfer" },
             amount = request.amount.multiply(request.transferRate),
@@ -164,37 +143,19 @@ class TransactionManager(
         )
 
         if (existingTransaction != null && existingTransaction.category == "Transfer") {
-            // Already a transfer, update both
             transactionUseCases.updateTransaction(existingTransaction, sourceTransaction, profileId)
         }
 
         val pair = transactionUseCases.saveTransfer(sourceTransaction, targetTransaction, profileId)
-        return pair.first // Source ID
+        return pair.first
     }
 
-    /**
-     * Clones an existing transaction with a new timestamp.
-     * @return The ID of the newly created transaction.
-     */
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return null
-        val clonedTransaction = transaction.copy(
-            id = 0, // Reset ID for new entry
-            timestamp = System.currentTimeMillis()
-        )
-        val newId = transactionUseCases.insertTransaction(clonedTransaction, profileId)
-
-        // Optionally link cloned transactions in the future
-        // transactionUseCases.addTransactionLink(newId, transactionId)
-
-        widgetRefreshTrigger?.trigger()
-        return newId
+        val clonedTransaction = transaction.copy(id = 0, timestamp = System.currentTimeMillis())
+        return transactionUseCases.insertTransaction(clonedTransaction, profileId)
     }
 
-    /**
-     * Toggles the status of a transaction (Cleared <-> Uncleared).
-     * @return The new status.
-     */
     suspend fun toggleStatus(transactionId: Long, profileId: Int): TransactionStatus? {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return null
         val newStatus = when (transaction.status) {
@@ -202,25 +163,13 @@ class TransactionManager(
             TransactionStatus.UNCLEARED -> TransactionStatus.CLEARED
             TransactionStatus.RECONCILE -> TransactionStatus.CLEARED
         }
-
-        val updatedTransaction = transaction.copy(status = newStatus)
-        transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)
-        widgetRefreshTrigger?.trigger()
+        transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
         return newStatus
     }
 
-    /**
-     * Updates the status of a transaction to a specific value.
-     */
-    suspend fun updateStatus(
-        transactionId: Long,
-        newStatus: TransactionStatus,
-        profileId: Int
-    ): Boolean {
+    suspend fun updateStatus(transactionId: Long, newStatus: TransactionStatus, profileId: Int): Boolean {
         val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
-        val updatedTransaction = transaction.copy(status = newStatus)
-        transactionUseCases.updateTransaction(transaction, updatedTransaction, profileId)
-        widgetRefreshTrigger?.trigger()
+        transactionUseCases.updateTransaction(transaction, transaction.copy(status = newStatus), profileId)
         return true
     }
 }

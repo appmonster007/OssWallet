@@ -8,9 +8,11 @@ import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.*
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -41,17 +43,35 @@ object CardAggregationService {
             precision = input.precision
         )
 
-        // For CashFlowResult in NetWorthCard
         val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter)
-
         val currentMetrics = NetWorthMetrics(netWorth, cashFlow)
+
+        val previousMetrics: NetWorthMetrics? = if (config.showComparison) {
+            val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
+            if (prevStart != null && prevEnd != null) {
+                val prevFilter = currentFilter.copy(
+                    timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
+                )
+                val prevTotalsByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevFilter)
+                    .getOrDefault(emptyMap())
+                    .mapValues { it.value.totalAmount }
+                val prevNetWorth = CurrencyService.calculateTotalInCurrency(
+                    currencyTotals = prevTotalsByCurrency,
+                    targetCurrency = input.baseCurrency,
+                    exchangeRates = input.exchangeRates,
+                    precision = input.precision
+                )
+                val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter)
+                NetWorthMetrics(prevNetWorth, prevCashFlow)
+            } else null
+        } else null
 
         return CardRenderData.NetWorth(
             config = config,
             currentMetrics = currentMetrics,
             baseCurrency = input.baseCurrency,
             precision = input.precision,
-            previousMetrics = null // Skipping previous period for first iteration
+            previousMetrics = previousMetrics
         )
     }
 

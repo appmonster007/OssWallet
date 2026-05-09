@@ -8,4 +8,16 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="ic_launcher_background">#8AB4F8</color>
+    <!-- Widget colors (light mode) -->
+    <color name="widget_surface">#FFFFFFFF</color>
+    <color name="widget_on_surface">#FF1C1B1F</color>
+    <color name="widget_subtle">#FF757575</color>
+    <color name="widget_income_color">#FF4CAF50</color>
+    <color name="widget_expense_color">#FFF44336</color>
+    <color name="widget_badge_income_bg">#264CAF50</color>
+    <color name="widget_badge_expense_bg">#26F44336</color>
+    <color name="widget_income_fill">#144CAF50</color>
+    <color name="widget_income_stroke">#1A4CAF50</color>
+    <color name="widget_expense_fill">#14F44336</color>
+    <color name="widget_expense_stroke">#1AF44336</color>
 </resources>

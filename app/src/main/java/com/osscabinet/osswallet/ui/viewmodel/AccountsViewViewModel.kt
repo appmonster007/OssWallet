@@ -182,9 +182,6 @@ class AccountsViewViewModel(
                     return@combine AccountsViewUiState.Loading
                 }
 
-                // Invalidate registry cache when data changes
-                registry.clearCache()
-
                 AccountsViewUiState.Success(
                     accounts = accounts.filter { !it.isArchived },
                     allTransactions = allTransactions,

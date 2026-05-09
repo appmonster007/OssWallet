@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.widget.WorkManagerWidgetRefreshTrigger
+import com.osscabinet.ossWallet.data.local.WidgetInvalidationObserver
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -140,6 +141,10 @@ class AppContainer(private val context: Context) {
         WorkManagerWidgetRefreshTrigger(context)
     }
 
+    fun startWidgetObserver() {
+        WidgetInvalidationObserver(db, queryCache, widgetRefreshTrigger).start()
+    }
+
     // Repositories
     val transactionRepository: TransactionRepository by lazy {
         TransactionRepositoryImpl(db.transactionDao(), db.accountDao(), db.transactionLinkDao(), db)
@@ -192,12 +197,15 @@ class AppContainer(private val context: Context) {
         LoanRepositoryImpl(db.loanDao(), db.loanPaymentDao())
     }
 
+    private val queryCache: QueryCache by lazy { QueryCache() }
+
     val databaseQueryService: DatabaseQueryService by lazy {
         DatabaseQueryServiceImpl(
             db.transactionDao(),
             TransactionQueryBuilder(),
             AggregationPlanner(),
-            QueryCache()
+            queryCache,
+            db.invalidationTracker
         )
     }
 
@@ -212,6 +220,6 @@ class AppContainer(private val context: Context) {
 
     // Services
     val transactionManager: TransactionManager by lazy {
-        TransactionManager(transactionUseCases, widgetRefreshTrigger)
+        TransactionManager(transactionUseCases)
     }
 }

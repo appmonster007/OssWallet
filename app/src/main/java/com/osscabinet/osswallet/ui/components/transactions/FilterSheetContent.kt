@@ -280,7 +280,7 @@ internal fun FilterSheetDragHandle(
                 .size(width = 88.dp, height = 20.dp)
                 .background(
                     backgroundColor,
-                    RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+                    RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
                 )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },

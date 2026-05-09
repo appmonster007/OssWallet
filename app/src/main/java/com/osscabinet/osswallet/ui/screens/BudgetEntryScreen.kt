@@ -51,7 +51,8 @@ import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
@@ -271,7 +272,7 @@ fun BudgetEntryScreen(
                                     idMapper = { it.id },
                                     labelMapper = { it.name },
                                     detailMapper = { it.currencyCode },
-                                    iconMapper = { AccountIconMap[it.icon] },
+                                    iconMapper = { getAccountIconByName(it.icon) },
                                     colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
                                 )
                             }
@@ -391,7 +392,7 @@ fun BudgetEntryScreen(
                                     idMapper = { it.id },
                                     labelMapper = { it.name },
                                     parentIdMapper = { it.parentId },
-                                    iconMapper = { AccountIconMap[it.iconName] },
+                                    iconMapper = { getIconByName(it.iconName) },
                                     colorMapper = {
                                         if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(
                                             it.colorHex

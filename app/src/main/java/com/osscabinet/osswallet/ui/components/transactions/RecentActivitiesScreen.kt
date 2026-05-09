@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +32,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
@@ -231,8 +230,7 @@ fun RecentActivitiesScreen(
                                 ).format(Date(transaction.timestamp)),
                                 note = transaction.note,
                                 tags = transaction.tags,
-                                icon = category?.let { categoryIcons[it.iconName] }
-                                    ?: categoryIcons[category?.name] ?: Icons.Rounded.Category,
+                                icon = getIconByName(category?.iconName),
                                 iconBg = category?.let { Color(it.colorHex) },
                                 precision = precision,
                                 status = transaction.status,

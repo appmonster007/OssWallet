@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 
@@ -61,7 +61,7 @@ fun TransactionCategorySelection(
                             idMapper = { it.id },
                             labelMapper = { it.name },
                             parentIdMapper = { it.parentId },
-                            iconMapper = { AccountIconMap[it.iconName] },
+                            iconMapper = { getIconByName(it.iconName) },
                             colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                         )
                     }

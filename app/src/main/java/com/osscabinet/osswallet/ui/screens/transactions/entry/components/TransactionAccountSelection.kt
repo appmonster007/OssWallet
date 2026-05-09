@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
@@ -86,7 +86,7 @@ fun TransactionAccountSelection(
                             idMapper = { it.id },
                             labelMapper = { it.name },
                             detailMapper = { it.currencyCode },
-                            iconMapper = { AccountIconMap[it.icon] },
+                            iconMapper = { getAccountIconByName(it.icon) },
                             colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
                         )
                     }

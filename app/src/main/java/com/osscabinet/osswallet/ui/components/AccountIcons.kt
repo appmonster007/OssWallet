@@ -134,3 +134,11 @@ val AccountIconMap = mapOf(
 )
 
 val categoryIcons = AccountIconMap
+
+fun getIconByName(name: String?): androidx.compose.ui.graphics.vector.ImageVector {
+    return AccountIconMap[name] ?: Icons.Rounded.Category
+}
+
+fun getAccountIconByName(name: String?): androidx.compose.ui.graphics.vector.ImageVector {
+    return AccountIconMap[name] ?: Icons.Rounded.AccountBalance
+}

@@ -26,6 +26,8 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.util.splitByComma
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
@@ -315,7 +317,7 @@ fun AddTemplateScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     EntryActionCard(
-                        icon = Icons.Rounded.AccountBalance,
+                        icon = getAccountIconByName(selectedAccount?.icon),
                         label = "ACCOUNT",
                         value = selectedAccount?.name ?: "Select",
                         onClick = { showAccountSheet = true },
@@ -324,8 +326,9 @@ fun AddTemplateScreen(
                         iconTint = MaterialTheme.colorScheme.primary
                     )
 
+                    val categoryObj = categoriesList.find { it.id == categoryId }
                     EntryActionCard(
-                        icon = com.osscabinet.ossWallet.ui.components.categoryIcons[categoryName] ?: Icons.Rounded.Category,
+                        icon = getIconByName(categoryObj?.iconName),
                         label = "CATEGORY",
                         value = categoryName,
                         onClick = { showCategorySheet = true },

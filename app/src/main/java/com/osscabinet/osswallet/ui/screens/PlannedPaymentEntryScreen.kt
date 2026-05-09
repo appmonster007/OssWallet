@@ -85,6 +85,8 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.TransactionCategorySelection
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.sheets.CalculatorSheet
@@ -503,15 +505,16 @@ fun PlannedPaymentEntryScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 var accountExpanded by remember { mutableStateOf(false) }
+                val selectedAccount = accounts.find { it.id == selectedAccountId }
                 ExposedDropdownMenuBox(
                     expanded = accountExpanded,
                     onExpandedChange = { accountExpanded = it },
                     modifier = Modifier.weight(1f)
                 ) {
                     EntryActionCard(
-                        icon = Icons.Rounded.AccountBalance,
+                        icon = getAccountIconByName(selectedAccount?.icon),
                         label = "ACCOUNT",
-                        value = accounts.find { it.id == selectedAccountId }?.name ?: "Select",
+                        value = selectedAccount?.name ?: "Select",
                         onClick = { accountExpanded = true },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -534,10 +537,11 @@ fun PlannedPaymentEntryScreen(
                     }
                 }
 
+                val categoryObj = categories.find { it.id == selectedCategoryId }
                 EntryActionCard(
-                    icon = Icons.Rounded.Category,
+                    icon = getIconByName(categoryObj?.iconName),
                     label = "CATEGORY",
-                    value = categories.find { it.id == selectedCategoryId }?.name ?: "None",
+                    value = categoryObj?.name ?: "None",
                     onClick = { showCategorySheet = true },
                     modifier = Modifier.weight(1f),
                     iconContainerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),

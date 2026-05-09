@@ -12,6 +12,8 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetPeriod
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 
 @Composable
@@ -47,12 +49,13 @@ fun BudgetActionCards(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val accountObj = if (selectedAccountIds.size == 1) accounts.find { it.id == selectedAccountIds.first() } else null
             EntryActionCard(
-                icon = Icons.Rounded.AccountBalance,
+                icon = getAccountIconByName(accountObj?.icon),
                 label = "ACCOUNT",
                 value = when {
                     selectedAccountIds.isEmpty() -> "All Accounts"
-                    selectedAccountIds.size == 1 -> accounts.find { it.id == selectedAccountIds.first() }?.name ?: "1 Account"
+                    accountObj != null -> accountObj.name
                     else -> "${selectedAccountIds.size} Accounts"
                 },
                 onClick = onAccountClick,
@@ -74,12 +77,13 @@ fun BudgetActionCards(
         }
 
         // Row 3: Filters / Categories (Full Width)
+        val categoryObj = if (selectedCategoryIds.size == 1) categories.find { it.id == selectedCategoryIds.first() } else null
         EntryActionCard(
-            icon = Icons.Rounded.FilterList,
+            icon = categoryObj?.let { getIconByName(it.iconName) } ?: Icons.Rounded.FilterList,
             label = "FILTERS",
             value = when {
                 selectedCategoryIds.isEmpty() -> "All Categories"
-                selectedCategoryIds.size == 1 -> categories.find { it.id == selectedCategoryIds.first() }?.name ?: "1 Category"
+                categoryObj != null -> categoryObj.name
                 else -> "${selectedCategoryIds.size} Categories"
             },
             onClick = onCategoryClick,

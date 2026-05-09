@@ -23,11 +23,25 @@ import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.navigation.navigateToDashboard
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import android.content.Intent
+import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
 import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private var keepSplashOnScreen = true
     private lateinit var appContainer: AppContainer
+
+    companion object {
+        const val EXTRA_WIDGET_NAV = "WIDGET_NAV"
+    }
+
+    private var pendingWidgetRoute by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingWidgetRoute = intent.getStringExtra(EXTRA_WIDGET_NAV)
+    }
 
     private val mainViewModel: MainViewModel by viewModels {
         GenericViewModelFactory {
@@ -49,6 +63,8 @@ class MainActivity : FragmentActivity() {
         // Initialize dependency container
         appContainer = (application as OssWalletApp).container
 
+        pendingWidgetRoute = intent?.getStringExtra(EXTRA_WIDGET_NAV)
+
         setContent {
             val theme by appContainer.settingsDataStore.theme.collectAsStateWithLifecycle(initialValue = "System")
 
@@ -62,6 +78,17 @@ class MainActivity : FragmentActivity() {
                 val starredTemplates by mainViewModel.starredTemplates.collectAsStateWithLifecycle()
                 val currentBackStackEntry by navController.currentBackStackEntryAsState()
                 
+                LaunchedEffect(pendingWidgetRoute) {
+                    pendingWidgetRoute?.let { route ->
+                        when (route) {
+                            "dashboard" -> navController.navigateToDashboard(DashboardViewContext.None)
+                            "analytics" -> navController.navigate(Screen.Analytics.route)
+                            // Add more routes as needed
+                        }
+                        pendingWidgetRoute = null
+                    }
+                }
+
                 // Extract base route from currentDestination to match drawer highlights
                 val currentDestination = currentBackStackEntry?.destination?.route?.substringBefore("?") 
                     ?: Screen.Dashboard.route.substringBefore("?")

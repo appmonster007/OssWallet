@@ -21,6 +21,7 @@ class OssWalletApp : Application() {
         )
 
         container = AppContainer(this)
+        container.startWidgetObserver()
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
         WidgetRefreshWorker.schedule(this)

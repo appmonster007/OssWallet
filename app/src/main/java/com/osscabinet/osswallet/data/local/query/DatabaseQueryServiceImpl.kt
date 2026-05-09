@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local.query
 
+import androidx.room.InvalidationTracker
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -17,8 +18,20 @@ class DatabaseQueryServiceImpl(
     private val transactionDao: TransactionDao,
     private val queryBuilder: TransactionQueryBuilder,
     private val planner: AggregationPlanner,
-    private val cache: QueryCache
+    private val cache: QueryCache,
+    invalidationTracker: InvalidationTracker
 ) : DatabaseQueryService {
+
+    init {
+        // Clear the aggregation cache whenever the transactions table is written to.
+        // This fires on the same background thread that Room uses to notify Flows,
+        // so by the time the reactive chain recomputes, the cache is already empty.
+        invalidationTracker.addObserver(object : InvalidationTracker.Observer("transactions") {
+            override fun onInvalidated(tables: Set<String>) {
+                cache.clear()
+            }
+        })
+    }
 
     override suspend fun aggregate(
         profileId: Int,

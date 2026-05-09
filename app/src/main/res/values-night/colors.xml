@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget colors (dark mode) -->
+    <color name="widget_surface">#FF1C1B1F</color>
+    <color name="widget_on_surface">#FFE6E1E5</color>
+    <color name="widget_subtle">#FF9E9E9E</color>
+    <color name="widget_income_color">#FF81C784</color>
+    <color name="widget_expense_color">#FFE57373</color>
+    <color name="widget_badge_income_bg">#2681C784</color>
+    <color name="widget_badge_expense_bg">#26E57373</color>
+    <color name="widget_income_fill">#1481C784</color>
+    <color name="widget_income_stroke">#1A81C784</color>
+    <color name="widget_expense_fill">#14E57373</color>
+    <color name="widget_expense_stroke">#1AE57373</color>
+</resources>

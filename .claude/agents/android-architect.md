@@ -95,3 +95,17 @@ class XxxViewModel(
 - Always use `WhileSubscribed(5000)` — not `Eagerly` or `Lazily`
 - Profile-scoped data: always `flatMapLatest` on `settingsRepository.currentProfileId`
 - Keep `UiState` as a sealed class with `Loading`, `Success`, `Error` states
+
+---
+
+## Adding a New Widget Type (7-step checklist)
+
+Each new widget type needs exactly these 7 artifacts. Missing any one causes either a crash or a manifest registration failure.
+
+1. **`widget/XxxGlanceWidget.kt`** — extends `GlanceAppWidget`. All data loading in `provideGlance()` before `provideContent {}`. Wrap all fetching in `runCatching` so `provideContent` is always reached.
+2. **`widget/XxxWidgetProvider.kt`** — extends `GlanceAppWidgetReceiver`. Override `glanceAppWidget = XxxGlanceWidget()`. Companion: `suspend fun updateAllWidgets(context)` calls `XxxGlanceWidget().updateAll(context)`.
+3. **`widget/XxxWidgetConfig.kt`** — `@Serializable data class` with timeline, font size, and any widget-specific settings. Include a computed `val timelineLabel: String`.
+4. **`widget/XxxWidgetPrefsStore.kt`** — DataStore-backed store keyed by widget ID. Copy `NetWorthWidgetPrefsStore` pattern, use a distinct DataStore name (`"xxx_widget_prefs"`).
+5. **`widget/XxxWidgetConfigActivity.kt`** — `ComponentActivity` with Compose UI shown when the user places the widget. On save: `prefsStore.save(widgetId, config)` then update via `GlanceAppWidgetManager` with `getGlanceIds().firstOrNull { getAppWidgetId(it) == widgetId }`.
+6. **Resources** — `res/xml/xxx_widget_info.xml` (copy `net_worth_widget_info.xml`, update `configure` class name and `initialLayout`) + `res/layout/widget_xxx.xml` (empty `FrameLayout` placeholder).
+7. **`AndroidManifest.xml` + `WidgetUpdateCoordinator`** — register the receiver with `APPWIDGET_UPDATE` action + meta-data pointing to the xml. Register the config activity with `APPWIDGET_CONFIGURE` action. Add `launch { XxxGlanceWidget().updateAll(context) }` to `WidgetUpdateCoordinator.updateAll()`.

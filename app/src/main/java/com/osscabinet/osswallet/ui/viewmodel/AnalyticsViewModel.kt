@@ -72,9 +72,6 @@ class AnalyticsViewModel(
                     return@combine AnalyticsUiState.Loading
                 }
 
-                // Invalidate registry cache when data changes to ensure cards refresh
-                registry.clearCache()
-
                 AnalyticsUiState.Success(
                     allTransactions = transactions,
                     accounts = accounts,

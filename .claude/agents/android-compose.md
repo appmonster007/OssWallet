@@ -97,10 +97,60 @@ Glance (home screen widgets) has different composables from regular Compose. Key
 - Layout: `Column`, `Row`, `Box` from `androidx.glance.layout`
 - Text: `Text` from `androidx.glance`
 - No `remember`, `LaunchedEffect`, or state in Glance composables — all state comes from `provideContent { }` suspension
-- Tap actions: use `clickable(actionStartActivity<MainActivity>(...))` or `actionRunCallback<MyAction>()`
+- Tap actions: use `clickable(actionStartActivity(intent))` where `intent` is a regular Android `Intent`
 - Colors: use `GlanceTheme.colors.*` or hardcoded `ColorProvider`
 
 Widget Compose files live in `widget/` alongside their `GlanceAppWidget` class.
+
+### `provideGlance()` structure
+
+All data fetching happens **before** `provideContent { }` — the composable is pure display:
+
+```kotlin
+override suspend fun provideGlance(context: Context, id: GlanceId) {
+    val widgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
+    val config = runCatching { XxxWidgetPrefsStore(context).load(widgetId) }
+        .getOrElse { XxxWidgetConfig() }
+
+    val result = runCatching {
+        val common = WidgetDataLoader.loadCommon(context)
+        // ... compute render data ...
+        Triple(renderData, common.baseCurrency, common.precision)
+    }.getOrNull()
+
+    provideContent {
+        XxxWidgetContent(context, config, result?.first, result?.second ?: "", result?.third ?: 2)
+    }
+}
+```
+
+The outer `runCatching` ensures `provideContent {}` is always reached — widgets never show "can't load".
+
+### Tap-to-navigate pattern
+
+```kotlin
+.clickable(
+    actionStartActivity(
+        Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(MainActivity.EXTRA_WIDGET_NAV, "route_name")
+        }
+    )
+)
+```
+
+`MainActivity` reads `EXTRA_WIDGET_NAV` in `onCreate`/`onNewIntent` and navigates via `navController`.
+
+### Chart rendering in widgets
+
+Glance cannot use Canvas-based Compose charts. Use `WidgetChartRenderer` to produce a `Bitmap`, then wrap it in `ImageProvider`:
+
+```kotlin
+val bitmap = WidgetChartRenderer.renderProgressBars(widthPx, heightPx, items, density)
+Image(provider = ImageProvider(bitmap), contentDescription = null)
+```
+
+`WidgetChartRenderer.renderLineChart()` for line/area charts.
 
 ---
 

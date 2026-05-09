@@ -144,7 +144,7 @@ fun NetWorthCard(
             
             Column {
                 Text(
-                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision),
+                    text = formatCurrencyRight(currentMetrics.netWorth, baseCurrency, precision, shorten = true),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = baseFontSize,
@@ -316,7 +316,7 @@ private fun FlowBadge(
                 }
             }
             Text(
-                text = formatCurrencyRight(amount, currency, precision),
+                text = formatCurrencyRight(amount, currency, precision, shorten = true),
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp

@@ -71,7 +71,7 @@ fun LoanHeroCard(
                             color = accentColor.copy(alpha = 0.6f)
                         )
                         
-                        val balanceParts = formatCurrencyRight(summary.remainingBalance, loan.currency, precision = precision).split(" ")
+                        val balanceParts = formatCurrencyRight(summary.remainingBalance, loan.currency, precision = precision, shorten = true).split(" ")
                         val amountText = balanceParts.dropLast(1).joinToString(" ")
                         val symbolText = balanceParts.lastOrNull() ?: ""
 
@@ -124,7 +124,7 @@ fun LoanHeroCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, precision)}",
+                        text = "Original: ${formatCurrencyRight(loan.principalAmount, loan.currency, precision, shorten = true)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )

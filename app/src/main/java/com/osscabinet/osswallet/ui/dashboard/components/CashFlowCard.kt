@@ -271,7 +271,7 @@ internal fun AeonFlowBreakdownItem(
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                formatCurrencyRight(amount, curr, precision),
+                formatCurrencyRight(amount, curr, precision, shorten = true),
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
@@ -279,7 +279,7 @@ internal fun AeonFlowBreakdownItem(
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium

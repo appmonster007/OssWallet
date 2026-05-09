@@ -155,26 +155,26 @@ fun TransactionHeader(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            formatCurrencyRight(incomeBase, baseCurrency, precision),
+                            formatCurrencyRight(incomeBase, baseCurrency, precision, shorten = true),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = positiveColor,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            formatCurrencyRight(expenseBase, baseCurrency, precision),
+                            formatCurrencyRight(expenseBase, baseCurrency, precision, shorten = true),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            formatCurrencyRight(netBase, baseCurrency, precision),
+                            formatCurrencyRight(netBase, baseCurrency, precision, shorten = true),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                             color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
                             modifier = Modifier.weight(1f)
                         )
                     }
                     Text(
-                        formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision),
+                        formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
                         modifier = Modifier.width(70.dp),
                         textAlign = TextAlign.End,
@@ -212,20 +212,20 @@ fun TransactionHeader(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        formatCurrencyRight(inc, curr, precision),
+                                        formatCurrencyRight(inc, curr, precision, shorten = true),
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                         color = positiveColor.copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
                                     )
                                     Text(
-                                        formatCurrencyRight(exp, curr, precision),
+                                        formatCurrencyRight(exp, curr, precision, shorten = true),
                                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                         color = negativeColor.copy(alpha = 0.7f),
                                         modifier = Modifier.weight(1f)
                                     )
                                     val netSign = if (net >= BigDecimal.ZERO) "+ " else "- "
                                     Text(
-                                        netSign + formatCurrencyRight(net, curr, precision),
+                                        netSign + formatCurrencyRight(net, curr, precision, shorten = true),
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 9.sp
@@ -236,7 +236,7 @@ fun TransactionHeader(
                                 }
 
                                 Text(
-                                    if (bal != null) formatCurrencyRight(bal, curr, precision) else "0.00 $curr",
+                                    if (bal != null) formatCurrencyRight(bal, curr, precision, shorten = true) else "0.00 $curr",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 9.sp

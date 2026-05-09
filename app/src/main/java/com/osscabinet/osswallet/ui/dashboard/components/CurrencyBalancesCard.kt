@@ -287,7 +287,7 @@ fun CurrencyBalanceItem(
             )
             
             Text(
-                formatCurrencyRight(amount, curr, precision),
+                formatCurrencyRight(amount, curr, precision, shorten = true),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFeatureSettings = "tnum",
                     fontWeight = FontWeight.Bold,
@@ -298,7 +298,7 @@ fun CurrencyBalanceItem(
             
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision)}",
+                    "≈ ${formatCurrencyRight(inBase, baseCurrency, precision, shorten = true)}",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
@@ -317,8 +317,8 @@ fun CurrencyBalanceItem(
 @Composable
 fun CurrencyBalancesCardPreview() {
     val items = listOf(
-        CurrencyAggregationItem("USD", BigDecimal("1500.00"), BigDecimal("1500.00")),
-        CurrencyAggregationItem("EUR", BigDecimal("1200.00"), BigDecimal("1300.50")),
+        CurrencyAggregationItem("USD", BigDecimal("15000000.00"), BigDecimal("1500.00")),
+        CurrencyAggregationItem("EUR", BigDecimal("100000.00"), BigDecimal("1300.50")),
         CurrencyAggregationItem("GBP", BigDecimal("500.00"), BigDecimal("650.00"))
     )
     OssWalletTheme {

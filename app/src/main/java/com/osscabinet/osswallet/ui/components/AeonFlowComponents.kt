@@ -291,7 +291,7 @@ fun AeonFlowBadge(
         modifier = modifier
     ) {
         Text(
-            text = formatCurrencyRight(amount, currency, precision).trim(),
+            text = formatCurrencyRight(amount, currency, precision, shorten = true).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Black,

@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
+import com.osscabinet.ossWallet.ui.util.formatShortCurrency
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import java.math.BigDecimal
-import java.text.NumberFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,12 +113,6 @@ private fun SuggestionListItem(
     onAcceptAsPlannedPayment: (DiscoveredPattern) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val currencyFormatter = remember(pattern.currency) {
-        NumberFormat.getCurrencyInstance(Locale.getDefault()).apply {
-            currency = Currency.getInstance(pattern.currency)
-        }
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -126,127 +120,159 @@ private fun SuggestionListItem(
             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
         )
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header Row: Type Indicator + Dismiss Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Dismiss",
-                    tint = MaterialTheme.colorScheme.outline
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            "Smart Suggestion",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Dismiss",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Main Info Row: Payee + Abbreviated Amount
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = pattern.payee.ifEmpty { pattern.title },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = formatShortCurrency(pattern.averageAmount.abs(), pattern.currency),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black,
+                    color = if (pattern.transactionType == "income") Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
                 )
             }
 
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (pattern.payee.isNotEmpty()) pattern.payee else pattern.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = currencyFormatter.format(pattern.averageAmount.abs()),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (pattern.transactionType == "income") Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
-                    )
-                }
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+            val recommendation = when {
+                pattern.recurrenceRule != null -> "Recurring ${pattern.recurrenceRule.type.name.lowercase()} payment detected."
+                else -> "This seems to be a common transaction."
+            }
 
-                val recommendation = when {
-                    pattern.recurrenceRule != null -> "Recurring ${pattern.recurrenceRule.type.name.lowercase()} payment detected."
-                    else -> "This seems to be a common transaction."
-                }
+            Text(
+                text = recommendation,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-                Text(
-                    text = recommendation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Detailed Preview Section
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            DetailItem("Category", pattern.category, Modifier.weight(1f))
-                            DetailItem("Account", pattern.accountId, Modifier.weight(1f))
+            // Detailed Preview Section
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        DetailItem("Category", pattern.category, Modifier.weight(1f))
+                        DetailItem("Account", pattern.accountId, Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        DetailItem("Method", pattern.paymentMethod, Modifier.weight(1f))
+                        if (pattern.note.isNotEmpty()) {
+                            DetailItem("Note", pattern.note, Modifier.weight(1f))
                         }
+                    }
+                    if (pattern.tags.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            DetailItem("Method", pattern.paymentMethod, Modifier.weight(1f))
-                            if (pattern.note.isNotEmpty()) {
-                                DetailItem("Note", pattern.note, Modifier.weight(1f))
-                            }
+                        DetailItem("Tags", pattern.tags.joinToString(", "), Modifier.fillMaxWidth())
+                    }
+                }
+            }
+            
+            Text(
+                text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (pattern.recurrenceRule != null && !pattern.existsAsPlannedPayment) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Button(
+                            onClick = { onAcceptAsPlannedPayment(pattern) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Save Planned Payment", style = MaterialTheme.typography.labelSmall)
                         }
-                        if (pattern.tags.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            DetailItem("Tags", pattern.tags.joinToString(", "), Modifier.fillMaxWidth())
-                        }
+                        Text(
+                            "Auto-creates records for future occurrences",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
                 
-                Text(
-                    text = "Confidence: ${(pattern.confidence * 100).toInt()}% based on ${pattern.occurrences} occurrences.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (pattern.recurrenceRule != null && !pattern.existsAsPlannedPayment) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Button(
-                                onClick = { onAcceptAsPlannedPayment(pattern) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Track Automatically", style = MaterialTheme.typography.labelSmall)
-                            }
-                            Text(
-                                "Auto-creates records for future occurrences",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                if (!pattern.existsAsTemplate) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        FilledTonalButton(
+                            onClick = { onAcceptAsTemplate(pattern) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Save Template", style = MaterialTheme.typography.labelSmall)
                         }
-                    }
-                    
-                    if (!pattern.existsAsTemplate) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            FilledTonalButton(
-                                onClick = { onAcceptAsTemplate(pattern) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Save Template", style = MaterialTheme.typography.labelSmall)
-                            }
-                            Text(
-                                "Shortcut for one-tap manual entry",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
+                        Text(
+                            "Shortcut for one-tap manual entry",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }

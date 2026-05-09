@@ -187,7 +187,7 @@ private fun LoanSummaryRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                     Text(
-                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision),
+                        text = formatCurrencyRight(summary.remainingBalance, summary.loan.currency, precision, shorten = true),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),

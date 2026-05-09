@@ -113,7 +113,9 @@ fun TransactionEntrySheets(
                 onEvent(TransactionEntryEvent.SetTags(tags))
                 onEvent(TransactionEntryEvent.ShowTagSheet(false))
             },
-            onAddTag = { tag -> onEvent(TransactionEntryEvent.AddTag(tag)) },
+            onAddTag = { tag, color -> onEvent(TransactionEntryEvent.AddTag(tag, color)) },
+            onEditTag = { tag -> /* We could support edit from here too if desired */ },
+            onDeleteTag = { tag -> onEvent(TransactionEntryEvent.DeleteTag(tag)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTagSheet(false)) }
         )
     }

@@ -31,4 +31,22 @@ class TagRepositoryImpl(
         transactionDao.updateTransactions(updatedTransactions)
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
     }
+
+    override suspend fun getTransactionCountForTag(tagName: String): Int {
+        // More accurate check to avoid substring matches if possible, 
+        // but for now keeping it consistent with deletion logic
+        return transactionDao.getTransactionsWithTag(tagName).size
+    }
+
+    override suspend fun updateTag(oldName: String, newTag: Tag) {
+        if (oldName != newTag.name) {
+            val transactions = transactionDao.getTransactionsWithTag(oldName)
+            val updatedTransactions = transactions.map { tx ->
+                val currentTags = tx.tags.splitByComma().map { if (it == oldName) newTag.name else it }
+                tx.copy(tags = currentTags.joinByComma())
+            }
+            transactionDao.updateTransactions(updatedTransactions)
+        }
+        tagDao.insertTag(TagEntity(id = newTag.id, name = newTag.name, colorHex = newTag.colorHex))
+    }
 }

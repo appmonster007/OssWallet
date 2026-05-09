@@ -24,4 +24,14 @@ class TagViewModel(private val repository: TagRepository) : ViewModel() {
             repository.deleteTagAndRemoveFromTransactions(tag)
         }
     }
+
+    suspend fun getTransactionCountForTag(tagName: String): Int {
+        return repository.getTransactionCountForTag(tagName)
+    }
+
+    fun updateTag(oldName: String, newTag: Tag) {
+        viewModelScope.launch {
+            repository.updateTag(oldName, newTag)
+        }
+    }
 }

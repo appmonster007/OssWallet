@@ -484,7 +484,9 @@ fun AddTemplateScreen(
             tags = allTags,
             selectedTags = tags,
             onTagsSelected = { tags = it },
-            onAddTag = { tagViewModel.addTag(it) },
+            onAddTag = { name, color -> tagViewModel.addTag(name, color) },
+            onEditTag = { tagViewModel.updateTag(it.name, it) },
+            onDeleteTag = { tagViewModel.deleteTag(it) },
             onDismiss = { showTagSheet = false }
         )
     }

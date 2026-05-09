@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -32,7 +33,7 @@ fun FilterSheetContent(
     accounts: List<Account>,
     allCategories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
-    onSetDateRange: (Long?, Long?) -> Unit,
+    onUpdateTimelineRange: (TimelineRange) -> Unit,
     onApplyFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
@@ -118,9 +119,9 @@ fun FilterSheetContent(
             stickyHeader {
                 AeonPeriodSelector(
                     filter = localFilter,
-                    onSetDateRange = { start, end ->
-                        localFilter = localFilter.copy(startDate = start, endDate = end)
-                        onSetDateRange(start, end)
+                    onSetDateRange = { range ->
+                        localFilter = localFilter.copy(timelineRange = range)
+                        onUpdateTimelineRange(range)
                         selectedFilterIds = emptySet()
                         applyFilterWithDebounce(localFilter, debounceMs = 0)
                     },
@@ -291,7 +292,7 @@ fun FilterSheetContentPreview() {
                 filter = TransactionFilter(),
                 accounts = sampleAccounts,
                 allCategories = sampleCategories,
-                onSetDateRange = { _, _ -> },
+                onUpdateTimelineRange = { },
                 onApplyFilter = {},
                 onToggleExpand = {},
                 onClose = {},

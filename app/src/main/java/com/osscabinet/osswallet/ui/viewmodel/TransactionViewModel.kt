@@ -6,11 +6,11 @@ import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.forAccount
 import com.osscabinet.ossWallet.domain.model.forCategory
-import com.osscabinet.ossWallet.domain.model.withDateRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -157,10 +157,15 @@ class TransactionViewModel(
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
         if (start != null || end != null) {
-            recordsFilterManager.setFilter("date", TransactionFilter().withDateRange(start, end))
+            recordsFilterManager.setFilter("date", TransactionFilter(startDate = start, endDate = end))
         } else {
             recordsFilterManager.removeFilter("date")
         }
+    }
+
+    fun updateRecordsTimelineRange(range: TimelineRange) {
+        recordsFilterManager.setFilter("date", TransactionFilter(timelineRange = range))
+        _recordsFilterInitialized.value = true
     }
 
     fun setIncomeTypeFilter(type: String?) {

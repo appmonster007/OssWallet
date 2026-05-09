@@ -30,10 +30,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,7 +65,7 @@ import java.util.Locale
 @Composable
 fun AeonPeriodSelector(
     filter: TransactionFilter,
-    onSetDateRange: (Long?, Long?) -> Unit,
+    onSetDateRange: (TimelineRange) -> Unit,
     onClick: () -> Unit,
     isExpanded: Boolean = false,
     showArcTab: Boolean = true,
@@ -104,7 +106,7 @@ fun AeonPeriodSelector(
                 1 -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
                 2 -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
                 3 -> {
-                    if (initialTimelineRange is TimelineRange.CustomRange) initialTimelineRange
+                    if (filter.timelineRange is TimelineRange.CustomRange) filter.timelineRange
                     else {
                         val now = System.currentTimeMillis()
                         TimelineRange.CustomRange(now - 86400000 * 7, now)
@@ -113,7 +115,7 @@ fun AeonPeriodSelector(
 
                 else -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
             }
-            applyTimelineRange(newRange, onSetDateRange)
+            onSetDateRange(newRange)
         }
     }
 
@@ -153,7 +155,6 @@ fun AeonPeriodSelector(
                             page = page,
                             filter = filter,
                             accentColor = accentColor,
-                            initialTimelineRange = initialTimelineRange,
                             onSetDateRange = onSetDateRange,
                             onToggleExpand = onClick
                         )
@@ -200,8 +201,7 @@ private fun PillNavigationRow(
     page: Int,
     filter: TransactionFilter,
     accentColor: Color,
-    initialTimelineRange: TimelineRange,
-    onSetDateRange: (Long?, Long?) -> Unit,
+    onSetDateRange: (TimelineRange) -> Unit,
     onToggleExpand: () -> Unit
 ) {
     var showDropdown by remember { mutableStateOf(false) }
@@ -210,36 +210,44 @@ private fun PillNavigationRow(
     Row(
         modifier = Modifier
             .fillMaxWidth(0.92f)
-            .height(30.dp)
-            .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .height(32.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(if (page == 0) MaterialTheme.colorScheme.surfaceVariant else accentColor),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left Arrow
+        // Left Arrow (Shift Previous)
         Box(
             modifier = Modifier
-                .weight(0.18f)
+                .weight(0.15f)
                 .fillMaxHeight()
-                .clickable(enabled = page == 1) { navigateMonth(filter, -1, onSetDateRange) },
+                .clickable(enabled = page > 0) {
+                    onSetDateRange(TimelineService.shiftRange(filter.timelineRange, -1))
+                },
             contentAlignment = Alignment.Center
         ) {
-            if (page == 1) {
+            if (page > 0) {
                 Icon(
                     Icons.Default.ChevronLeft,
                     contentDescription = "Previous",
-                    tint = accentColor,
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
 
-        // Center Period (Blue Block)
+        // Divider
+        if (page > 0) {
+            VerticalDivider(
+                modifier = Modifier.height(16.dp),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+            )
+        }
+
+        // Center Period
         Box(
             modifier = Modifier
-                .weight(0.64f)
+                .weight(0.7f)
                 .fillMaxHeight()
-                .background(accentColor)
                 .clickable {
                     when (page) {
                         0 -> onToggleExpand()
@@ -256,17 +264,25 @@ private fun PillNavigationRow(
                 Text(
                     text = if (page == 0) "All Time" else getPeriodText(filter),
                     style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 11.sp
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
                     ),
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = if (page == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                 )
-                if (page > 0) {
+                if (page > 0 && page < 3) {
                     Spacer(Modifier.width(4.dp))
                     Icon(
-                        if (page == 3) Icons.Default.DateRange else Icons.Default.KeyboardArrowDown,
+                        Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else if (page == 3) {
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -282,10 +298,7 @@ private fun PillNavigationRow(
                             DropdownMenuItem(
                                 text = { Text(type.label) },
                                 onClick = {
-                                    applyTimelineRange(
-                                        TimelineRange.ThisPeriod(type),
-                                        onSetDateRange
-                                    )
+                                    onSetDateRange(TimelineRange.ThisPeriod(type))
                                     showDropdown = false
                                 }
                             )
@@ -295,10 +308,7 @@ private fun PillNavigationRow(
                             DropdownMenuItem(
                                 text = { Text(type.label) },
                                 onClick = {
-                                    applyTimelineRange(
-                                        TimelineRange.LastPeriod(type),
-                                        onSetDateRange
-                                    )
+                                    onSetDateRange(TimelineRange.LastPeriod(type))
                                     showDropdown = false
                                 }
                             )
@@ -308,20 +318,30 @@ private fun PillNavigationRow(
             }
         }
 
-        // Right Arrow
+        // Divider
+        if (page > 0) {
+            VerticalDivider(
+                modifier = Modifier.height(16.dp),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+            )
+        }
+
+        // Right Arrow (Shift Next)
         Box(
             modifier = Modifier
-                .weight(0.18f)
+                .weight(0.15f)
                 .fillMaxHeight()
-                .clickable(enabled = page == 1) { navigateMonth(filter, 1, onSetDateRange) },
+                .clickable(enabled = page > 0) {
+                    onSetDateRange(TimelineService.shiftRange(filter.timelineRange, 1))
+                },
             contentAlignment = Alignment.Center
         ) {
-            if (page == 1) {
+            if (page > 0) {
                 Icon(
                     Icons.Default.ChevronRight,
                     contentDescription = "Next",
-                    tint = accentColor,
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -329,100 +349,27 @@ private fun PillNavigationRow(
 
     if (showDatePicker) {
         AeonDateRangePicker(
-            initialStart = (initialTimelineRange as? TimelineRange.CustomRange)?.start,
-            initialEnd = (initialTimelineRange as? TimelineRange.CustomRange)?.end,
+            initialStart = (filter.timelineRange as? TimelineRange.CustomRange)?.start,
+            initialEnd = (filter.timelineRange as? TimelineRange.CustomRange)?.end,
             onDismiss = { showDatePicker = false },
             onConfirmed = { start, end ->
-                onSetDateRange(start, end)
+                onSetDateRange(TimelineRange.CustomRange(start ?: 0L, end ?: System.currentTimeMillis()))
                 showDatePicker = false
             }
         )
     }
 }
 
-private fun applyTimelineRange(range: TimelineRange, onSetDateRange: (Long?, Long?) -> Unit) {
-    when (range) {
-        is TimelineRange.AllTime -> onSetDateRange(null, null)
-        is TimelineRange.ThisPeriod -> {
-            val (start, end) = TimelineService.getRangeForThis(range.period)
-            onSetDateRange(start, end)
-        }
-
-        is TimelineRange.LastPeriod -> {
-            val (start, end) = TimelineService.getRangeForLast(range.period)
-            onSetDateRange(start, end)
-        }
-
-        is TimelineRange.CustomRange -> onSetDateRange(range.start, range.end)
-    }
-}
-
 private fun guessTimelineRange(filter: TransactionFilter): TimelineRange {
-    if (filter.startDate == null && filter.endDate == null) return TimelineRange.AllTime
-
-    val start = filter.startDate!!
-    val end = filter.endDate!!
-
-    // Check ThisPeriod
-    for (type in ThisPeriodType.entries) {
-        val range = TimelineService.getRangeForThis(type)
-        if (Math.abs(range.first - start) < 2000 && Math.abs(range.second - end) < 2000) return TimelineRange.ThisPeriod(
-            type
-        )
-    }
-
-    // Check LastPeriod
-    for (type in LastPeriodType.entries) {
-        val range = TimelineService.getRangeForLast(type)
-        val expectedStart = range.first
-        val expectedEnd = range.second
-
-        if (type == LastPeriodType.LAST_24H) {
-            // For Last 24h, we check both start and end with a bit more tolerance
-            if (Math.abs(expectedStart - start) < 10000 && Math.abs(expectedEnd - end) < 10000) return TimelineRange.LastPeriod(
-                type
-            )
-        } else {
-            if (Math.abs(expectedStart - start) < 5000 && Math.abs(expectedEnd - end) < 5000) return TimelineRange.LastPeriod(
-                type
-            )
-        }
-    }
-
-    return TimelineRange.CustomRange(start, end)
-}
-
-private fun navigateMonth(
-    filter: TransactionFilter,
-    delta: Int,
-    onSetDateRange: (Long?, Long?) -> Unit
-) {
-    val calendar = Calendar.getInstance()
-    filter.startDate?.let {
-        calendar.timeInMillis = it
-        calendar.add(Calendar.MONTH, delta)
-    } ?: run {
-        calendar.add(Calendar.MONTH, delta)
-        calendar.set(Calendar.DAY_OF_MONTH, 1)
-    }
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    calendar.set(Calendar.SECOND, 0)
-    calendar.set(Calendar.MILLISECOND, 0)
-    val start = calendar.timeInMillis
-    calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
-    calendar.set(Calendar.HOUR_OF_DAY, 23)
-    calendar.set(Calendar.MINUTE, 59)
-    calendar.set(Calendar.SECOND, 59)
-    val end = calendar.timeInMillis
-    onSetDateRange(start, end)
+    return filter.timelineRange
 }
 
 private fun getPeriodText(filter: TransactionFilter): String {
-    if (filter.startDate == null || filter.endDate == null) return "All Time"
-    
-    val start = filter.startDate
-    val end = filter.endDate
+    val (resolvedStart, resolvedEnd) = TimelineService.getDateRange(filter.timelineRange)
+    val start = filter.startDate ?: resolvedStart
+    val end = filter.endDate ?: resolvedEnd
+
+    if (start == null || end == null) return "All Time"
     
     // Check for "Today"
     val todayRange = TimelineService.getRangeForThis(ThisPeriodType.TODAY)
@@ -459,7 +406,7 @@ fun AeonPeriodSelectorPreview() {
     Box(modifier = Modifier.padding(top = 16.dp)) {
         AeonPeriodSelector(
             filter = filter,
-            onSetDateRange = { _, _ -> },
+            onSetDateRange = { },
             onClick = { },
             isExpanded = false,
             showArcTab = true
@@ -474,7 +421,7 @@ fun AeonPeriodSelectorExpandedPreview() {
     Box(modifier = Modifier.padding(top = 16.dp)) {
         AeonPeriodSelector(
             filter = filter,
-            onSetDateRange = { _, _ -> },
+            onSetDateRange = { },
             onClick = { },
             isExpanded = true,
             showArcTab = true

@@ -26,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
@@ -35,7 +36,7 @@ fun TransactionFilterSheet(
     accounts: List<Account>,
     categories: List<Category>,
     savedFilters: List<Filter> = emptyList(),
-    onSetDateRange: (Long?, Long?) -> Unit,
+    onUpdateTimelineRange: (TimelineRange) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
     onToggleExpand: () -> Unit,
     onClose: () -> Unit,
@@ -53,7 +54,7 @@ fun TransactionFilterSheet(
             accounts = accounts,
             allCategories = categories,
             savedFilters = savedFilters,
-            onSetDateRange = onSetDateRange,
+            onUpdateTimelineRange = onUpdateTimelineRange,
             onApplyFilter = onUpdateFilter,
             onToggleExpand = onToggleExpand,
             onClose = onClose,
@@ -111,7 +112,7 @@ fun TransactionFilterSheetPreview() {
                             parentId = null
                         )
                     ),
-                    onSetDateRange = { _, _ -> },
+                    onUpdateTimelineRange = { },
                     onUpdateFilter = {},
                     onToggleExpand = {},
                     onClose = {},

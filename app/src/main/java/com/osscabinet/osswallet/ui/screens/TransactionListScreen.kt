@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
@@ -117,7 +118,7 @@ fun TransactionListScreen(
         isTopLevel = isTopLevel,
         onAccountDetailClick = { id -> navigate { onAccountDetailClick(id) } },
         onUpdateFilter = { viewModel.updateRecordsFilter(it) },
-        onSetDateRange = { start, end -> viewModel.setRecordsDateRangeFilter(start, end) },
+        onUpdateTimelineRange = { viewModel.updateRecordsTimelineRange(it) },
         onUpdateRecordsSettings = { settings -> viewModel.updateRecordsSettings { settings } },
         accountNames = accountMap,
         onResetToInitial = { viewModel.resetToInitialFilter() },

@@ -36,40 +36,50 @@ object TimelineService {
      */
     fun getRangeForThis(
         period: ThisPeriodType,
+        offset: Int = 0,
         firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY
     ): Pair<Long, Long> {
         val now = ZonedDateTime.now(systemZoneId)
+        val base: ZonedDateTime = when (period) {
+            ThisPeriodType.TODAY -> now.plusDays(offset.toLong())
+            ThisPeriodType.WEEK -> now.plusWeeks(offset.toLong())
+            ThisPeriodType.MONTH -> now.plusMonths(offset.toLong())
+            ThisPeriodType.QUARTER -> now.plusMonths(offset.toLong() * 3)
+            ThisPeriodType.HALF_YEAR -> now.plusMonths(offset.toLong() * 6)
+            ThisPeriodType.YEAR -> now.plusYears(offset.toLong())
+        }
+
         val start: ZonedDateTime = when (period) {
-            ThisPeriodType.TODAY -> now.toLocalDate().atStartOfDay(now.zone)
-            ThisPeriodType.WEEK -> now.toLocalDate()
-                .with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(now.zone)
-            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
+            ThisPeriodType.TODAY -> base.toLocalDate().atStartOfDay(base.zone)
+            ThisPeriodType.WEEK -> base.toLocalDate()
+                .with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(base.zone)
+            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
             ThisPeriodType.QUARTER -> {
-                val month = now.monthValue
+                val month = base.monthValue
                 val firstMonthOfQuarter = ((month - 1) / 3) * 3 + 1
-                now.toLocalDate().withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
+                base.toLocalDate().withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
             }
             ThisPeriodType.HALF_YEAR -> {
-                val firstMonthOfHalf = if (now.monthValue <= 6) 1 else 7
-                now.toLocalDate().withMonth(firstMonthOfHalf).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(now.zone)
+                val firstMonthOfHalf = if (base.monthValue <= 6) 1 else 7
+                base.toLocalDate().withMonth(firstMonthOfHalf).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
             }
-            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.firstDayOfYear()).atStartOfDay(now.zone)
+            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.firstDayOfYear()).atStartOfDay(base.zone)
         }
         val end: ZonedDateTime = when (period) {
-            ThisPeriodType.TODAY -> now.toLocalDate().atTime(LocalTime.MAX).atZone(now.zone)
-            ThisPeriodType.WEEK -> now.toLocalDate()
-                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX).atZone(now.zone)
-            ThisPeriodType.MONTH -> now.toLocalDate().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
+            ThisPeriodType.TODAY -> base.toLocalDate().atTime(LocalTime.MAX).atZone(base.zone)
+            ThisPeriodType.WEEK -> start.toLocalDate()
+                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX).atZone(base.zone)
+            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
             ThisPeriodType.QUARTER -> {
-                val month = now.monthValue
+                val month = base.monthValue
                 val lastMonthOfQuarter = ((month - 1) / 3) * 3 + 3
-                now.toLocalDate().withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
+                base.toLocalDate().withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
             }
             ThisPeriodType.HALF_YEAR -> {
-                val lastMonthOfHalf = if (now.monthValue <= 6) 6 else 12
-                now.toLocalDate().withMonth(lastMonthOfHalf).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(now.zone)
+                val lastMonthOfHalf = if (base.monthValue <= 6) 6 else 12
+                base.toLocalDate().withMonth(lastMonthOfHalf).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
             }
-            ThisPeriodType.YEAR -> now.toLocalDate().with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX).atZone(now.zone)
+            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX).atZone(base.zone)
         }
         return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
     }
@@ -77,18 +87,26 @@ object TimelineService {
     /**
      * Gets the date range for a "last period" type.
      */
-    fun getRangeForLast(period: LastPeriodType): Pair<Long, Long> {
+    fun getRangeForLast(period: LastPeriodType, offset: Int = 0): Pair<Long, Long> {
         val now = ZonedDateTime.now(systemZoneId)
-        val start: ZonedDateTime = when (period) {
-            LastPeriodType.LAST_24H -> now.minusHours(24)
-            LastPeriodType.LAST_7_DAYS -> now.minusDays(7)
-            LastPeriodType.LAST_30_DAYS -> now.minusDays(30)
-            LastPeriodType.LAST_12_WEEKS -> now.minusWeeks(12)
-            LastPeriodType.LAST_6_MONTHS -> now.minusMonths(6)
-            LastPeriodType.LAST_1_YEAR -> now.minusYears(1)
-            LastPeriodType.LAST_5_YEARS -> now.minusYears(5)
+        
+        // Duration of one period
+        val (startDelta, endDelta) = when (period) {
+            LastPeriodType.LAST_24H -> Pair(now.minusHours(24), now)
+            LastPeriodType.LAST_7_DAYS -> Pair(now.minusDays(7), now)
+            LastPeriodType.LAST_30_DAYS -> Pair(now.minusDays(30), now)
+            LastPeriodType.LAST_12_WEEKS -> Pair(now.minusWeeks(12), now)
+            LastPeriodType.LAST_6_MONTHS -> Pair(now.minusMonths(6), now)
+            LastPeriodType.LAST_1_YEAR -> Pair(now.minusYears(1), now)
+            LastPeriodType.LAST_5_YEARS -> Pair(now.minusYears(5), now)
         }
-        return Pair(start.toInstant().toEpochMilli(), now.toInstant().toEpochMilli())
+        val durationMs = endDelta.toInstant().toEpochMilli() - startDelta.toInstant().toEpochMilli()
+        val totalOffsetMs = durationMs * offset
+
+        val finalStart = startDelta.toInstant().toEpochMilli() + totalOffsetMs
+        val finalEnd = endDelta.toInstant().toEpochMilli() + totalOffsetMs
+        
+        return Pair(finalStart, finalEnd)
     }
 
     /**
@@ -97,44 +115,33 @@ object TimelineService {
     fun getDateRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
         return when (timelineRange) {
             is TimelineRange.AllTime -> Pair(null, null)
-            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period)
-            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period)
+            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period, timelineRange.offset)
+            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period, timelineRange.offset)
             is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
         }
     }
 
     /**
      * Gets the previous date range for a given timeline range.
+     * Legacy method used for comparison metrics.
      */
     fun getPreviousRange(timelineRange: TimelineRange): Pair<Long?, Long?> {
-        val (currentStart, currentEnd) = getDateRange(timelineRange)
-        if (currentStart == null || currentEnd == null) return Pair(null, null)
+        val prevRange = shiftRange(timelineRange, -1)
+        return getDateRange(prevRange)
+    }
 
-        return when (timelineRange) {
-            is TimelineRange.ThisPeriod -> {
-                val start = Instant.ofEpochMilli(currentStart).atZone(systemZoneId)
-                val prevStart: ZonedDateTime = when (timelineRange.period) {
-                    ThisPeriodType.TODAY -> start.minusDays(1)
-                    ThisPeriodType.WEEK -> start.minusWeeks(1)
-                    ThisPeriodType.MONTH -> start.minusMonths(1)
-                    ThisPeriodType.QUARTER -> start.minusMonths(3)
-                    ThisPeriodType.HALF_YEAR -> start.minusMonths(6)
-                    ThisPeriodType.YEAR -> start.minusYears(1)
-                }
-                val prevEnd: ZonedDateTime = when (timelineRange.period) {
-                    ThisPeriodType.TODAY -> prevStart.with(LocalTime.MAX)
-                    ThisPeriodType.WEEK -> prevStart.plusDays(6).with(LocalTime.MAX)
-                    ThisPeriodType.MONTH -> prevStart.with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
-                    ThisPeriodType.QUARTER -> prevStart.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
-                    ThisPeriodType.HALF_YEAR -> prevStart.plusMonths(5).with(TemporalAdjusters.lastDayOfMonth()).with(LocalTime.MAX)
-                    ThisPeriodType.YEAR -> prevStart.with(TemporalAdjusters.lastDayOfYear()).with(LocalTime.MAX)
-                }
-                Pair(prevStart.toInstant().toEpochMilli(), prevEnd.toInstant().toEpochMilli())
+    /**
+     * Gets the shifted timeline range (previous or next).
+     */
+    fun shiftRange(range: TimelineRange, delta: Int): TimelineRange {
+        return when (range) {
+            is TimelineRange.ThisPeriod -> range.copy(offset = range.offset + delta)
+            is TimelineRange.LastPeriod -> range.copy(offset = range.offset + delta)
+            is TimelineRange.CustomRange -> {
+                val duration = range.end - range.start
+                TimelineRange.CustomRange(range.start + duration * delta, range.end + duration * delta)
             }
-            else -> {
-                val duration = currentEnd - currentStart
-                Pair(currentStart - duration, currentStart)
-            }
+            else -> range
         }
     }
 

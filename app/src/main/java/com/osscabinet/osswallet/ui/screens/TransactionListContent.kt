@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.viewmodel.AnalyticsUiState
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,7 +73,7 @@ fun TransactionListContent(
     isTopLevel: Boolean = true,
     onAccountDetailClick: (String) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
-    onSetDateRange: (Long?, Long?) -> Unit,
+    onUpdateTimelineRange: (TimelineRange) -> Unit,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
     accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null,
@@ -127,7 +128,7 @@ fun TransactionListContent(
                     accounts = accounts,
                     categories = categories,
                     savedFilters = savedFilters,
-                    onSetDateRange = onSetDateRange,
+                    onUpdateTimelineRange = onUpdateTimelineRange,
                     onUpdateFilter = onUpdateFilter,
                     onToggleExpand = {
                         scope.launch {
@@ -294,7 +295,7 @@ fun TransactionListContentPreview() {
                 onBackClick = {},
                 onAccountDetailClick = {},
                 onUpdateFilter = {},
-                onSetDateRange = { _, _ -> },
+                onUpdateTimelineRange = { },
                 onUpdateRecordsSettings = {},
                 expandableFabEnabled = true
             )

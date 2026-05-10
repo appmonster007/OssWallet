@@ -31,7 +31,10 @@ sealed class Screen(val route: String) {
         fun createRoute(topLevel: Boolean = true) = "analytics?topLevel=$topLevel"
     }
     object SharedWallet : Screen("shared")
-    object AccountSetup : Screen("account_setup")
+    object AccountEntry : Screen("account_entry?accountId={accountId}") {
+        fun createRoute(accountId: String? = null) =
+            if (accountId != null) "account_entry?accountId=$accountId" else "account_entry"
+    }
     object AccountManagement : Screen("manage_accounts")
     object ExchangeRates : Screen("exchange_rates?topLevel={topLevel}") {
         fun createRoute(topLevel: Boolean = true) = "exchange_rates?topLevel=$topLevel"
@@ -49,9 +52,6 @@ sealed class Screen(val route: String) {
         fun createRoute(accountId: String) = "account_detail/$accountId"
     }
     
-    object EditAccount : Screen("edit_account/{accountId}") {
-        fun createRoute(accountId: String) = "edit_account/$accountId"
-    }
 
     object ManageTags : Screen("manage_tags")
     object ManageCategories : Screen("manage_categories")

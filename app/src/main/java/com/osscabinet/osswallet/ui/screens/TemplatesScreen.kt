@@ -23,12 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.*
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +46,30 @@ fun TemplatesScreen(
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
 
+    TemplatesScreenContent(
+        templates = templates,
+        starredTemplates = starredTemplates,
+        categoryMap = categoryMap,
+        onBackClick = onBackClick,
+        onAddTemplateClick = onAddTemplateClick,
+        onDeleteTemplate = { viewModel.deleteTemplate(it) },
+        onUpdateOrder = { viewModel.updateTemplatesOrder(it) },
+        onToggleStar = { viewModel.toggleStar(it) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TemplatesScreenContent(
+    templates: List<Template>,
+    starredTemplates: List<Template>,
+    categoryMap: Map<Long, Category>,
+    onBackClick: () -> Unit,
+    onAddTemplateClick: (Long?) -> Unit,
+    onDeleteTemplate: (Template) -> Unit,
+    onUpdateOrder: (List<Template>) -> Unit,
+    onToggleStar: (Template) -> Unit
+) {
     var editList by remember { mutableStateOf(emptyList<Template>()) }
     var templateToDelete by remember { mutableStateOf<Template?>(null) }
 
@@ -50,7 +78,7 @@ fun TemplatesScreen(
         title = "Delete Template",
         message = "Are you sure you want to delete the template \"${templateToDelete?.name}\"?",
         onConfirm = {
-            templateToDelete?.let { viewModel.deleteTemplate(it) }
+            templateToDelete?.let { onDeleteTemplate(it) }
             templateToDelete = null
         },
         onDismiss = { templateToDelete = null }
@@ -116,7 +144,7 @@ fun TemplatesScreen(
                     items = editList,
                     key = { it.id },
                     onReorder = { newList -> editList = newList },
-                    onDragEnd = { newList -> viewModel.updateTemplatesOrder(newList) },
+                    onDragEnd = { newList -> onUpdateOrder(newList) },
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
@@ -145,7 +173,7 @@ fun TemplatesScreen(
                         categoryIconName = categoryMap[template.categoryId]?.iconName,
                         onEdit = { navigate { onAddTemplateClick(template.id) } },
                         onDelete = { templateToDelete = template },
-                        onToggleStar = { viewModel.toggleStar(template) }
+                        onToggleStar = { onToggleStar(template) }
                     )
                 }
             }
@@ -194,15 +222,10 @@ fun TemplateItem(
     onDelete: () -> Unit,
     onToggleStar: () -> Unit
 ) {
-    val badgeColor = when (template.transactionType) {
-        1 -> MaterialTheme.colorScheme.error          // expense — red
-        2 -> MaterialTheme.colorScheme.secondary      // transfer
-        else -> Color(0xFF2E7D32)                     // income — green
-    }
-    val badgeLabel = when (template.transactionType) {
-        1 -> "Expense"
-        2 -> "Transfer"
-        else -> "Income"
+    val (badgeColor, badgeIcon) = when (template.transactionType) {
+        0 -> MaterialTheme.colorScheme.error to Icons.Rounded.ArrowDownward          // expense — red
+        1 -> Color(0xFF2E7D32) to Icons.Rounded.ArrowUpward                         // income — green
+        else -> MaterialTheme.colorScheme.secondary to Icons.Rounded.Sync           // transfer
     }
 
     Card(
@@ -216,7 +239,7 @@ fun TemplateItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box {
+            Box(contentAlignment = Alignment.Center) {
                 Surface(
                     modifier = Modifier.size(40.dp),
                     shape = CircleShape,
@@ -233,16 +256,19 @@ fun TemplateItem(
                 }
                 Surface(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 4.dp, y = 4.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    color = badgeColor
+                        .align(Alignment.BottomStart)
+                        .offset(x = (-4).dp, y = 4.dp),
+                    shape = CircleShape,
+                    color = badgeColor,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface)
                 ) {
-                    Text(
-                        text = badgeLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                    Icon(
+                        imageVector = badgeIcon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .padding(2.dp)
                     )
                 }
             }
@@ -371,5 +397,159 @@ fun TemplateDialog(
             },
             onDismiss = { showAccountPicker = false }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TemplatesScreenPreview() {
+    val sampleTemplates = listOf(
+        Template(
+            id = 1L,
+            name = "Coffee Shop",
+            categoryId = 1001L,
+            amount = BigDecimal("5.50"),
+            transactionType = 0,
+            icon = null,
+            colorHex = null,
+            accountId = null,
+            note = "Morning coffee",
+            payee = null,
+            location = null,
+            paymentMethod = null,
+            currency = null,
+            tags = emptyList(),
+            isStarred = true,
+            displayOrder = 0
+        ),
+        Template(
+            id = 2L,
+            name = "Monthly Rent",
+            categoryId = 1002L,
+            amount = BigDecimal("1200.00"),
+            transactionType = 0,
+            icon = null,
+            colorHex = null,
+            accountId = null,
+            note = "Apartment rent",
+            payee = null,
+            location = null,
+            paymentMethod = null,
+            currency = null,
+            tags = emptyList(),
+            isStarred = true,
+            displayOrder = 1
+        ),
+        Template(
+            id = 3L,
+            name = "Salary",
+            categoryId = 1003L,
+            amount = BigDecimal("3500.00"),
+            transactionType = 1,
+            icon = null,
+            colorHex = null,
+            accountId = null,
+            note = "Monthly salary",
+            payee = null,
+            location = null,
+            paymentMethod = null,
+            currency = null,
+            tags = emptyList(),
+            isStarred = false,
+            displayOrder = 2
+        ),
+        Template(
+            id = 4L,
+            name = "Grocery Shopping",
+            categoryId = 1004L,
+            amount = BigDecimal("150.00"),
+            transactionType = 0,
+            icon = null,
+            colorHex = null,
+            accountId = null,
+            note = "Weekly groceries",
+            payee = null,
+            location = null,
+            paymentMethod = null,
+            currency = null,
+            tags = emptyList(),
+            isStarred = false,
+            displayOrder = 3
+        ),
+        Template(
+            id = 5L,
+            name = "Savings Transfer",
+            categoryId = 1005L,
+            amount = BigDecimal("500.00"),
+            transactionType = 2,
+            icon = null,
+            colorHex = null,
+            accountId = null,
+            note = "Monthly savings",
+            payee = null,
+            location = null,
+            paymentMethod = null,
+            currency = null,
+            tags = emptyList(),
+            isStarred = false,
+            displayOrder = 4
+        )
+    )
+    
+    val sampleCategories = mapOf(
+        1001L to Category(1001L, "Food & Dining", "restaurant", -14513374, false, null),
+        1002L to Category(1002L, "Housing", "home", -16726016, false, null),
+        1003L to Category(1003L, "Income", "trending_up", -14513374, false, null),
+        1004L to Category(1004L, "Groceries", "shopping_cart", -26513, false, null),
+        1005L to Category(1005L, "Transfer", "sync_alt", -769226, false, null)
+    )
+    
+    MaterialTheme {
+        TemplatesScreenContent(
+            templates = sampleTemplates,
+            starredTemplates = sampleTemplates.filter { it.isStarred },
+            categoryMap = sampleCategories,
+            onBackClick = {},
+            onAddTemplateClick = {},
+            onDeleteTemplate = {},
+            onUpdateOrder = {},
+            onToggleStar = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun TemplateItemPreview() {
+    val sampleTemplate = Template(
+        id = 1L,
+        name = "Coffee Shop",
+        categoryId = 1001L,
+        amount = BigDecimal("5.50"),
+        transactionType = 0,
+        icon = null,
+        colorHex = null,
+        accountId = null,
+        note = "Morning coffee",
+        payee = null,
+        location = null,
+        paymentMethod = null,
+        currency = null,
+        tags = emptyList(),
+        isStarred = true,
+        displayOrder = 0
+    )
+
+    MaterialTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            TemplateItem(
+                template = sampleTemplate,
+                categoryName = "Food & Dining",
+                categoryIconName = "restaurant",
+                onEdit = {},
+                onDelete = {},
+                onToggleStar = {}
+            )
+        }
     }
 }

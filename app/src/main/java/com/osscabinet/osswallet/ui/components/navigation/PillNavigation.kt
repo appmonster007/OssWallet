@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -280,35 +282,25 @@ fun PillNavigationBar(
 fun TransactionFabMenu(
     isExpanded: Boolean,
     templates: List<Template>,
+    categories: List<Category> = emptyList(),
     onAddClick: (Int?, String?) -> Unit,
     onAddAccountClick: (() -> Unit)? = null
 ) {
+    val categoryMap = remember(categories) { categories.associateBy { it.id } }
+
     val displayTemplates = remember(templates) {
         val starred = templates.filter { it.isStarred }
-        val finalTemplates = if (starred.isNotEmpty()) {
-            starred
-        } else if (templates.isNotEmpty()) {
-            templates.take(5)
-        } else {
-            emptyList()
-        }
-
-        finalTemplates.map {
-            Triple(it.name, when(it.transactionType) {
-                1 -> Icons.Rounded.Payments
-                2 -> Icons.Rounded.SwapHoriz
-                else -> Icons.Rounded.ShoppingCart
-            }, it.transactionType)
-        }
+        if (starred.isNotEmpty()) starred else templates.take(5)
     }
 
-    displayTemplates.forEachIndexed { index, (name, icon, type) ->
+    displayTemplates.forEachIndexed { index, template ->
+        val icon = getIconByName(categoryMap[template.categoryId]?.iconName)
         FabMenuItem(
             visible = isExpanded,
-            label = "Template: $name",
+            label = "Template: ${template.name}",
             icon = icon,
             index = index,
-            onClick = { onAddClick(type, name) }
+            onClick = { onAddClick(template.transactionType, template.name) }
         )
     }
 

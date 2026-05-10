@@ -186,6 +186,7 @@ fun DashboardScreen(
     )
 
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
+    val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val isTopLevel = remember(initialViewContext, isTopLevelParam) {
@@ -290,6 +291,7 @@ fun DashboardScreen(
                     TransactionFabMenu(
                         isExpanded = isFabExpanded,
                         templates = allTemplates,
+                        categories = allCategories,
                         onAddClick = { type, name ->
                             isFabExpanded = false
                             navigate { onAddClick(type, name) }

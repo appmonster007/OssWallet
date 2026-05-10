@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.*
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -141,6 +142,7 @@ fun TemplatesScreen(
                     TemplateItem(
                         template = template,
                         categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
+                        categoryIconName = categoryMap[template.categoryId]?.iconName,
                         onEdit = { navigate { onAddTemplateClick(template.id) } },
                         onDelete = { templateToDelete = template },
                         onToggleStar = { viewModel.toggleStar(template) }
@@ -187,10 +189,22 @@ fun ReorderTemplateItem(
 fun TemplateItem(
     template: Template,
     categoryName: String,
+    categoryIconName: String?,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleStar: () -> Unit
 ) {
+    val badgeColor = when (template.transactionType) {
+        1 -> MaterialTheme.colorScheme.error          // expense — red
+        2 -> MaterialTheme.colorScheme.secondary      // transfer
+        else -> Color(0xFF2E7D32)                     // income — green
+    }
+    val badgeLabel = when (template.transactionType) {
+        1 -> "Expense"
+        2 -> "Transfer"
+        else -> "Income"
+    }
+
     Card(
         onClick = onEdit,
         shape = RoundedCornerShape(16.dp),
@@ -202,21 +216,33 @@ fun TemplateItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        when (template.transactionType) {
-                            1 -> Icons.Rounded.ArrowUpward
-                            2 -> Icons.Rounded.SwapHoriz
-                            else -> Icons.Rounded.ArrowDownward
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+            Box {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = getIconByName(categoryIconName),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 4.dp, y = 4.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    color = badgeColor
+                ) {
+                    Text(
+                        text = badgeLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }
             }

@@ -349,16 +349,24 @@ fun OssWalletNavGraph(
             }
 
             composable(
-                route = Screen.AccountSetup.route,
+                route = Screen.AccountEntry.route,
+                arguments = listOf(navArgument("accountId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }),
                 enterTransition = { EnterTransitionSpec },
                 exitTransition = { ExitTransitionSpec },
                 popEnterTransition = { PopEnterTransitionSpec },
                 popExitTransition = { PopExitTransitionSpec }
-            ) {
-                AccountSetupScreen(
+            ) { backStackEntry ->
+                val accountId = backStackEntry.arguments?.getString("accountId")
+                AccountEntryScreen(
                     onBackClick = { navController.popBackStack() },
-                    onAccountCreated = { navController.popBackStack() },
-                    viewModel = accountViewModel
+                    onDone = { navController.popBackStack() },
+                    viewModel = accountViewModel,
+                    transactionViewModel = transactionViewModel,
+                    accountId = accountId
                 )
             }
 
@@ -371,7 +379,7 @@ fun OssWalletNavGraph(
             ) {
                 AccountManagementScreen(
                     onBackClick = { navController.popBackStack() },
-                    onAddAccountClick = { navController.navigate(Screen.AccountSetup.route) },
+                    onAddAccountClick = { navController.navigate(Screen.AccountEntry.createRoute()) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     viewModel = accountViewModel
                 )
@@ -505,7 +513,7 @@ fun OssWalletNavGraph(
                     cardComputerRegistry = appContainer.cardComputerRegistry,
                     templateViewModel = templateViewModel,
                     onBackClick = { navController.popBackStack() },
-                    onEditAccountClick = { id -> navController.navigate(Screen.EditAccount.createRoute(id)) },
+                    onEditAccountClick = { id -> navController.navigate(Screen.AccountEntry.createRoute(id)) },
                     onAccountClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                     onCloneTransactionClick = { id ->
@@ -519,22 +527,6 @@ fun OssWalletNavGraph(
                 )
             }
 
-            composable(
-                route = Screen.EditAccount.route,
-                arguments = listOf(navArgument("accountId") { type = NavType.StringType }),
-                enterTransition = { EnterTransitionSpec },
-                exitTransition = { ExitTransitionSpec },
-                popEnterTransition = { PopEnterTransitionSpec },
-                popExitTransition = { PopExitTransitionSpec }
-            ) { backStackEntry ->
-                val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-                EditAccountScreen(
-                    accountId = accountId,
-                    viewModel = accountViewModel,
-                    transactionViewModel = transactionViewModel,
-                    onBackClick = { navController.popBackStack() }
-                )
-            }
 
             composable(
                 route = Screen.ManageTags.route,

@@ -12,4 +12,5 @@
     android:updatePeriodMillis="1800000"
     android:previewLayout="@layout/widget_recent_transactions_preview"
     android:previewImage="@mipmap/ic_launcher"
+    android:configure="com.osscabinet.ossWallet.widget.RecentTransactionsWidgetConfigActivity"
     android:widgetCategory="home_screen" />

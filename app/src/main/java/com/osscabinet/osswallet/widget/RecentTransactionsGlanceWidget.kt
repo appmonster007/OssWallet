@@ -1,8 +1,20 @@
 package com.osscabinet.ossWallet.widget
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter as ComposeColorFilter
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -10,6 +22,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
@@ -30,6 +45,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.ui.components.getIconByName
 import kotlinx.serialization.json.Json
 
 class RecentTransactionsGlanceWidget : BaseOssWalletWidget() {
@@ -42,6 +58,8 @@ class RecentTransactionsGlanceWidget : BaseOssWalletWidget() {
     object Keys {
         val IS_LOADED = stringPreferencesKey("rt_is_loaded")
         val TRANSACTIONS_JSON = stringPreferencesKey("rt_transactions_json")
+        val PERIOD_LABEL = stringPreferencesKey("rt_period_label")
+        val PRIMARY_DISPLAY = stringPreferencesKey("rt_primary_display")
     }
 }
 
@@ -54,6 +72,7 @@ internal fun RecentTransactionsWidgetContent(context: Context, prefs: Preference
     }
     
     val isLoaded = prefs[RecentTransactionsGlanceWidget.Keys.IS_LOADED] == "true"
+    
     if (!isLoaded) {
         RecentTransactionsPlaceholder(scale)
     } else {
@@ -63,48 +82,67 @@ internal fun RecentTransactionsWidgetContent(context: Context, prefs: Preference
 
 @Composable
 private fun RecentTransactionsPlaceholder(scale: Float) {
-    Text(
-        text = "Recent Transactions",
-        style = TextStyle(
-            fontSize = TextUnit(12f * scale, TextUnitType.Sp),
-            fontWeight = FontWeight.Bold,
-            color = GlanceTheme.colors.onSurface
+    Column(modifier = GlanceModifier.fillMaxSize().padding(12.dp)) {
+        Text(
+            text = "RECENT ACTIVITIES",
+            style = TextStyle(
+                fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = GlanceTheme.colors.onSurfaceVariant
+            )
         )
-    )
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        Box(modifier = GlanceModifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "Loading...",
+                style = TextStyle(
+                    fontSize = TextUnit(12f * scale, TextUnitType.Sp),
+                    color = GlanceTheme.colors.onSurfaceVariant
+                )
+            )
+        }
+        Spacer(modifier = GlanceModifier.defaultWeight())
+    }
 }
 
 @Composable
 internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale: Float) {
     val json = prefs[RecentTransactionsGlanceWidget.Keys.TRANSACTIONS_JSON] ?: "[]"
+    val periodLabel = prefs[RecentTransactionsGlanceWidget.Keys.PERIOD_LABEL]
+    val primaryDisplay = prefs[RecentTransactionsGlanceWidget.Keys.PRIMARY_DISPLAY] ?: "CATEGORY_FIRST"
+    
     val transactions = try {
         Json.decodeFromString<List<WidgetTransaction>>(json)
     } catch (e: Exception) {
         emptyList()
     }
 
+    val headerSp = 10f * scale
+
     Column(modifier = GlanceModifier.fillMaxSize()) {
+        // Match NetWorth header style
         Row(
             modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = GlanceModifier
-                    .size((16f * scale).dp)
-                    .background(GlanceTheme.colors.primary)
-                    .cornerRadius((8f * scale).dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Dot icon
-            }
-            Spacer(modifier = GlanceModifier.width(8.dp))
             Text(
-                text = context.getString(R.string.recent_activities).uppercase(),
+                text = "RECENT ACTIVITIES",
                 style = TextStyle(
-                    fontSize = TextUnit(9f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(headerSp, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    color = GlanceTheme.colors.primary
+                    color = GlanceTheme.colors.onSurfaceVariant
                 )
             )
+            if (periodLabel != null) {
+                Spacer(modifier = GlanceModifier.defaultWeight())
+                Text(
+                    text = periodLabel.uppercase(),
+                    style = TextStyle(
+                        fontSize = TextUnit(headerSp, TextUnitType.Sp),
+                        color = GlanceTheme.colors.onSurfaceVariant
+                    )
+                )
+            }
         }
 
         if (transactions.isEmpty()) {
@@ -112,7 +150,7 @@ internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale:
                 Text(
                     text = context.getString(R.string.no_recent_activities),
                     style = TextStyle(
-                        fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                        fontSize = TextUnit(11f * scale, TextUnitType.Sp),
                         color = GlanceTheme.colors.onSurfaceVariant
                     )
                 )
@@ -120,8 +158,8 @@ internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale:
         } else {
             LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                 items(transactions) { tx ->
-                    TransactionItem(tx, scale)
-                    Spacer(modifier = GlanceModifier.height(8.dp))
+                    TransactionItem(tx, scale, primaryDisplay)
+                    Spacer(modifier = GlanceModifier.height(6.dp))
                 }
             }
         }
@@ -129,7 +167,7 @@ internal fun RecentTransactionsBody(context: Context, prefs: Preferences, scale:
 }
 
 @Composable
-private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
+private fun TransactionItem(tx: WidgetTransaction, scale: Float, primaryDisplay: String) {
     val isIncome = tx.type == "income"
     val amountColor = if (isIncome) {
         ColorProvider(R.color.widget_income_color)
@@ -137,52 +175,96 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
         ColorProvider(R.color.widget_expense_color)
     }
 
+    val categoryColor = tx.categoryColor?.let { Color(it) } ?: Color(0xFF9E9E9E)
+    val iconBgColor = categoryColor.copy(alpha = 0.15f)
+    val iconTextColor = categoryColor
+
+    val showNoteFirst = primaryDisplay == "NOTE_FIRST"
+    
+    val titleText = if (showNoteFirst && tx.note.isNotBlank()) tx.note else tx.category
+    val subTextMain = if (showNoteFirst || tx.note.isBlank()) tx.category else tx.note
+    val subtitle = "$subTextMain • ${tx.accountName}"
+
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(GlanceTheme.colors.surfaceVariant)
-            .cornerRadius((12f * scale).dp)
-            .padding((8f * scale).dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Category Icon Circle
-        Box(
-            modifier = GlanceModifier
-                .size((32f * scale).dp)
-                .background(GlanceTheme.colors.secondaryContainer)
-                .cornerRadius((16f * scale).dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // Placeholder for category icon
+        // Provide LocalDensity for ImageVector rendering
+        val context = LocalContext.current
+        val density = Density(context.resources.displayMetrics.density)
+        
+        CompositionLocalProvider(LocalDensity provides density) {
+            Box(
+                modifier = GlanceModifier
+                    .size((36f * scale).dp)
+                    .background(ColorProvider(iconBgColor))
+                    .cornerRadius((18f * scale).dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val icon = getIconByName(tx.iconName)
+                val painter = rememberVectorPainter(icon)
+                
+                val bitmap = remember(tx.iconName, iconTextColor, density, scale) {
+                    val sizePx = (20 * scale * density.density).toInt().coerceAtLeast(1)
+                    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    val composeCanvas = androidx.compose.ui.graphics.Canvas(canvas)
+                    val drawScope = CanvasDrawScope()
+                    drawScope.draw(
+                        density = density,
+                        layoutDirection = LayoutDirection.Ltr,
+                        canvas = composeCanvas,
+                        size = Size(sizePx.toFloat(), sizePx.toFloat())
+                    ) {
+                        with(painter) {
+                            draw(size = Size(sizePx.toFloat(), sizePx.toFloat()), colorFilter = ComposeColorFilter.tint(iconTextColor))
+                        }
+                    }
+                    bitmap
+                }
+
+                Image(
+                    provider = ImageProvider(bitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size((20f * scale).dp)
+                )
+            }
         }
 
-        Spacer(modifier = GlanceModifier.width(10.dp))
+        Spacer(modifier = GlanceModifier.width(12.dp))
 
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = tx.title,
+                text = titleText,
                 style = TextStyle(
-                    fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(11f * scale, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
                     color = GlanceTheme.colors.onSurface
                 ),
                 maxLines = 1
             )
+            
             Text(
-                text = tx.category,
+                text = subtitle,
                 style = TextStyle(
                     fontSize = TextUnit(8f * scale, TextUnitType.Sp),
+                    fontWeight = FontWeight.Medium,
                     color = GlanceTheme.colors.onSurfaceVariant
                 ),
                 maxLines = 1
             )
         }
 
+        Spacer(modifier = GlanceModifier.width(4.dp))
+
         Column(horizontalAlignment = Alignment.End) {
+            val prefix = if (isIncome) "+" else "-"
             Text(
-                text = (if (isIncome) "+" else "-") + tx.amount,
+                text = prefix + tx.amount,
                 style = TextStyle(
-                    fontSize = TextUnit(10f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(11f * scale, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
                     color = amountColor
                 )
@@ -190,7 +272,7 @@ private fun TransactionItem(tx: WidgetTransaction, scale: Float) {
             Text(
                 text = tx.timestamp,
                 style = TextStyle(
-                    fontSize = TextUnit(7f * scale, TextUnitType.Sp),
+                    fontSize = TextUnit(8f * scale, TextUnitType.Sp),
                     color = GlanceTheme.colors.onSurfaceVariant
                 )
             )

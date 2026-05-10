@@ -56,41 +56,45 @@ private fun getMockRtPrefs(): Preferences {
     val mockTransactions = listOf(
         WidgetTransaction(
             id = 1,
-            title = "Starbucks Coffee",
             amount = "5.50",
             currency = "USD",
             type = "expense",
             category = "Food & Drinks",
             timestamp = "10:30 AM",
             note = "Morning coffee",
-            iconName = "Restaurant"
+            accountName = "Visa Card",
+            iconName = "Restaurant",
+            categoryColor = 0xFFF44336.toInt()
         ),
         WidgetTransaction(
             id = 2,
-            title = "Salary Deposit",
             amount = "2,500.00",
             currency = "USD",
             type = "income",
             category = "Salary",
             timestamp = "Yesterday",
             note = "Monthly salary",
-            iconName = "Payments"
+            accountName = "Savings Account",
+            iconName = "Payments",
+            categoryColor = 0xFF4CAF50.toInt()
         ),
         WidgetTransaction(
             id = 3,
-            title = "Uber Ride",
             amount = "12.00",
             currency = "USD",
             type = "expense",
             category = "Transport",
             timestamp = "Oct 24",
             note = "Back home",
-            iconName = "DirectionsCar"
+            accountName = "Digital Wallet",
+            iconName = "DirectionsCar",
+            categoryColor = 0xFF2196F3.toInt()
         )
     )
     
     return preferencesOf(
         RecentTransactionsGlanceWidget.Keys.IS_LOADED to "true",
+        RecentTransactionsGlanceWidget.Keys.PERIOD_LABEL to "This Month",
         RecentTransactionsGlanceWidget.Keys.TRANSACTIONS_JSON to Json.encodeToString(mockTransactions)
     )
 }

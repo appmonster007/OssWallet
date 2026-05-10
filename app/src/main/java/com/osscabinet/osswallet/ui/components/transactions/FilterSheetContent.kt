@@ -151,10 +151,13 @@ fun FilterSheetContent(
                 )
                 TextButton(
                     onClick = {
-                        onResetToInitial?.invoke()
-                        localFilter = TransactionFilter()
-                        selectedFilterIds = emptySet()
-                        applyFilterWithDebounce(localFilter, debounceMs = 0)
+                        if (onResetToInitial != null) {
+                            onResetToInitial.invoke()
+                        } else {
+                            localFilter = TransactionFilter()
+                            selectedFilterIds = emptySet()
+                            applyFilterWithDebounce(localFilter, debounceMs = 0)
+                        }
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {

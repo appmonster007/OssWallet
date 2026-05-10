@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
@@ -296,13 +297,9 @@ fun AccountDetailScreen(
                         }
                         1 -> {
                             // Transactions tab content using RecentActivitiesCard
-                            val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-                            val categoryMap = remember(categories) { categories.associateBy { it.id } }
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-                            val transactionsWithBalanceList = state.transactionsWithBalance
-
-                            if (transactionsWithBalanceList.isEmpty()) {
+                            if (state.listState.isEmpty) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize(),
@@ -325,15 +322,12 @@ fun AccountDetailScreen(
                                 }
                             } else {
                                 RecentActivitiesScreen(
-                                    allTransactions = transactionsWithBalanceList,
-                                    accountNamesMap = accountNamesMap,
-                                    categoryMap = categoryMap,
+                                    listState = state.listState,
                                     onRecordsClick = { drillDown ->
                                         onRecordsClick(state.currentFilter.merge(drillDown))
                                     },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
-                                    exchangeRates = state.exchangeRates,
                                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                                     modifier = Modifier.fillMaxSize(),
                                     revealedCardIds = revealedCardIds,
@@ -344,8 +338,6 @@ fun AccountDetailScreen(
                                     onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                                     onSplit = { transactionViewModel.quickSplitTransaction(it) },
                                     onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) },
-                                    applyFilter = false,
-                                    excludeFuture = !state.showPlannedPayments,
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
                                     filter = state.currentFilter

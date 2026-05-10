@@ -13,7 +13,9 @@ import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -266,11 +268,22 @@ class DashboardViewModel(
                         .sortedByDescending { it.transaction.timestamp }
                         .toList()
 
+                    val groups = TimelineService.getGroupedData(
+                        transactions = transactionsWithBalance.take(20),
+                        absoluteHistory = transactionsWithBalance,
+                        groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                        accounts = accounts,
+                        categories = categories,
+                        baseCurrency = baseCurrency,
+                        exchangeRates = rates,
+                        precision = precision
+                    )
+
                     emit(DashboardUiState.Success(
                         accounts = accounts.filter { !it.isArchived },
                         cardDataMap = cardDataMap,
                         allTransactions = allTransactions,
-                        allTransactionsWithBalance = transactionsWithBalance,
+                        recentActivitiesState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
                         allCategories = categories,
                         baseCurrency = baseCurrency,
                         exchangeRates = rates,
@@ -378,7 +391,7 @@ sealed class DashboardUiState {
         val accounts: List<Account>,
         val cardDataMap: Map<String, CardRenderData>,
         val allTransactions: List<Transaction>,
-        val allTransactionsWithBalance: List<TransactionWithBalance>,
+        val recentActivitiesState: TransactionListState,
         val allCategories: List<Category>,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

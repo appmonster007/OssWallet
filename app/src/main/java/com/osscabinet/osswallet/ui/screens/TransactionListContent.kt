@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetDragHandle
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -51,27 +52,21 @@ private fun calculateScrollBottomPadding(): Dp {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListContent(
-    transactionsWithBalance: List<TransactionWithBalance>,
+    listState: TransactionListState,
     accounts: List<Account>,
-    accountMap: Map<String, String>,
-    accountCurrencyMap: Map<String, String>,
     categories: List<Category>,
-    categoryMap: Map<Long, Category>,
     decimalPrecision: Int,
     analyticsState: AnalyticsUiState,
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     savedFilters: List<Filter> = emptyList(),
-    onAddTransactionClick: (Int?, Long?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onMenuClick: () -> Unit = {},
     isTopLevel: Boolean = true,
-    onAccountDetailClick: (String) -> Unit,
     onUpdateFilter: (TransactionFilter) -> Unit,
     onUpdateTimelineRange: (TimelineRange) -> Unit,
     onUpdateRecordsSettings: (TransactionSectionSettings) -> Unit,
-    accountNames: Map<String, String> = emptyMap(),
     onResetToInitial: (() -> Unit)? = null,
     revealedCardIds: List<Long> = emptyList(),
     onItemExpanded: (Long) -> Unit = {},
@@ -83,6 +78,7 @@ fun TransactionListContent(
     onFullSwipeRight: (Long) -> Unit = {},
     is24Hour: Boolean = false
 ) {
+    val accountNames = remember(accounts) { accounts.associate { it.id to it.name } }
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
@@ -155,24 +151,18 @@ fun TransactionListContent(
                 .padding(top = innerPadding.calculateTopPadding())
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (transactionsWithBalance.isEmpty()) {
+            if (listState.isEmpty) {
                 TransactionListEmptyState()
             } else {
                 AeonTransactionList(
-                    transactions = transactionsWithBalance,
-                    accountMap = accountMap,
-                    categoryMap = categoryMap,
+                    listState = listState,
                     onTransactionClick = { onEditTransactionClick(it.id) },
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                     precision = decimalPrecision,
                     useNoteAsHeader = recordsSettings.useNoteAsHeader,
                     showOpeningBalance = recordsSettings.showOpeningBalance,
                     showClosingBalance = recordsSettings.showClosingBalance,
-                    groupBy = recordsSettings.groupBy,
                     baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency ?: "USD",
-                    exchangeRates = (analyticsState as? AnalyticsUiState.Success)?.exchangeRates ?: emptyMap(),
-                    accountCurrencyMap = accountCurrencyMap,
-                    filterAccountId = if (filter.accountIds.size == 1) filter.accountIds.first() else null,
                     revealedCardIds = revealedCardIds,
                     onItemExpanded = onItemExpanded,
                     onItemCollapsed = onItemCollapsed,
@@ -210,31 +200,6 @@ fun TransactionListContentPreview() {
         parentId = null
     )
 
-    val sampleTransaction = Transaction(
-        id = 1L,
-        title = "Weekly Groceries",
-        note = "Weekly groceries from supermarket",
-        amount = BigDecimal("85.50"),
-        timestamp = System.currentTimeMillis(),
-        currency = "USD",
-        transactionType = "expense",
-        accountId = "1",
-        categoryId = 1L
-    )
-
-    val transactions = List(20) { i ->
-        TransactionWithBalance(
-            transaction = sampleTransaction.copy(
-                id = i.toLong(),
-                title = "Transaction $i",
-                note = "Weekly expense \nNote $i",
-                timestamp = System.currentTimeMillis() - (i * 86400000L)
-            ),
-            balanceBefore = BigDecimal("1500.00"),
-            balanceAfter = BigDecimal("1414.50")
-        )
-    }
-
     var theme by remember { mutableStateOf("System") }
     Column {
         Row(
@@ -247,20 +212,15 @@ fun TransactionListContentPreview() {
         }
         OssWalletTheme(theme = theme) {
             TransactionListContent(
-                transactionsWithBalance = transactions,
+                listState = TransactionListState(isEmpty = false),
                 accounts = listOf(sampleAccount),
-                accountMap = mapOf("1" to "Checking"),
-                accountCurrencyMap = mapOf("1" to "USD"),
                 categories = listOf(sampleCategory),
-                categoryMap = mapOf(1L to sampleCategory),
                 decimalPrecision = 2,
                 analyticsState = AnalyticsUiState.Loading,
                 filter = TransactionFilter(),
                 recordsSettings = TransactionSectionSettings(),
-                onAddTransactionClick = { _, _ -> },
                 onEditTransactionClick = {},
                 onBackClick = {},
-                onAccountDetailClick = {},
                 onUpdateFilter = {},
                 onUpdateTimelineRange = { },
                 onUpdateRecordsSettings = {}

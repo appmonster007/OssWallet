@@ -307,9 +307,7 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
 
             RecentActivitiesCard(
-                transactions = renderData.transactions,
-                accountNamesMap = renderData.accountNamesMap,
-                categoryMap = renderData.categoryMap,
+                listState = renderData.listState,
                 config = renderData.config,
                 onUpdate = cb.onUpdate,
                 onTransactionClick = cb.onTransactionClick,

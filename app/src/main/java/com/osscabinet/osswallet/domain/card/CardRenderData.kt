@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
@@ -109,9 +110,7 @@ sealed class CardRenderData {
 
     data class RecentActivities(
         val config: RecentActivitiesCardConfig,
-        val transactions: List<TransactionWithBalance>,
-        val accountNamesMap: Map<String, String>,
-        val categoryMap: Map<Long, com.osscabinet.ossWallet.domain.model.Category>,
+        val listState: TransactionListState,
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val precision: Int

@@ -50,6 +50,7 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
@@ -421,20 +422,13 @@ fun DashboardContent(
             }
 
             1 -> {
-                val accountMap =
-                    remember(state.accounts) { state.accounts.associate { it.id to it.name } }
-                val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
-                val categoryMap = remember(categories) { categories.associateBy { it.id } }
                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                 RecentActivitiesScreen(
-                    allTransactions = state.allTransactionsWithBalance,
-                    accountNamesMap = accountMap,
-                    categoryMap = categoryMap,
+                    listState = state.recentActivitiesState,
                     onRecordsClick = onRecordsClick,
                     onTransactionClick = onEditTransactionClick,
                     baseCurrency = state.baseCurrency,
-                    exchangeRates = state.exchangeRates,
                     contentPadding = PaddingValues(bottom = calculateScrollBottomPadding()),
                     modifier = Modifier.fillMaxSize(),
                     revealedCardIds = revealedCardIds,

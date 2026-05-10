@@ -24,43 +24,18 @@ fun TransactionListFilteredPreview() {
         Category(1, "Food", "Restaurant", -12627531, true, null),
         Category(2, "Transport", "DirectionsCar", -14575885, true, null)
     )
-    
-    val mockTransactions = listOf(
-        TransactionWithBalance(
-            transaction = Transaction(
-                id = 1,
-                title = "Lunch at Burger King",
-                amount = BigDecimal("15.50"),
-                categoryId = 1,
-                timestamp = System.currentTimeMillis(),
-                currency = "USD",
-                transactionType = "expense",
-                accountId = "1",
-                paymentMethod = "Credit Card",
-                payee = "Burger King",
-                note = "Quick lunch"
-            ),
-            balanceBefore = BigDecimal("1000.00"),
-            balanceAfter = BigDecimal("984.50")
-        )
-    )
 
     OssWalletTheme {
         TransactionListContent(
-            transactionsWithBalance = mockTransactions,
+            listState = com.osscabinet.ossWallet.domain.model.TransactionListState(isEmpty = false),
             accounts = mockAccounts,
-            accountMap = mockAccounts.associate { it.id to it.name },
-            accountCurrencyMap = mockAccounts.associate { it.id to it.currencyCode },
             categories = mockCategories,
-            categoryMap = mockCategories.associateBy { it.id },
             decimalPrecision = 2,
             analyticsState = AnalyticsUiState.Success(selectedCurrency = "USD"),
             filter = TransactionFilter(queryPayee = "Burger"),
             recordsSettings = com.osscabinet.ossWallet.data.local.TransactionSectionSettings(),
-            onAddTransactionClick = { _, _ -> },
             onEditTransactionClick = {},
             onBackClick = {},
-            onAccountDetailClick = {},
             onUpdateFilter = {},
             onUpdateTimelineRange = {},
             onUpdateRecordsSettings = {}

@@ -251,21 +251,12 @@ fun OssWalletNavGraph(
                     accountViewModel = accountViewModel,
                     analyticsViewModel = analyticsViewModel,
                     settingsViewModel = settingsViewModel,
-                    onAddTransactionClick = { type, templateId ->
-                        if (templateId != null) {
-                            transactionViewModel.setTemplatePrefill(templateId)
-                            navController.navigate(Screen.AddTransaction.route)
-                        } else {
-                            navController.navigate(Screen.AddTransaction.createRoute(type = type))
-                        }
-                    },
                     onEditTransactionClick = { id -> navController.navigate(Screen.EditTransaction.createRoute(id)) },
                     onCloneTransactionClick = { id ->
                         transactionViewModel.setCloneTransactionId(id)
                         navController.navigate(Screen.AddTransaction.route)
                     },
                     onBackClick = { navController.popBackStack() },
-                    onAccountDetailClick = { id -> navController.navigate(Screen.AccountDetail.createRoute(id)) },
                     templateViewModel = templateViewModel,
                     filterJson = filterJson
                 )

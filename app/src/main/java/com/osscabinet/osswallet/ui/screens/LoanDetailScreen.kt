@@ -59,8 +59,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.AmortizationEntry
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.management.LoanService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -129,18 +130,25 @@ fun LoanDetailScreen(
         )
     )
 
+    val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
+
     // Get loan-related transactions for Activity tab
     val loanTransactions =
-        remember(loan, viewModel.transactions.collectAsStateWithLifecycle().value) {
-            viewModel.getLoanTransactions(loan).map {
-                TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO)
+        remember(loan, absoluteTransactionsWithBalance) {
+            absoluteTransactionsWithBalance.filter { item ->
+                val transaction = item.transaction
+                val accountMatch =
+                    loan.linkedAccountId.isBlank() || transaction.accountId == loan.linkedAccountId
+                val categoryMatch = loan.categoryIds.isEmpty() ||
+                        transaction.categoryId in loan.categoryIds
+                val tagMatch = loan.tags.isEmpty() ||
+                        transaction.tags.any { it in loan.tags }
+                accountMatch && categoryMatch && tagMatch
             }
         }
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-    val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
     val selectedAccount = remember(accounts, loan.linkedAccountId) {
@@ -219,10 +227,22 @@ fun LoanDetailScreen(
                                 }
                             }
                         } else {
+                            val loanListState = remember(loanTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {
+                                val groups = TimelineService.getGroupedData(
+                                    transactions = loanTransactions,
+                                    absoluteHistory = absoluteTransactionsWithBalance,
+                                    groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                                    accounts = accounts,
+                                    categories = categoriesList,
+                                    baseCurrency = baseCurrency,
+                                    exchangeRates = emptyMap(),
+                                    precision = precision
+                                )
+                                TransactionListState(groups = groups, isEmpty = groups.isEmpty())
+                            }
+
                             RecentActivitiesScreen(
-                                allTransactions = loanTransactions,
-                                accountNamesMap = accountNamesMap,
-                                categoryMap = categoryMap,
+                                listState = loanListState,
                                 onRecordsClick = { _ ->
                                     onRecordsClick(
                                         TransactionFilter(
@@ -236,7 +256,6 @@ fun LoanDetailScreen(
                                 },
                                 onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
-                                exchangeRates = emptyMap(),
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
                                 onItemExpanded = { transactionViewModel.onItemExpanded(it) },
@@ -255,8 +274,6 @@ fun LoanDetailScreen(
                                         it
                                     )
                                 },
-                                applyFilter = false,
-                                excludeFuture = false,
                                 precision = precision
                             )
                         }

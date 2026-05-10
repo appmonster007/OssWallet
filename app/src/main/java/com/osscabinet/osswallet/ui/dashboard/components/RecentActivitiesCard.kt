@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
@@ -55,9 +56,7 @@ import java.math.BigDecimal
 
 @Composable
 fun RecentActivitiesCard(
-    transactions: List<TransactionWithBalance>,
-    accountNamesMap: Map<String, String>,
-    categoryMap: Map<Long, Category>,
+    listState: TransactionListState,
     config: RecentActivitiesCardConfig,
     onUpdate: (RecentActivitiesCardConfig) -> Unit,
     onTransactionClick: (Long) -> Unit,
@@ -109,16 +108,12 @@ fun RecentActivitiesCard(
         }
     ) {
         RecentActivitiesScreen(
-            allTransactions = transactions,
-            accountNamesMap = accountNamesMap,
-            categoryMap = categoryMap,
+            listState = listState,
             onRecordsClick = onRecordsClick,
             onTransactionClick = onTransactionClick,
             baseCurrency = baseCurrency,
-            exchangeRates = exchangeRates,
             modifier = Modifier.height(300.dp), // Limit height in card
             showHeader = false, // We use card header
-            applyFilter = false, // Data already filtered by computer
             precision = precision,
             revealedCardIds = emptyList(), // Should be passed if needed
             onItemExpanded = onItemExpanded,
@@ -127,8 +122,7 @@ fun RecentActivitiesCard(
             onClone = onClone,
             onDelete = onDeleteTransaction,
             onSplit = onSplit,
-            onFullSwipeRight = onFullSwipeRight,
-            groupBy = config.groupBy
+            onFullSwipeRight = onFullSwipeRight
         )
     }
 

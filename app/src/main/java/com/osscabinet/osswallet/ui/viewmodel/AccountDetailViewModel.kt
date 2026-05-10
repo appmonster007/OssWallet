@@ -9,8 +9,10 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -142,25 +144,37 @@ class AccountDetailViewModel(
                 // All transactions for this account (Card Input)
                 val accountTransactions = allTransactions.filter { it.accountId == accountId }
 
-                // Filtered transactions for the list tab
-                var filteredTransactions = TransactionFilterService.filter(accountTransactions, currentFilter)
-
-                if (!settings.transactionsSection.showPlannedPayments) {
-                    val now = System.currentTimeMillis()
-                    filteredTransactions = filteredTransactions.filter { it.timestamp <= now }
-                }
-
-                val transactionsWithBalance = computeRunningBalance(
-                    transactions = filteredTransactions,
-                    accountCurrency = account.currencyCode,
-                    exchangeRates = rates
+                // Absolute balances for this account
+                val absoluteTransactionsWithBalance = transactionUseCases.getRecentTransactions(
+                    allTransactions = accountTransactions,
+                    accounts = listOf(account),
+                    exchangeRates = rates,
+                    precision = precision,
+                    limit = Int.MAX_VALUE
                 )
+
+                // Filtered transactions for the list tab
+                val filteredTransactionsWithBalance = TransactionFilterService.filterTransactionsWithBalance(
+                    absoluteTransactionsWithBalance,
+                    if (!settings.transactionsSection.showPlannedPayments) currentFilter.copy(excludeFuture = true) else currentFilter
+                )
+
+                val listState = TimelineService.getGroupedData(
+                    transactions = filteredTransactionsWithBalance,
+                    absoluteHistory = absoluteTransactionsWithBalance,
+                    groupingType = settings.transactionsSection.groupBy,
+                    accounts = accounts,
+                    categories = categories,
+                    baseCurrency = baseCurrency,
+                    exchangeRates = rates,
+                    precision = precision
+                ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
 
                 AccountDetailUiState.Success(
                     profileId = profileId,
                     account = account,
                     allAccountTransactions = accountTransactions,
-                    transactionsWithBalance = transactionsWithBalance,
+                    listState = listState,
                     allCategories = categories,
                     baseCurrency = baseCurrency,
                     exchangeRates = rates,
@@ -177,37 +191,6 @@ class AccountDetailViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AccountDetailUiState.Loading
         )
-
-    private fun computeRunningBalance(
-        transactions: List<Transaction>,
-        accountCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
-    ): List<TransactionWithBalance> {
-        val sorted = transactions.sortedByDescending { it.timestamp }
-        val totalBalance = sorted.fold(BigDecimal.ZERO) { acc, tx ->
-            acc + CurrencyService.convertAmount(
-                tx.amount,
-                tx.currency,
-                accountCurrency,
-                exchangeRates,
-                10
-            )
-        }
-        var currentBalance = totalBalance
-        return sorted.map { tx ->
-            val converted = CurrencyService.convertAmount(
-                tx.amount,
-                tx.currency,
-                accountCurrency,
-                exchangeRates,
-                10
-            )
-            val balanceAfter = currentBalance
-            val balanceBefore = currentBalance - converted
-            currentBalance = balanceBefore
-            TransactionWithBalance(tx, balanceBefore, balanceAfter)
-        }
-    }
 }
 
 sealed class AccountDetailUiState {
@@ -216,7 +199,7 @@ sealed class AccountDetailUiState {
         val profileId: Int,
         val account: Account,
         val allAccountTransactions: List<Transaction>,
-        val transactionsWithBalance: List<TransactionWithBalance> = emptyList(),
+        val listState: TransactionListState,
         val allCategories: List<Category> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,

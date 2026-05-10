@@ -51,8 +51,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.BudgetTrackType
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -100,15 +101,19 @@ fun BudgetDetailScreen(
     )
 
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
-    val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
     val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-    val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
+    val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
+
     val budgetTransactions =
-        remember(budget, viewModel.transactions.collectAsStateWithLifecycle().value) {
-            viewModel.getBudgetTransactions(budget).map {
-                TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO)
+        remember(budget, absoluteTransactionsWithBalance) {
+            absoluteTransactionsWithBalance.filter { item ->
+                val transaction = item.transaction
+                val accountMatch = budget.accountIds.isEmpty() || transaction.accountId in budget.accountIds
+                val categoryMatch = budget.categoryIds.isEmpty() || transaction.categoryId in budget.categoryIds
+                val tagMatch = budget.tags.isEmpty() || transaction.tags.any { it in budget.tags }
+                accountMatch && categoryMatch && tagMatch
             }
         }
 
@@ -304,10 +309,22 @@ fun BudgetDetailScreen(
                                 if (budget.trackTypes.first() == BudgetTrackType.INCOME) "income" else "expense"
                             } else null
 
+                            val budgetListState = remember(budgetTransactions, absoluteTransactionsWithBalance, precision, baseCurrency) {
+                                val groups = TimelineService.getGroupedData(
+                                    transactions = budgetTransactions,
+                                    absoluteHistory = absoluteTransactionsWithBalance,
+                                    groupingType = com.osscabinet.ossWallet.data.local.TransactionGroupingType.BY_DAY,
+                                    accounts = accounts,
+                                    categories = categoriesList,
+                                    baseCurrency = baseCurrency,
+                                    exchangeRates = emptyMap(),
+                                    precision = precision
+                                )
+                                TransactionListState(groups = groups, isEmpty = groups.isEmpty())
+                            }
+
                             RecentActivitiesScreen(
-                                allTransactions = budgetTransactions,
-                                accountNamesMap = accountNamesMap,
-                                categoryMap = categoryMap,
+                                listState = budgetListState,
                                 onRecordsClick = { _ ->
                                     val (start, end) = BudgetService.getCurrentPeriodRange(
                                         budget,
@@ -325,7 +342,6 @@ fun BudgetDetailScreen(
                                 },
                                 onTransactionClick = onTransactionClick,
                                 baseCurrency = baseCurrency,
-                                exchangeRates = emptyMap(),
                                 contentPadding = PaddingValues(0.dp),
                                 revealedCardIds = revealedCardIds,
                                 onItemExpanded = { transactionViewModel.onItemExpanded(it) },
@@ -344,8 +360,6 @@ fun BudgetDetailScreen(
                                         it
                                     )
                                 },
-                                applyFilter = false,
-                                excludeFuture = false,
                                 precision = precision
                             )
                         }

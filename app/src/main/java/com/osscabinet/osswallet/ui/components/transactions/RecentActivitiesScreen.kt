@@ -27,8 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.data.local.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -43,15 +45,12 @@ import java.util.Locale
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecentActivitiesScreen(
-    allTransactions: List<TransactionWithBalance>,
-    accountNamesMap: Map<String, String>,
-    categoryMap: Map<Long, Category>,
+    listState: TransactionListState,
     onRecordsClick: (TransactionFilter) -> Unit,
+    modifier: Modifier = Modifier,
     onTransactionClick: (Long) -> Unit = {},
     baseCurrency: String = "USD",
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
     contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
-    modifier: Modifier = Modifier,
     revealedCardIds: List<Long> = emptyList(),
     onItemExpanded: (Long) -> Unit = {},
     onItemCollapsed: (Long) -> Unit = {},
@@ -60,32 +59,12 @@ fun RecentActivitiesScreen(
     onDelete: (Long) -> Unit = {},
     onSplit: (Long) -> Unit = {},
     onFullSwipeRight: (Long) -> Unit = {},
-    limit: Int = 20,
-    days: Int = 7,
-    applyFilter: Boolean = true,
-    excludeFuture: Boolean = true,
     precision: Int = 2,
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
     headerTitle: String = "Recent Activities",
-    is24Hour: Boolean = false,
-    groupBy: TransactionGroupingType = TransactionGroupingType.BY_DAY
+    is24Hour: Boolean = false
 ) {
-    // Apply recent transactions filter if enabled
-    val recentTransactions = if (applyFilter) {
-        TransactionFilterService.filterToRecent(
-            items = allTransactions,
-            getTimestamp = { it.transaction.timestamp },
-            limit = limit,
-            days = days,
-            excludeFuture = excludeFuture
-        )
-    } else {
-        allTransactions
-    }
-
-    val groupedTransactions =
-        TimelineService.groupTransactions(recentTransactions, groupBy)
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -138,7 +117,7 @@ fun RecentActivitiesScreen(
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            if (recentTransactions.isEmpty()) {
+            if (listState.isEmpty) {
                 item {
                     Box(
                         modifier = Modifier
@@ -149,22 +128,12 @@ fun RecentActivitiesScreen(
                         Text(
                             "No recent activities",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         )
                     }
                 }
             } else {
-                groupedTransactions.forEach { (key, groupTransactions) ->
-                    val headerData = TimelineService.getHeaderData(
-                        groupKey = key,
-                        groupTransactions = groupTransactions,
-                        allTransactions = allTransactions,
-                        groupingType = groupBy,
-                        baseCurrency = baseCurrency,
-                        exchangeRates = exchangeRates,
-                        precision = precision
-                    )
-
+                listState.groups.forEach { group ->
                     stickyHeader {
                         Column(
                             modifier = Modifier
@@ -172,26 +141,24 @@ fun RecentActivitiesScreen(
                                 .background(MaterialTheme.colorScheme.background)
                         ) {
                             TransactionHeader(
-                                title = headerData.title,
-                                subtitle = headerData.subtitle,
-                                incomeByCurrency = headerData.incomeByCurrency,
-                                expenseByCurrency = headerData.expenseByCurrency,
-                                closingBalancesByCurrency = headerData.closingBalancesByCurrency,
-                                allCurrencies = headerData.allCurrencies,
-                                incomeBase = headerData.incomeBase,
-                                expenseBase = headerData.expenseBase,
-                                netBase = headerData.netBase,
-                                totalClosingBalanceBase = headerData.totalClosingBalanceBase,
+                                title = group.headerData.title,
+                                subtitle = group.headerData.subtitle,
+                                incomeByCurrency = group.headerData.incomeByCurrency,
+                                expenseByCurrency = group.headerData.expenseByCurrency,
+                                closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
+                                allCurrencies = group.headerData.allCurrencies,
+                                incomeBase = group.headerData.incomeBase,
+                                expenseBase = group.headerData.expenseBase,
+                                netBase = group.headerData.netBase,
+                                totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                                 baseCurrency = baseCurrency,
                                 precision = precision
                             )
                         }
                     }
 
-                    items(groupTransactions, key = { it.transaction.id }) { item ->
-                        val transaction = item.transaction
-                        val category = categoryMap[transaction.categoryId]
-                        val balanceBeforeValue = item.balanceAfter.subtract(transaction.amount)
+                    items(group.transactions, key = { it.item.transaction.id }) { enriched ->
+                        val transaction = enriched.item.transaction
 
                         SwipeableTransactionItem(
                             transaction = transaction,
@@ -206,21 +173,21 @@ fun RecentActivitiesScreen(
                             onSplit = { onSplit(transaction.id) }
                         ) {
                             AeonTransactionItem(
-                                category = category?.name ?: "Unknown",
-                                account = accountNamesMap[transaction.accountId] ?: "Unknown",
+                                category = enriched.categoryName,
+                                account = enriched.accountName,
                                 amount = formatCurrencyRight(
                                     transaction.amount,
                                     transaction.currency,
                                     precision
                                 ),
                                 balanceBefore = formatCurrencyRight(
-                                    balanceBeforeValue,
-                                    transaction.currency,
+                                    enriched.item.balanceBefore,
+                                    enriched.accountCurrency,
                                     precision
                                 ),
                                 balanceAfter = formatCurrencyRight(
-                                    item.balanceAfter,
-                                    transaction.currency,
+                                    enriched.item.balanceAfter,
+                                    enriched.accountCurrency,
                                     precision
                                 ),
                                 type = if (transaction.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
@@ -230,12 +197,10 @@ fun RecentActivitiesScreen(
                                 ).format(Date(transaction.timestamp)),
                                 note = transaction.note,
                                 tags = transaction.tags,
-                                icon = getIconByName(category?.iconName),
-                                iconBg = category?.let { Color(it.colorHex) },
-                                precision = precision,
-                                status = transaction.status,
-                                onClick = { onTransactionClick(transaction.id) }
-                            )
+                                icon = getIconByName(enriched.categoryIcon),
+                                iconBg = Color(enriched.categoryColor),
+                                status = transaction.status
+                            ) { onTransactionClick(transaction.id) }
                         }
                     }
                 }

@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
@@ -16,9 +17,6 @@ class RecentActivitiesCardComputer(
     override val supportedType = CardType.RECENT_ACTIVITIES
 
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
-        val accountNamesMap = input.accounts.associate { it.id to it.name }
-        val categoryMap = input.categories.associateBy { it.id }
-
         val mergedFilter = input.filter.copy(
             accountIds = if (config.filter.accountIds.isNotEmpty())
                 input.filter.accountIds.intersect(config.filter.accountIds.toSet()).toList()
@@ -31,11 +29,20 @@ class RecentActivitiesCardComputer(
             .first()
             .map { TransactionWithBalance(it, BigDecimal.ZERO, BigDecimal.ZERO) }
 
+        val groups = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.getGroupedData(
+            transactions = recentTransactions,
+            absoluteHistory = recentTransactions,
+            groupingType = config.groupBy,
+            accounts = input.accounts,
+            categories = input.categories,
+            baseCurrency = input.baseCurrency,
+            exchangeRates = input.exchangeRates,
+            precision = input.precision
+        )
+
         return CardRenderData.RecentActivities(
             config = config,
-            transactions = recentTransactions,
-            accountNamesMap = accountNamesMap,
-            categoryMap = categoryMap,
+            listState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
             baseCurrency = input.baseCurrency,
             exchangeRates = input.exchangeRates,
             precision = input.precision

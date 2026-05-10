@@ -29,57 +29,88 @@ object TransactionFilterService {
         val now = System.currentTimeMillis()
 
         return transactions.filter { tx ->
-            // 0. Future exclusion
-            if (filter.excludeFuture && tx.timestamp > now) return@filter false
-
-            // 1. Timeline check
-            val inTimeRange = (startTime == null || tx.timestamp >= startTime) &&
-                    (endTime == null || tx.timestamp <= endTime)
-            if (!inTimeRange) return@filter false
-
-            // 2. Attribute checks
-            val matchesAccounts = filter.accountIds.isEmpty() || tx.accountId in filter.accountIds
-            val matchesCategories = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
-            val matchesType = filter.transactionType == null || tx.transactionType == filter.transactionType
-
-            // Amount check (absolute value for UI consistency)
-            val matchesAmount = (filter.minAmount == null || tx.amount.abs() >= filter.minAmount) &&
-                    (filter.maxAmount == null || tx.amount.abs() <= filter.maxAmount)
-
-            val matchesStatuses = filter.statuses.isEmpty() || tx.status in filter.statuses
-            val matchesCurrencies = filter.currencies.isEmpty() || tx.currency in filter.currencies
-            val matchesTags = filter.tags.isEmpty() || tx.tags.any { it in filter.tags }
-
-            // Payee match
-            val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
-                try { Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch (e: Exception) { false }
-            } else if (!filter.queryPayee.isNullOrBlank()) {
-                tx.payee.contains(filter.queryPayee, ignoreCase = true)
-            } else true
-
-            // Note match
-            val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
-                try { Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch (e: Exception) { false }
-            } else if (!filter.queryNote.isNullOrBlank()) {
-                tx.note.contains(filter.queryNote, ignoreCase = true)
-            } else true
-
-            // Warranty check
-            val matchesWarranty = when (filter.hasWarranty) {
-                true -> tx.warrantyExpiration != null
-                false -> tx.warrantyExpiration == null
-                null -> true
-            }
-
-            val inWarrantyRange = (filter.warrantyExpirationStart == null || (tx.warrantyExpiration ?: 0) >= filter.warrantyExpirationStart) &&
-                    (filter.warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= filter.warrantyExpirationEnd)
-
-            val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
-
-            matchesAccounts && matchesCategories && matchesType && matchesAmount &&
-                    matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
-                    matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags
+            matches(tx, filter, startTime, endTime, now)
         }
+    }
+
+    fun matches(
+        tx: Transaction,
+        filter: TransactionFilter,
+        startTime: Long? = null,
+        endTime: Long? = null,
+        now: Long = System.currentTimeMillis()
+    ): Boolean {
+        // 0. Future exclusion
+        if (filter.excludeFuture && tx.timestamp > now) return false
+
+        // 1. Timeline check
+        val effectiveStartTime: Long?
+        val effectiveEndTime: Long?
+        if (startTime == null && endTime == null) {
+            val (s, e) = TimelineService.getDateRange(filter.timelineRange)
+            effectiveStartTime = s
+            effectiveEndTime = e
+        } else {
+            effectiveStartTime = startTime
+            effectiveEndTime = endTime
+        }
+
+        val inTimeRange = (effectiveStartTime == null || tx.timestamp >= effectiveStartTime) &&
+                (effectiveEndTime == null || tx.timestamp <= effectiveEndTime)
+        if (!inTimeRange) return false
+
+        // 2. Attribute checks
+        val matchesAccounts = filter.accountIds.isEmpty() || tx.accountId in filter.accountIds
+        val matchesCategories = filter.categoryIds.isEmpty() || tx.categoryId in filter.categoryIds
+        val matchesType = filter.transactionType == null || tx.transactionType == filter.transactionType
+
+        // Amount check (absolute value for UI consistency)
+        val matchesAmount = (filter.minAmount == null || tx.amount.abs() >= filter.minAmount) &&
+                (filter.maxAmount == null || tx.amount.abs() <= filter.maxAmount)
+
+        val matchesStatuses = filter.statuses.isEmpty() || tx.status in filter.statuses
+        val matchesCurrencies = filter.currencies.isEmpty() || tx.currency in filter.currencies
+        val matchesTags = filter.tags.isEmpty() || tx.tags.any { it in filter.tags }
+
+        // Payee match
+        val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
+            try { Regex(filter.queryPayee, RegexOption.IGNORE_CASE).containsMatchIn(tx.payee) } catch (e: Exception) { false }
+        } else if (!filter.queryPayee.isNullOrBlank()) {
+            tx.payee.contains(filter.queryPayee, ignoreCase = true)
+        } else true
+
+        // Note match
+        val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
+            try { Regex(filter.queryNote, RegexOption.IGNORE_CASE).containsMatchIn(tx.note) } catch (e: Exception) { false }
+        } else if (!filter.queryNote.isNullOrBlank()) {
+            tx.note.contains(filter.queryNote, ignoreCase = true)
+        } else true
+
+        // Warranty check
+        val matchesWarranty = when (filter.hasWarranty) {
+            true -> tx.warrantyExpiration != null
+            false -> tx.warrantyExpiration == null
+            null -> true
+        }
+
+        val inWarrantyRange = (filter.warrantyExpirationStart == null || (tx.warrantyExpiration ?: 0) >= filter.warrantyExpirationStart) &&
+                (filter.warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= filter.warrantyExpirationEnd)
+
+        val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
+
+        return matchesAccounts && matchesCategories && matchesType && matchesAmount &&
+                matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
+                matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags
+    }
+
+    fun filterTransactionsWithBalance(
+        items: List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>,
+        filter: TransactionFilter
+    ): List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance> {
+        val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
+        val now = System.currentTimeMillis()
+
+        return items.filter { matches(it.transaction, filter, startTime, endTime, now) }
     }
 
     /**

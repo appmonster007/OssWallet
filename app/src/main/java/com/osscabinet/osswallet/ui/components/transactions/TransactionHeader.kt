@@ -53,6 +53,11 @@ fun TransactionHeader(
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
     val outlineColor = MaterialTheme.colorScheme.outline
     val dividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val balanceWeight = when {
+        showOpeningBalance && showClosingBalance -> 2f
+        showOpeningBalance || showClosingBalance -> 1f
+        else -> 0f
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -95,24 +100,20 @@ fun TransactionHeader(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(modifier = Modifier.width(40.dp))
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        listOf("INCOME", "EXPENSE", "NET").forEach { label ->
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 7.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 0.5.sp
-                                ),
-                                color = outlineColor.copy(alpha = 0.5f),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                    listOf("INCOME", "EXPENSE", "NET").forEach { label ->
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 7.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = outlineColor.copy(alpha = 0.5f),
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.End
+                        )
                     }
-                    if (showOpeningBalance || showClosingBalance) {
+                    if (balanceWeight > 0) {
                         Text(
                             "BALANCE",
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -121,7 +122,7 @@ fun TransactionHeader(
                                 letterSpacing = 0.5.sp
                             ),
                             color = outlineColor.copy(alpha = 0.5f),
-                            modifier = Modifier.width(70.dp),
+                            modifier = Modifier.weight(balanceWeight),
                             textAlign = TextAlign.End
                         )
                     }
@@ -163,33 +164,31 @@ fun TransactionHeader(
                             )
                         }
                     }
-                    Row(
+                    Text(
+                        formatCurrencyRight(incomeBase, baseCurrency, precision, shorten = true),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                        color = positiveColor,
                         modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            formatCurrencyRight(incomeBase, baseCurrency, precision, shorten = true),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                            color = positiveColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            formatCurrencyRight(expenseBase, baseCurrency, precision, shorten = true),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                            color = negativeColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            formatCurrencyRight(netBase, baseCurrency, precision, shorten = true),
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
-                            color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                        textAlign = TextAlign.End
+                    )
+                    Text(
+                        formatCurrencyRight(expenseBase, baseCurrency, precision, shorten = true),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                        color = negativeColor,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
+                    Text(
+                        formatCurrencyRight(netBase, baseCurrency, precision, shorten = true),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 9.sp),
+                        color = if (netBase >= BigDecimal.ZERO) positiveColor else negativeColor,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
                     val openingBaseText = formatCurrencyRight(totalOpeningBalanceBase, baseCurrency, precision, shorten = true)
                     val closingBaseText = formatCurrencyRight(totalClosingBalanceBase, baseCurrency, precision, shorten = true)
 
-                    if (showOpeningBalance || showClosingBalance) {
+                    if (balanceWeight > 0) {
                         val balanceText = when {
                             showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
                             showOpeningBalance -> openingBaseText
@@ -201,9 +200,11 @@ fun TransactionHeader(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp
                             ),
-                            modifier = Modifier.width(70.dp),
+                            modifier = Modifier.weight(balanceWeight),
                             textAlign = TextAlign.End,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -235,34 +236,32 @@ fun TransactionHeader(
                                     color = outlineColor.copy(alpha = 0.8f)
                                 )
 
-                                Row(
+                                Text(
+                                    formatCurrencyRight(inc, curr, precision, shorten = true),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = positiveColor.copy(alpha = 0.7f),
                                     modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        formatCurrencyRight(inc, curr, precision, shorten = true),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = positiveColor.copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        formatCurrencyRight(exp, curr, precision, shorten = true),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = negativeColor.copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        formatCurrencyRight(net, curr, precision, shorten = true),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 9.sp
-                                        ),
-                                        color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    formatCurrencyRight(exp, curr, precision, shorten = true),
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    color = negativeColor.copy(alpha = 0.7f),
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    formatCurrencyRight(net, curr, precision, shorten = true),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp
+                                    ),
+                                    color = (if (net >= BigDecimal.ZERO) positiveColor else negativeColor).copy(alpha = 0.7f),
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.End
+                                )
 
-                                if (showOpeningBalance || showClosingBalance) {
+                                if (balanceWeight > 0) {
                                     val balAfterText = if (balAfter != null) formatCurrencyRight(balAfter, curr, precision, shorten = true) else "0.00 $curr"
                                     val balBeforeText = formatCurrencyRight(balBefore, curr, precision, shorten = true)
 
@@ -278,9 +277,11 @@ fun TransactionHeader(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 9.sp
                                         ),
-                                        modifier = Modifier.width(70.dp),
+                                        modifier = Modifier.weight(balanceWeight),
                                         textAlign = TextAlign.End,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }

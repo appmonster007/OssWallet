@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.*
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import com.osscabinet.ossWallet.ui.util.isDark
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
@@ -282,7 +282,7 @@ fun AccountManagementListItem(
                     color = accountColor
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+                        val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
                         Icon(
                             icon,
                             contentDescription = null,

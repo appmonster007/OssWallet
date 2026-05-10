@@ -72,7 +72,7 @@ fun AeonHeroHeader(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        AccountIconMap[iconName] ?: Icons.Rounded.Category,
+                        AppIconMap[iconName] ?: Icons.Rounded.Category,
                         contentDescription = null,
                         modifier = Modifier.size(40.dp),
                         tint = if (currentAccentColor.isDark()) Color.White else Color.Black
@@ -535,7 +535,7 @@ fun VisualIdentitySection(
 ) {
     val presetColors = listOf("#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C", "#E65100", "#006064", "#212121", "#795548", "#607D8B")
     var iconSearchQuery by remember { mutableStateOf("") }
-    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AccountIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
+    val filteredIcons = if (iconSearchQuery.isBlank()) emptyList() else AppIconMap.keys.filter { it.contains(iconSearchQuery, ignoreCase = true) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showAllIcons by remember { mutableStateOf(false) }
 
@@ -572,7 +572,7 @@ fun VisualIdentitySection(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         filteredIcons.forEach { name ->
-                            val icon = AccountIconMap[name]!!
+                            val icon = AppIconMap[name]!!
                             val isSelected = selectedIconName == name
                             val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                             Surface(
@@ -585,7 +585,7 @@ fun VisualIdentitySection(
                             }
                         }
                     }
-                } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AccountIconMap.containsKey(selectedIconName)) {
+                } else if (iconSearchQuery.isBlank() && selectedIconName.isNotEmpty() && AppIconMap.containsKey(selectedIconName)) {
                     // Show currently selected icon if search is blank
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
@@ -595,7 +595,7 @@ fun VisualIdentitySection(
                             color = accentColor,
                             contentColor = if (accentColor.isDark()) Color.White else Color.Black
                         ) {
-                            Box(contentAlignment = Alignment.Center) { Icon(AccountIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
+                            Box(contentAlignment = Alignment.Center) { Icon(AppIconMap[selectedIconName]!!, contentDescription = null, modifier = Modifier.size(24.dp)) }
                         }
                         Text(selectedIconName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
                     }
@@ -694,7 +694,7 @@ fun VisualIdentitySection(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        AccountIconMap.forEach { (name, icon) ->
+                        AppIconMap.forEach { (name, icon) ->
                             val isSelected = selectedIconName == name
                             val accentColor = try { Color(android.graphics.Color.parseColor(accentColorHex)) } catch (e: Exception) { Color(0xFF004D5F) }
                             Surface(

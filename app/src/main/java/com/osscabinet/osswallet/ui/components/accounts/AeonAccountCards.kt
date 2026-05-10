@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -51,7 +51,7 @@ fun AeonAccountCardSmall(
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     Surface(
         modifier = modifier
@@ -124,7 +124,7 @@ fun AeonAccountCardMedium(
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     Surface(
         modifier = modifier
@@ -210,7 +210,7 @@ fun AeonAccountCardLarge(
     val accountColor = try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     val containerColor = accountColor.toContainerColor(isDarkTheme, isAmoled)
     val contentColor = accountColor.toOnContainerColor(isDarkTheme, isAmoled)
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
     
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
@@ -401,7 +401,7 @@ fun AccountSelection(
                             idMapper = { it.id },
                             labelMapper = { it.name },
                             detailMapper = { it.structureType },
-                            iconMapper = { AccountIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
+                            iconMapper = { AppIconMap[it.icon] ?: Icons.Rounded.AccountBalance },
                             colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
                         )
                     }

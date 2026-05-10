@@ -15,7 +15,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 
 /**
  * Full-screen selection for Transaction Status.
@@ -64,7 +64,7 @@ fun StatusSelection(
                             idMapper = { it.name },
                             labelMapper = { it.displayName },
                             detailMapper = { it.description },
-                            iconMapper = { AccountIconMap[it.iconName] ?: Icons.Rounded.CheckCircle },
+                            iconMapper = { AppIconMap[it.iconName] ?: Icons.Rounded.CheckCircle },
                             colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
                         )
                     }

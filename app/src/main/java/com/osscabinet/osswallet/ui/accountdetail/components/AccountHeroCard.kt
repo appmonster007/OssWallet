@@ -43,7 +43,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardFilterButton
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -82,7 +82,7 @@ fun AccountHeroCard(
         MaterialTheme.colorScheme.primary
     }
 
-    val icon = AccountIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     val balanceInBase = CurrencyService.convertAmount(
         amount = balance,

@@ -52,7 +52,7 @@ fun TemplateSelection(
                 modifier = Modifier
                     .padding(padding)
                     .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AeonSearchField(
                     query = query,

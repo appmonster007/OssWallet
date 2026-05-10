@@ -248,7 +248,7 @@ fun TagSelectionContent(
             Box(modifier = Modifier.weight(1f)) {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     filteredTags.forEach { tag ->
                         val isSelected = isSelectionModeEnabled && tag.name in currentSelection

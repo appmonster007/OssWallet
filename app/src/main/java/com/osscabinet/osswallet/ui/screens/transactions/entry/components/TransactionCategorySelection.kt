@@ -46,7 +46,8 @@ fun TransactionCategorySelection(
             Column(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AeonSearchField(
                     query = query,
@@ -54,10 +55,11 @@ fun TransactionCategorySelection(
                     placeholder = "Search categories…"
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 Box(modifier = Modifier.weight(1f, fill = false)) {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         if (query.isBlank()) {
                             AeonHierarchicalHybridSelector(
                                 items = categories,

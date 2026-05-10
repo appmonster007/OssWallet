@@ -66,7 +66,7 @@ fun EntrySelectionCard(
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
         border = BorderStroke(borderWidth, borderColor),
         modifier = modifier.fillMaxWidth()

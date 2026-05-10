@@ -19,11 +19,11 @@ sealed class Screen(val route: String) {
         }
     }
     object AddTransaction : Screen("add") {
-        fun createRoute(accountId: String? = null, type: Int? = null, template: String? = null): String {
+        fun createRoute(accountId: String? = null, type: Int? = null, templateId: Long? = null): String {
             val params = mutableListOf<String>()
             accountId?.let { params.add("accountId=$it") }
             type?.let { params.add("type=$it") }
-            template?.let { params.add("template=$it") }
+            templateId?.let { params.add("templateId=$it") }
             return if (params.isEmpty()) "add" else "add?${params.joinToString("&")}"
         }
     }

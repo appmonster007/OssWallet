@@ -29,7 +29,7 @@ fun TransactionEntryScreen(
     transactionId: Long? = null,
     accountId: String? = null,
     initialType: Int = 0,
-    initialTemplate: String? = null,
+    initialTemplateId: Long? = null,
     prefillDto: com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO? = null,
     viewModel: TransactionEntryViewModel,
     onBackClick: () -> Unit
@@ -40,7 +40,7 @@ fun TransactionEntryScreen(
             transactionId = transactionId,
             accountId = accountId,
             initialType = initialType,
-            initialTemplate = initialTemplate,
+            initialTemplateId = initialTemplateId,
             prefillDto = prefillDto
         )
     }
@@ -102,7 +102,7 @@ fun TransactionEntryScreen(
                         onClick = {
                             viewModel.saveTransaction { viewModel.onEvent(TransactionEntryEvent.TriggerNavigation) }
                         },
-                        enabled = state.canSave,
+                        enabled = state.canSave && !state.navTriggered,
                         modifier = Modifier.padding(end = 8.dp),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),

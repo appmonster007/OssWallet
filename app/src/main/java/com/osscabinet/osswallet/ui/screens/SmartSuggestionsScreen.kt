@@ -249,7 +249,7 @@ private fun SuggestionListItem(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Save Planned Payment", style = MaterialTheme.typography.labelSmall)
+                            Text("Save Planned", style = MaterialTheme.typography.labelSmall)
                         }
                         Text(
                             "Auto-creates records for future occurrences",

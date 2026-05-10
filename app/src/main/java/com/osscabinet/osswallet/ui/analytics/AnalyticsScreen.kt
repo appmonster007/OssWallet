@@ -37,7 +37,7 @@ fun AnalyticsScreen(
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
-    onAddClick: (Int?, String?) -> Unit,
+    onAddClick: (Int?, Long?) -> Unit,
     cardComputerRegistry: CardComputerRegistry
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -151,9 +151,9 @@ fun AnalyticsScreen(
                             TransactionFabMenu(
                                 isExpanded = isFabExpanded,
                                 templates = allTemplates,
-                                onAddClick = { type, name ->
+                                onAddClick = { type, templateId ->
                                     isFabExpanded = false
-                                    onAddClick(type, name)
+                                    onAddClick(type, templateId)
                                 }
                             )
                         }

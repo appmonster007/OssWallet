@@ -94,7 +94,7 @@ fun DashboardScreen(
     onBackClick: () -> Unit = {},
     isTopLevelParam: Boolean = false,
     onRecordsClick: (com.osscabinet.ossWallet.ui.navigation.RecordsFilterContext) -> Unit,
-    onAddClick: (Int?, String?) -> Unit,
+    onAddClick: (Int?, Long?) -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
@@ -292,9 +292,9 @@ fun DashboardScreen(
                         isExpanded = isFabExpanded,
                         templates = allTemplates,
                         categories = allCategories,
-                        onAddClick = { type, name ->
+                        onAddClick = { type, templateId ->
                             isFabExpanded = false
-                            navigate { onAddClick(type, name) }
+                            navigate { onAddClick(type, templateId) }
                         }
                     )
                 }

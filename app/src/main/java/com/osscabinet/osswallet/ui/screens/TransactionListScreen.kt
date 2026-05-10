@@ -35,7 +35,7 @@ fun TransactionListScreen(
     accountViewModel: com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel,
     analyticsViewModel: com.osscabinet.ossWallet.ui.viewmodel.AnalyticsViewModel,
     settingsViewModel: com.osscabinet.ossWallet.ui.viewmodel.SettingsViewModel,
-    onAddTransactionClick: (Int?, String?) -> Unit,
+    onAddTransactionClick: (Int?, Long?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onBackClick: () -> Unit,
@@ -103,7 +103,7 @@ fun TransactionListScreen(
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
-        onAddTransactionClick = { type, template -> navigate { onAddTransactionClick(type, template) } },
+        onAddTransactionClick = { type, templateId -> navigate { onAddTransactionClick(type, templateId) } },
         onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
         onBackClick = {
             navigate {

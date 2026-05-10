@@ -3,6 +3,9 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -11,10 +14,12 @@ import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.viewmodel.BaseViewModel
@@ -38,7 +43,8 @@ class TransactionEntryViewModel(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
-    private val templateRepository: TemplateRepository
+    private val templateRepository: TemplateRepository,
+    private val plannedPaymentRepository: PlannedPaymentRepository
 ) : BaseViewModel(settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
@@ -53,7 +59,7 @@ class TransactionEntryViewModel(
         transactionId: Long? = null,
         accountId: String? = null,
         initialType: Int = 0,
-        initialTemplate: String? = null,
+        initialTemplateId: Long? = null,
         prefillDto: TransactionPrefillDTO? = null
     ) {
         viewModelScope.launch {
@@ -76,8 +82,8 @@ class TransactionEntryViewModel(
                 transactions.find { it.id == transactionId }
             } else null
 
-            val linkedTxs = if (isEditMode && transactionId != null) {
-                transactionUseCases.getLinkedTransactions(transactionId).first()
+            val linkedTxs = if (isEditMode) {
+                transactionUseCases.getLinkedTransactions(transactionId!!).first()
             } else emptyList()
 
             // Set default account if provided
@@ -102,16 +108,23 @@ class TransactionEntryViewModel(
                 selectedAccount = selectedAccount,
                 selectedCurrency = selectedAccount?.currencyCode ?: "",
                 transactionType = initialType,
-                selectedTemplateName = initialTemplate,
+                selectedTemplateName = null, // Will be set by applyPrefill
                 selectedDateMillis = initialTimestamp,
                 selectedCategoryId = defaultCategory?.id ?: 1002L
             )
+
+            // Initialize from template ID if provided
+            if (initialTemplateId != null && initialTemplateId != -1L) {
+                templates.find { it.id == initialTemplateId }?.let { template ->
+                    applyPrefill(TransactionPrefillDTO.fromTemplate(template))
+                }
+            }
 
             // Initialize from existing transaction or prefill DTO
             if (isEditMode && existingTransaction != null) {
                 initializeFromTransaction(existingTransaction, accounts, linkedTxs)
             } else if (prefillDto != null) {
-                initializeFromPrefill(prefillDto, accounts)
+                applyPrefill(prefillDto)
             }
         }
     }
@@ -152,7 +165,7 @@ class TransactionEntryViewModel(
             payee = transaction.payee,
             note = transaction.note,
             warrantyExpirationMillis = transaction.warrantyExpiration
-                ?: System.currentTimeMillis() + 31536000000L,
+                ?: (System.currentTimeMillis() + 31536000000L),
             isWarrantyEnabled = transaction.warrantyExpiration != null,
             locationCoords = transaction.latitude?.let { lat ->
                 transaction.longitude?.let { lng -> lat to lng }
@@ -165,9 +178,13 @@ class TransactionEntryViewModel(
         )
     }
 
-    private fun initializeFromPrefill(prefillDto: TransactionPrefillDTO, accounts: List<Account>) {
-        val prefillAcc = accounts.find { it.id == prefillDto.accountId }
-        val txType = when (prefillDto.transactionType) {
+    private fun applyPrefill(prefill: TransactionPrefillDTO) {
+        val currentState = _state.value
+        val accounts = currentState.accounts
+        
+        val prefillAcc = accounts.find { it.id == prefill.accountId } ?: currentState.selectedAccount
+        
+        val txType = when (prefill.transactionType) {
             "transfer" -> 2
             "income" -> 1
             else -> 0
@@ -175,35 +192,46 @@ class TransactionEntryViewModel(
 
         var targetAcc: Account? = null
         if (txType == 2) {
-            targetAcc = prefillDto.targetAccountId?.let { accounts.find { acc -> acc.id == it } }
+            targetAcc = prefill.targetAccountId?.let { id -> accounts.find { acc -> acc.id == id } }
+                ?: currentState.targetAccount
         }
 
-        _state.value = _state.value.copy(
-            title = prefillDto.title,
-            amount = prefillDto.amount.toBigDecimalOrNull()?.abs()?.toPlainString()
-                ?: prefillDto.amount,
-            selectedCategoryId = prefillDto.categoryId,
-            selectedTags = prefillDto.tags,
-            paymentMethod = prefillDto.paymentMethod,
-            status = prefillDto.status,
+        _state.value = currentState.copy(
+            title = prefill.title,
+            amount = prefill.amount.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString()
+                ?: prefill.amount,
+            selectedCategoryId = prefill.categoryId,
+            selectedTags = prefill.tags,
+            paymentMethod = prefill.paymentMethod,
+            status = prefill.status,
             transactionType = txType,
-            selectedDateMillis = System.currentTimeMillis(),
-            payee = prefillDto.payee,
-            note = prefillDto.note,
-            warrantyExpirationMillis = prefillDto.warrantyExpiration
+            payee = prefill.payee,
+            note = prefill.note,
+            warrantyExpirationMillis = prefill.warrantyExpiration
                 ?: System.currentTimeMillis() + 31536000000L,
-            isWarrantyEnabled = prefillDto.warrantyExpiration != null,
-            locationCoords = prefillDto.latitude?.let { lat ->
-                prefillDto.longitude?.let { lng -> lat to lng }
+            isWarrantyEnabled = prefill.warrantyExpiration != null,
+            locationCoords = prefill.latitude?.let { lat ->
+                prefill.longitude?.let { lng -> lat to lng }
             },
-            linkedTransactionIds = prefillDto.clonedFromTransactionId?.let { listOf(it) }
-                ?: emptyList(),
+            linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
+                ?: prefill.linkedTransactionIds,
             selectedAccount = prefillAcc,
-            selectedCurrency = prefillDto.currency,
+            selectedCurrency = prefill.currency.ifEmpty { prefillAcc?.currencyCode ?: "" },
+            selectedDateMillis = prefill.timestamp ?: currentState.selectedDateMillis,
             targetAccount = targetAcc,
-            targetCurrency = targetAcc?.currencyCode ?: "",
-            exchangeRate = prefillDto.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE
+            targetCurrency = prefill.targetCurrency ?: targetAcc?.currencyCode ?: "",
+            exchangeRate = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE,
+            selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.title else currentState.selectedTemplateName,
+            prefillDto = prefill
         )
+
+        // Post-prefill logic for transfers
+        if (txType == 2) {
+            if (_state.value.targetAccount == null) {
+                autoSelectTargetAccount()
+            }
+            recalculateExchangeRate()
+        }
     }
 
     /**
@@ -326,7 +354,7 @@ class TransactionEntryViewModel(
                 it.copy(selectedTemplateName = event.templateName)
             }
 
-            is TransactionEntryEvent.ApplyTemplate -> applyTemplate(event.template)
+            is TransactionEntryEvent.ApplyTemplate -> applyPrefill(TransactionPrefillDTO.fromTemplate(event.template))
 
             // Sheet visibility
             is TransactionEntryEvent.ShowDatePicker -> update { it.copy(showDatePicker = event.show) }
@@ -361,20 +389,6 @@ class TransactionEntryViewModel(
             // Navigation
             is TransactionEntryEvent.TriggerNavigation -> update { it.copy(navTriggered = true) }
             is TransactionEntryEvent.ClearNavigationTrigger -> update { it.copy(navTriggered = false) }
-        }
-    }
-
-    private fun applyTemplate(template: Template) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(
-                title = template.name,
-                selectedCategoryId = template.categoryId,
-                selectedTags = template.tags,
-                paymentMethod = template.paymentMethod ?: "Cash",
-                payee = template.payee ?: "",
-                note = template.note ?: "",
-                selectedTemplateName = template.name
-            )
         }
     }
 
@@ -492,10 +506,41 @@ class TransactionEntryViewModel(
                 onSuccess(id)
             } else {
                 val newId = transactionManager.handleSaveTransaction(null, request, profileId)
+                
                 // Add links for cloned transaction
                 currentState.prefillDto?.clonedFromTransactionId?.let {
                     transactionUseCases.addTransactionLink(newId, it)
                 }
+
+                // Handle Planned Payment side effects
+                currentState.prefillDto?.sourcePlannedPaymentId?.let { paymentId ->
+                    val payment = plannedPaymentRepository.getById(paymentId)
+                    if (payment != null) {
+                        // Mark occurrence as confirmed
+                        val occurrence = PlannedPaymentOccurrence(
+                            id = 0,
+                            plannedPaymentId = paymentId,
+                            scheduledDate = payment.nextDueDate, // Assume we are confirming the next one
+                            status = OccurrenceStatus.CONFIRMED,
+                            generatedTransactionId = newId
+                        )
+                        plannedPaymentRepository.upsertOccurrence(occurrence)
+
+                        // Update planned payment next due date
+                        val nextDue = PlannedPaymentService.calculateNextDueDate(payment, payment.nextDueDate)
+                        if (nextDue == null) {
+                            plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
+                        } else {
+                            plannedPaymentRepository.update(
+                                payment.copy(
+                                    nextDueDate = nextDue,
+                                    lastTriggeredDate = payment.nextDueDate
+                                )
+                            )
+                        }
+                    }
+                }
+
                 // Add any additional links
                 currentState.linkedTransactionIds.forEach { linkedId ->
                     transactionUseCases.addTransactionLink(newId, linkedId)

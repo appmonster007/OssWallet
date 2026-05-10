@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,9 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -51,6 +58,7 @@ fun AeonOSMMap(
     var mapView by remember { mutableStateOf<MapView?>(null) }
     var currentZoom by remember { mutableStateOf(zoomLevel) }
     var isDragging by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(context) {
         // Initialize osmdroid configuration if not already done
@@ -109,6 +117,7 @@ fun AeonOSMMap(
                     }
                 }
                 override fun onMarkerDragStart(marker: Marker?) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     isDragging = true
                 }
             })
@@ -160,12 +169,22 @@ fun AeonOSMMap(
                             marker.position = geoPoint
                             currentMapView.invalidate()
                             onLocationSelected(geoPoint)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         }
                         false // Allow MapView to handle other gestures
                     }
                 }
             },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            currentZoom = (currentZoom + 1.0).coerceAtMost(20.0)
+                            currentMapView.controller.zoomTo(currentZoom)
+                        }
+                    )
+                },
             update = {
                 // Update logic if needed
             }
@@ -176,73 +195,76 @@ fun AeonOSMMap(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 16.dp)
-                .width(48.dp)
                 .background(
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                    RoundedCornerShape(24.dp)
+                    RoundedCornerShape(16.dp)
                 )
-                .padding(vertical = 8.dp),
+                .padding(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            IconButton(
+            FilledIconButton(
                 onClick = {
                     currentZoom = (currentZoom + 1.0).coerceAtMost(20.0)
                     currentMapView.controller.zoomTo(currentZoom)
-                }
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Zoom In", tint = MaterialTheme.colorScheme.primary)
-            }
-
-            Box(
-                modifier = Modifier
-                    .height(160.dp)
-                    .width(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Slider(
-                    value = currentZoom.toFloat(),
-                    onValueChange = {
-                        currentZoom = it.toDouble()
-                        currentMapView.controller.setZoom(currentZoom)
-                    },
-                    valueRange = 1f..20f,
-                    modifier = Modifier
-                        .graphicsLayer {
-                            rotationZ = -90f
-                        }
-                        .width(140.dp),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
+                },
+                modifier = Modifier.size(40.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = "Zoom In")
             }
 
-            IconButton(
+            HorizontalDivider(
+                modifier = Modifier.width(24.dp),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            FilledIconButton(
                 onClick = {
                     currentZoom = (currentZoom - 1.0).coerceAtLeast(1.0)
                     currentMapView.controller.zoomTo(currentZoom)
-                }
+                },
+                modifier = Modifier.size(40.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Icon(Icons.Rounded.Remove, contentDescription = "Zoom Out", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Rounded.Remove, contentDescription = "Zoom Out")
             }
         }
         
-        // Pin feedback (only visible when dragging or after selection)
+        // Pin feedback (only visible when dragging)
         if (isDragging) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 16.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f), 
+                        CircleShape
+                    )
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
-                Text(
-                    "Release to set location",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "Release to set location",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
     }

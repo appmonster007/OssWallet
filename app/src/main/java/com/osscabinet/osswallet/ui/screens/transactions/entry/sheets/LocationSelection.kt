@@ -95,15 +95,32 @@ fun LocationSelection(
                         for (i in 0 until jsonArray.length()) {
                             val obj = jsonArray.getJSONObject(i)
                             val address = obj.optJSONObject("address")
-                            val mainName = address?.optString("road") 
-                                ?: address?.optString("amenity")
-                                ?: address?.optString("house_number")
-                                ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
                             
-                            val secondaryName = obj.getString("display_name")
-                                .replaceFirst(mainName, "")
-                                .trim().trimStart(',')
-                                .trim()
+                            val mainName = address?.let { addr ->
+                                addr.optString("road").takeIf { it.isNotBlank() }
+                                    ?: addr.optString("amenity").takeIf { it.isNotBlank() }
+                                    ?: addr.optString("building").takeIf { it.isNotBlank() }
+                                    ?: addr.optString("house_number").takeIf { it.isNotBlank() }
+                                    ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
+                            } ?: obj.getString("display_name").split(",").firstOrNull() ?: ""
+                            
+                            val secondaryElements = mutableListOf<String>()
+                            address?.let { addr ->
+                                addr.optString("suburb").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                                addr.optString("city").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                                    ?: addr.optString("town").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                                    ?: addr.optString("village").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                                addr.optString("state").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                                addr.optString("country").takeIf { it.isNotBlank() }?.let { secondaryElements.add(it) }
+                            }
+                            
+                            var secondaryName = secondaryElements.distinct().joinToString(", ")
+                            if (secondaryName.isBlank()) {
+                                secondaryName = obj.getString("display_name")
+                                    .replaceFirst(mainName, "")
+                                    .trim().trimStart(',')
+                                    .trim()
+                            }
 
                             results.add(
                                 SearchResult(
@@ -161,11 +178,10 @@ fun LocationSelection(
                 selectedCoords = result.lat to result.lon
                 searchResults = emptyList()
                 searchQuery = result.display
-                // Add to history if not already there
-                if (!searchHistory.any { it.display == result.display }) {
-                    searchHistory = (listOf(result) + searchHistory).take(5)
-                }
+                // Add to history if not already there, move to top if it is
+                searchHistory = (listOf(result) + searchHistory.filter { it.display != result.display }).take(5)
             },
+            onClearHistory = { searchHistory = emptyList() },
             onManualPin = { geoPoint ->
                 selectedCoords = geoPoint.latitude to geoPoint.longitude
                 searchQuery = ""
@@ -193,6 +209,7 @@ fun LocationSelectionContent(
     onBack: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSearchResultClick: (SearchResult) -> Unit,
+    onClearHistory: () -> Unit,
     onManualPin: (GeoPoint) -> Unit,
     onGetCurrentLocation: () -> Unit,
     onClear: () -> Unit,
@@ -280,12 +297,52 @@ fun LocationSelectionContent(
                             }
 
                             if (searchQuery.isEmpty() && searchHistory.isNotEmpty()) {
-                                Text(
-                                    "RECENT SEARCHES",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "RECENT SEARCHES",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.5.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    TextButton(
+                                        onClick = onClearHistory,
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(24.dp)
+                                    ) {
+                                        Text("Clear All", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+
+                            if (displayResults.isEmpty() && searchQuery.length > 2 && !isSearching && searchError == null) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.SearchOff,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        "No results found for \"$searchQuery\"",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                }
                             }
 
                             LazyColumn(
@@ -487,6 +544,7 @@ fun LocationSelectionPreview() {
             onBack = {},
             onSearchQueryChange = {},
             onSearchResultClick = {},
+            onClearHistory = {},
             onManualPin = {},
             onGetCurrentLocation = {},
             onClear = {},

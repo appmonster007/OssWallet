@@ -35,6 +35,7 @@ class PlannedPaymentServiceTest {
         currency = "USD",
         transactionType = "expense",
         accountId = "acc1",
+        categoryId = 1001L,
         recurrenceRule = RecurrenceRule(
             type = recurrenceType,
             interval = interval,

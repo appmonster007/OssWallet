@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.CategoryEditSheet
@@ -87,7 +87,7 @@ fun CategoryManagementScreen(
                 idMapper = { it.id },
                 labelMapper = { it.name },
                 parentIdMapper = { it.parentId },
-                iconMapper = { AccountIconMap[it.iconName] },
+                iconMapper = { AppIconMap[it.iconName] },
                 colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
                 onEditClick = { selectedCategoryForEdit = it },
                 onAddChildClick = { parent ->

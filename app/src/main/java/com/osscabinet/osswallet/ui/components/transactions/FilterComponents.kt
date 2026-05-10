@@ -29,7 +29,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import androidx.compose.ui.graphics.Color
@@ -107,7 +107,7 @@ fun FilterFields(
                 },
                 idMapper = { it.id },
                 labelMapper = { it.name },
-                iconMapper = { AccountIconMap[it.icon] },
+                iconMapper = { AppIconMap[it.icon] },
                 colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) }
             )
         }
@@ -689,7 +689,7 @@ fun CategorySelectionDialog(
                             idMapper = { it.id },
                             labelMapper = { it.name },
                             parentIdMapper = { it.parentId },
-                            iconMapper = { AccountIconMap[it.iconName] },
+                            iconMapper = { AppIconMap[it.iconName] },
                             colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) }
                         )
                         Spacer(modifier = Modifier.height(24.dp))

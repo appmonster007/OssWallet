@@ -21,7 +21,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
 import java.math.BigDecimal
@@ -84,7 +84,7 @@ fun LinkedTransactionSelection(
                             val isSelected = tx.id in selectedIds
                             val account = accounts.find { it.id == tx.accountId }
                             val category = categories.find { it.id == tx.categoryId }
-                            val icon = categoryIcons[category?.iconName] ?: Icons.Rounded.Category
+                            val icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category
                             val iconBg = category?.colorHex?.let { Color(it) }
 
                             Box {

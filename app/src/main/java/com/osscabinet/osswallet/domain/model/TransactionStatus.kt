@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * Represents the clearance status of a transaction in the accounting workflow.
  *
  * @property displayName Human-readable name for UI display
- * @property iconName Name of the icon to use (maps to AccountIconMap in UI layer)
+ * @property iconName Name of the icon to use (maps to AppIconMap in UI layer)
  * @property colorHex Hex color value for the status (e.g., "#4CAF50")
  * @property description Description of the status for UI tooltips
  */

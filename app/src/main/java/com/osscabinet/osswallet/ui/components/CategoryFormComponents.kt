@@ -22,7 +22,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.VisualIdentitySection
 import com.osscabinet.ossWallet.ui.components.EditorialInput
 import com.osscabinet.ossWallet.ui.components.RecordFieldCard
-import com.osscabinet.ossWallet.ui.components.AccountIconMap
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
@@ -166,7 +166,7 @@ fun CategoryEditSheet(
                                                 idMapper = { it.id },
                                                 labelMapper = { it.name },
                                                 parentIdMapper = { it.parentId },
-                                                iconMapper = { AccountIconMap[it.iconName] },
+                                                iconMapper = { AppIconMap[it.iconName] },
                                                 colorMapper = { if (it.colorHex == -1) Color(0xFF9E9E9E) else Color(it.colorHex) },
                                                 noneLabel = "None (Primary Category)",
                                                 onParentSelected = {

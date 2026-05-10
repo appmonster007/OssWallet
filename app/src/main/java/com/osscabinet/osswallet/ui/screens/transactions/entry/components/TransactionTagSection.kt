@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatCurrencyRight
-import com.osscabinet.ossWallet.ui.components.categoryIcons
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.entry.*
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
@@ -96,7 +96,7 @@ fun TransactionTagSection(
             )
 
             val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
-            val statusIcon = com.osscabinet.ossWallet.ui.components.AccountIconMap[state.status.iconName]
+            val statusIcon = AppIconMap[state.status.iconName]
                 ?: Icons.Rounded.CheckCircle
 
             EntryActionChip(
@@ -201,8 +201,8 @@ private fun LinkedTransactionItem(
     onRemove: () -> Unit
 ) {
     val categoryName = category?.name ?: "Unknown"
-    val icon: ImageVector = category?.iconName?.let { categoryIcons[it] }
-        ?: categoryIcons[categoryName]
+    val icon: ImageVector = category?.iconName?.let { AppIconMap[it] }
+        ?: AppIconMap[categoryName]
         ?: Icons.Rounded.Category
     val iconBg = category?.colorHex?.let { Color(it) }
 

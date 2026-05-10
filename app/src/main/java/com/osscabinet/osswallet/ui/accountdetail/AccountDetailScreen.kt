@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.merge
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.ui.viewmodel.AccountViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.TransactionViewModel
@@ -54,6 +56,9 @@ import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScree
 import com.osscabinet.ossWallet.ui.viewmodel.TemplateViewModel
 import com.osscabinet.ossWallet.ui.viewmodel.AccountDetailUiState
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 /**
  * Helper function to calculate 30% of screen height as dp padding.
@@ -72,6 +77,7 @@ private fun calculateScrollBottomPadding(): Dp {
 @Composable
 fun AccountDetailScreen(
     accountId: String,
+    filterJson: String? = null,
     accountViewModel: AccountViewModel,
     transactionViewModel: TransactionViewModel,
     settingsViewModel: SettingsViewModel,
@@ -87,6 +93,19 @@ fun AccountDetailScreen(
     onAddTransactionClick: (String, Int?, Long?) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
+    // Initialize filter from navigation parameter when screen opens
+    LaunchedEffect(filterJson) {
+        if (filterJson != null) {
+            try {
+                val decoded = URLDecoder.decode(filterJson, StandardCharsets.UTF_8.toString())
+                val filter = Json.decodeFromString<TransactionFilter>(decoded)
+                accountDetailViewModel.updateFilter(filter)
+            } catch (e: Exception) {
+                // Handle error silently
+            }
+        }
+    }
+
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
     val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
@@ -132,9 +151,28 @@ fun AccountDetailScreen(
 
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddCardDialog by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
+    val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
+
+    if (showFilterSheet && uiState is AccountDetailUiState.Success) {
+        val state = uiState as AccountDetailUiState.Success
+        TransactionFilterSheet(
+            filter = state.currentFilter,
+            accounts = accounts,
+            categories = categories,
+            savedFilters = savedFilters,
+            onUpdateTimelineRange = { accountDetailViewModel.updateTimelineRange(it) },
+            onUpdateFilter = { accountDetailViewModel.updateFilter(it) },
+            onToggleExpand = { /* Handle if needed */ },
+            onClose = { showFilterSheet = false },
+            showAccountFilter = false, // Locked to current account
+            accountNames = remember(accounts) { accounts.associate { it.id to it.name } },
+            onResetToInitial = { accountDetailViewModel.clearFilters() }
+        )
+    }
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
         val state = uiState as AccountDetailUiState.Success
@@ -193,6 +231,9 @@ fun AccountDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showFilterSheet = true }) {
+                        Icon(Icons.Rounded.FilterList, contentDescription = "Filter")
+                    }
                     IconButton(onClick = { navigate { onEditAccountClick(accountId) } }) {
                         Icon(Icons.Rounded.Edit, contentDescription = "Edit")
                     }
@@ -255,11 +296,8 @@ fun AccountDetailScreen(
                         }
                         1 -> {
                             // Transactions tab content using RecentActivitiesCard
-                            val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
                             val accountNamesMap = remember(accounts) { accounts.associate { it.id to it.name } }
-                            remember(accounts) { accounts.associate { it.id to it.currencyCode } }
-                            val categoriesList by transactionViewModel.categories.collectAsStateWithLifecycle()
-                            val categoryMap = remember(categoriesList) { categoriesList.associateBy { it.id } }
+                            val categoryMap = remember(categories) { categories.associateBy { it.id } }
                             val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
                             val transactionsWithBalanceList = state.transactionsWithBalance
@@ -290,7 +328,9 @@ fun AccountDetailScreen(
                                     allTransactions = transactionsWithBalanceList,
                                     accountNamesMap = accountNamesMap,
                                     categoryMap = categoryMap,
-                                    onRecordsClick = { _ -> navigate { onRecordsClick(TransactionFilter(accountIds = listOf(accountId))) } },
+                                    onRecordsClick = { drillDown -> 
+                                        accountDetailViewModel.updateFilter(state.currentFilter.merge(drillDown))
+                                    },
                                     onTransactionClick = { txId -> navigate { onEditTransactionClick(txId) } },
                                     baseCurrency = state.baseCurrency,
                                     exchangeRates = state.exchangeRates,
@@ -308,7 +348,7 @@ fun AccountDetailScreen(
                                     excludeFuture = !state.showPlannedPayments,
                                     precision = state.decimalPrecision,
                                     is24Hour = state.use24HourFormat,
-                                    filter = TransactionFilter(accountIds = listOf(accountId))
+                                    filter = state.currentFilter
                                 )
                             }
                         }
@@ -371,9 +411,10 @@ fun DynamicAccountDetailCards(
 ) {
     var showDeleteCardsDialog by remember { mutableStateOf(false) }
 
-    val accountScopeFilter = remember(accountId) { TransactionFilter(accountIds = listOf(accountId), excludeFuture = false) }
+    val accountScopeFilter = state.currentFilter
     val sharedCardInput = remember(state) {
         CardInput(
+            profileId = state.profileId,
             transactions = state.allAccountTransactions,
             accounts = listOf(state.account),
             categories = state.allCategories,
@@ -384,16 +425,29 @@ fun DynamicAccountDetailCards(
         )
     }
 
-    // Always-present hero card — not in the reorderable list, cannot be deleted.
+    // Always-present hero card — no filters (All Time)
+    val heroCardInput = remember(state) {
+        CardInput(
+            profileId = state.profileId,
+            transactions = state.allAccountTransactions,
+            accounts = listOf(state.account),
+            categories = state.allCategories,
+            exchangeRates = state.exchangeRates,
+            baseCurrency = state.baseCurrency,
+            precision = state.decimalPrecision,
+            filter = TransactionFilter(accountIds = listOf(accountId), timelineRange = TimelineRange.AllTime)
+        )
+    }
+
     val heroConfig = remember(accountId) {
         AccountHeroCardConfig(
             cardId = "hero_$accountId",
-            filter = accountScopeFilter
+            filter = TransactionFilter(accountIds = listOf(accountId), timelineRange = TimelineRange.AllTime)
         )
     }
     val heroCard = rememberCardWithCallbacks(
         config = heroConfig,
-        input = sharedCardInput,
+        input = heroCardInput,
         registry = cardComputerRegistry,
         updateHandler = accountDetailViewModel,
         onDelete = {},

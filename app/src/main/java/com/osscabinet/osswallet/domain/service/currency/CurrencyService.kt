@@ -53,7 +53,7 @@ object CurrencyService {
     }
 
     /**
-     * Converts a FinancialSummary from one currency to another.
+     * Converts a FinancialSummary from source currency to another currency.
      */
     fun convertFinancialSummary(
         summary: FinancialSummary,
@@ -71,34 +71,17 @@ object CurrencyService {
     }
 
     /**
-     * Converts a FinancialSummary to base currency.
+     * Aggregates multiple FinancialSummary objects into a single one in a target currency.
      */
-    fun convertFinancialSummaryToBase(
-        summary: FinancialSummary,
-        fromCurrency: String,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
-    ): FinancialSummary {
-        return FinancialSummary(
-            totalAmount = convertToBaseCurrency(summary.totalAmount, fromCurrency, baseCurrency, exchangeRates),
-            income = convertToBaseCurrency(summary.income, fromCurrency, baseCurrency, exchangeRates),
-            expense = convertToBaseCurrency(summary.expense, fromCurrency, baseCurrency, exchangeRates),
-            transactionCount = summary.transactionCount
-        )
-    }
-
-    /**
-     * Aggregates multiple FinancialSummary objects into a single one in base currency.
-     */
-    fun calculateTotalInBaseCurrency(
+    fun calculateTotalFinancialSummary(
         summaries: Map<String, FinancialSummary>,
-        baseCurrency: String,
+        targetCurrency: String,
         exchangeRates: Map<String, BigDecimal>
     ): FinancialSummary {
         if (summaries.isEmpty()) return FinancialSummary.EMPTY
 
         return summaries.map { (currency, summary) ->
-            convertFinancialSummaryToBase(summary, currency, baseCurrency, exchangeRates)
+            convertFinancialSummary(summary, currency, targetCurrency, exchangeRates)
         }.reduce { acc, summary ->
             FinancialSummary(
                 totalAmount = acc.totalAmount + summary.totalAmount,
@@ -108,6 +91,25 @@ object CurrencyService {
             )
         }
     }
+
+    /**
+     * Converts a FinancialSummary to base currency.
+     */
+    fun convertFinancialSummaryToBase(
+        summary: FinancialSummary,
+        fromCurrency: String,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary = convertFinancialSummary(summary, fromCurrency, baseCurrency, exchangeRates)
+
+    /**
+     * Aggregates multiple FinancialSummary objects into a single one in base currency.
+     */
+    fun calculateTotalInBaseCurrency(
+        summaries: Map<String, FinancialSummary>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary = calculateTotalFinancialSummary(summaries, baseCurrency, exchangeRates)
 
     /**
      * Calculates the total amount in a target currency from a map of currency totals.

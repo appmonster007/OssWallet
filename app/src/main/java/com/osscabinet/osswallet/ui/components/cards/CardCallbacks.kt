@@ -66,12 +66,10 @@ sealed class CardCallbacks {
      * Callbacks for account hero card
      */
     data class AccountHero(
-        val onShowCurrencyBadgesChange: (String, Boolean) -> Unit,
-        val onFilterChange: (String, com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
         val onClickExpense: ((com.osscabinet.ossWallet.domain.model.TransactionFilter) -> Unit)? = null,
-        val onClick: (() -> Unit)? = null,
-        val onDelete: () -> Unit = {}
+        val onClickCurrency: ((String) -> Unit)? = null,
+        val onClick: (() -> Unit)? = null
     ) : CardCallbacks()
     
     /**

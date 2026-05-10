@@ -227,7 +227,17 @@ data class AccountHeroCardConfig(
     override val filter: TransactionFilter = TransactionFilter()
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
-    override val filterRules: CardFilterRules get() = CardFilterRules(allowFutureTransactionsToggle = false)
+    override val filterRules: CardFilterRules get() = CardFilterRules(
+        allowAccountSelection = false,
+        allowCategorySelection = false,
+        allowStatusSelection = false,
+        allowSearch = false,
+        allowAmountRange = false,
+        allowCurrencySelection = false,
+        allowPaymentMethodSelection = false,
+        allowTimelineSelection = false,
+        allowFutureTransactionsToggle = false
+    )
 }
 
 /**

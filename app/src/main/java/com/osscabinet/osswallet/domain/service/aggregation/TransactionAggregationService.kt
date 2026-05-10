@@ -80,23 +80,27 @@ object TransactionAggregationService {
     }
 
     /**
-     * Gets summaries grouped by account.
+     * Gets summaries grouped by account and currency.
+     * Returns Map<AccountId, Map<Currency, FinancialSummary>>
      */
-    suspend fun getSummaryByAccount(
+    suspend fun getSummaryByAccountAndCurrency(
         queryService: DatabaseQueryService,
         profileId: Int,
         filter: TransactionFilter = TransactionFilter()
-    ): Result<Map<String, FinancialSummary>> {
+    ): Result<Map<String, Map<String, FinancialSummary>>> {
         return queryService.aggregate(
             profileId = profileId,
-            dimensions = listOf(AggregationDimension.ACCOUNT),
+            dimensions = listOf(AggregationDimension.ACCOUNT, AggregationDimension.CURRENCY),
             metrics = StandardMetrics.defaultSet(),
             filter = filter
         ).map { dataList ->
-            dataList.associate { data ->
-                val accountId = data.dimensions[AggregationDimension.ACCOUNT] ?: "Unknown"
-                accountId to mapToFinancialSummary(data)
-            }
+            dataList.groupBy { it.dimensions[AggregationDimension.ACCOUNT] ?: "Unknown" }
+                .mapValues { (_, rows) ->
+                    rows.associate { data ->
+                        val currency = data.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
+                        currency to mapToFinancialSummary(data)
+                    }
+                }
         }
     }
 

@@ -160,31 +160,35 @@ object CardAggregationService {
         config: AccountsCardConfig
     ): CardRenderData.Accounts {
         val mergedFilter = input.filter.merge(config.filter)
-        val summariesByAccount = TransactionAggregationService.getSummaryByAccount(queryService, profileId, mergedFilter)
+        val summariesByAccountAndCurrency = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, mergedFilter)
             .getOrDefault(emptyMap())
 
         val accountStats = input.accounts.associate { account ->
-            val summary = summariesByAccount[account.id] ?: FinancialSummary.EMPTY
+            val currencySummaries = summariesByAccountAndCurrency[account.id] ?: emptyMap()
             
-            // For now, let's assume one main currency balance per account for simplicity in this summary
-            // In a real multi-currency account, we'd query by (Account, Currency)
-            val currencyBalances = mapOf(account.currencyCode to summary.totalAmount)
-            
-            val balanceInBase = CurrencyService.convertAmount(
-                summary.totalAmount, 
-                account.currencyCode, 
-                input.baseCurrency, 
-                input.exchangeRates, 
-                10
+            // Multi-currency aware aggregation for the account
+            val totalSummaryInAccountCurrency = CurrencyService.calculateTotalFinancialSummary(
+                currencySummaries,
+                account.currencyCode,
+                input.exchangeRates
             )
+
+            val balanceInBase = CurrencyService.calculateTotalInCurrency(
+                currencyTotals = currencySummaries.mapValues { it.value.totalAmount },
+                targetCurrency = input.baseCurrency,
+                exchangeRates = input.exchangeRates,
+                precision = 10
+            )
+
+            val currencyBalances = currencySummaries.mapValues { it.value.totalAmount }
 
             account.id to com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem(
                 account = account,
                 currencyBalances = currencyBalances,
-                balance = summary.totalAmount,
+                balance = totalSummaryInAccountCurrency.totalAmount,
                 balanceInBase = balanceInBase,
-                incomeInAccountCurrency = summary.income,
-                expenseInAccountCurrency = summary.expense.abs()
+                incomeInAccountCurrency = totalSummaryInAccountCurrency.income,
+                expenseInAccountCurrency = totalSummaryInAccountCurrency.expense.abs()
             )
         }
 
@@ -213,16 +217,27 @@ object CardAggregationService {
 
         // Lifetime balance (base scope)
         val baseFilter = input.filter.merge(config.filter).copy(excludeFuture = true, timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-        val lifetimeSummary = TransactionAggregationService.getSummary(queryService, profileId, baseFilter)
-            .getOrDefault(FinancialSummary.EMPTY)
+        val lifetimeSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
+            .getOrDefault(emptyMap())
+        
+        val lifetimeSummary = CurrencyService.calculateTotalFinancialSummary(
+            lifetimeSummariesByCurrency,
+            account.currencyCode,
+            input.exchangeRates
+        )
 
         // Period summary
         val periodFilter = input.filter.merge(config.filter).copy(excludeFuture = true)
-        val periodSummary = TransactionAggregationService.getSummary(queryService, profileId, periodFilter)
-            .getOrDefault(FinancialSummary.EMPTY)
-
-        val balancesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
+        val periodSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, periodFilter)
             .getOrDefault(emptyMap())
+
+        val periodSummary = CurrencyService.calculateTotalFinancialSummary(
+            periodSummariesByCurrency,
+            account.currencyCode,
+            input.exchangeRates
+        )
+
+        val balancesByCurrency = lifetimeSummariesByCurrency
             .mapValues { it.value.totalAmount.setScale(input.precision, RoundingMode.HALF_UP) }
 
         return CardRenderData.AccountHero(

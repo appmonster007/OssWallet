@@ -182,7 +182,8 @@ fun PlannedPaymentsScreen(
     transactionManager: TransactionManager,
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
-    onDetailClick: (Long) -> Unit
+    onDetailClick: (Long) -> Unit,
+    onConfirmClick: ((Long, Long?) -> Unit)? = null
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
@@ -296,11 +297,15 @@ fun PlannedPaymentsScreen(
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
-                                    viewModel.quickConfirm(
-                                        payment,
-                                        transactionManager,
-                                        profileId
-                                    )
+                                    if (onConfirmClick != null) {
+                                        onConfirmClick(payment.id, payment.nextDueDate)
+                                    } else {
+                                        viewModel.quickConfirm(
+                                            payment,
+                                            transactionManager,
+                                            profileId
+                                        )
+                                    }
                                 },
                                 onSkip = { viewModel.quickSkip(payment) }
                             )
@@ -333,11 +338,15 @@ fun PlannedPaymentsScreen(
                                     onPause = { viewModel.pause(item.plannedPayment) },
                                     onResume = { viewModel.resume(item.plannedPayment) },
                                     onConfirm = {
-                                        viewModel.quickConfirm(
-                                            item.plannedPayment,
-                                            transactionManager,
-                                            profileId
-                                        )
+                                        if (onConfirmClick != null) {
+                                            onConfirmClick(item.plannedPayment.id, item.scheduledDate)
+                                        } else {
+                                            viewModel.quickConfirm(
+                                                item.plannedPayment,
+                                                transactionManager,
+                                                profileId
+                                            )
+                                        }
                                     },
                                     onSkip = { viewModel.quickSkip(item.plannedPayment) }
                                 )
@@ -365,11 +374,15 @@ fun PlannedPaymentsScreen(
                                 onPause = { viewModel.pause(payment) },
                                 onResume = { viewModel.resume(payment) },
                                 onConfirm = {
-                                    viewModel.quickConfirm(
-                                        payment,
-                                        transactionManager,
-                                        profileId
-                                    )
+                                    if (onConfirmClick != null) {
+                                        onConfirmClick(payment.id, payment.nextDueDate)
+                                    } else {
+                                        viewModel.quickConfirm(
+                                            payment,
+                                            transactionManager,
+                                            profileId
+                                        )
+                                    }
                                 },
                                 onSkip = { viewModel.quickSkip(payment) }
                             )

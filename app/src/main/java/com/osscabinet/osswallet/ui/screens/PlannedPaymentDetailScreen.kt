@@ -85,6 +85,7 @@ fun PlannedPaymentDetailScreen(
     accounts: List<Account> = emptyList(),
     categories: List<Category> = emptyList(),
     onEditClick: (Long) -> Unit,
+    onConfirmClick: (Long, Long?) -> Unit,
     onBackClick: () -> Unit
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
@@ -351,7 +352,7 @@ fun PlannedPaymentDetailScreen(
                         status = status,
                         dateFormatter = dateFormatter,
                         onConfirm = {
-                            viewModel.quickConfirm(payment, transactionManager, profileId)
+                            onConfirmClick(payment.id, item.scheduledDate)
                         },
                         onSkip = {
                             viewModel.quickSkip(payment)

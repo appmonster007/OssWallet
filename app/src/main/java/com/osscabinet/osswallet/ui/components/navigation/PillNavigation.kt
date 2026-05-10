@@ -283,7 +283,7 @@ fun TransactionFabMenu(
     isExpanded: Boolean,
     templates: List<Template>,
     categories: List<Category> = emptyList(),
-    onAddClick: (Int?, String?) -> Unit,
+    onAddClick: (Int?, Long?) -> Unit,
     onAddAccountClick: (() -> Unit)? = null
 ) {
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -300,7 +300,7 @@ fun TransactionFabMenu(
             label = "Template: ${template.name}",
             icon = icon,
             index = index,
-            onClick = { onAddClick(template.transactionType, template.name) }
+            onClick = { onAddClick(template.transactionType, template.id) }
         )
     }
 

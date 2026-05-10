@@ -85,7 +85,7 @@ fun AccountDetailScreen(
     onAccountClick: (String) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
-    onAddTransactionClick: (String, Int?, String?) -> Unit,
+    onAddTransactionClick: (String, Int?, Long?) -> Unit,
     onRecordsClick: (RecordsFilterContext) -> Unit
 ) {
     val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -336,9 +336,9 @@ fun AccountDetailScreen(
                     TransactionFabMenu(
                         isExpanded = isFabExpanded,
                         templates = allTemplates,
-                        onAddClick = { type, name ->
+                        onAddClick = { type, templateId ->
                             isFabExpanded = false
-                            navigate { onAddTransactionClick(accountId, type, name) }
+                            navigate { onAddTransactionClick(accountId, type, templateId) }
                         }
                     )
                 }

@@ -62,7 +62,7 @@ fun TransactionListContent(
     filter: TransactionFilter,
     recordsSettings: TransactionSectionSettings,
     savedFilters: List<Filter> = emptyList(),
-    onAddTransactionClick: (Int?, String?) -> Unit,
+    onAddTransactionClick: (Int?, Long?) -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onBackClick: () -> Unit,
     onMenuClick: () -> Unit = {},

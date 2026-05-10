@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -423,10 +424,64 @@ class TransactionViewModel(
         viewModelScope.launch {
             val transaction = transactionUseCases.getTransactionById(transactionId)
             if (transaction != null) {
-                _prefillDto.value = TransactionPrefillDTO.fromTransaction(
+                var prefill = TransactionPrefillDTO.fromTransaction(
                     transaction,
-                    clonedFromTransactionId = transactionId
+                    clonedFromId = transactionId
                 )
+
+                // If it's a transfer, try to find the linked transaction to get the target account and rate
+                if (transaction.categoryId == 1003L) {
+                    val linkedTxs = transactionUseCases.getLinkedTransactions(transactionId).first()
+                    val targetTx = linkedTxs.find { 
+                        it.categoryId == 1003L && 
+                        it.accountId != transaction.accountId &&
+                        it.transactionType == "income" 
+                    }
+                    if (targetTx != null) {
+                        val rate = if (transaction.amount.signum() != 0) {
+                            targetTx.amount.abs().divide(transaction.amount.abs(), 6, java.math.RoundingMode.HALF_UP)
+                        } else BigDecimal.ONE
+                        
+                        prefill = prefill.copy(
+                            targetAccountId = targetTx.accountId,
+                            targetCurrency = targetTx.currency,
+                            exchangeRate = rate.toPlainString()
+                        )
+                    }
+                }
+                
+                _prefillDto.value = prefill
+            } else {
+                _prefillDto.value = null
+            }
+        }
+    }
+
+    /**
+     * Set the prefill DTO from a planned payment.
+     * This is used when manually confirming a planned payment.
+     */
+    fun setPlannedPaymentPrefill(plannedPaymentId: Long, scheduledDate: Long? = null) {
+        viewModelScope.launch {
+            val payment = plannedPaymentRepository.getById(plannedPaymentId)
+            if (payment != null) {
+                _prefillDto.value = TransactionPrefillDTO.fromPlannedPayment(payment, scheduledDate)
+            } else {
+                _prefillDto.value = null
+            }
+        }
+    }
+
+    /**
+     * Set the prefill DTO from a template.
+     * This is used when creating a transaction from a template.
+     */
+    fun setTemplatePrefill(templateId: Long) {
+        viewModelScope.launch {
+            val templates = templateRepository.getAllTemplates().first()
+            val template = templates.find { it.id == templateId }
+            if (template != null) {
+                _prefillDto.value = TransactionPrefillDTO.fromTemplate(template)
             } else {
                 _prefillDto.value = null
             }

@@ -151,7 +151,7 @@ class MainActivity : FragmentActivity() {
                                 navController.navigate(Screen.AccountDetail.createRoute(id))
                             },
                             onTemplateClick = { template ->
-                                navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, template = template.name))
+                                navController.navigate(Screen.AddTransaction.createRoute(type = template.transactionType, templateId = template.id))
                             },
                             onCloseDrawer = { scope.launch { drawerState.close() } },
                             onPlannedPaymentsClick = {

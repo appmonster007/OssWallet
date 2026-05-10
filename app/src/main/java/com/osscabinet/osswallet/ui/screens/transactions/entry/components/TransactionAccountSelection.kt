@@ -43,7 +43,8 @@ fun TransactionAccountSelection(
             Column(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AeonSearchField(
                     query = query,
@@ -51,10 +52,11 @@ fun TransactionAccountSelection(
                     placeholder = "Search accounts…"
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 Box(modifier = Modifier.weight(1f, fill = false)) {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         if (allowOutsideWallet && query.isBlank()) {
                             AeonHybridSelector(
                                 items = listOf(null),
@@ -70,13 +72,11 @@ fun TransactionAccountSelection(
                                 iconMapper = { Icons.Rounded.Public },
                                 colorMapper = { tertiaryColor }
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 4.dp),
+                                modifier = Modifier.padding(vertical = 8.dp),
                                 thickness = 0.5.dp,
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
 
                         if (filteredAccounts.isEmpty() && query.isNotBlank()) {

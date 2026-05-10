@@ -53,36 +53,56 @@ fun <T, ID> AeonHierarchicalHybridSelector(
         // Special "None" option for Parent Selection mode
         if (mode == AeonSelectMode.PARENT && noneLabel != null) {
             val isNoneSelected = selectedIds.isEmpty()
+            val backgroundColor by animateColorAsState(
+                if (isNoneSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                else MaterialTheme.colorScheme.surfaceContainerLowest,
+                label = "noneBgColor"
+            )
+            val borderColor by animateColorAsState(
+                if (isNoneSelected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                label = "noneBorderColor"
+            )
+            val borderWidth by androidx.compose.animation.core.animateDpAsState(
+                if (isNoneSelected) 1.5.dp else 0.5.dp,
+                label = "noneBorderWidth"
+            )
+
             Surface(
+                onClick = { onParentSelected(null) },
                 shape = RoundedCornerShape(24.dp),
-                color = if (isNoneSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onParentSelected(null) }
+                color = backgroundColor,
+                border = BorderStroke(borderWidth, borderColor),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(12.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(modifier = Modifier.width(32.dp))
                     Surface(
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(36.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(noneIcon, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Icon(noneIcon, contentDescription = null, modifier = Modifier.size(18.dp))
                         }
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         noneLabel,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = if (isNoneSelected) FontWeight.Bold else FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
                     if (isNoneSelected) {
-                        Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Rounded.CheckCircle,
+                            contentDescription = "Selected",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
@@ -133,6 +153,7 @@ private fun <T, ID> RecursiveHybridNode(
             selectedIds.any { id -> allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId })
     }
 
+    // Alternating contrast backgrounds for levels
     val backgroundColor = if (depth % 2 == 0) {
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     } else {
@@ -140,9 +161,10 @@ private fun <T, ID> RecursiveHybridNode(
     }
 
     Surface(
-        shape = if (depth == 0) RoundedCornerShape(24.dp) else RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column {
             HybridSelectItem(
@@ -180,7 +202,12 @@ private fun <T, ID> RecursiveHybridNode(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     children.forEach { child ->
                         RecursiveHybridNode(
                             item = child,
@@ -202,10 +229,9 @@ private fun <T, ID> RecursiveHybridNode(
 
                     if (children.isNotEmpty()) {
                         HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
@@ -243,6 +269,11 @@ private fun <T, ID> HybridSelectItem(
         label = "borderColor"
     )
 
+    val borderWidth by androidx.compose.animation.core.animateDpAsState(
+        if (isSelected && mode != AeonSelectMode.MANAGEMENT) 1.5.dp else 0.5.dp,
+        label = "borderWidth"
+    )
+
     Surface(
         onClick = {
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
@@ -250,13 +281,13 @@ private fun <T, ID> HybridSelectItem(
         },
         shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
-        border = BorderStroke(if (isSelected && mode != AeonSelectMode.MANAGEMENT) 1.5.dp else 0.5.dp, borderColor),
+        border = BorderStroke(borderWidth, borderColor),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left side: Expansion Control

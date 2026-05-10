@@ -43,7 +43,7 @@ fun <T, ID> AeonHybridSelector(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items.forEach { item ->
             val id = idMapper(item)

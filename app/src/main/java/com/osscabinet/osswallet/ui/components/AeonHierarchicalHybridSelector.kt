@@ -248,7 +248,7 @@ private fun <T, ID> HybridSelectItem(
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
         border = BorderStroke(if (isSelected && mode != AeonSelectMode.MANAGEMENT) 1.5.dp else 0.5.dp, borderColor),
         modifier = Modifier.fillMaxWidth()

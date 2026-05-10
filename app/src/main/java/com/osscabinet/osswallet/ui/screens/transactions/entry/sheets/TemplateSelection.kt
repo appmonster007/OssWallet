@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.getIconByName
 
 @Composable
@@ -53,20 +54,11 @@ fun TemplateSelection(
                     .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    placeholder = { Text("Search templates…") },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(24.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                    )
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = "Search templates…",
+                    focusRequester = focusRequester
                 )
 
                 when {
